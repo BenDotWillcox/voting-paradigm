@@ -18,7 +18,7 @@ export default function Header() {
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <CheckSquare className="h-6 w-6" />
-          <h1 className="text-xl font-bold">Todo App</h1>
+          <h1 className="text-xl font-bold">Voting Paradigm</h1>
         </div>
         <nav className="hidden md:flex space-x-4">
           <Link
@@ -29,10 +29,16 @@ export default function Header() {
           </Link>
           <SignedIn>
             <Link
-              href="/todo"
+              href="/chat"
               className="hover:underline"
             >
-              Todos
+              Chat
+            </Link>
+            <Link
+              href="/preferences"
+              className="hover:underline"
+            >
+              Preferences
             </Link>
           </SignedIn>
         </nav>
@@ -70,11 +76,20 @@ export default function Header() {
             <SignedIn>
               <li>
                 <Link
-                  href="/todo"
+                  href="/chat"
                   className="block hover:underline"
                   onClick={toggleMenu}
                 >
-                  Todos
+                  Chat
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/preferences"
+                  className="block hover:underline"
+                  onClick={toggleMenu}
+                >
+                  Preferences
                 </Link>
               </li>
             </SignedIn>

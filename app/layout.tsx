@@ -26,11 +26,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} dark`}>
+      <body className={`${inter.className} light`}>
         <ClerkProvider>
           <Providers
             attribute="class"
-            defaultTheme="dark"
+            defaultTheme="light"
             disableTransitionOnChange
             enableSystem={false}
           >
