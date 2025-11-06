@@ -1,17 +1,24 @@
 {
-  "id": "f4671f0a-70ac-412c-ae0b-72fef9b4e80d",
-  "prevId": "7911f133-ae49-4c49-940c-e0f3395dfaf7",
+  "id": "6a5e3539-6fe7-44d1-898c-ecf4cbd0ae5d",
+  "prevId": "d0deee69-2690-4f8e-bd00-28cc2367087f",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.profiles": {
-      "name": "profiles",
+    "public.app_user": {
+      "name": "app_user",
       "schema": "",
       "columns": {
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
+        "id": {
+          "name": "id",
+          "type": "uuid",
           "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "handle": {
+          "name": "handle",
+          "type": "text",
+          "primaryKey": false,
           "notNull": true
         },
         "created_at": {
@@ -32,95 +39,540 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "app_user_handle_unique": {
+          "name": "app_user_handle_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "handle"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.domain": {
+      "name": "domain",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "domain_name_unique": {
+          "name": "domain_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.program": {
+      "name": "program",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "domain_id": {
+          "name": "domain_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "program_domain_id_domain_id_fk": {
+          "name": "program_domain_id_domain_id_fk",
+          "tableFrom": "program",
+          "tableTo": "domain",
+          "columnsFrom": [
+            "domain_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.user_preferences": {
-      "name": "user_preferences",
+    "public.proposal_action": {
+      "name": "proposal_action",
       "schema": "",
       "columns": {
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
+        "id": {
+          "name": "id",
+          "type": "uuid",
           "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "proposal_id": {
+          "name": "proposal_id",
+          "type": "uuid",
+          "primaryKey": false,
           "notNull": true
         },
-        "federal_vs_unitary": {
-          "name": "federal_vs_unitary",
-          "type": "numeric",
+        "ordinal": {
+          "name": "ordinal",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "text": {
+          "name": "text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "proposal_action_proposal_id_proposal_id_fk": {
+          "name": "proposal_action_proposal_id_proposal_id_fk",
+          "tableFrom": "proposal_action",
+          "tableTo": "proposal",
+          "columnsFrom": [
+            "proposal_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.proposal_budget_item": {
+      "name": "proposal_budget_item",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "proposal_id": {
+          "name": "proposal_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "item_name": {
+          "name": "item_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "one_time_usd": {
+          "name": "one_time_usd",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "'0'"
+          "default": 0
         },
-        "democratic_vs_authoritarian": {
-          "name": "democratic_vs_authoritarian",
-          "type": "numeric",
+        "annual_usd": {
+          "name": "annual_usd",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "'0'"
+          "default": 0
         },
-        "globalist_vs_isolationist": {
-          "name": "globalist_vs_isolationist",
-          "type": "numeric",
+        "confidence": {
+          "name": "confidence",
+          "type": "numeric(3, 2)",
           "primaryKey": false,
           "notNull": true,
-          "default": "'0'"
-        },
-        "militarist_vs_pacifist": {
-          "name": "militarist_vs_pacifist",
-          "type": "numeric",
-          "primaryKey": false,
+          "default": "'0.50'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "proposal_budget_item_proposal_id_proposal_id_fk": {
+          "name": "proposal_budget_item_proposal_id_proposal_id_fk",
+          "tableFrom": "proposal_budget_item",
+          "tableTo": "proposal",
+          "columnsFrom": [
+            "proposal_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.proposal_metric": {
+      "name": "proposal_metric",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
           "notNull": true,
-          "default": "'0'"
+          "default": "gen_random_uuid()"
         },
-        "security_vs_freedom": {
-          "name": "security_vs_freedom",
-          "type": "numeric",
+        "proposal_id": {
+          "name": "proposal_id",
+          "type": "uuid",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'0'"
+          "notNull": true
         },
-        "equality_vs_markets": {
-          "name": "equality_vs_markets",
-          "type": "numeric",
+        "name": {
+          "name": "name",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'0'"
+          "notNull": true
         },
-        "secular_vs_religious": {
-          "name": "secular_vs_religious",
-          "type": "numeric",
+        "unit": {
+          "name": "unit",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'0'"
+          "notNull": true
         },
-        "progressive_vs_traditional": {
-          "name": "progressive_vs_traditional",
-          "type": "numeric",
+        "baseline_val": {
+          "name": "baseline_val",
+          "type": "numeric(12, 4)",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'0'"
+          "notNull": true
         },
-        "assimilationist_vs_multiculturalist": {
-          "name": "assimilationist_vs_multiculturalist",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'0'"
-        },
-        "additional_topics": {
-          "name": "additional_topics",
-          "type": "json",
+        "baseline_year": {
+          "name": "baseline_year",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
-        "axis_importance": {
-          "name": "axis_importance",
-          "type": "json",
+        "baseline_source": {
+          "name": "baseline_source",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "target_val": {
+          "name": "target_val",
+          "type": "numeric(12, 4)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deadline": {
+          "name": "deadline",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "proposal_metric_proposal_id_proposal_id_fk": {
+          "name": "proposal_metric_proposal_id_proposal_id_fk",
+          "tableFrom": "proposal_metric",
+          "tableTo": "proposal",
+          "columnsFrom": [
+            "proposal_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.proposal_topic": {
+      "name": "proposal_topic",
+      "schema": "",
+      "columns": {
+        "proposal_id": {
+          "name": "proposal_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "domain_id": {
+          "name": "domain_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "program_id": {
+          "name": "program_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_primary": {
+          "name": "is_primary",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "proposal_topic_proposal_id_proposal_id_fk": {
+          "name": "proposal_topic_proposal_id_proposal_id_fk",
+          "tableFrom": "proposal_topic",
+          "tableTo": "proposal",
+          "columnsFrom": [
+            "proposal_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "proposal_topic_domain_id_domain_id_fk": {
+          "name": "proposal_topic_domain_id_domain_id_fk",
+          "tableFrom": "proposal_topic",
+          "tableTo": "domain",
+          "columnsFrom": [
+            "domain_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "proposal_topic_program_id_program_id_fk": {
+          "name": "proposal_topic_program_id_program_id_fk",
+          "tableFrom": "proposal_topic",
+          "tableTo": "program",
+          "columnsFrom": [
+            "program_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.proposal": {
+      "name": "proposal",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "author_id": {
+          "name": "author_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "proposal_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'draft'"
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "problem_plain": {
+          "name": "problem_plain",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "implementing_org": {
+          "name": "implementing_org",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scope_geojson": {
+          "name": "scope_geojson",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "population_estimate": {
+          "name": "population_estimate",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "population_source": {
+          "name": "population_source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "budget_one_time_usd": {
+          "name": "budget_one_time_usd",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "budget_annual_usd": {
+          "name": "budget_annual_usd",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "funding_notes": {
+          "name": "funding_notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "legal_citation": {
+          "name": "legal_citation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "needs_new_authority": {
+          "name": "needs_new_authority",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "equity_beneficiaries": {
+          "name": "equity_beneficiaries",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "equity_cost_bearers": {
+          "name": "equity_cost_bearers",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "safeguards_rollback_trigger": {
+          "name": "safeguards_rollback_trigger",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "safeguards_rollback_steps": {
+          "name": "safeguards_rollback_steps",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sunset_date": {
+          "name": "sunset_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "privacy_notes": {
+          "name": "privacy_notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "retention_days": {
+          "name": "retention_days",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         },
         "updated_at": {
           "name": "updated_at",
@@ -132,17 +584,17 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "user_preferences_user_id_profiles_user_id_fk": {
-          "name": "user_preferences_user_id_profiles_user_id_fk",
-          "tableFrom": "user_preferences",
-          "tableTo": "profiles",
+        "proposal_author_id_app_user_id_fk": {
+          "name": "proposal_author_id_app_user_id_fk",
+          "tableFrom": "proposal",
+          "tableTo": "app_user",
           "columnsFrom": [
-            "user_id"
+            "author_id"
           ],
           "columnsTo": [
-            "user_id"
+            "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "restrict",
           "onUpdate": "no action"
         }
       },
@@ -153,7 +605,19 @@
       "isRLSEnabled": false
     }
   },
-  "enums": {},
+  "enums": {
+    "public.proposal_status": {
+      "name": "proposal_status",
+      "schema": "public",
+      "values": [
+        "draft",
+        "active",
+        "passed",
+        "failed",
+        "archived"
+      ]
+    }
+  },
   "schemas": {},
   "sequences": {},
   "roles": {},

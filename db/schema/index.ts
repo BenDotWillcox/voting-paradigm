@@ -1,2 +1,3 @@
-export * from "./profiles-schema";
-export * from "./user_preferences-schema";
+export * from "./users-schema";
+export * from "./topics-schema";
+export * from "./proposals-schema";

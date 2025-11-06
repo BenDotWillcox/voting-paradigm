@@ -1,7 +1,12 @@
-export default function Home() {
+'use client';
+
+export default function LandingPage() {
+
   return (
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <div>Home Page</div>
-      </main>
+    <div className="container mx-auto px-4 py-12 text-center">
+      <header className="mb-12">
+        <h1 className="text-5xl font-bold text-gray-800">Welcome to Nebula Civitas</h1>
+      </header>
+    </div>
   );
 }
