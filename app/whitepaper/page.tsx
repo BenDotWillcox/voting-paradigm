@@ -16,7 +16,6 @@ import {
 	Network,
 	Shield,
 	Signal,
-	Target,
 	User,
 	Users,
 	Vote,
@@ -215,7 +214,7 @@ export default function WhitepaperPage() {
 				</h4>
 				<ul className="mb-3">
 					<li className="mb-1 ml-4">Multi-issuer verifiable credentials; proof of uniqueness; revocation & recovery.</li>
-					<li className="mb-1 ml-4">zk-proof of eligibility to vote without revealing identity ("I'm eligible & haven't voted in this ballot").</li>
+					<li className="mb-1 ml-4">zk-proof of eligibility to vote without revealing identity (&quot;I&apos;m eligible &amp; haven&apos;t voted in this ballot&quot;).</li>
 				</ul>
 
 				<h4 className="text-lg font-semibold mb-2 mt-3">
