@@ -24,7 +24,7 @@ export const proposalBudgetItemSchema = z.object({
 export const proposalTopicSchema = z.object({
   domainId: z.string().uuid("Invalid domain"),
   programId: z.string().uuid().optional(),
-  isPrimary: z.boolean().default(true),
+  isPrimary: z.boolean().optional().default(true),
 });
 
 export const proposalFormSchema = z.object({
@@ -56,7 +56,7 @@ export const proposalFormSchema = z.object({
   
   // Governance
   legalCitation: z.string().optional(),
-  needsNewAuthority: z.boolean().default(false),
+  needsNewAuthority: z.boolean().optional().default(false),
   equityBeneficiaries: z.string().optional(),
   equityCostBearers: z.string().optional(),
   safeguardsRollbackTrigger: z.string().optional(),
