@@ -16,9 +16,9 @@ export const proposalActionSchema = z.object({
 
 export const proposalBudgetItemSchema = z.object({
   itemName: z.string().min(1, "Item name is required"),
-  oneTimeUsd: z.number().int().min(0).default(0),
-  annualUsd: z.number().int().min(0).default(0),
-  confidence: z.number().min(0).max(1).default(0.5),
+  oneTimeUsd: z.number().int().min(0),
+  annualUsd: z.number().int().min(0),
+  confidence: z.number().min(0).max(1),
 });
 
 export const proposalTopicSchema = z.object({
