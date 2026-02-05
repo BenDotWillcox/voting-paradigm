@@ -151,7 +151,54 @@ Creates `alice`, `bob`, a `Transportation > Vision Zero` topic, and a “Safe Cr
 
 ---
 
-## 6) Roadmap (phased)
+## 6) Voting Mechanisms Package
+
+A core package within the repo for experimenting with and simulating different voting methods. The design separates **ballot types** (how voters express preferences) from **resolution methods** (how ballots are tallied to determine outcomes).
+
+### Ballot Types
+
+- **Binary (Yes/No):** Approve or reject a single proposal
+- **Single Choice (1 of N):** Select one option from multiple candidates/proposals
+- **Approval:** Approve any number of options (no ranking)
+- **Score/Range:** Rate each option on a numeric scale (e.g., 0–5)
+- **Ranked:** Order options by preference (full or partial ranking)
+
+### Resolution Methods
+
+- **Plurality (FPTP):** Highest vote count wins (single choice ballots)
+- **Approval Tally:** Highest approval count wins
+- **Score Tally:** Highest average/sum score wins
+- **Instant Runoff (IRV):** Eliminate lowest-ranked, redistribute until majority
+- **Borda Count:** Points based on rank position
+- **Condorcet Methods:** Pairwise comparison; Ranked Pairs for cycle resolution
+- **Quadratic Voting:** Voters allocate credits; cost scales quadratically
+
+### Implementation Phases
+
+**Phase A — Core Voting Library**
+- Define ballot type interfaces and resolution method functions
+- Pure TypeScript with no database dependencies
+- Unit tests for each method with known election scenarios
+
+**Phase B — Simulated Elections**
+- Create simulated voter populations with preference distributions
+- Run elections across ballot/method combinations
+- Visualize results and compare method behaviors
+
+**Phase C — Simulated Users**
+- Generate user personas with defined preference profiles
+- Simulate strategic vs sincere voting behavior
+- Model delegation chains and their effects
+
+**Phase D — AI Agent Voting**
+- Train agents to learn user preferences from past votes
+- Agent recommends or casts votes on user's behalf
+- Confidence thresholds and override mechanisms
+- Measure agent accuracy in maximizing user utility
+
+---
+
+## 7) Roadmap (phased)
 
 ### Phase 0 — MVP (this doc)
 
@@ -159,19 +206,24 @@ Creates `alice`, `bob`, a `Transportation > Vision Zero` topic, and a “Safe Cr
 - Proposal form with validation; list + detail pages
 - Simulated users only
 
-### Phase 1 — AI Assistance (opt‑in recommendations)
+### Phase 1 — Voting Mechanisms Package
+
+- Implement core voting library (see §6 Phase A–B)
+- Integrate with proposal system for mock elections
+
+### Phase 2 — AI Assistance (opt‑in recommendations)
 
 - Local preference store (per topic)
 - Agent suggests rankings/approvals + **confidence**
 - Pre‑commit preview; easy override; learning from overrides
+- Builds on voting mechanisms package (§6 Phase D)
 
-### Phase 2 — Voting Protocols & Delegation
+### Phase 3 — Voting Protocols & Delegation
 
-- **Condorcet + Ranked Pairs** implementation for multi‑option
-- **Approval** for boolean
 - Topic‑scoped **delegation**; basic explorer of delegation graph
+- Full integration of all ballot types and resolution methods
 
-### Phase 3 — Privacy & Security
+### Phase 4 — Privacy & Security
 
 - Eligibility via verifiable credentials (zk‑eligibility POC)
 - Commit–reveal or encrypted ballots + threshold tally
@@ -180,7 +232,7 @@ Creates `alice`, `bob`, a `Transportation > Vision Zero` topic, and a “Safe Cr
 
 ---
 
-## 7) Multi‑Option & Continuous Policy Choices (design notes)
+## 8) Multi‑Option & Continuous Policy Choices (design notes)
 
 - Never vote over an “infinite” space directly. **Synthesize** a small, representative **menu** first (Pareto frontier points + Status Quo), then use **Condorcet** with **Ranked Pairs** to pick a winner.
 - For single‑parameter choices with likely single‑peaked preferences (e.g., a rate/limit), consider the **median** mechanism.
@@ -188,7 +240,7 @@ Creates `alice`, `bob`, a `Transportation > Vision Zero` topic, and a “Safe Cr
 
 ---
 
-## 8) Principles & Non‑Goals
+## 9) Principles & Non‑Goals
 
 **Principles**
 
@@ -204,24 +256,35 @@ Creates `alice`, `bob`, a `Transportation > Vision Zero` topic, and a “Safe Cr
 
 ---
 
-## 9) Glossary (quick)
+## 10) Glossary (quick)
 
-- **Condorcet method:** Candidate that would beat every other in head‑to‑head wins.
-- **Ranked Pairs:** A Condorcet completion rule to resolve cycles deterministically.
 - **Approval voting:** Voters approve any number of options; highest approval wins.
+- **Ballot type:** The format for expressing voter preferences (binary, single choice, ranked, scored, etc.).
+- **Borda count:** Ranked voting where candidates receive points based on position (n-1 for 1st, n-2 for 2nd, etc.).
+- **Condorcet method:** Candidate that would beat every other in head‑to‑head wins.
 - **Delegation (topic‑scoped):** You pick a trusted person for specific Domains/Programs.
+- **Instant Runoff (IRV):** Ranked voting with elimination rounds; lowest candidate eliminated and votes redistributed.
+- **Plurality (FPTP):** First-past-the-post; candidate with most votes wins regardless of majority.
+- **Quadratic voting:** Voters allocate credits across options; cost to add votes scales quadratically (1, 4, 9, 16...).
+- **Ranked Pairs:** A Condorcet completion rule to resolve cycles deterministically.
+- **Resolution method:** Algorithm that processes ballots to determine election outcome.
+- **Score/Range voting:** Voters rate each option on a scale; highest average or sum wins.
 - **Subsidiarity:** Make decisions at the lowest competent level.
 - **Synthesis (menu):** Turning continuous policy spaces into a small, auditable set of concrete options before voting.
 
 ---
 
-## 10) Next Steps (action list)
+## 11) Next Steps (action list)
 
-- [ ] Push current Drizzle schema & run seeds
-- [ ] Build minimal form page (Zod + React Hook Form) → `proposals` + children
+- [x] Push current Drizzle schema & run seeds
+- [x] Build minimal form page (Zod + React Hook Form) → `proposals` + children
 - [ ] List page with quick filters (Domain/Program/Status)
 - [ ] Detail page with metrics table & budget roll‑up
-- [ ] Add simple “verifiability score” badge (filled metrics + scope + budget)
+- [ ] Add simple "verifiability score" badge (filled metrics + scope + budget)
+- [ ] Create `lib/voting/` package structure with ballot type interfaces
+- [ ] Implement plurality and approval resolution methods with tests
+- [ ] Add ranked ballot type and IRV/Borda/Condorcet resolvers
+- [ ] Build election simulation runner for comparing methods
 
 ---
 
