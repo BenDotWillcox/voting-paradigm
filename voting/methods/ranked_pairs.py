@@ -231,6 +231,8 @@ def resolve_ranked_pairs(
     candidates: list[Candidate],
     ballots: list[RankedChoiceBallot],
     tiebreak: TiebreakFunction = random_tiebreak,
+    pairwise_matrix: PairwiseMatrix | None = None,
+    include_pairwise_matrix: bool = True,
 ) -> RankedPairsResult:
     """
     Resolve an election using Condorcet method with Ranked Pairs completion.
@@ -239,6 +241,8 @@ def resolve_ranked_pairs(
         candidates: All candidates in the election
         ballots: All cast ballots
         tiebreak: Function to break ties (used when no clear winner)
+        pairwise_matrix: Optional precomputed pairwise matrix to reuse
+        include_pairwise_matrix: Whether to include the matrix in the result
 
     Returns:
         Ranked Pairs result with winner, pairwise matrix, and locked/skipped edges
@@ -275,8 +279,8 @@ def resolve_ranked_pairs(
     # Count abstentions
     abstentions = len([b for b in ballots if is_abstention(b)])
 
-    # Build pairwise matrix
-    matrix = _build_pairwise_matrix(candidates, ballots)
+    # Build or reuse pairwise matrix
+    matrix = pairwise_matrix or _build_pairwise_matrix(candidates, ballots)
 
     # Check for Condorcet winner
     condorcet_winner = _find_condorcet_winner(candidate_ids, matrix)
@@ -295,7 +299,7 @@ def resolve_ranked_pairs(
             total_ballots=len(ballots),
             abstentions=abstentions,
             tiebreak_applied=False,
-            pairwise_matrix=matrix,
+            pairwise_matrix=matrix if include_pairwise_matrix else {},
             had_condorcet_winner=True,
             locked_victories=[],
             skipped_victories=[],
@@ -323,7 +327,7 @@ def resolve_ranked_pairs(
         total_ballots=len(ballots),
         abstentions=abstentions,
         tiebreak_applied=tiebreak_applied,
-        pairwise_matrix=matrix,
+        pairwise_matrix=matrix if include_pairwise_matrix else {},
         had_condorcet_winner=False,
         locked_victories=locked,
         skipped_victories=skipped,

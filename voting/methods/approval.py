@@ -53,17 +53,17 @@ def resolve_approval(
     # Count approvals and abstentions
     abstentions = 0
     total_approvals = 0
+    valid_candidate_ids = set(vote_counts.keys())
 
     for ballot in ballots:
         if is_abstention(ballot):
             abstentions += 1
         else:
-            total_approvals += approval_count(ballot)
-            for candidate_id in ballot.approvals:
-                if candidate_id in vote_counts:
-                    # Only count approvals for valid candidates
-                    vote_counts[candidate_id] += 1
-                # Approvals for unknown candidates are silently ignored
+            valid_approvals = ballot.approvals & valid_candidate_ids
+            total_approvals += len(valid_approvals)
+            for candidate_id in valid_approvals:
+                vote_counts[candidate_id] += 1
+            # Approvals for unknown candidates are silently ignored
 
     # Calculate metrics
     non_abstaining = len(ballots) - abstentions
