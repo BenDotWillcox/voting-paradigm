@@ -21,7 +21,6 @@ from dataclasses import dataclass, field
 from ..ballots.ranked_choice import (
     RankedChoiceBallot,
     is_abstention,
-    get_first_choice,
 )
 from ..types import (
     Candidate,
@@ -55,20 +54,26 @@ class IRVResult(ElectionResult):
     winning_round: int = 0
 
 
-def _get_active_choice(
+def _advance_to_active_choice(
     ballot: RankedChoiceBallot,
     eliminated: set[CandidateId],
-) -> CandidateId | None:
+    start_index: int,
+) -> tuple[int, CandidateId | None]:
     """
-    Get the voter's top choice among non-eliminated candidates.
+    Advance to the voter's top non-eliminated choice.
 
-    Returns None if all of the voter's ranked candidates have been eliminated
-    (exhausted ballot).
+    Returns the updated index and the candidate ID (or None if exhausted).
     """
-    for candidate_id in ballot.ranking:
-        if candidate_id not in eliminated:
-            return candidate_id
-    return None
+    index = start_index
+    ranking = ballot.ranking
+
+    while index < len(ranking) and ranking[index] in eliminated:
+        index += 1
+
+    if index >= len(ranking):
+        return index, None
+
+    return index, ranking[index]
 
 
 def resolve_irv(
@@ -99,6 +104,9 @@ def resolve_irv(
     rounds: list[IRVRound] = []
     round_number = 0
     total_exhausted = 0
+    tiebreak_applied = False
+    ballot_indices = [0 for _ in active_ballots]
+    exhausted_flags = [False for _ in active_ballots]
 
     while True:
         round_number += 1
@@ -108,10 +116,18 @@ def resolve_irv(
         exhausted_this_round = 0
         active_this_round = 0
 
-        for ballot in active_ballots:
-            choice = _get_active_choice(ballot, eliminated)
+        for index, ballot in enumerate(active_ballots):
+            current_index, choice = _advance_to_active_choice(
+                ballot,
+                eliminated,
+                ballot_indices[index],
+            )
+            ballot_indices[index] = current_index
             if choice is None:
                 exhausted_this_round += 1
+                if not exhausted_flags[index]:
+                    exhausted_flags[index] = True
+                    total_exhausted += 1
             else:
                 vote_counts[choice] += 1
                 active_this_round += 1
@@ -141,9 +157,9 @@ def resolve_irv(
                 vote_counts=vote_counts,
                 total_ballots=len(ballots),
                 abstentions=abstention_count,
-                tiebreak_applied=False,  # Winner achieved majority
+                tiebreak_applied=tiebreak_applied,
                 rounds=rounds,
-                total_exhausted=exhausted_this_round,
+                total_exhausted=total_exhausted,
                 winning_round=round_number,
             )
 
@@ -157,7 +173,7 @@ def resolve_irv(
                 abstentions=abstention_count,
                 tiebreak_applied=False,
                 rounds=rounds,
-                total_exhausted=exhausted_this_round,
+                total_exhausted=total_exhausted,
                 winning_round=0,
             )
 
@@ -176,6 +192,7 @@ def resolve_irv(
             winner = tiebreak(list(remaining_candidates))
             to_eliminate = [cid for cid in remaining_candidates if cid != winner]
             elimination_was_tiebreak = True
+            tiebreak_applied = True
         elif len(remaining_candidates) - len(candidates_with_min) >= 1:
             # Eliminating all tied candidates leaves at least 1
             to_eliminate = candidates_with_min
@@ -183,6 +200,7 @@ def resolve_irv(
             # Would eliminate too many - use tiebreak
             to_eliminate = [tiebreak(candidates_with_min)]
             elimination_was_tiebreak = True
+            tiebreak_applied = True
 
         # Record this round
         rounds.append(IRVRound(
@@ -209,10 +227,18 @@ def resolve_irv(
             final_exhausted = 0
             final_active = 0
 
-            for ballot in active_ballots:
-                choice = _get_active_choice(ballot, eliminated)
+            for index, ballot in enumerate(active_ballots):
+                current_index, choice = _advance_to_active_choice(
+                    ballot,
+                    eliminated,
+                    ballot_indices[index],
+                )
+                ballot_indices[index] = current_index
                 if choice is None:
                     final_exhausted += 1
+                    if not exhausted_flags[index]:
+                        exhausted_flags[index] = True
+                        total_exhausted += 1
                 else:
                     final_vote_counts[choice] += 1
                     final_active += 1
@@ -231,9 +257,9 @@ def resolve_irv(
                 vote_counts=final_vote_counts,
                 total_ballots=len(ballots),
                 abstentions=abstention_count,
-                tiebreak_applied=elimination_was_tiebreak,
+                tiebreak_applied=tiebreak_applied or elimination_was_tiebreak,
                 rounds=rounds,
-                total_exhausted=final_exhausted,
+                total_exhausted=total_exhausted,
                 winning_round=round_number,
             )
 
@@ -246,6 +272,6 @@ def resolve_irv(
                 abstentions=abstention_count,
                 tiebreak_applied=elimination_was_tiebreak,
                 rounds=rounds,
-                total_exhausted=len(active_ballots),
+                total_exhausted=total_exhausted,
                 winning_round=0,
             )
