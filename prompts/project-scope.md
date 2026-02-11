@@ -281,10 +281,13 @@ A core package within the repo for experimenting with and simulating different v
 - [ ] List page with quick filters (Domain/Program/Status)
 - [ ] Detail page with metrics table & budget roll‑up
 - [ ] Add simple "verifiability score" badge (filled metrics + scope + budget)
-- [ ] Create `lib/voting/` package structure with ballot type interfaces
-- [ ] Implement plurality and approval resolution methods with tests
-- [ ] Add ranked ballot type and IRV/Borda/Condorcet resolvers
+- [x] Create `voting/` Python package with ballot type interfaces and core types
+- [x] Implement plurality and approval ballot types + resolution methods with tests
+- [x] Implement ranked choice ballot (dual list+dict representation) with IRV, Borda, and Condorcet/Ranked Pairs resolvers
+- [x] Implement score ballot type (0-10) + score tally resolution method
+- [ ] Implement quadratic voting ballot type + resolution method
 - [ ] Build election simulation runner for comparing methods
+- [ ] Create simulated voter populations with preference distributions
 
 ---
 

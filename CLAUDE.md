@@ -54,6 +54,49 @@ Seven tables centered on proposals:
 
 Proposals require: title (≤60 chars), summary (≤280 chars), problem description, 3-7 actions, at least one metric, and topic assignment.
 
+## Voting Mechanisms Package (Python)
+
+A separate Python package at `voting/` for experimenting with electoral methods. Pure Python, no database dependencies.
+
+**Setup:**
+```bash
+python -m venv venv
+source venv/Scripts/activate   # Windows Git Bash
+pip install -r voting/requirements.txt
+pytest voting/tests -v         # Run tests (144 passing)
+```
+
+**Structure:** Ballot types (how voters express preferences) are separate from resolution methods (how ballots are tallied).
+
+```
+voting/
+├── types.py              # Core types: Candidate, Ballot, ElectionResult
+├── ballots/
+│   ├── single_choice.py  # 1-of-N or abstain
+│   ├── approval.py       # Approve any number of candidates
+│   ├── ranked_choice.py  # Strict full ranking (dual list+dict for O(1) lookups)
+│   └── score.py          # Rate 0-10 per candidate, partial allowed
+├── methods/
+│   ├── plurality.py      # Highest vote count wins
+│   ├── approval.py       # Highest approval count wins
+│   ├── irv.py            # Eliminate lowest, redistribute until majority
+│   ├── borda.py          # Points by position (n-1 for 1st)
+│   ├── ranked_pairs.py   # Condorcet with Ranked Pairs cycle resolution
+│   └── score.py          # Highest total score wins
+└── tests/                # 144 tests
+```
+
+**Design decisions:**
+- All methods: random tiebreak by default, injectable custom tiebreak function
+- All ballots: abstention allowed (null/empty)
+- Ranked choice: dual representation (list for positional access, dict for pairwise O(1))
+- IRV: batch-eliminates all tied-for-last if at least one candidate remains
+- Condorcet: margins = simple difference, ties broken by winning votes then random
+- Score: 0-10 range, unscored candidates get 0, winner by highest total
+- Each result type extends `ElectionResult` with method-specific metrics
+
+**Still to implement:** Quadratic voting, simulated elections, AI agent voting
+
 ## Domain Concepts
 
 - **Domain/Program:** Two-level topic taxonomy for organizing proposals and scoping delegation
