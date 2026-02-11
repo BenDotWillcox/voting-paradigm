@@ -6,6 +6,7 @@ from .irv import resolve_irv, IRVResult, IRVRound
 from .borda import resolve_borda, BordaResult
 from .ranked_pairs import resolve_ranked_pairs, RankedPairsResult, PairwiseMatrix
 from .score import resolve_score, ScoreResult
+from .quadratic import resolve_quadratic, QuadraticResult
 
 __all__ = [
     "resolve_plurality",
@@ -21,4 +22,6 @@ __all__ = [
     "PairwiseMatrix",
     "resolve_score",
     "ScoreResult",
+    "resolve_quadratic",
+    "QuadraticResult",
 ]

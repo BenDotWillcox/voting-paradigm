@@ -54,6 +54,21 @@ from .methods.irv import resolve_irv, IRVResult, IRVRound
 from .methods.borda import resolve_borda, BordaResult
 from .methods.ranked_pairs import resolve_ranked_pairs, RankedPairsResult, PairwiseMatrix
 from .methods.score import resolve_score, ScoreResult
+from .ballots.quadratic import (
+    QuadraticBallot,
+    create_quadratic_ballot,
+    is_quadratic_abstention,
+    get_votes,
+    candidates_voted_for,
+    quadratic_cost,
+    quadratic_total_cost,
+    credits_remaining,
+    credit_utilization,
+    max_votes_for_budget,
+    InvalidQuadraticBallotError,
+    DEFAULT_CREDIT_BUDGET,
+)
+from .methods.quadratic import resolve_quadratic, QuadraticResult
 
 __all__ = [
     # Types
@@ -108,4 +123,20 @@ __all__ = [
     "PairwiseMatrix",
     "resolve_score",
     "ScoreResult",
+    # Quadratic ballots
+    "QuadraticBallot",
+    "create_quadratic_ballot",
+    "is_quadratic_abstention",
+    "get_votes",
+    "candidates_voted_for",
+    "quadratic_cost",
+    "quadratic_total_cost",
+    "credits_remaining",
+    "credit_utilization",
+    "max_votes_for_budget",
+    "InvalidQuadraticBallotError",
+    "DEFAULT_CREDIT_BUDGET",
+    # Quadratic method
+    "resolve_quadratic",
+    "QuadraticResult",
 ]
