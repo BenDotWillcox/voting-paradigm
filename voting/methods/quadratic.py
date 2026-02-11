@@ -15,8 +15,6 @@ from dataclasses import dataclass
 from ..ballots.quadratic import (
     QuadraticBallot,
     is_quadratic_abstention,
-    quadratic_total_cost,
-    credit_utilization,
 )
 from ..types import (
     Candidate,
@@ -73,6 +71,7 @@ def resolve_quadratic(
     total_credits_spent = 0
     total_credits_available = 0
     voter_utilizations: list[float] = []
+    counted_vote_allocations = 0
 
     for ballot in ballots:
         if is_quadratic_abstention(ballot):
@@ -80,15 +79,20 @@ def resolve_quadratic(
             continue
 
         # Add votes for known candidates only
+        known_cost = 0
         for cid, votes in ballot.allocations.items():
             if cid in candidate_ids:
                 vote_totals[cid] += votes
+                counted_vote_allocations += 1
+                known_cost += votes * votes
 
         # Track credit metrics
-        cost = quadratic_total_cost(ballot)
-        total_credits_spent += cost
+        total_credits_spent += known_cost
         total_credits_available += ballot.credit_budget
-        voter_utilizations.append(credit_utilization(ballot))
+        if ballot.credit_budget == 0:
+            voter_utilizations.append(0.0)
+        else:
+            voter_utilizations.append(known_cost / ballot.credit_budget)
 
     # Calculate aggregate utilization
     if total_credits_available > 0:
@@ -106,22 +110,23 @@ def resolve_quadratic(
         1 for total in vote_totals.values() if total < 0
     )
 
-    # Find highest net total
-    max_total = max(vote_totals.values()) if vote_totals else 0
-
-    # Find all candidates with highest total
-    tied = [cid for cid, total in vote_totals.items() if total == max_total]
-
-    # Determine winner
-    if len(tied) == 0:
+    # Determine winner. If no known-candidate votes were cast, treat as no-result.
+    if counted_vote_allocations == 0:
         winners: list[CandidateId] = []
         tiebreak_applied = False
-    elif len(tied) == 1:
-        winners = tied
-        tiebreak_applied = False
     else:
-        winners = [tiebreak(tied)]
-        tiebreak_applied = True
+        # Find highest net total
+        max_total = max(vote_totals.values()) if vote_totals else 0
+
+        # Find all candidates with highest total
+        tied = [cid for cid, total in vote_totals.items() if total == max_total]
+
+        if len(tied) == 1:
+            winners = tied
+            tiebreak_applied = False
+        else:
+            winners = [tiebreak(tied)]
+            tiebreak_applied = True
 
     # Use vote_totals as vote_counts for base class compatibility
     vote_counts = vote_totals.copy()

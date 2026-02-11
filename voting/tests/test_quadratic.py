@@ -457,7 +457,8 @@ class TestQuadraticResolutionAbstentions:
         assert result.total_credits_spent == 0
         assert result.total_credits_available == 0
         assert result.overall_utilization == pytest.approx(0.0)
-        assert result.tiebreak_applied is True
+        assert result.winners == []
+        assert result.tiebreak_applied is False
 
     def test_mixed_abstention_and_votes(self):
         """Mix of abstentions and real votes."""
@@ -494,6 +495,8 @@ class TestQuadraticResolutionEdgeCases:
         candidates = make_candidates("Alice", "Bob")
         result = resolve_quadratic(candidates, [])
 
+        assert result.winners == []
+        assert result.tiebreak_applied is False
         assert result.total_ballots == 0
         assert result.vote_totals["alice"] == 0
         assert result.vote_totals["bob"] == 0
@@ -524,6 +527,36 @@ class TestQuadraticResolutionEdgeCases:
 
         assert "charlie" not in result.vote_totals
         assert result.vote_totals["alice"] == 5
+        assert result.vote_totals["bob"] == 0
+
+    def test_unknown_candidate_votes_excluded_from_credit_metrics(self):
+        """Credits spent on unknown candidates are excluded from utilization metrics."""
+        candidates = make_candidates("Alice", "Bob")
+        ballots = [
+            # known cost: 25, unknown cost: 49
+            create_quadratic_ballot("v1", {"alice": 5, "charlie": 7}),
+        ]
+
+        result = resolve_quadratic(candidates, ballots)
+
+        assert result.total_credits_spent == 25
+        assert result.total_credits_available == 100
+        assert result.overall_utilization == pytest.approx(0.25)
+        assert result.avg_voter_utilization == pytest.approx(0.25)
+
+    def test_only_unknown_candidate_votes_gives_no_winner(self):
+        """Ballots without known-candidate votes should produce no winner."""
+        candidates = make_candidates("Alice", "Bob")
+        ballots = [
+            create_quadratic_ballot("v1", {"charlie": 5}),
+            create_quadratic_ballot("v2", {"dana": -3}),
+        ]
+
+        result = resolve_quadratic(candidates, ballots)
+
+        assert result.winners == []
+        assert result.tiebreak_applied is False
+        assert result.vote_totals["alice"] == 0
         assert result.vote_totals["bob"] == 0
 
     def test_result_is_quadratic_result_type(self):
