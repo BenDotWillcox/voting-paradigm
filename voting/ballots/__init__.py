@@ -34,6 +34,20 @@ from .score import (
     MIN_SCORE,
     MAX_SCORE,
 )
+from .quadratic import (
+    QuadraticBallot,
+    create_quadratic_ballot,
+    is_quadratic_abstention,
+    get_votes,
+    candidates_voted_for,
+    quadratic_cost,
+    quadratic_total_cost,
+    credits_remaining,
+    credit_utilization,
+    max_votes_for_budget,
+    InvalidQuadraticBallotError,
+    DEFAULT_CREDIT_BUDGET,
+)
 
 __all__ = [
     # Single choice
@@ -66,4 +80,17 @@ __all__ = [
     "InvalidScoreError",
     "MIN_SCORE",
     "MAX_SCORE",
+    # Quadratic
+    "QuadraticBallot",
+    "create_quadratic_ballot",
+    "is_quadratic_abstention",
+    "get_votes",
+    "candidates_voted_for",
+    "quadratic_cost",
+    "quadratic_total_cost",
+    "credits_remaining",
+    "credit_utilization",
+    "max_votes_for_budget",
+    "InvalidQuadraticBallotError",
+    "DEFAULT_CREDIT_BUDGET",
 ]
