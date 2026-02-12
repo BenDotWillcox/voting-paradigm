@@ -20,6 +20,12 @@ export default function Header() {
             Create Proposal
           </Link>
           <Link 
+            href="/ballots/new" 
+            className="text-primary-foreground hover:text-primary-foreground/80 transition-colors"
+          >
+            Create Ballot
+          </Link>
+          <Link 
             href="/whitepaper" 
             className="text-primary-foreground hover:text-primary-foreground/80 transition-colors"
           >
