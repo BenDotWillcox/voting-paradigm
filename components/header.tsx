@@ -26,10 +26,10 @@ export default function Header() {
             Preferences
           </Link>
           <Link
-            href="/whitepaper"
+            href="/methods"
             className="text-primary-foreground hover:text-primary-foreground/80 transition-colors"
           >
-            Whitepaper
+            Compare Methods
           </Link>
         </nav>
       </div>
