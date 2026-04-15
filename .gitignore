@@ -43,3 +43,6 @@ venv/
 __pycache__/
 .pytest_cache/
 *.pyc
+
+# Claude Code local state (worktrees, settings, session caches)
+.claude/

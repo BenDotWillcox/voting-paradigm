@@ -1,0 +1,225 @@
+{
+  "items": [
+    {
+      "id": "economic_freedom",
+      "text": "Individual economic freedom",
+      "description": "People should be free to make their own economic decisions with minimal government interference.",
+      "domain": "economic"
+    },
+    {
+      "id": "economic_security",
+      "text": "Collective economic security",
+      "description": "A strong social safety net ensuring no one falls into poverty or loses healthcare.",
+      "domain": "economic"
+    },
+    {
+      "id": "market_efficiency",
+      "text": "Market-driven efficiency",
+      "description": "Private markets allocate resources better than government planning.",
+      "domain": "economic"
+    },
+    {
+      "id": "regulated_fairness",
+      "text": "Regulated economic fairness",
+      "description": "Government should actively correct market failures and reduce inequality.",
+      "domain": "economic"
+    },
+    {
+      "id": "property_rights",
+      "text": "Strong property rights",
+      "description": "Private property is a foundational right that should rarely be overridden.",
+      "domain": "economic"
+    },
+    {
+      "id": "collective_goods",
+      "text": "Strong collective goods",
+      "description": "Shared resources like parks, transit, and utilities should be publicly owned.",
+      "domain": "economic"
+    },
+
+    {
+      "id": "local_control",
+      "text": "Local community control",
+      "description": "Decisions should be made at the most local level possible — neighborhood or city.",
+      "domain": "governance"
+    },
+    {
+      "id": "national_standards",
+      "text": "Standardized national policy",
+      "description": "Uniform standards across the country ensure fairness and efficiency.",
+      "domain": "governance"
+    },
+    {
+      "id": "direct_democracy",
+      "text": "Direct citizen participation",
+      "description": "Citizens should vote directly on major policy questions.",
+      "domain": "governance"
+    },
+    {
+      "id": "expert_technocracy",
+      "text": "Expert-led decisions",
+      "description": "Complex policy questions are best decided by trained specialists.",
+      "domain": "governance"
+    },
+    {
+      "id": "rapid_action",
+      "text": "Rapid decisive action",
+      "description": "When problems are urgent, bold swift action beats careful deliberation.",
+      "domain": "governance"
+    },
+    {
+      "id": "careful_deliberation",
+      "text": "Careful deliberation",
+      "description": "Thorough debate and consensus-building produce better long-term outcomes.",
+      "domain": "governance"
+    },
+    {
+      "id": "institutional_trust",
+      "text": "Trust in established institutions",
+      "description": "Existing institutions deserve deference — they embody accumulated wisdom.",
+      "domain": "governance"
+    },
+    {
+      "id": "institutional_reform",
+      "text": "Institutional reform",
+      "description": "Current institutions are flawed and need significant structural change.",
+      "domain": "governance"
+    },
+
+    {
+      "id": "personal_privacy",
+      "text": "Personal privacy",
+      "description": "Individuals have a strong right to privacy from surveillance and data collection.",
+      "domain": "social"
+    },
+    {
+      "id": "public_safety",
+      "text": "Public safety and transparency",
+      "description": "Monitoring and open data improve safety and hold people accountable.",
+      "domain": "social"
+    },
+    {
+      "id": "individual_rights",
+      "text": "Individual rights",
+      "description": "Personal freedoms should be protected even when they conflict with group goals.",
+      "domain": "social"
+    },
+    {
+      "id": "community_cohesion",
+      "text": "Community cohesion",
+      "description": "Shared norms and mutual obligation make societies function.",
+      "domain": "social"
+    },
+    {
+      "id": "meritocracy",
+      "text": "Merit-based outcomes",
+      "description": "Rewards should flow to effort and ability, not identity or circumstance.",
+      "domain": "social"
+    },
+    {
+      "id": "equal_outcomes",
+      "text": "Equitable outcomes",
+      "description": "When groups systematically differ, policy should actively level the playing field.",
+      "domain": "social"
+    },
+    {
+      "id": "tradition",
+      "text": "Respect for tradition",
+      "description": "Long-standing customs and values should be preserved across generations.",
+      "domain": "social"
+    },
+    {
+      "id": "progressive_change",
+      "text": "Progressive change",
+      "description": "Society should continuously evolve toward new and better arrangements.",
+      "domain": "social"
+    },
+    {
+      "id": "rehabilitation",
+      "text": "Rehabilitation over punishment",
+      "description": "Criminal justice should focus on reintegrating offenders, not punishing them.",
+      "domain": "social"
+    },
+    {
+      "id": "strict_accountability",
+      "text": "Strict accountability",
+      "description": "Clear consequences for rule-breaking deter harm and uphold justice.",
+      "domain": "social"
+    },
+
+    {
+      "id": "environmental_protection",
+      "text": "Environmental protection",
+      "description": "Ecosystems and climate stability should be preserved even at economic cost.",
+      "domain": "environmental"
+    },
+    {
+      "id": "economic_development",
+      "text": "Economic development",
+      "description": "Growth and jobs are essential — environmental costs are often overstated.",
+      "domain": "environmental"
+    },
+    {
+      "id": "precautionary_principle",
+      "text": "Precautionary regulation",
+      "description": "When harms are uncertain but potentially severe, restrict first and study later.",
+      "domain": "environmental"
+    },
+    {
+      "id": "innovation_speed",
+      "text": "Rapid innovation",
+      "description": "New technologies solve problems faster than regulation — let them develop.",
+      "domain": "environmental"
+    },
+
+    {
+      "id": "open_borders",
+      "text": "Open immigration",
+      "description": "People should move freely across borders; migration enriches everyone.",
+      "domain": "external"
+    },
+    {
+      "id": "national_sovereignty",
+      "text": "Strong national sovereignty",
+      "description": "Countries have a right to control who enters and on what terms.",
+      "domain": "external"
+    },
+    {
+      "id": "global_cooperation",
+      "text": "Global cooperation",
+      "description": "Major problems require international institutions and binding agreements.",
+      "domain": "external"
+    },
+    {
+      "id": "self_reliance",
+      "text": "National self-reliance",
+      "description": "Countries should prioritize their own capacity and avoid external dependencies.",
+      "domain": "external"
+    },
+
+    {
+      "id": "transparency",
+      "text": "Radical transparency",
+      "description": "Government operations should be maximally open and auditable by the public.",
+      "domain": "process"
+    },
+    {
+      "id": "operational_secrecy",
+      "text": "Operational secrecy",
+      "description": "Some government functions require confidentiality to work effectively.",
+      "domain": "process"
+    },
+    {
+      "id": "ballot_privacy",
+      "text": "Ballot privacy",
+      "description": "How individuals vote should remain secret to protect them from coercion.",
+      "domain": "process"
+    },
+    {
+      "id": "public_accountability",
+      "text": "Public accountability",
+      "description": "Representatives' positions and votes should be fully visible to constituents.",
+      "domain": "process"
+    }
+  ]
+}

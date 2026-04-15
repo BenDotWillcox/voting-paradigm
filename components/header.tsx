@@ -13,20 +13,26 @@ export default function Header() {
           <h1 className="text-xl font-bold">Nebula Civitas</h1>
         </Link>
         <nav className="flex items-center space-x-4">
-          <Link 
-            href="/proposals/new" 
+          <Link
+            href="/proposals/new"
             className="text-primary-foreground hover:text-primary-foreground/80 transition-colors"
           >
             Create Proposal
           </Link>
-          <Link 
-            href="/ballots/new" 
+          <Link
+            href="/ballots/new"
             className="text-primary-foreground hover:text-primary-foreground/80 transition-colors"
           >
             Create Ballot
           </Link>
-          <Link 
-            href="/whitepaper" 
+          <Link
+            href="/preferences"
+            className="text-primary-foreground hover:text-primary-foreground/80 transition-colors"
+          >
+            Preferences
+          </Link>
+          <Link
+            href="/whitepaper"
             className="text-primary-foreground hover:text-primary-foreground/80 transition-colors"
           >
             Whitepaper
