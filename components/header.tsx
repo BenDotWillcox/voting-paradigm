@@ -14,12 +14,6 @@ export default function Header() {
         </Link>
         <nav className="flex items-center space-x-4">
           <Link
-            href="/proposals/new"
-            className="text-primary-foreground hover:text-primary-foreground/80 transition-colors"
-          >
-            Create Proposal
-          </Link>
-          <Link
             href="/ballots/new"
             className="text-primary-foreground hover:text-primary-foreground/80 transition-colors"
           >

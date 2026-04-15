@@ -1,6 +1,5 @@
 import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { sql, relations } from "drizzle-orm";
-import { proposals } from "./proposals-schema";
+import { sql } from "drizzle-orm";
 
 // --- users
 export const users = pgTable("app_user", {
@@ -12,10 +11,6 @@ export const users = pgTable("app_user", {
     .notNull()
     .$onUpdate(() => new Date()),
   });
-
-export const usersRelations = relations(users, ({ many }) => ({
-  proposals: many(proposals),
-}));
 
 export type SelectUser = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;

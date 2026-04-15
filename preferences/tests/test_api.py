@@ -4,7 +4,7 @@ import pytest
 
 try:
     from fastapi.testclient import TestClient
-    from preferences.api.main import app
+    from api.main import app
 except ImportError:
     pytest.skip("FastAPI not available", allow_module_level=True)
 
