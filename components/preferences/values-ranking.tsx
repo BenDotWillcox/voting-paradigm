@@ -29,10 +29,6 @@ export function ValuesRanking({ values }: ValuesRankingProps) {
         const norm = (v.mean - minMean) / range;
         const pct = Math.max(2, Math.min(100, norm * 100));
         const stdPct = Math.min(20, (v.std / range) * 100);
-        // Whisker, clamped so it never escapes the track.
-        const whiskerLeft = Math.max(0, Math.min(100, pct - stdPct));
-        const whiskerRight = Math.max(0, Math.min(100, pct + stdPct));
-        const whiskerWidth = Math.max(0, whiskerRight - whiskerLeft);
         return (
           <div key={v.item_id} className="rounded-lg border p-3">
             <div className="flex items-baseline justify-between gap-2">
