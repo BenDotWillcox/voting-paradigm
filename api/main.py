@@ -11,6 +11,7 @@ Run with: uvicorn api.main:app --reload --port 8000
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .routers.districting import router as districting_router
 from .routers.preferences import router as preferences_router
 from .routers.voting import router as voting_router
 
@@ -27,6 +28,14 @@ tags_metadata = [
         "description": (
             "Bayesian preference elicitation. Stateless: every request carries "
             "the full PreferenceState; every response returns the updated state."
+        ),
+    },
+    {
+        "name": "districting",
+        "description": (
+            "Algorithmic redistricting. Step 1 ships apportionment "
+            "(Method of Equal Proportions on 2020 census populations); the "
+            "districting algorithm itself follows in later build steps."
         ),
     },
 ]
@@ -51,6 +60,7 @@ app.add_middleware(
 
 app.include_router(voting_router)
 app.include_router(preferences_router)
+app.include_router(districting_router)
 
 
 @app.get("/", tags=["meta"])

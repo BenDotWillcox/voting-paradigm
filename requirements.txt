@@ -7,6 +7,13 @@
 numpy>=1.24.0
 scipy>=1.11.0
 
+# --- Domain: geo (districting demo) ---
+# pyshp is a pure-Python shapefile reader — no GDAL/Fiona compile path
+# headache on Windows. We use it for the simple read-and-emit-GeoJSON
+# pipelines under scripts/. Step 4's tract precompute will additionally
+# add geopandas for richer ops (CRS reprojection, polygon dissolves).
+pyshp>=2.3.0
+
 # --- API: HTTP surface ---
 fastapi>=0.115.0
 uvicorn[standard]>=0.32.0
