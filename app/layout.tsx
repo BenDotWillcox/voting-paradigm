@@ -7,7 +7,8 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Nebula Civitas",
-  description: "A civic system for the future."
+  description:
+    "A portfolio of demos exploring voting methods, preference modeling, districting, and delegation.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

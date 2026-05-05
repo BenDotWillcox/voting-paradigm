@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "api:dev": "python -m uvicorn api.main:app --reload --port 8000",
+    "dev:all": "concurrently -n web,api -c blue,green \"npm run dev\" \"npm run api:dev\""
   },
   "dependencies": {
     "@clerk/backend": "^1.27.1",
@@ -72,6 +74,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "concurrently": "^9.1.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

@@ -1,36 +1,33 @@
-"use client";
-
 import { CheckSquare } from "lucide-react";
 import Link from "next/link";
 
-export default function Header() {
+const navItems = [
+  { href: "/methods", label: "Methods" },
+  { href: "/preferences", label: "Preferences" },
+  { href: "/districts", label: "Districts" },
+];
 
+export default function Header() {
   return (
     <header className="bg-primary text-primary-foreground shadow-md">
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+      <div className="container mx-auto flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <Link
+          href="/"
+          className="flex items-center space-x-2 transition-opacity hover:opacity-80"
+        >
           <CheckSquare className="h-6 w-6" />
           <h1 className="text-xl font-bold">Nebula Civitas</h1>
         </Link>
-        <nav className="flex items-center space-x-4">
-          <Link 
-            href="/proposals/new" 
-            className="text-primary-foreground hover:text-primary-foreground/80 transition-colors"
-          >
-            Create Proposal
-          </Link>
-          <Link 
-            href="/ballots/new" 
-            className="text-primary-foreground hover:text-primary-foreground/80 transition-colors"
-          >
-            Create Ballot
-          </Link>
-          <Link 
-            href="/whitepaper" 
-            className="text-primary-foreground hover:text-primary-foreground/80 transition-colors"
-          >
-            Whitepaper
-          </Link>
+        <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-medium">
+          {navItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="text-primary-foreground transition-colors hover:text-primary-foreground/80"
+            >
+              {item.label}
+            </Link>
+          ))}
         </nav>
       </div>
     </header>

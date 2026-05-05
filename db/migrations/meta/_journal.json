@@ -15,6 +15,34 @@
       "when": 1761607482111,
       "tag": "0001_stale_spacker_dave",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776208180812,
+      "tag": "0002_absent_hedge_knight",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1776211352547,
+      "tag": "0003_exotic_gideon",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1776292589453,
+      "tag": "0004_optimal_mystique",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1776295129498,
+      "tag": "0005_green_mandrill",
+      "breakpoints": true
     }
   ]
 }
