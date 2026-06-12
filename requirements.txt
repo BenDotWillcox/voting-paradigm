@@ -1,0 +1,27 @@
+# Consolidated Python requirements for Nebula Civitas.
+#
+# Organized by layer. Domain packages (voting/, preferences/) keep only what
+# they themselves need; api/ pulls in the HTTP surface on top.
+
+# --- Domain: numerical + scientific ---
+numpy>=1.24.0
+scipy>=1.11.0
+
+# --- Domain: geo (districting demo) ---
+# pyshp is a pure-Python shapefile reader — no GDAL/Fiona compile path
+# headache on Windows. We use it for the simple read-and-emit-GeoJSON
+# pipelines under scripts/. Step 4's tract precompute will additionally
+# add geopandas for richer ops (CRS reprojection, polygon dissolves).
+pyshp>=2.3.0
+# shapely powers the district dissolve in scripts/build_district_topojson.py
+# (merging tract polygons into compact per-district display outlines).
+shapely>=2.0.0
+
+# --- API: HTTP surface ---
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+pydantic>=2.0.0
+
+# --- Testing ---
+pytest>=8.0.0
+httpx>=0.27.0
