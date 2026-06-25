@@ -3,6 +3,7 @@
 import {
   BarChart,
   Bar,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -20,24 +21,21 @@ interface BarChartResultProps {
   values: Record<string, number>;
   winners: string[];
   valueLabel: string;
+  candidateColors?: Record<string, string>;
 }
 
 export function BarChartResult({
   candidates,
   values,
-  winners,
   valueLabel,
+  candidateColors,
 }: BarChartResultProps) {
-  const winnerSet = new Set(winners);
-
   const data = candidates
     .map((c) => ({
       name: c.name,
       id: c.id,
       value: values[c.id] ?? 0,
-      fill: winnerSet.has(c.id)
-        ? "var(--color-winner)"
-        : "var(--color-other)",
+      fill: candidateColors?.[c.id] ?? "var(--color-other)",
     }))
     .sort((a, b) => b.value - a.value);
 
@@ -68,7 +66,11 @@ export function BarChartResult({
             />
           }
         />
-        <Bar dataKey="value" radius={[0, 4, 4, 0]} />
+        <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+          {data.map((entry) => (
+            <Cell key={entry.id} fill={entry.fill} />
+          ))}
+        </Bar>
       </BarChart>
     </ChartContainer>
   );

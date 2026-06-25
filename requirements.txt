@@ -13,6 +13,9 @@ scipy>=1.11.0
 # pipelines under scripts/. Step 4's tract precompute will additionally
 # add geopandas for richer ops (CRS reprojection, polygon dissolves).
 pyshp>=2.3.0
+# shapely powers the district dissolve in scripts/build_district_topojson.py
+# (merging tract polygons into compact per-district display outlines).
+shapely>=2.0.0
 
 # --- API: HTTP surface ---
 fastapi>=0.115.0

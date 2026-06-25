@@ -11,10 +11,14 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from districting import (
+    CAP_ANCHORS,
+    CACHE_VERSION,
     InvalidApportionmentError,
+    POPULAR_STATE_FIPS,
     US_2020_APPORTIONMENT_POPULATIONS,
     US_2020_TOTAL_APPORTIONMENT_POPULATION,
     apportion_us_2020,
+    build_precompute_manifest,
 )
 
 
@@ -60,6 +64,25 @@ class ApportionmentResponse(BaseModel):
     )
 
 
+class PrecomputeJobResponse(BaseModel):
+    """One district-plan artifact the system should compute ahead of time."""
+
+    state_fips: str
+    cap: int
+    seats: int
+    cache_key: str
+    compute_tier: str
+
+
+class PrecomputeManifestResponse(BaseModel):
+    """Precompute contract for expensive district-plan artifacts."""
+
+    cache_version: str
+    cap_anchors: list[int]
+    priority_state_fips: list[str]
+    jobs: list[PrecomputeJobResponse]
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -102,4 +125,34 @@ def get_apportionment(
         apportionment=seats,
         total_states=len(US_2020_APPORTIONMENT_POPULATIONS),
         total_apportionment_population=US_2020_TOTAL_APPORTIONMENT_POPULATION,
+    )
+
+
+@router.get(
+    "/precompute-manifest",
+    response_model=PrecomputeManifestResponse,
+    summary="List state/cap district plans that should be precomputed",
+)
+def get_precompute_manifest() -> PrecomputeManifestResponse:
+    """
+    Return the first cache manifest for expensive balanced-power district plans.
+
+    The UI can fetch apportionment live, but real district polygons should be
+    generated offline, stored by `cache_key`, and served as static artifacts.
+    """
+    jobs = build_precompute_manifest(apportion_us_2020)
+    return PrecomputeManifestResponse(
+        cache_version=CACHE_VERSION,
+        cap_anchors=list(CAP_ANCHORS),
+        priority_state_fips=list(POPULAR_STATE_FIPS),
+        jobs=[
+            PrecomputeJobResponse(
+                state_fips=job.state_fips,
+                cap=job.cap,
+                seats=job.seats,
+                cache_key=job.cache_key,
+                compute_tier=job.compute_tier,
+            )
+            for job in jobs
+        ],
     )

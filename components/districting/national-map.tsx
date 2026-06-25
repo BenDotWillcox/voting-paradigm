@@ -15,6 +15,7 @@ import type {
   StateFeature,
   StatesGeoJSON,
 } from "@/lib/load-states-geojson";
+import { US_2020_APPORTIONMENT_POPULATIONS } from "@/lib/us-state-populations";
 import { getStateByFips, isStateFips } from "@/lib/us-states";
 
 interface NationalMapProps {
@@ -22,29 +23,17 @@ interface NationalMapProps {
   states: StatesGeoJSON;
   /** Current apportionment, FIPS -> seats. Drives the choropleth. */
   apportionment: Record<string, number>;
-  /** The cap value behind `apportionment`, used in click-through links. */
+  /** The cap value behind `apportionment`, used in labels. */
   cap: number;
+  /** State receiving the currently selected seat, if any. */
+  highlightedFips?: string | null;
 }
 
-/**
- * SVG choropleth of the 50 US states, colored by seat count at the
- * current cap.  Click a state to drill into its detail page.
- *
- * Rendering pipeline:
- *   - Raw lat/lon GeoJSON in (`states`) →
- *   - `geoAlbersUsa().fitExtent(...)` projects into the SVG viewBox
- *     (the canonical 975×610 d3-geo space, with AK/HI as insets in the
- *     lower-left corner) →
- *   - `geoPath(projection)` emits SVG `d` strings.
- *
- * Earlier iterations consumed pre-projected TopoJSON; we now project
- * at render time so the same source data feeds both this component
- * and the per-state Albers used in `StateDetailMap`.
- */
 export function NationalMap({
   states,
   apportionment,
   cap,
+  highlightedFips,
 }: NationalMapProps) {
   const router = useRouter();
 
@@ -69,55 +58,48 @@ export function NationalMap({
     };
   }, [apportionment]);
 
+  const highlightedFeature = React.useMemo(
+    () =>
+      highlightedFips
+        ? features.find((feature) => String(feature.id ?? "") === highlightedFips)
+        : undefined,
+    [features, highlightedFips]
+  );
+
   return (
     <TooltipProvider delayDuration={100}>
       <div className="w-full">
         <svg
           viewBox={`0 0 ${NATIONAL_VIEWBOX.width} ${NATIONAL_VIEWBOX.height}`}
-          className="w-full h-auto"
+          className="h-auto w-full"
           role="img"
           aria-label={`US states colored by House seats at cap ${cap}`}
         >
           <g>
-            {features.map((f) => {
-              const fips = String(f.id ?? "");
-              const state = getStateByFips(fips);
-              const seats = apportionment[fips] ?? 0;
-              const fill = seatColor(seats, minSeats, maxSeats);
-              const d = pathGen(f) ?? "";
-              const stateName = state?.name ?? f.properties?.name ?? fips;
-
-              return (
-                <Tooltip key={fips}>
-                  <TooltipTrigger asChild>
-                    <path
-                      d={d}
-                      fill={fill}
-                      stroke="var(--background)"
-                      strokeWidth={0.75}
-                      className="cursor-pointer transition-[fill,stroke] hover:stroke-foreground hover:stroke-[1.5px] focus:outline-none focus-visible:stroke-foreground focus-visible:stroke-[1.5px]"
-                      tabIndex={0}
-                      onClick={() =>
-                        router.push(`/districts/${fips}?cap=${cap}`)
-                      }
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          router.push(`/districts/${fips}?cap=${cap}`);
-                        }
-                      }}
-                      aria-label={`${stateName}, ${seats} seat${seats === 1 ? "" : "s"}`}
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent side="top">
-                    <div className="font-semibold">{stateName}</div>
-                    <div className="font-normal opacity-90 tabular-nums">
-                      {seats} seat{seats === 1 ? "" : "s"} at cap {cap.toLocaleString()}
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })}
+            {features
+              .filter((feature) => String(feature.id ?? "") !== highlightedFips)
+              .map((feature) => (
+                <StatePath
+                  key={String(feature.id ?? "")}
+                  feature={feature}
+                  pathGen={pathGen}
+                  seats={apportionment[String(feature.id ?? "")] ?? 0}
+                  minSeats={minSeats}
+                  maxSeats={maxSeats}
+                  cap={cap}
+                  routerPush={(fips) => router.push(`/districts/${fips}`)}
+                />
+              ))}
+            {highlightedFeature && (
+              <AwardedStateLayer
+                key={`${highlightedFips}-${cap}`}
+                feature={highlightedFeature}
+                pathGen={pathGen}
+                seats={apportionment[highlightedFips ?? ""] ?? 0}
+                cap={cap}
+                routerPush={(fips) => router.push(`/districts/${fips}`)}
+              />
+            )}
           </g>
         </svg>
         <ColorLegend min={minSeats} max={maxSeats} />
@@ -126,52 +108,216 @@ export function NationalMap({
   );
 }
 
-/**
- * Sequential color scale on the seat count, log-spaced.
- *
- * Logarithmic interpolation because seat counts span ~3 orders of
- * magnitude at high caps (Wyoming with 1 vs California with ~1,316).
- * A linear scale would push every state except CA and TX to the
- * bottom of the palette and lose all visible signal.
- */
+function StatePath({
+  cap,
+  feature,
+  maxSeats,
+  minSeats,
+  pathGen,
+  routerPush,
+  seats,
+}: {
+  cap: number;
+  feature: StateFeature;
+  maxSeats: number;
+  minSeats: number;
+  pathGen: ReturnType<typeof geoPath>;
+  routerPush: (fips: string) => void;
+  seats: number;
+}) {
+  const fips = String(feature.id ?? "");
+  const state = getStateByFips(fips);
+  const fill = seatColor(seats, minSeats, maxSeats);
+  const d = pathGen(feature) ?? "";
+  const stateName = state?.name ?? feature.properties?.name ?? fips;
+  const population = US_2020_APPORTIONMENT_POPULATIONS[fips] ?? 0;
+  const peoplePerSeat = seats > 0 ? Math.round(population / seats) : 0;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <path
+          d={d}
+          fill={fill}
+          stroke="var(--background)"
+          strokeWidth={0.75}
+          className="cursor-pointer transition-[fill,stroke,stroke-width] hover:stroke-foreground hover:stroke-[1.5px] focus:outline-none focus-visible:stroke-foreground focus-visible:stroke-[1.5px]"
+          tabIndex={0}
+          onClick={() => routerPush(fips)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              routerPush(fips);
+            }
+          }}
+          aria-label={`${stateName}, ${seats} seat${seats === 1 ? "" : "s"}`}
+        />
+      </TooltipTrigger>
+      <TooltipContent side="top">
+        <div className="font-semibold">{stateName}</div>
+        <div className="font-normal opacity-90 tabular-nums">
+          Population {population.toLocaleString()}
+        </div>
+        <div className="font-normal opacity-90 tabular-nums">
+          {seats} seat{seats === 1 ? "" : "s"} at cap {cap.toLocaleString()}
+        </div>
+        <div className="font-normal opacity-90 tabular-nums">
+          1 seat / {peoplePerSeat.toLocaleString()} people
+        </div>
+        <div className="font-normal opacity-75">
+          Open current 435-seat district map
+        </div>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function AwardedStateLayer({
+  cap,
+  feature,
+  pathGen,
+  routerPush,
+  seats,
+}: {
+  cap: number;
+  feature: StateFeature;
+  pathGen: ReturnType<typeof geoPath>;
+  routerPush: (fips: string) => void;
+  seats: number;
+}) {
+  const fips = String(feature.id ?? "");
+  const state = getStateByFips(fips);
+  const d = pathGen(feature) ?? "";
+  const [cx, cy] = pathGen.centroid(feature);
+  const stateName = state?.name ?? feature.properties?.name ?? fips;
+  const population = US_2020_APPORTIONMENT_POPULATIONS[fips] ?? 0;
+  const peoplePerSeat = seats > 0 ? Math.round(population / seats) : 0;
+  const totalLabel = `${seats.toLocaleString()} seats`;
+  const labelWidth = Math.max(78, totalLabel.length * 7 + 22);
+  const labelX = stableSvgNumber(
+    clamp(cx - labelWidth / 2, 6, NATIONAL_VIEWBOX.width - labelWidth - 6)
+  );
+  const labelY = stableSvgNumber(
+    clamp(cy - 56, 6, NATIONAL_VIEWBOX.height - 46)
+  );
+  const labelCenterX = stableSvgNumber(labelX + labelWidth / 2);
+  const labelTopY = stableSvgNumber(labelY + 16);
+  const labelBottomY = stableSvgNumber(labelY + 31);
+
+  return (
+    <>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <path
+            d={d}
+            fill="oklch(0.72 0.18 145)"
+            stroke="oklch(0.32 0.13 145)"
+            strokeWidth={2.5}
+            className="district-award-state cursor-pointer focus:outline-none"
+            tabIndex={0}
+            onClick={() => routerPush(fips)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                routerPush(fips);
+              }
+            }}
+            aria-label={`${stateName} gained one seat, now ${seats} seat${
+              seats === 1 ? "" : "s"
+            } at cap ${cap.toLocaleString()}`}
+          />
+        </TooltipTrigger>
+        <TooltipContent side="top">
+          <div className="font-semibold">{stateName}</div>
+          <div className="font-normal opacity-90 tabular-nums">
+            +1 seat, now {seats.toLocaleString()} total
+          </div>
+          <div className="font-normal opacity-90 tabular-nums">
+            Population {population.toLocaleString()}
+          </div>
+          <div className="font-normal opacity-90 tabular-nums">
+            1 seat / {peoplePerSeat.toLocaleString()} people
+          </div>
+          <div className="font-normal opacity-75">
+            Open current 435-seat district map
+          </div>
+        </TooltipContent>
+      </Tooltip>
+      <g className="district-award-label" pointerEvents="none">
+        <rect
+          x={labelX}
+          y={labelY}
+          width={labelWidth}
+          height={40}
+          rx={6}
+          fill="var(--background)"
+          stroke="oklch(0.32 0.13 145)"
+          strokeWidth={1.25}
+        />
+        <text
+          x={labelCenterX}
+          y={labelTopY}
+          textAnchor="middle"
+          className="fill-foreground text-[13px] font-semibold"
+        >
+          +1
+        </text>
+        <text
+          x={labelCenterX}
+          y={labelBottomY}
+          textAnchor="middle"
+          className="fill-muted-foreground text-[11px] tabular-nums"
+        >
+          {totalLabel}
+        </text>
+      </g>
+    </>
+  );
+}
+
 function seatColor(seats: number, min: number, max: number): string {
   if (max <= min) return "oklch(0.85 0.05 250)";
   const t =
     (Math.log(Math.max(seats, 1)) - Math.log(Math.max(min, 1))) /
     (Math.log(Math.max(max, 1)) - Math.log(Math.max(min, 1)));
   const clamped = Math.max(0, Math.min(1, t));
-  // Indigo ramp: light at low seat counts, deep indigo at high.
-  // OKLch keeps perceptual lightness uniform.
-  const lightness = 0.92 - clamped * 0.45; // 0.92 → 0.47
-  const chroma = 0.04 + clamped * 0.16; // 0.04 → 0.20
+  const lightness = 0.92 - clamped * 0.45;
+  const chroma = 0.04 + clamped * 0.16;
   return `oklch(${lightness.toFixed(3)} ${chroma.toFixed(3)} 265)`;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+function stableSvgNumber(value: number): number {
+  return Number(value.toFixed(3));
 }
 
 function ColorLegend({ min, max }: { min: number; max: number }) {
   if (max <= min) return null;
-  // 6 buckets, geometrically spaced.
-  const stops = 6;
-  const ticks: { seats: number; color: string }[] = [];
-  for (let i = 0; i < stops; i += 1) {
-    const t = i / (stops - 1);
-    const seats = Math.round(
-      Math.exp(Math.log(min) + t * (Math.log(max) - Math.log(min)))
-    );
-    ticks.push({ seats, color: seatColor(seats, min, max) });
-  }
+  const gradientStops = Array.from({ length: 16 }, (_, i) => {
+    const t = i / 15;
+    const seats = Math.exp(Math.log(min) + t * (Math.log(max) - Math.log(min)));
+    return `${seatColor(seats, min, max)} ${(t * 100).toFixed(1)}%`;
+  }).join(", ");
+
   return (
-    <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
-      <span>Seats per state</span>
-      <div className="flex items-center gap-1">
-        {ticks.map((t, i) => (
-          <div key={i} className="flex flex-col items-center">
-            <div
-              className="w-8 h-3 rounded-sm border"
-              style={{ background: t.color }}
-            />
-            <span className="tabular-nums mt-0.5">{t.seats}</span>
-          </div>
-        ))}
+    <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
+      <div className="flex items-center justify-between">
+        <span>Seats per state</span>
+        <span className="tabular-nums">
+          {min.toLocaleString()} to {max.toLocaleString()}
+        </span>
+      </div>
+      <div
+        className="h-3 w-full rounded-sm border"
+        style={{ background: `linear-gradient(to right, ${gradientStops})` }}
+        aria-hidden="true"
+      />
+      <div className="flex items-center justify-between tabular-nums">
+        <span>{min.toLocaleString()}</span>
+        <span>{max.toLocaleString()}</span>
       </div>
     </div>
   );

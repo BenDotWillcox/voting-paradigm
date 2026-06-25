@@ -11,10 +11,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { StateDetailMap } from "@/components/districting/state-detail-map";
+import { StatePriorityChart } from "@/components/districting/state-priority-chart";
+import { StateSeatLadder } from "@/components/districting/state-seat-ladder";
+import {
+  buildStatePriorityCurve,
+  getNextCandidates,
+  getStateSeatLadder,
+} from "@/lib/apportionment-sequence";
 import { getApportionment } from "@/lib/districting-api";
-import { CAP_MIN, getNearestAnchor } from "@/lib/districting-cap-scale";
-import { loadStatesGeoJSON } from "@/lib/load-states-geojson";
+import { CAP_MIN } from "@/lib/districting-cap-scale";
 import { US_2020_APPORTIONMENT_POPULATIONS } from "@/lib/us-state-populations";
 import { getStateByFips, isStateFips } from "@/lib/us-states";
 
@@ -22,39 +27,34 @@ export const dynamic = "force-dynamic";
 
 interface StatePageProps {
   params: Promise<{ stateFips: string }>;
-  searchParams: Promise<{ cap?: string }>;
 }
 
 export default async function StateDetailPage({
   params,
-  searchParams,
 }: StatePageProps) {
   const { stateFips } = await params;
-  const { cap: capParam } = await searchParams;
-  const cap = parseCapParam(capParam);
+  const cap = CAP_MIN;
 
   if (!isStateFips(stateFips)) notFound();
   const state = getStateByFips(stateFips);
   if (!state) notFound();
 
   try {
-    const [states, apportionment] = await Promise.all([
-      loadStatesGeoJSON(),
-      getApportionment(cap),
-    ]);
+    const apportionment = await getApportionment(cap);
 
     const seats = apportionment.apportionment[stateFips] ?? 0;
     const population = US_2020_APPORTIONMENT_POPULATIONS[stateFips] ?? 0;
     const avgDistrict = seats > 0 ? Math.round(population / seats) : null;
-    const baselineSeats = await getApportionment(CAP_MIN).then(
-      (r) => r.apportionment[stateFips] ?? 0
+    const seatLadder = getStateSeatLadder(stateFips, cap);
+    const priorityCurve = buildStatePriorityCurve(stateFips, Math.max(seats + 8, 12));
+    const nextCandidate = getNextCandidates(cap, 50).find(
+      (candidate) => candidate.stateFips === stateFips
     );
-    const delta = seats - baselineSeats;
 
     return (
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         <Link
-          href={`/districts?cap=${cap}`}
+          href="/districts"
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -72,58 +72,68 @@ export default async function StateDetailPage({
               </p>
             </div>
             <Badge variant="secondary" className="text-sm">
-              House cap {cap.toLocaleString()}
+              Current 435-seat House
             </Badge>
           </div>
         </header>
 
-        <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_18rem]">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">State outline</CardTitle>
-              <CardDescription>
-                Algorithmic district polygons land in step 4. For now, the
-                state shape and its apportioned seat count.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <StateDetailMap states={states} stateFips={state.fips} />
-            </CardContent>
-          </Card>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Priority curve</CardTitle>
+                <CardDescription>
+                  Each additional state seat lowers its priority for the next
+                  seat. Higher priority wins the next national allocation.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <StatePriorityChart data={priorityCurve} stateName={state.name} />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Seat ladder</CardTitle>
+                <CardDescription>
+                  The national seat numbers where {state.name} received each
+                  representative after its guaranteed first seat.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <StateSeatLadder steps={seatLadder} />
+              </CardContent>
+            </Card>
+          </div>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">At cap = {cap.toLocaleString()}</CardTitle>
+              <CardTitle className="text-base">Current apportionment</CardTitle>
+              <CardDescription>
+                Method of Equal Proportions at 435 seats.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                 <dt className="text-muted-foreground">Seats</dt>
                 <dd className="text-right tabular-nums">{seats}</dd>
-                <dt className="text-muted-foreground">2020 population</dt>
+                <dt className="text-muted-foreground">Population</dt>
                 <dd className="text-right tabular-nums">
                   {population.toLocaleString()}
                 </dd>
                 {avgDistrict !== null && (
                   <>
-                    <dt className="text-muted-foreground">Avg. district</dt>
+                    <dt className="text-muted-foreground">People / seat</dt>
                     <dd className="text-right tabular-nums">
-                      {avgDistrict.toLocaleString()} ppl
+                      {avgDistrict.toLocaleString()}
                     </dd>
                   </>
                 )}
-                {cap !== CAP_MIN && (
+                {nextCandidate && (
                   <>
-                    <dt className="text-muted-foreground">vs. {CAP_MIN}</dt>
-                    <dd
-                      className={`text-right tabular-nums ${
-                        delta > 0
-                          ? "text-emerald-600 dark:text-emerald-400"
-                          : delta < 0
-                          ? "text-rose-600 dark:text-rose-400"
-                          : ""
-                      }`}
-                    >
-                      {delta > 0 ? `+${delta}` : delta}
+                    <dt className="text-muted-foreground">Next priority</dt>
+                    <dd className="text-right tabular-nums">
+                      {Math.round(nextCandidate.priority).toLocaleString()}
                     </dd>
                   </>
                 )}
@@ -159,11 +169,4 @@ export default async function StateDetailPage({
       </div>
     );
   }
-}
-
-function parseCapParam(raw: string | undefined): number {
-  if (!raw) return CAP_MIN;
-  const n = Number.parseInt(raw, 10);
-  if (!Number.isFinite(n)) return CAP_MIN;
-  return getNearestAnchor(n).cap;
 }

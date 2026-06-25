@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  outputFileTracingExcludes: {
+    "/*": [
+      "./public/data/districting/**/*",
+      "./public/data/districting-topo/**/*",
+    ],
+  },
 };
 
 export default nextConfig;

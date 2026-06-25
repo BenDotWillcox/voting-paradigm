@@ -1,10 +1,17 @@
 "use server";
 
 import { ActionResult } from "@/types/actions/action-types";
-import { VotingMethod, MethodDemo } from "@/types/methods";
 import {
+  VotingMethod,
+  MethodDemo,
+  DemoScenario,
+  DemoScenarioResolution,
+} from "@/types/methods";
+import {
+  fetchDemoScenarios,
   fetchScenarioResult,
   fetchAllScenarioResults,
+  resolveDemoScenario,
 } from "@/lib/methods-api";
 
 export async function getMethodDemoAction(
@@ -47,6 +54,51 @@ export async function getAllMethodDemosAction(): Promise<
         error instanceof Error
           ? error.message
           : "Failed to fetch election demos. Is the Python API running?",
+    };
+  }
+}
+
+export async function getDemoScenariosAction(): Promise<
+  ActionResult<DemoScenario[]>
+> {
+  try {
+    const scenarios = await fetchDemoScenarios();
+    return {
+      isSuccess: true,
+      message: "Interactive scenarios loaded",
+      data: scenarios,
+    };
+  } catch (error) {
+    console.error("Error fetching interactive scenarios:", error);
+    return {
+      isSuccess: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch interactive scenarios. Is the Python API running?",
+    };
+  }
+}
+
+export async function resolveDemoScenarioAction(
+  scenarioId: string,
+  controls: Record<string, number>
+): Promise<ActionResult<DemoScenarioResolution>> {
+  try {
+    const result = await resolveDemoScenario(scenarioId, controls);
+    return {
+      isSuccess: true,
+      message: "Interactive scenario resolved",
+      data: result,
+    };
+  } catch (error) {
+    console.error("Error resolving interactive scenario:", error);
+    return {
+      isSuccess: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to resolve interactive scenario. Is the Python API running?",
     };
   }
 }

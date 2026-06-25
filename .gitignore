@@ -43,6 +43,11 @@ venv/
 __pycache__/
 .pytest_cache/
 *.pyc
-
-# Claude Code local state (worktrees, settings, session caches)
+.cache/
 .claude/
+
+# Raw districting algorithm artifacts (tract-level GeoJSON, ~5 GB total).
+# The display artifacts the site actually serves are derived from these via
+# scripts/build_district_topojson.py into districting-topo/ and
+# districting-summary/.
+/public/data/districting/

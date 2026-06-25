@@ -5,6 +5,7 @@ const navItems = [
   { href: "/methods", label: "Methods" },
   { href: "/preferences", label: "Preferences" },
   { href: "/districts", label: "Districts" },
+  { href: "/liquid", label: "Liquid" },
 ];
 
 export default function Header() {

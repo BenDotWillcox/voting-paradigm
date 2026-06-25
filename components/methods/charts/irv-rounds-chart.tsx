@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   BarChart,
   Bar,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -22,12 +23,14 @@ interface IRVRoundsChartProps {
   candidates: CandidateData[];
   rounds: IRVRound[];
   winners: string[];
+  candidateColors?: Record<string, string>;
 }
 
 export function IRVRoundsChart({
   candidates,
   rounds,
   winners,
+  candidateColors,
 }: IRVRoundsChartProps) {
   const [currentRound, setCurrentRound] = useState(rounds.length - 1);
   const round = rounds[currentRound];
@@ -55,10 +58,10 @@ export function IRVRoundsChart({
         fill: isEliminated
           ? "hsl(var(--muted))"
           : isEliminatedThisRound
-            ? "hsl(var(--destructive))"
+            ? candidateColors?.[c.id] ?? "hsl(var(--destructive))"
             : isWinner
-              ? "var(--color-winner)"
-              : "var(--color-active)",
+              ? candidateColors?.[c.id] ?? "var(--color-winner)"
+              : candidateColors?.[c.id] ?? "var(--color-active)",
       };
     })
     .filter((d) => !eliminatedBefore.has(d.id));
@@ -113,7 +116,11 @@ export function IRVRoundsChart({
             strokeDasharray="5 5"
             label={{ value: "Majority", position: "top", fontSize: 11 }}
           />
-          <Bar dataKey="value" radius={[0, 4, 4, 0]} />
+          <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+            {data.map((entry) => (
+              <Cell key={entry.id} fill={entry.fill} />
+            ))}
+          </Bar>
         </BarChart>
       </ChartContainer>
 

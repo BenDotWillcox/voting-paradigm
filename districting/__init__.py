@@ -30,6 +30,15 @@ from .apportionment import (
     priority_value,
     InvalidApportionmentError,
 )
+from .precompute import (
+    CAP_ANCHORS,
+    CACHE_VERSION,
+    POPULAR_STATE_FIPS,
+    PrecomputeJob,
+    build_precompute_manifest,
+    compute_tier,
+    district_plan_cache_key,
+)
 from .data.apportionment_2020 import (
     US_2020_APPORTIONMENT_POPULATIONS,
     US_2020_KNOWN_APPORTIONMENT,
@@ -48,6 +57,14 @@ __all__ = [
     "DistrictCenter",
     "DistrictingResult",
     "DistrictingError",
+    # Precompute planning
+    "CAP_ANCHORS",
+    "CACHE_VERSION",
+    "POPULAR_STATE_FIPS",
+    "PrecomputeJob",
+    "build_precompute_manifest",
+    "compute_tier",
+    "district_plan_cache_key",
     # 2020 reference data
     "US_2020_APPORTIONMENT_POPULATIONS",
     "US_2020_KNOWN_APPORTIONMENT",

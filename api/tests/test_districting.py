@@ -64,3 +64,31 @@ class TestApportionmentEndpoint:
     def test_non_integer_cap_rejected(self, client: TestClient):
         resp = client.get("/api/districting/apportionment?cap=abc")
         assert resp.status_code == 422
+
+
+class TestPrecomputeManifestEndpoint:
+    def test_manifest_lists_anchor_jobs(self, client: TestClient):
+        resp = client.get("/api/districting/precompute-manifest")
+        assert resp.status_code == 200
+        body = resp.json()
+
+        assert body["cache_version"] == "bpd-v1"
+        assert body["cap_anchors"] == [435, 574, 692, 1000, 11037]
+        assert len(body["priority_state_fips"]) == 10
+        assert len(body["jobs"]) == 50
+        assert body["priority_state_fips"][0] == "20"
+
+    def test_manifest_cache_keys_include_cap_and_seats(self, client: TestClient):
+        resp = client.get("/api/districting/precompute-manifest")
+        assert resp.status_code == 200
+        california_435 = next(
+            job
+            for job in resp.json()["jobs"]
+            if job["state_fips"] == "06" and job["cap"] == 435
+        )
+
+        assert california_435["seats"] == 52
+        assert california_435["cache_key"] == (
+            "bpd-v1/state-06/cap-435/seats-52.json"
+        )
+        assert california_435["compute_tier"] == "batch-cache"

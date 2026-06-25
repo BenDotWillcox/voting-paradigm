@@ -8,6 +8,8 @@ import {
   MethodScenario,
   AnyElectionResult,
   MethodDemo,
+  DemoScenario,
+  DemoScenarioResolution,
 } from "@/types/methods";
 import { methodOrder } from "@/lib/methods/method-descriptions";
 
@@ -88,4 +90,21 @@ export async function fetchAllScenarioResults(): Promise<
   );
 
   return results as Record<VotingMethod, MethodDemo>;
+}
+
+export async function fetchDemoScenarios(): Promise<DemoScenario[]> {
+  return apiFetch<DemoScenario[]>("/api/elections/demo-scenarios");
+}
+
+export async function resolveDemoScenario(
+  scenarioId: string,
+  controls: Record<string, number>
+): Promise<DemoScenarioResolution> {
+  return apiFetch<DemoScenarioResolution>(
+    `/api/elections/demo-scenarios/${scenarioId}/resolve`,
+    {
+      method: "POST",
+      body: JSON.stringify({ controls }),
+    }
+  );
 }

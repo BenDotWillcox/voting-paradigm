@@ -26,6 +26,7 @@ from voting.methods.ranked_pairs import resolve_ranked_pairs
 from voting.methods.score import resolve_score
 from voting.types import Candidate, CandidateId
 
+from ..demo_scenarios import list_demo_scenarios, resolve_demo_scenario
 from ..scenarios import get_scenario, get_scenarios
 
 router = APIRouter(prefix="/api/elections", tags=["elections"])
@@ -100,6 +101,10 @@ class ScoreRequest(BaseModel):
 class QuadraticRequest(BaseModel):
     candidates: list[CandidateInput]
     ballots: list[QuadraticBallotInput]
+
+
+class DemoScenarioResolveRequest(BaseModel):
+    controls: dict[str, int] = {}
 
 
 def _to_candidates(inputs: list[CandidateInput]) -> list[Candidate]:
@@ -226,3 +231,21 @@ def get_scenario_by_method(method: str):
     if scenario is None:
         raise HTTPException(status_code=404, detail=f"Unknown method: {method}")
     return scenario
+
+
+@router.get("/demo-scenarios")
+def list_interactive_demo_scenarios():
+    """Return curated interactive electorate scenarios for the methods lab."""
+    return list_demo_scenarios()
+
+
+@router.post("/demo-scenarios/{scenario_id}/resolve")
+def resolve_interactive_demo_scenario(
+    scenario_id: str,
+    req: DemoScenarioResolveRequest,
+):
+    """Resolve every supported voting method for a scenario/control state."""
+    result = resolve_demo_scenario(scenario_id, req.controls)
+    if result is None:
+        raise HTTPException(status_code=404, detail=f"Unknown scenario: {scenario_id}")
+    return result

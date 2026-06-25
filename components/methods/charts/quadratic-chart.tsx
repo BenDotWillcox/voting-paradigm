@@ -24,17 +24,16 @@ interface QuadraticChartProps {
   winners: string[];
   overallUtilization: number;
   avgVoterUtilization: number;
+  candidateColors?: Record<string, string>;
 }
 
 export function QuadraticChart({
   candidates,
   voteTotals,
-  winners,
   overallUtilization,
   avgVoterUtilization,
+  candidateColors,
 }: QuadraticChartProps) {
-  const winnerSet = new Set(winners);
-
   const data = candidates
     .map((c) => ({
       name: c.name,
@@ -74,13 +73,7 @@ export function QuadraticChart({
             {data.map((entry) => (
               <Cell
                 key={entry.id}
-                fill={
-                  entry.value < 0
-                    ? "hsl(var(--destructive))"
-                    : winnerSet.has(entry.id)
-                      ? "hsl(var(--chart-1))"
-                      : "hsl(var(--chart-3))"
-                }
+                fill={candidateColors?.[entry.id] ?? "hsl(var(--chart-3))"}
               />
             ))}
           </Bar>

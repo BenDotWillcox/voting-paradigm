@@ -1,60 +1,74 @@
-import { getAllUsers } from "@/db/queries/users-queries";
-import { listUserPreferenceSessionsAction } from "@/actions/preferences-actions";
-import { StartSessionForm } from "@/components/preferences/start-session-form";
+import Link from "next/link";
+import { ArrowLeft, Bot, Lock, PlayCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { PreferenceDemoLab } from "@/components/preferences/preference-demo-lab";
 
 export const dynamic = "force-dynamic";
 
-export default async function PreferencesLandingPage() {
-  const users = await getAllUsers();
+type DemoMode = "replay" | "live";
 
-  // For v1 (no auth) we preload sessions for all users so we can surface
-  // the "resume active session" affordance after they pick who they are.
-  const sessionLists = await Promise.all(
-    users.map(async (u) => {
-      const res = await listUserPreferenceSessionsAction(u.id);
-      if (!res.isSuccess || !res.data) return [];
-      return res.data.map((s) => ({ ...s, userId: u.id }));
-    })
-  );
-  const existingSessions = sessionLists.flat();
+export default function PreferencesPage() {
+  const configuredMode: DemoMode =
+    process.env.PREFERENCE_DEMO_MODE === "live" ? "live" : "replay";
+  const liveEnabled =
+    configuredMode === "live" &&
+    process.env.ENABLE_LIVE_PREFERENCE_LLM === "true" &&
+    process.env.NODE_ENV !== "production";
+  const walkthroughVideoSrc =
+    process.env.NEXT_PUBLIC_PREFERENCE_WALKTHROUGH_SRC || null;
 
   return (
-    <div className="container mx-auto max-w-2xl py-10 space-y-8">
-      <div className="space-y-3">
-        <h1 className="text-3xl font-bold">Discover Your Values</h1>
-        <p className="text-muted-foreground">
-          Answer a series of pairwise tradeoffs between civic values. A
-          Bayesian model updates after each answer to build a personal map of
-          what matters to you — with calibrated uncertainty. Takes ~5–10
-          minutes for 25 questions.
-        </p>
-      </div>
+    <main className="container mx-auto max-w-7xl px-4 py-8">
+      <Link
+        href="/"
+        className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to demos
+      </Link>
 
-      <div className="rounded-xl border bg-card p-6 shadow-sm">
-        <StartSessionForm
-          users={users.map((u) => ({ id: u.id, name: u.handle }))}
-          existingSessions={existingSessions}
-        />
-      </div>
+      <header className="mb-8 space-y-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="secondary">
+            <Bot className="h-3 w-3" />
+            Preference model
+          </Badge>
+          <Badge variant={liveEnabled ? "default" : "outline"}>
+            {liveEnabled ? (
+              <>
+                <PlayCircle className="h-3 w-3" />
+                Local live mode
+              </>
+            ) : (
+              <>
+                <Lock className="h-3 w-3" />
+                Public replay mode
+              </>
+            )}
+          </Badge>
+        </div>
+        <div className="max-w-4xl space-y-3">
+          <p className="text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            Agent voting via preference models
+          </p>
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            A GPT-OSS interviewer turns one voter&apos;s values into an
+            auditable ballot.
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            This video-first demo shows the individual experience: a local
+            open-weight agent asks follow-up questions, structured evidence
+            updates a transparent model, and the model previews a vote on a
+            transportation and climate ballot.
+          </p>
+        </div>
+      </header>
 
-      <div className="text-sm text-muted-foreground space-y-2">
-        <p className="font-medium">How it works:</p>
-        <ul className="list-disc pl-5 space-y-1">
-          <li>
-            Each question asks you to pick between two civic values using a
-            slider — the further you drag, the stronger the preference.
-          </li>
-          <li>
-            We use a Thurstone pairwise model with a Laplace-approximated
-            Gaussian posterior, so every answer refines a learned latent
-            utility for each value.
-          </li>
-          <li>
-            At the end you&apos;ll see your values ranked by posterior mean,
-            with uncertainty bands from the posterior variance.
-          </li>
-        </ul>
-      </div>
-    </div>
+      <PreferenceDemoLab
+        configuredMode={configuredMode}
+        liveEnabled={liveEnabled}
+        walkthroughVideoSrc={walkthroughVideoSrc}
+      />
+    </main>
   );
 }

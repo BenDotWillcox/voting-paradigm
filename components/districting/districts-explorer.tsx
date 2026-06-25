@@ -3,20 +3,22 @@
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { fetchApportionmentAction } from "@/actions/districting-actions";
-import { CAP_MIN } from "@/lib/districting-cap-scale";
+import {
+  getRecentAllocations,
+  getSeatCountsAfter,
+} from "@/lib/apportionment-sequence";
+import { CAP_MAX, CAP_MIN } from "@/lib/districting-cap-scale";
 import type { StatesGeoJSON } from "@/lib/load-states-geojson";
 import type { ApportionmentDto } from "@/types/districting";
 
-import { ApportionmentSummary } from "./apportionment-summary";
+import { AllocationExplainer } from "./allocation-explainer";
 import { CapPicker } from "./cap-picker";
 import { NationalMap } from "./national-map";
+import { RepresentationMetrics } from "./representation-metrics";
 
 interface DistrictsExplorerProps {
   /** Initial apportionment fetched on the server (cap = `initialCap`). */
   initialApportionment: ApportionmentDto;
-  /** The 435-baseline apportionment, used for "vs. current" deltas. */
-  baselineApportionment: ApportionmentDto;
   /** Cap value behind `initialApportionment`. Drives picker initial state. */
   initialCap: number;
   /** GeoJSON of all 50 states, loaded once on the server. */
@@ -24,105 +26,103 @@ interface DistrictsExplorerProps {
 }
 
 /**
- * Top-level client component for the districting overview.
+ * Top-level client component for the national apportionment overview.
  *
- * Owns:
- *  - the cap state (mirrored to `?cap=` in the URL so reloads stick)
- *  - the in-flight apportionment for the *currently displayed* cap
- *  - one server-action call per anchor selection
- *
- * The cap picker is a discrete-anchor toggle group rather than a slider:
- * we only ever compute results at the five educational anchors, so a
- * continuous control would imply commitments we don't keep.
+ * Owns the selected House size, mirrors it to `?cap=`, and derives the
+ * apportionment locally from the deterministic priority sequence.
  */
 export function DistrictsExplorer({
   initialApportionment,
-  baselineApportionment,
   initialCap,
   states,
 }: DistrictsExplorerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [apportionment, setApportionment] = React.useState<ApportionmentDto>(
-    initialApportionment
+  const [cap, setCap] = React.useState(initialCap);
+  const displayedApportionment = React.useMemo(
+    () => getSeatCountsAfter(cap),
+    [cap]
   );
-  const [pending, startTransition] = React.useTransition();
-  const [error, setError] = React.useState<string | null>(null);
-
-  // Track the most recent requested cap so out-of-order responses (user
-  // clicks anchor B before anchor A's fetch finishes) can be discarded.
-  const latestCapRef = React.useRef(initialCap);
+  const baselineApportionment = React.useMemo(
+    () => getSeatCountsAfter(CAP_MIN),
+    []
+  );
+  const lastAwarded = React.useMemo(
+    () => getRecentAllocations(cap, 1)[0] ?? null,
+    [cap]
+  );
 
   const handleCapChange = React.useCallback(
     (nextCap: number) => {
-      latestCapRef.current = nextCap;
+      const bounded = Math.max(CAP_MIN, Math.min(CAP_MAX, Math.round(nextCap)));
+      setCap(bounded);
+    },
+    []
+  );
+
+  React.useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const currentCapParam = searchParams.get("cap");
+      if (
+        (cap === CAP_MIN && currentCapParam === null) ||
+        currentCapParam === String(cap)
+      ) {
+        return;
+      }
 
       // Mirror to the URL so a reload stays at the same anchor.
       const params = new URLSearchParams(searchParams.toString());
-      if (nextCap === CAP_MIN) {
+      if (cap === CAP_MIN) {
         params.delete("cap");
       } else {
-        params.set("cap", String(nextCap));
+        params.set("cap", String(cap));
       }
       router.replace(
         `/districts${params.size ? `?${params.toString()}` : ""}`,
         { scroll: false }
       );
+    }, 250);
 
-      // If the data we already have matches, skip the round trip.
-      if (apportionment.cap === nextCap) return;
-
-      startTransition(async () => {
-        const result = await fetchApportionmentAction(nextCap);
-        // Bail if the user moved on while we were waiting.
-        if (latestCapRef.current !== nextCap) return;
-        if (!result.isSuccess || !result.data) {
-          setError(result.message);
-          return;
-        }
-        setError(null);
-        setApportionment(result.data);
-      });
-    },
-    [apportionment.cap, router, searchParams]
-  );
+    return () => window.clearTimeout(timer);
+  }, [cap, router, searchParams]);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-      <div className="space-y-6">
-        <div className="rounded-xl border bg-card p-6 shadow-sm">
-          <CapPicker cap={apportionment.cap} onCapChange={handleCapChange} />
-        </div>
-
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-          <NationalMap
-            states={states}
-            apportionment={apportionment.apportionment}
-            cap={apportionment.cap}
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_21rem]">
+      <div className="space-y-4">
+        <div className="rounded-xl border bg-card p-2.5 shadow-sm">
+          <CapPicker
+            cap={cap}
+            maxCap={CAP_MAX}
+            onCapChange={handleCapChange}
           />
         </div>
 
-        {error && (
-          <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-            Districting API error: {error}
-          </div>
-        )}
+        <RepresentationMetrics
+          cap={cap}
+          apportionment={displayedApportionment}
+          baselineApportionment={baselineApportionment}
+          totalPopulation={initialApportionment.total_apportionment_population}
+        />
 
-        <p className="text-xs text-muted-foreground">
-          Maps shown are state outlines colored by the seat count each state
-          would receive at the chosen House size. Real congressional-district
-          polygons land in step 4 alongside the algorithmic redistricting
-          pipeline. Click a state for its detail page.
+        <div className="rounded-xl border bg-card p-2 shadow-sm">
+          <NationalMap
+            states={states}
+            apportionment={displayedApportionment}
+            cap={cap}
+            highlightedFips={lastAwarded?.stateFips}
+          />
+        </div>
+
+        <p className="text-[11px] leading-snug text-muted-foreground">
+          State outlines are colored by the seat count each state would receive
+          at the selected House size. The outlined state received the selected
+          seat. Click a state to inspect its current 435-seat districting plan.
         </p>
       </div>
 
-      <aside className="space-y-4">
-        <ApportionmentSummary
-          apportionment={apportionment}
-          baseline={baselineApportionment}
-          loading={pending}
-        />
+      <aside className="space-y-2">
+        <AllocationExplainer cap={cap} />
       </aside>
     </div>
   );

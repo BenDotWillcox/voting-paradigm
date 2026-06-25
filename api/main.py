@@ -12,8 +12,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .routers.districting import router as districting_router
-from .routers.preferences import router as preferences_router
 from .routers.voting import router as voting_router
+
+try:
+    from .routers.preferences import router as preferences_router
+except ModuleNotFoundError:
+    preferences_router = None
 
 tags_metadata = [
     {
@@ -58,9 +62,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(voting_router)
-app.include_router(preferences_router)
 app.include_router(districting_router)
+app.include_router(voting_router)
+if preferences_router is not None:
+    app.include_router(preferences_router)
 
 
 @app.get("/", tags=["meta"])
