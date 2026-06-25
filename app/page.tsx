@@ -47,7 +47,7 @@ const demos: Demo[] = [
       "LLM orchestration",
     ],
     href: "/preferences",
-    status: "live",
+    status: "in-progress",
     Icon: Bot,
   },
   {
