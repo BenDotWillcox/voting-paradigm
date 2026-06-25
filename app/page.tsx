@@ -37,9 +37,9 @@ const demos: Demo[] = [
   {
     number: 2,
     title: "Agent voting via preference models",
-    tagline: "An LLM learns what you value, then votes on your behalf.",
+    tagline: "A local open-weight agent learns what you value, then previews a vote.",
     description:
-      "Pairwise elicitation builds a Bayesian posterior over your civic preferences. An agent uses that posterior to cast ballots — and flags low-confidence margins for follow-up questions.",
+      "A video-first walkthrough and static replay show GPT-OSS interviewing one voter, extracting structured preference evidence, and producing an auditable ballot preview.",
     showcase: [
       "Bayesian inference",
       "Embeddings",
@@ -47,7 +47,7 @@ const demos: Demo[] = [
       "LLM orchestration",
     ],
     href: "/preferences",
-    status: "in-progress",
+    status: "live",
     Icon: Bot,
   },
   {
