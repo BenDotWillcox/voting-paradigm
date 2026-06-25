@@ -1,6 +1,6 @@
 import "server-only";
 
-import { access, readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import type { CachedDistrictPlan } from "@/types/districting";
@@ -37,48 +37,7 @@ export async function getDistrictPlanTopoUrl(
   seats: number
 ): Promise<string | null> {
   const fileName = `cap-${cap}-seats-${seats}.topo.json`;
-  const path = join(
-    process.cwd(),
-    "public",
-    "data",
-    "districting-topo",
-    stateFips,
-    fileName
-  );
-  try {
-    await access(path);
-    return `/data/districting-topo/${stateFips}/${fileName}`;
-  } catch {
-    return null;
-  }
-}
-
-export async function loadCachedDistrictPlan(
-  stateFips: string,
-  cap: number,
-  seats: number
-): Promise<CachedDistrictPlan | null> {
-  const fileName = `cap-${cap}-seats-${seats}`;
-  const topoPath = join(
-    process.cwd(),
-    "public",
-    "data",
-    "districting-topo",
-    stateFips,
-    `${fileName}.topo.json`
-  );
-  const jsonPath = join(
-    process.cwd(),
-    "public",
-    "data",
-    "districting",
-    stateFips,
-    `${fileName}.json`
-  );
-
-  const topoPlan = await readPlanFile(topoPath);
-  if (topoPlan) return topoPlan;
-  return readPlanFile(jsonPath);
+  return `/data/districting-topo/${stateFips}/${fileName}`;
 }
 
 async function readPlanFile(path: string): Promise<CachedDistrictPlan | null> {
