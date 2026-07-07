@@ -14,6 +14,17 @@ def client():
     return TestClient(app)
 
 
+def make_evidence(question, value=7.5):
+    opt_ids = [o["item_id"] for o in question["options"]]
+    return {
+        "source": "pairwise",
+        "item_a": opt_ids[0],
+        "item_b": opt_ids[1],
+        "value": value,
+        "prompt_id": question["id"],
+    }
+
+
 def test_root(client):
     r = client.get("/")
     assert r.status_code == 200
@@ -39,13 +50,34 @@ def test_start_session(client):
     assert data["question"]["question_type"] == "pairwise"
     assert len(data["question"]["options"]) == 2
     assert data["state"]["n_questions_asked"] == 0
+    assert data["state"]["model_version"] == "gaussian_linear_v1"
 
 
-def test_full_session_flow(client):
+def test_start_session_with_bradley_terry(client):
+    r = client.post(
+        "/api/preferences/sessions/start",
+        json={
+            "user_id": "u1",
+            "session_id": "s1",
+            "target_questions": 5,
+            "model": "bradley_terry",
+        },
+    )
+    assert r.status_code == 200
+    assert r.json()["state"]["model_version"] == "bradley_terry_laplace_v1"
+
+
+@pytest.mark.parametrize("model", ["gaussian_linear", "bradley_terry"])
+def test_full_session_flow(client, model):
     # Start
     r = client.post(
         "/api/preferences/sessions/start",
-        json={"user_id": "u1", "session_id": "s1", "target_questions": 3},
+        json={
+            "user_id": "u1",
+            "session_id": "s1",
+            "target_questions": 3,
+            "model": model,
+        },
     )
     assert r.status_code == 200
     state = r.json()["state"]
@@ -53,23 +85,18 @@ def test_full_session_flow(client):
 
     # Answer 3 questions
     for i in range(3):
-        opt_ids = [o["item_id"] for o in question["options"]]
         r = client.post(
-            "/api/preferences/sessions/respond",
+            "/api/preferences/sessions/evidence",
             json={
                 "state": state,
-                "response": {
-                    "question_id": question["id"],
-                    "chosen_option_id": opt_ids[0],
-                    "strength": 7.5,
-                },
-                "question_options": opt_ids,
+                "evidence": make_evidence(question),
                 "target_questions": 3,
             },
         )
         assert r.status_code == 200
         data = r.json()
         state = data["state"]
+        assert len(state["evidence"]) == i + 1
         if i < 2:
             assert data["next_question"] is not None
             question = data["next_question"]
@@ -91,7 +118,31 @@ def test_full_session_flow(client):
     assert means == sorted(means, reverse=True)
 
 
-def test_bad_response_returns_400(client):
+def test_bad_evidence_returns_400(client):
+    r = client.post(
+        "/api/preferences/sessions/start",
+        json={"user_id": "u1", "session_id": "s1", "target_questions": 5},
+    )
+    state = r.json()["state"]
+
+    # item not in the bank
+    r = client.post(
+        "/api/preferences/sessions/evidence",
+        json={
+            "state": state,
+            "evidence": {
+                "source": "pairwise",
+                "item_a": "not_a_real_item",
+                "item_b": "economic_freedom",
+                "value": 5.0,
+            },
+            "target_questions": 5,
+        },
+    )
+    assert r.status_code == 400
+
+
+def test_unimplemented_evidence_source_returns_422(client):
     r = client.post(
         "/api/preferences/sessions/start",
         json={"user_id": "u1", "session_id": "s1", "target_questions": 5},
@@ -100,18 +151,55 @@ def test_bad_response_returns_400(client):
     question = r.json()["question"]
     opt_ids = [o["item_id"] for o in question["options"]]
 
-    # chosen_option_id not in question_options
     r = client.post(
-        "/api/preferences/sessions/respond",
+        "/api/preferences/sessions/evidence",
         json={
             "state": state,
-            "response": {
-                "question_id": question["id"],
-                "chosen_option_id": "not_a_real_item",
-                "strength": 5.0,
+            "evidence": {
+                "source": "free_text_extraction",
+                "item_a": opt_ids[0],
+                "item_b": opt_ids[1],
+                "value": 5.0,
+                "raw_response": "I care much more about the first thing",
             },
-            "question_options": opt_ids,
             "target_questions": 5,
         },
     )
-    assert r.status_code == 400
+    assert r.status_code == 422
+    assert "free_text_extraction" in r.json()["detail"]
+
+
+def test_legacy_state_upgrades_on_the_wire(client):
+    """A pre-Evidence state (responses + thurstone_v1) still works."""
+    r = client.post(
+        "/api/preferences/sessions/start",
+        json={"user_id": "u1", "session_id": "s1", "target_questions": 5},
+    )
+    fresh = r.json()["state"]
+    question = r.json()["question"]
+    opt_ids = [o["item_id"] for o in question["options"]]
+
+    legacy_state = {
+        "user_id": fresh["user_id"],
+        "session_id": fresh["session_id"],
+        "item_ids": fresh["item_ids"],
+        "mu": fresh["mu"],
+        "sigma_flat": fresh["sigma_flat"],
+        "responses": [
+            {
+                "question_id": f"q1_{opt_ids[0]}_vs_{opt_ids[1]}",
+                "chosen_option_id": opt_ids[0],
+                "strength": 6.0,
+            }
+        ],
+        "n_questions_asked": 1,
+        "asked_question_ids": [f"q1_{opt_ids[0]}_vs_{opt_ids[1]}"],
+        "model_version": "thurstone_v1",
+    }
+
+    r = client.post(
+        "/api/preferences/sessions/summary",
+        json={"state": legacy_state, "target_questions": 5},
+    )
+    assert r.status_code == 200
+    assert r.json()["model_version"] == "gaussian_linear_v1"

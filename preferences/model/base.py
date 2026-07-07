@@ -2,11 +2,14 @@
 Abstract protocol for preference models.
 
 Any model implementing this protocol can be plugged into the ElicitationEngine.
+Models consume typed `Evidence` (never raw LLM output or UI payloads) and are
+the ONLY code allowed to move the posterior — the evidence contract is the
+boundary between elicitation frontends (UI, LLM interviewer) and inference.
 """
 
 from typing import Protocol
 
-from ..types import ItemId, PreferenceState, Response
+from ..types import Evidence, ItemId, PreferenceState
 
 
 class PreferenceModel(Protocol):
@@ -26,14 +29,13 @@ class PreferenceModel(Protocol):
     def update(
         self,
         state: PreferenceState,
-        response: Response,
-        question_options: list[ItemId],
+        evidence: Evidence,
     ) -> PreferenceState:
-        """Return a new state with posterior updated by the response.
+        """Return a new state with posterior updated by one piece of evidence.
 
-        `question_options` is the ordered list of item ids the question compared
-        (length 2 for pairwise). The response's `chosen_option_id` and `strength`
-        determine the observed preference direction.
+        Must raise `UnsupportedEvidenceError` for evidence sources the model
+        has no likelihood for, and ValueError for malformed evidence — never
+        silently skip.
         """
         ...
 

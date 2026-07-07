@@ -1,8 +1,9 @@
 """
 Elicitation engine: orchestrates the model, question bank, and session flow.
 
-v1 picks the next question at random from the bank. Future versions will plug
-in an acquisition function and an LLM question generator.
+The engine builds questions from the bank, converts user answers into typed
+`Evidence`, applies it through the model, and picks the next question via a
+pluggable acquisition policy (default: max-variance uncertainty sampling).
 """
 
 import datetime as dt
@@ -10,12 +11,18 @@ import random
 from dataclasses import dataclass
 from typing import Optional
 
-from .model.thurstone import ThurstonePairwiseModel
+from .acquisition import DEFAULT_SELECTOR_NAME, PairSelector, create_selector
+from .model import (
+    DEFAULT_MODEL_NAME,
+    PreferenceModel,
+    create_model,
+    model_for_version,
+)
 from .questions.bank import QuestionBank
 from .types import (
+    Evidence,
     PreferenceState,
     Question,
-    Response,
     SessionProgress,
     ValueEstimate,
 )
@@ -25,6 +32,7 @@ from .types import (
 class EngineConfig:
     target_questions: int = 25
     seed: Optional[int] = None
+    selection_policy: str = DEFAULT_SELECTOR_NAME
 
 
 class ElicitationEngine:
@@ -32,13 +40,15 @@ class ElicitationEngine:
 
     def __init__(
         self,
-        model: Optional[ThurstonePairwiseModel] = None,
+        model: Optional[PreferenceModel] = None,
         question_bank: Optional[QuestionBank] = None,
         config: Optional[EngineConfig] = None,
+        selector: Optional[PairSelector] = None,
     ):
-        self.model = model or ThurstonePairwiseModel()
+        self.model = model or create_model(DEFAULT_MODEL_NAME)
         self.bank = question_bank or QuestionBank.load_default()
         self.config = config or EngineConfig()
+        self.selector = selector or create_selector(self.config.selection_policy)
         self._rng = random.Random(self.config.seed)
 
     # ------------------------------------------------------------------
@@ -61,53 +71,60 @@ class ElicitationEngine:
             raise RuntimeError("Could not generate initial question")
         return state, question
 
-    def submit_response(
+    def submit_evidence(
         self,
         state: PreferenceState,
-        response: Response,
-        question_options: list[str],
+        evidence: Evidence,
     ) -> tuple[PreferenceState, Optional[Question]]:
-        """Update the model with a response and return the next question (or None)."""
-        if response.timestamp is None:
-            response.timestamp = dt.datetime.utcnow().isoformat() + "Z"
-        new_state = self.model.update(state, response, question_options)
+        """Apply one piece of evidence and return the next question (or None)."""
+        # A state must be resumed by the model family that produced it —
+        # mu/sigma have model-specific semantics (legacy version strings map
+        # to their renamed successors via model_for_version).
+        owner = model_for_version(state.model_version)
+        if type(owner) is not type(self.model):
+            raise ValueError(
+                f"State was produced by '{state.model_version}' but the "
+                f"engine is running '{self.model.model_version}'"
+            )
+        if evidence.timestamp is None:
+            evidence.timestamp = (
+                dt.datetime.now(dt.timezone.utc)
+                .isoformat()
+                .replace("+00:00", "Z")
+            )
+        new_state = self.model.update(state, evidence)
         if new_state.n_questions_asked >= self.config.target_questions:
             return new_state, None
         next_q = self._select_next_question(new_state)
         return new_state, next_q
 
     # ------------------------------------------------------------------
-    # Question selection (v1: random from bank)
+    # Question selection
     # ------------------------------------------------------------------
 
     def _select_next_question(self, state: PreferenceState) -> Optional[Question]:
-        """Pick the next question. v1 = random, avoiding already-asked pairs."""
-        seen_pairs = self._seen_pairs(state)
-        try:
-            a_id, b_id = self.bank.random_pair(
-                exclude_pairs=seen_pairs,
-                rng=self._rng,
-            )
-        except RuntimeError:
+        """Ask the acquisition policy for a pair, avoiding already-asked pairs."""
+        pair = self.selector.select_pair(
+            state=state,
+            model=self.model,
+            bank=self.bank,
+            exclude_pairs=self._seen_pairs(state),
+            rng=self._rng,
+        )
+        if pair is None:
             return None
+        a_id, b_id = pair
         qid = f"q{state.n_questions_asked + 1}_{a_id}_vs_{b_id}"
         return self.bank.build_pairwise_question(a_id, b_id, question_id=qid)
 
     @staticmethod
     def _seen_pairs(state: PreferenceState) -> set[frozenset[str]]:
-        """Reconstruct the set of (item_a, item_b) pairs already asked."""
-        # Question IDs follow "q{n}_{a}_vs_{b}" — parse items out. For robustness
-        # in case IDs change, also look at responses where possible.
-        pairs: set[frozenset[str]] = set()
-        for qid in state.asked_question_ids:
-            # Split off the "q{n}_" prefix and then "_vs_" delimiter
-            try:
-                rest = qid.split("_", 1)[1]  # "{a}_vs_{b}"
-                a, b = rest.split("_vs_")
-                pairs.add(frozenset((a, b)))
-            except (IndexError, ValueError):
-                continue
-        return pairs
+        """Item pairs already covered by the state's evidence trail."""
+        return {
+            frozenset((ev.item_a, ev.item_b))
+            for ev in state.evidence
+            if ev.item_a != ev.item_b
+        }
 
     # ------------------------------------------------------------------
     # Summary / reporting
