@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 
 import {
@@ -12,13 +13,18 @@ import {
 } from "@/db/queries/preferences-queries";
 import {
   getPreferenceSummary,
-  QuestionDto,
   startPreferenceSession,
-  SubmitResponseResult,
-  submitPreferenceResponse,
+  submitPreferenceEvidence,
+  SubmitEvidenceResult,
   SummaryResult,
-  PreferenceStateDto,
 } from "@/lib/preferences-api";
+import {
+  EvidenceDto,
+  parseCurrentQuestion,
+  parsePreferenceState,
+  PreferenceStateDto,
+  QuestionDto,
+} from "@/lib/validations/preferences-schemas";
 import { ActionResult } from "@/types/actions/action-types";
 
 // ---------------------------------------------------------------------------
@@ -73,45 +79,38 @@ export async function startPreferenceSessionAction(input: {
   targetQuestions?: number;
 }): Promise<ActionResult<SessionData>> {
   try {
-    // 1) Create DB row first to get the UUID we'll use as the session id.
-    const placeholderState = {
-      user_id: input.userId,
-      session_id: "pending",
-      item_ids: [],
-      mu: [],
-      sigma_flat: [],
-      responses: [],
-      n_questions_asked: 0,
-      asked_question_ids: [],
-      model_version: "thurstone_v1",
-    };
-    const dbRow = await createPreferenceSession({
+    // Generate the session id up front so the Python call and the DB insert
+    // agree on it without a placeholder-write/update round trip (the old
+    // create-then-update flow left a window where a concurrent read saw a
+    // dummy state).
+    const sessionId = randomUUID();
+    const targetQuestions = input.targetQuestions ?? 25;
+
+    // 1) Initialize the real state + first question in the Python API.
+    const resp = await startPreferenceSession({
+      userId: input.userId,
+      sessionId,
+      targetQuestions,
+    });
+
+    // 2) Persist the session in a single insert.
+    await createPreferenceSession({
+      id: sessionId,
       userId: input.userId,
       status: "active",
-      modelVersion: "thurstone_v1",
-      stateSnapshot: placeholderState,
-      targetQuestions: input.targetQuestions ?? 25,
+      modelVersion: resp.state.model_version,
+      stateSnapshot: resp.state,
+      currentQuestion: resp.question,
+      targetQuestions,
       nQuestions: 0,
     });
 
-    // 2) Call Python API to initialize the real state + first question.
-    const resp = await startPreferenceSession({
-      userId: input.userId,
-      sessionId: dbRow.id,
-      targetQuestions: input.targetQuestions ?? 25,
-    });
-
-    // 3) Update the DB row with the real state and current question.
-    await updatePreferenceSession(dbRow.id, {
-      stateSnapshot: resp.state,
-      currentQuestion: resp.question,
-    });
-
+    revalidatePath("/preferences");
     return {
       isSuccess: true,
       message: "Session started",
       data: {
-        sessionId: dbRow.id,
+        sessionId,
         userId: input.userId,
         question: resp.question,
         state: resp.state,
@@ -138,10 +137,10 @@ export async function getPreferenceSessionAction(
 ): Promise<ActionResult<SessionData | null>> {
   try {
     const row = await getPreferenceSessionById(sessionId);
-    if (!row) return { isSuccess: false, message: "Session not found" };
+    if (!row) return { isSuccess: true, message: "Session not found", data: null };
 
-    const state = row.stateSnapshot as unknown as PreferenceStateDto;
-    const question = row.currentQuestion as unknown as QuestionDto | null;
+    const state = parsePreferenceState(row.stateSnapshot);
+    const question = parseCurrentQuestion(row.currentQuestion);
 
     return {
       isSuccess: true,
@@ -182,9 +181,8 @@ export async function submitPreferenceResponseAction(input: {
     if (row.status !== "active")
       return { isSuccess: false, message: "Session is not active" };
 
-    const state = row.stateSnapshot as unknown as PreferenceStateDto;
-    const currentQuestion =
-      row.currentQuestion as unknown as QuestionDto | null;
+    const state = parsePreferenceState(row.stateSnapshot);
+    const currentQuestion = parseCurrentQuestion(row.currentQuestion);
     if (!currentQuestion || currentQuestion.id !== input.questionId) {
       return {
         isSuccess: false,
@@ -192,18 +190,36 @@ export async function submitPreferenceResponseAction(input: {
       };
     }
 
-    const questionOptionIds = currentQuestion.options.map((o) => o.item_id);
+    // Convert the UI answer (chosen option + positive strength) into signed
+    // pairwise evidence: positive value prefers options[0], negative prefers
+    // options[1].
+    const [left, right] = currentQuestion.options;
+    if (
+      input.chosenOptionId !== left.item_id &&
+      input.chosenOptionId !== right.item_id
+    ) {
+      return {
+        isSuccess: false,
+        message: "Chosen option is not part of the current question",
+      };
+    }
+    const magnitude = Math.min(10, Math.max(0, Math.abs(input.strength)));
+    const evidence: EvidenceDto = {
+      source: "pairwise",
+      item_a: left.item_id,
+      item_b: right.item_id,
+      value: input.chosenOptionId === left.item_id ? magnitude : -magnitude,
+      confidence: 1,
+      prompt_id: currentQuestion.id,
+      extracted_claims: [],
+      response_time_ms: input.responseTimeMs ?? null,
+      metadata: {},
+    };
 
     // Call Python API to update state and get next question.
-    const result: SubmitResponseResult = await submitPreferenceResponse({
+    const result: SubmitEvidenceResult = await submitPreferenceEvidence({
       state,
-      response: {
-        questionId: input.questionId,
-        chosenOptionId: input.chosenOptionId,
-        strength: input.strength,
-        responseTimeMs: input.responseTimeMs,
-      },
-      questionOptions: questionOptionIds,
+      evidence,
       targetQuestions: row.targetQuestions,
     });
 
@@ -229,6 +245,9 @@ export async function submitPreferenceResponseAction(input: {
       status: result.progress.is_complete ? "completed" : "active",
     });
 
+    if (result.progress.is_complete) {
+      revalidatePath("/preferences");
+    }
     return {
       isSuccess: true,
       message: "ok",
@@ -257,7 +276,7 @@ export async function getPreferenceSummaryAction(
     const row = await getPreferenceSessionById(sessionId);
     if (!row)
       return { isSuccess: false, message: "Session not found" };
-    const state = row.stateSnapshot as unknown as PreferenceStateDto;
+    const state = parsePreferenceState(row.stateSnapshot);
     const summary = await getPreferenceSummary({
       state,
       targetQuestions: row.targetQuestions,
