@@ -320,7 +320,7 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 - Typed `Evidence` contract (pairwise/slider implemented; free-text/correction/override declared, 422 until built); legacy `responses`/`thurstone_v1` states upgrade transparently in `preferences/serialization.py`
 - `GaussianLinearUtilityModel` (renamed from `ThurstonePairwiseModel`, docstrings corrected) + `BradleyTerryLaplaceModel`; model registry with `model_for_version` state routing
 - Max-variance acquisition (default) + random baseline in `preferences/acquisition.py`
-- Fixed-bank eval harness: 4 authored synthetic personas (`eval/personas.py`), held-out pair splits, log-likelihood/accuracy/Brier/Kendall-τ/calibration curves, models × policies comparison (`python -m eval.run_preference_eval`)
+- Fixed-bank eval harness: 4 authored synthetic personas + seeded Dirichlet-mixture persona generator (`eval/personas.py`), three response models as the misspecification axis (`gaussian_gap` matches the Gaussian likelihood, `logistic_choice` matches BT, `sloppy` matches neither — `eval/response_models.py`), held-out pair splits, log-likelihood/accuracy/Brier/Kendall-τ/calibration curves, models × policies comparison (`python -m eval.run_preference_eval --response-model ...`), grid sweeps for notebooks (`eval/sweeps.py`)
 - API: `/sessions/evidence` endpoint (replaces `/sessions/respond`), model + selection-policy params on session start
 - TS hygiene: Zod-validated JSONB boundaries (`lib/validations/preferences-schemas.ts`); `startPreferenceSession` race fixed via server-generated UUID + single insert
 
