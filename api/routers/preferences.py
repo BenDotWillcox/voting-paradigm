@@ -3,16 +3,22 @@ HTTP router for preference elicitation.
 
 Thin layer: validate input, call into `preferences` domain package, shape the
 response. No domain logic lives here.
+
+Sessions are stateless per-call: the state snapshot travels with every
+request. The model that owns a state is recovered from its `model_version`,
+so a session started with one model is always resumed by the same family.
 """
 
 from fastapi import APIRouter, HTTPException
 
 from preferences.engine import ElicitationEngine, EngineConfig
+from preferences.model import create_model, model_for_version
 from preferences.questions.bank import QuestionBank
 from preferences.serialization import state_from_dict, state_to_dict
-from preferences.types import Response
+from preferences.types import Evidence, EvidenceSource, UnsupportedEvidenceError
 
 from ..schemas.preferences import (
+    EvidenceSchema,
     ItemSchema,
     ItemsResponse,
     PreferenceStateSchema,
@@ -21,8 +27,8 @@ from ..schemas.preferences import (
     QuestionSchema,
     StartSessionRequest,
     StartSessionResponse,
-    SubmitResponseRequest,
-    SubmitResponseResponse,
+    SubmitEvidenceRequest,
+    SubmitEvidenceResponse,
     SummaryRequest,
     SummaryResponse,
 )
@@ -33,11 +39,19 @@ router = APIRouter(prefix="/api/preferences", tags=["preferences"])
 _BANK = QuestionBank.load_default()
 
 
-def _engine(target_questions: int = 25) -> ElicitationEngine:
+def _engine(
+    model,
+    target_questions: int = 25,
+    selection_policy: str = "max_variance",
+) -> ElicitationEngine:
     """Construct a fresh engine per request (stateless API)."""
     return ElicitationEngine(
+        model=model,
         question_bank=_BANK,
-        config=EngineConfig(target_questions=target_questions),
+        config=EngineConfig(
+            target_questions=target_questions,
+            selection_policy=selection_policy,
+        ),
     )
 
 
@@ -72,15 +86,43 @@ def _state_from_schema(schema: PreferenceStateSchema):
     return state_from_dict(schema.model_dump())
 
 
+def _evidence_from_schema(schema: EvidenceSchema) -> Evidence:
+    return Evidence(
+        source=EvidenceSource(schema.source),
+        item_a=schema.item_a,
+        item_b=schema.item_b,
+        value=schema.value,
+        confidence=schema.confidence,
+        prompt_id=schema.prompt_id,
+        raw_response=schema.raw_response,
+        extracted_claims=list(schema.extracted_claims),
+        response_time_ms=schema.response_time_ms,
+        timestamp=schema.timestamp,
+        metadata=dict(schema.metadata),
+    )
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
 
 
-@router.post("/sessions/start", response_model=StartSessionResponse)
+@router.post(
+    "/sessions/start",
+    response_model=StartSessionResponse,
+    summary="Start an elicitation session",
+)
 def start_session(req: StartSessionRequest):
-    """Create a new preference state and return the first question."""
-    engine = _engine(req.target_questions)
+    """Create a fresh preference state and return the first question.
+
+    `model` picks the posterior family (gaussian_linear | bradley_terry);
+    `selection_policy` picks how questions are chosen (max_variance | random).
+    """
+    engine = _engine(
+        create_model(req.model),
+        req.target_questions,
+        req.selection_policy,
+    )
     state, question = engine.start_session(
         user_id=req.user_id, session_id=req.session_id
     )
@@ -91,27 +133,34 @@ def start_session(req: StartSessionRequest):
     )
 
 
-@router.post("/sessions/respond", response_model=SubmitResponseResponse)
-def submit_response(req: SubmitResponseRequest):
-    """Apply a response to the state and return the next question (or None)."""
-    engine = _engine(req.target_questions)
+@router.post(
+    "/sessions/evidence",
+    response_model=SubmitEvidenceResponse,
+    summary="Submit typed evidence",
+)
+def submit_evidence(req: SubmitEvidenceRequest):
+    """Apply one piece of typed evidence and return the next question (or null).
+
+    Evidence sources without an implemented likelihood (free_text_extraction,
+    correction, override) are part of the declared contract but rejected with
+    422 until their handlers land.
+    """
     state = _state_from_schema(req.state)
-    response = Response(
-        question_id=req.response.question_id,
-        chosen_option_id=req.response.chosen_option_id,
-        strength=req.response.strength,
-        response_time_ms=req.response.response_time_ms,
-        timestamp=req.response.timestamp,
-    )
     try:
-        new_state, next_q = engine.submit_response(
-            state, response, req.question_options
-        )
+        model = model_for_version(state.model_version)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    engine = _engine(model, req.target_questions, req.selection_policy)
+    evidence = _evidence_from_schema(req.evidence)
+    try:
+        new_state, next_q = engine.submit_evidence(state, evidence)
+    except UnsupportedEvidenceError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
     progress = engine.get_progress(new_state)
-    return SubmitResponseResponse(
+    return SubmitEvidenceResponse(
         state=_state_to_schema(new_state),
         next_question=(_question_to_schema(next_q) if next_q else None),
         progress=ProgressSchema(
@@ -123,16 +172,28 @@ def submit_response(req: SubmitResponseRequest):
     )
 
 
-@router.post("/sessions/summary", response_model=SummaryResponse)
+@router.post(
+    "/sessions/summary",
+    response_model=SummaryResponse,
+    summary="Summarize a session's posterior",
+)
 def get_summary(req: SummaryRequest):
-    """Return ranked values summary for the given state."""
-    engine = _engine(req.target_questions)
+    """Return ranked values (posterior mean +/- std) for the given state."""
     state = _state_from_schema(req.state)
+    try:
+        model = model_for_version(state.model_version)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    engine = _engine(model, req.target_questions)
     summary = engine.get_summary(state)
     return SummaryResponse(**summary)
 
 
-@router.get("/items", response_model=ItemsResponse)
+@router.get(
+    "/items",
+    response_model=ItemsResponse,
+    summary="List the civic-value item bank",
+)
 def list_items():
     """Return the full item bank (for debugging/inspection)."""
     return ItemsResponse(

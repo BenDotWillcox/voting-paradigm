@@ -47,6 +47,15 @@ export const getSessionsForUser = async (
   });
 };
 
+export const getActiveSessions = async (): Promise<
+  SelectPreferenceSession[]
+> => {
+  return db.query.preferenceSessions.findMany({
+    where: eq(preferenceSessions.status, "active"),
+    orderBy: [desc(preferenceSessions.createdAt)],
+  });
+};
+
 export const insertPreferenceResponse = async (
   data: InsertPreferenceResponse
 ) => {

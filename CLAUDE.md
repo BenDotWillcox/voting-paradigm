@@ -147,10 +147,14 @@ Each demo has its own AI/ML/systems story. The depth lives here. Demo 1 (voting 
 
 ### Preference models (two families, compared on what each is for)
 
-**Classical baselines — fixed bank of ~30 civic-value items:**
+**Classical baselines — fixed bank of 36 civic-value items (both implemented):**
 
-- **Gaussian linear utility model** (renamed from `ThurstonePairwiseModel` — it isn't actually Thurstone Case V). Gaussian likelihood on continuous strength observations; closed-form Kalman-style posterior update. Fast, interpretable, native uncertainty. This is the existing code, with docstring corrections.
-- **Bradley-Terry + Laplace approximation**. Logistic likelihood on signed strength, with `|strength|/10` as per-observation weight. Posterior approximated as Gaussian around the MAP. The canonical classical pairwise-ranking baseline.
+- **Gaussian linear utility model** (`GaussianLinearUtilityModel`, renamed from `ThurstonePairwiseModel` — it isn't actually Thurstone Case V). Gaussian likelihood on continuous strength observations; closed-form Kalman-style posterior update. Fast, interpretable, native uncertainty.
+- **Bradley-Terry + Laplace approximation** (`BradleyTerryLaplaceModel`). Logistic likelihood on signed strength, with `|strength|/10` as per-observation weight. MAP via Newton refit from the full evidence history (order-independent); posterior approximated as Gaussian around the MAP. The canonical classical pairwise-ranking baseline.
+
+**Evidence contract (implemented).** All elicitation modalities normalize into typed `Evidence` (`preferences/types.py`): sources `pairwise | slider | free_text_extraction | correction | override`, a signed value in [-10, 10] over an item pair, and a confidence weight. Only pairwise/slider have likelihoods today; the other sources are declared contract, rejected with 422 at the API until their handlers land. LLM components may *produce* evidence; only deterministic model code may *apply* it. Ballot-level overrides are recorded for audit and never update the posterior; dimension-level corrections become evidence only after user confirmation.
+
+**Vote preview mapping (decided, not yet built).** Fixed-bank models score ballot options via authored stance vectors (option utility = stance · posterior over value items), keeping all models comparable at the vote layer; the embedding model additionally scores option text natively.
 
 **Primary showcase — dynamic items:**
 
@@ -167,7 +171,7 @@ MCMC comparison is deferred to future work; VI alone is sufficient for this demo
 
 Question selection evolves in three stages, each a shippable step:
 
-1. **Max-variance pair selection** (ships with rename). Pick the pair `(a, b)` with highest posterior std of `u_a − u_b`. Already supported by `get_uncertainty()`. Closes the active-learning loop immediately.
+1. **Max-variance pair selection** (implemented, default policy — `preferences/acquisition.py`). Pick the pair `(a, b)` with highest posterior std of `u_a − u_b`; deterministic lexicographic tie-break. The `random` policy remains as the eval baseline.
 2. **Expected information gain / BALD** (follow-up). Pick the pair whose expected posterior update most reduces total entropy. Tractable under Gaussian/Laplace posteriors.
 3. **LLM-generated items targeted at high-variance directions** (dynamic-items mode). Acquisition function picks a *direction* in embedding space with high posterior variance of `w`; LLM generates a new civic-value item whose embedding aligns with that direction; user answers; posterior tightens.
 
@@ -287,10 +291,11 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 - Web shell: Next.js App Router, Drizzle schema scaffolding
 - Proposals removed: tables, queries, actions, components, and form deleted; migration `0004_optimal_mystique.sql` drops the 5 proposal tables + enum
 - Unified API: single FastAPI process at `api/` with `/api/voting/*` and `/api/preferences/*` routers on :8000; consolidated `requirements.txt`; `npm run dev:all` runs web + api concurrently
+- `eval/` harness skeleton: seeded held-out splits, deterministic trials, demo 2 preference-model metrics first (results JSON gitignored under `eval/results/`)
 
 **Next:**
 - Seed-plumb all stochastic operations for the reproducibility invariant
-- Build `eval/` harness skeleton with held-out splits and one baseline metric per demo
+- Extend `eval/` with one baseline metric for demos 1/3/4 as they mature
 - Add a top-level navigation surfacing the demo set (`/methods`, `/preferences`, future `/districts`, `/delegation`)
 
 ### Demo 1: Voting methods comparison
@@ -311,21 +316,21 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 ### Demo 2: Agent voting via preference models
 
 **Done:**
-- Preferences package: Thurstone-named v1 model (actually a Gaussian linear utility model — to rename) + question bank + elicitation engine + pytest suite
-
-**In progress (this branch):**
-- Preferences elicitation flow UI
+- Preferences package: question bank + elicitation engine + pytest suite
+- Typed `Evidence` contract (pairwise/slider implemented; free-text/correction/override declared, 422 until built); legacy `responses`/`thurstone_v1` states upgrade transparently in `preferences/serialization.py`
+- `GaussianLinearUtilityModel` (renamed from `ThurstonePairwiseModel`, docstrings corrected) + `BradleyTerryLaplaceModel`; model registry with `model_for_version` state routing
+- Max-variance acquisition (default) + random baseline in `preferences/acquisition.py`
+- Fixed-bank eval harness: 4 authored synthetic personas + seeded Dirichlet-mixture persona generator (`eval/personas.py`), three response models as the misspecification axis (`gaussian_gap` matches the Gaussian likelihood, `logistic_choice` matches BT, `sloppy` matches neither — `eval/response_models.py`), held-out pair splits, log-likelihood/accuracy/Brier/Kendall-τ/calibration curves, models × policies comparison (`python -m eval.run_preference_eval --response-model ...`), grid sweeps for notebooks (`eval/sweeps.py`)
+- API: `/sessions/evidence` endpoint (replaces `/sessions/respond`), model + selection-policy params on session start
+- TS hygiene: Zod-validated JSONB boundaries (`lib/validations/preferences-schemas.ts`); `startPreferenceSession` race fixed via server-generated UUID + single insert
 
 **Next, in order:**
-1. Zod-validate JSONB boundaries in preferences actions
-2. Fix `startPreferenceSession` race via client-generated UUID
-3. Rename `ThurstonePairwiseModel` → `GaussianLinearUtilityModel`, fix docstrings; ship max-variance question selection
-4. Implement `BradleyTerryLaplaceModel` on the fixed bank; run the three-way evaluation (current code counts as model #1)
-5. Implement `EmbeddingPreferenceModel` — pretrained sentence-transformers + Pyro SVI over user weight vector
-6. Wire LLM-generated dynamic items into elicitation flow; acquisition function over embedding directions
-7. Uncertainty-aware agent voting + elicitation loopback on low-confidence margins
-8. *(Deferred)* LLM-generated vote rationales
-9. *(Deferred)* LLM-generated personas
+1. Implement `EmbeddingPreferenceModel` — pretrained sentence-transformers + Pyro SVI over user weight vector; add to the eval comparison (three-way)
+2. Wire LLM-generated dynamic items into elicitation flow; acquisition function over embedding directions
+3. Uncertainty-aware agent voting (`preview_vote` with authored stance vectors + uncertainty watchlist) + elicitation loopback on low-confidence margins
+4. Expected-information-gain (BALD) acquisition policy
+5. *(Deferred)* LLM-generated vote rationales
+6. *(Deferred)* LLM-generated personas
 
 ### Demo 3: Algorithmic districting
 

@@ -3,9 +3,10 @@
 import pytest
 
 from preferences.engine import ElicitationEngine, EngineConfig
-from preferences.model.thurstone import ThurstonePairwiseModel
+from preferences.model.bradley_terry import BradleyTerryLaplaceModel
+from preferences.model.gaussian_linear import GaussianLinearUtilityModel
 from preferences.questions.bank import Item, QuestionBank
-from preferences.types import Response
+from preferences.types import Evidence, EvidenceSource
 
 
 def small_bank() -> QuestionBank:
@@ -19,11 +20,24 @@ def small_bank() -> QuestionBank:
     )
 
 
-def make_engine(target: int = 3) -> ElicitationEngine:
+def make_engine(target: int = 3, policy: str = "max_variance") -> ElicitationEngine:
     return ElicitationEngine(
-        model=ThurstonePairwiseModel(),
+        model=GaussianLinearUtilityModel(),
         question_bank=small_bank(),
-        config=EngineConfig(target_questions=target, seed=42),
+        config=EngineConfig(
+            target_questions=target, seed=42, selection_policy=policy
+        ),
+    )
+
+
+def evidence_for(question, value: float = 8.0) -> Evidence:
+    opt_ids = [o.item_id for o in question.options]
+    return Evidence(
+        source=EvidenceSource.PAIRWISE,
+        item_a=opt_ids[0],
+        item_b=opt_ids[1],
+        value=value,
+        prompt_id=question.id,
     )
 
 
@@ -43,59 +57,72 @@ class TestStart:
         assert set(state.item_ids) == {"a", "b", "c", "d"}
 
 
-class TestSubmitResponse:
-    def test_first_response_updates_state(self):
+class TestSubmitEvidence:
+    def test_first_evidence_updates_state(self):
         engine = make_engine()
         state, q = engine.start_session("u1", "s1")
-        opt_ids = [o.item_id for o in q.options]
-        response = Response(
-            question_id=q.id,
-            chosen_option_id=opt_ids[0],
-            strength=8.0,
-        )
-        new_state, next_q = engine.submit_response(state, response, opt_ids)
+        new_state, next_q = engine.submit_evidence(state, evidence_for(q))
         assert new_state.n_questions_asked == 1
         assert next_q is not None
 
     def test_session_ends_at_target(self):
         engine = make_engine(target=3)
         state, q = engine.start_session("u1", "s1")
-        for i in range(3):
-            opt_ids = [o.item_id for o in q.options]
-            response = Response(
-                question_id=q.id,
-                chosen_option_id=opt_ids[0],
-                strength=5.0,
-            )
-            state, q = engine.submit_response(state, response, opt_ids)
+        for _ in range(3):
+            state, q = engine.submit_evidence(state, evidence_for(q, 5.0))
         assert state.n_questions_asked == 3
         assert q is None  # No more questions
 
     def test_adds_timestamp(self):
         engine = make_engine()
         state, q = engine.start_session("u1", "s1")
-        opt_ids = [o.item_id for o in q.options]
-        response = Response(
-            question_id=q.id, chosen_option_id=opt_ids[0], strength=5.0
+        new_state, _ = engine.submit_evidence(state, evidence_for(q))
+        assert new_state.evidence[-1].timestamp is not None
+
+    def test_rejects_state_from_other_model_family(self):
+        engine = make_engine()
+        bt_state = BradleyTerryLaplaceModel().initialize(
+            "u1", "s1", small_bank().item_ids()
         )
-        new_state, _ = engine.submit_response(state, response, opt_ids)
-        assert new_state.responses[-1].timestamp is not None
+        ev = Evidence(
+            source=EvidenceSource.PAIRWISE, item_a="a", item_b="b", value=5.0
+        )
+        with pytest.raises(ValueError, match="engine is running"):
+            engine.submit_evidence(bt_state, ev)
 
 
 class TestQuestionSelection:
-    def test_does_not_repeat_pairs(self):
-        engine = make_engine(target=6)  # 4 items => 6 possible pairs
+    @pytest.mark.parametrize("policy", ["random", "max_variance"])
+    def test_does_not_repeat_pairs(self, policy):
+        engine = make_engine(target=6, policy=policy)  # 4 items => 6 pairs
         state, q = engine.start_session("u1", "s1")
         seen = set()
-        for i in range(6):
-            opt_ids = [o.item_id for o in q.options]
-            pair = frozenset(opt_ids)
+        for _ in range(6):
+            pair = frozenset(o.item_id for o in q.options)
             assert pair not in seen
             seen.add(pair)
-            response = Response(
-                question_id=q.id, chosen_option_id=opt_ids[0], strength=5.0
+            state, q = engine.submit_evidence(state, evidence_for(q, 5.0))
+
+    def test_max_variance_is_deterministic(self):
+        """Same answers => same question sequence, regardless of RNG."""
+        sequences = []
+        for run_seed in (1, 2):
+            engine = ElicitationEngine(
+                model=GaussianLinearUtilityModel(),
+                question_bank=small_bank(),
+                config=EngineConfig(
+                    target_questions=4,
+                    seed=run_seed,
+                    selection_policy="max_variance",
+                ),
             )
-            state, q = engine.submit_response(state, response, opt_ids)
+            state, q = engine.start_session("u1", "s1")
+            seq = [q.id]
+            for _ in range(3):
+                state, q = engine.submit_evidence(state, evidence_for(q, 6.0))
+                seq.append(q.id if q else None)
+            sequences.append(seq)
+        assert sequences[0] == sequences[1]
 
 
 class TestSummary:
@@ -113,11 +140,18 @@ class TestSummary:
         # Always prefer "a" when it appears
         for _ in range(5):
             opt_ids = [o.item_id for o in q.options]
-            chosen = "a" if "a" in opt_ids else opt_ids[0]
-            response = Response(
-                question_id=q.id, chosen_option_id=chosen, strength=10.0
+            if "a" in opt_ids:
+                value = 10.0 if opt_ids[0] == "a" else -10.0
+            else:
+                value = 5.0
+            ev = Evidence(
+                source=EvidenceSource.PAIRWISE,
+                item_a=opt_ids[0],
+                item_b=opt_ids[1],
+                value=value,
+                prompt_id=q.id,
             )
-            state, q = engine.submit_response(state, response, opt_ids)
+            state, q = engine.submit_evidence(state, ev)
         summary = engine.get_summary(state)
         # "a" should have the highest rank (rank 0)
         top = summary["values"][0]

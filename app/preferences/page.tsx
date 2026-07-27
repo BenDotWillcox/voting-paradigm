@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, Bot, Lock, PlayCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { LocalElicitationLab } from "@/components/preferences/local-elicitation-lab";
 import { PreferenceDemoLab } from "@/components/preferences/preference-demo-lab";
 
 export const dynamic = "force-dynamic";
@@ -69,6 +70,8 @@ export default function PreferencesPage() {
         liveEnabled={liveEnabled}
         walkthroughVideoSrc={walkthroughVideoSrc}
       />
+
+      {process.env.NODE_ENV !== "production" && <LocalElicitationLab />}
     </main>
   );
 }
