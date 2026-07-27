@@ -16,7 +16,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from preferences.types import Evidence, EvidenceSource, ItemId
+from preferences.types import ItemId
 
 
 @dataclass(frozen=True)
@@ -34,37 +34,6 @@ class Persona:
     def true_ranking(self, item_ids: list[ItemId]) -> list[ItemId]:
         """Items sorted by true utility, best first (stable for ties)."""
         return sorted(item_ids, key=lambda i: (-self.utilities[i], i))
-
-
-def simulate_response(
-    persona: Persona,
-    item_a: ItemId,
-    item_b: ItemId,
-    rng: np.random.Generator,
-    noise_std: float = 0.3,
-    response_scale: float = 5.0,
-) -> Evidence:
-    """Simulate the persona answering a pairwise slider question.
-
-    Response model: the persona perceives the true gap plus Gaussian noise,
-    then reports it on the [-10, 10] slider:
-        value = clip((true_gap + N(0, noise_std^2)) * response_scale, -10, 10)
-
-    `response_scale = 5` maps the full [-2, 2] gap range onto the slider.
-    All stochasticity flows through the injected numpy Generator.
-    """
-    perceived = persona.true_gap(item_a, item_b) + float(
-        rng.normal(0.0, noise_std)
-    )
-    value = float(np.clip(perceived * response_scale, -10.0, 10.0))
-    return Evidence(
-        source=EvidenceSource.PAIRWISE,
-        item_a=item_a,
-        item_b=item_b,
-        value=value,
-        confidence=1.0,
-        metadata={"persona": persona.name},
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -262,3 +231,69 @@ DEFAULT_PERSONAS: tuple[Persona, ...] = (
     COMMUNITARIAN_TRADITIONALIST,
     GREEN_TECHNOCRAT,
 )
+
+
+# ---------------------------------------------------------------------------
+# Generated populations
+# ---------------------------------------------------------------------------
+
+
+def generate_personas(
+    n: int,
+    seed: int,
+    archetypes: tuple[Persona, ...] = DEFAULT_PERSONAS,
+    concentration: float = 0.5,
+    jitter_std: float = 0.15,
+) -> list[Persona]:
+    """Generate a seeded population of structured synthetic personas.
+
+    Each persona is a Dirichlet-weighted mixture of the authored archetype
+    profiles plus per-item Gaussian jitter, clipped to [-1, 1]:
+
+        u = clip(sum_k w_k * archetype_k + N(0, jitter_std^2), -1, 1),
+        w ~ Dirichlet(concentration * 1)
+
+    Mixing archetypes (rather than sampling items independently) preserves
+    the correlated value structure real populations have — someone high on
+    economic_freedom is unlikely to also be high on collective_goods,
+    because no archetype is. ``concentration`` controls archetype purity:
+    values < 1 concentrate mass near single archetypes (a polarized
+    population); larger values produce centrist blends. Jitter adds
+    idiosyncratic variation so no generated persona is a pure mixture.
+
+    Deterministic given (n, seed, archetypes, concentration, jitter_std).
+    The mixture weights are recorded in each persona's description for
+    auditability.
+    """
+    if not archetypes:
+        raise ValueError("generate_personas requires at least one archetype")
+    item_ids = list(archetypes[0].utilities.keys())
+    for arch in archetypes[1:]:
+        if set(arch.utilities.keys()) != set(item_ids):
+            raise ValueError(
+                f"Archetype '{arch.name}' does not share the item universe "
+                f"of '{archetypes[0].name}'"
+            )
+
+    profile_matrix = np.array(
+        [[arch.utilities[i] for i in item_ids] for arch in archetypes]
+    )  # shape (n_archetypes, n_items)
+
+    rng = np.random.default_rng(seed)
+    personas: list[Persona] = []
+    for k in range(n):
+        weights = rng.dirichlet(concentration * np.ones(len(archetypes)))
+        base = weights @ profile_matrix
+        jitter = rng.normal(0.0, jitter_std, size=len(item_ids))
+        utilities = np.clip(base + jitter, -1.0, 1.0)
+        mixture = ", ".join(
+            f"{arch.name}={w:.2f}" for arch, w in zip(archetypes, weights)
+        )
+        personas.append(
+            Persona(
+                name=f"gen_s{seed}_{k:03d}",
+                description=f"Generated mixture: {mixture}",
+                utilities=dict(zip(item_ids, utilities.tolist())),
+            )
+        )
+    return personas

@@ -27,15 +27,22 @@ _VERSION_TO_NAME = {
 }
 
 
-def create_model(name: str = DEFAULT_MODEL_NAME) -> PreferenceModel:
-    """Instantiate a registered model by name with default hyperparameters."""
+def create_model(
+    name: str = DEFAULT_MODEL_NAME, **hyperparams: float
+) -> PreferenceModel:
+    """Instantiate a registered model by name.
+
+    Keyword arguments override the model's default hyperparameters (e.g.
+    ``prior_variance``); the eval harness uses this for sensitivity sweeps.
+    """
     try:
-        return MODEL_REGISTRY[name]()  # type: ignore[no-any-return]
+        cls = MODEL_REGISTRY[name]
     except KeyError:
         raise ValueError(
             f"Unknown preference model '{name}'. "
             f"Available: {sorted(MODEL_REGISTRY)}"
         ) from None
+    return cls(**hyperparams)  # type: ignore[no-any-return]
 
 
 def model_for_version(model_version: str) -> PreferenceModel:

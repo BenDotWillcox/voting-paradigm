@@ -36,7 +36,8 @@ from preferences.model import create_model
 from preferences.questions.bank import QuestionBank
 from preferences.types import ItemId, PreferenceState
 
-from .personas import DEFAULT_PERSONAS, Persona, simulate_response
+from .personas import DEFAULT_PERSONAS, Persona
+from .response_models import create_response_model
 
 Pair = tuple[ItemId, ItemId]
 
@@ -45,14 +46,21 @@ _PROB_CLAMP = 1e-9
 
 @dataclass(frozen=True)
 class EvalConfig:
-    """Configuration for one comparison run. Fully determines the results."""
+    """Configuration for one comparison run. Fully determines the results.
+
+    `response_model` names how personas answer (see eval/response_models.py)
+    — sweeping it turns the model comparison into a misspecification study.
+    `model_params` overrides preference-model hyperparameters (applied to
+    every model in `model_names`) for sensitivity sweeps.
+    """
 
     n_questions: int = 25
     holdout_fraction: float = 0.2
     n_seeds: int = 5
     base_seed: int = 42
-    noise_std: float = 0.3
-    response_scale: float = 5.0
+    response_model: str = "gaussian_gap"
+    response_model_params: dict = field(default_factory=dict)
+    model_params: dict = field(default_factory=dict)
     tie_epsilon: float = 1e-9  # holdout pairs with |true gap| below are skipped
     convergence_tau: float = 0.7
     n_calibration_bins: int = 10
@@ -253,8 +261,11 @@ def run_trial(
 ) -> TrialResult:
     """One deterministic elicitation run against a persona."""
     bank = bank or QuestionBank.load_default()
-    model = create_model(model_name)
+    model = create_model(model_name, **config.model_params)
     selector = create_selector(policy_name)
+    responder = create_response_model(
+        config.response_model, **config.response_model_params
+    )
     selector_rng = random.Random(seed)
     response_rng = np.random.default_rng(seed)
 
@@ -292,14 +303,7 @@ def run_trial(
         asked.add(frozenset(pair))
         asked_ordered.append(pair)
 
-        evidence = simulate_response(
-            persona,
-            a,
-            b,
-            response_rng,
-            noise_std=config.noise_std,
-            response_scale=config.response_scale,
-        )
+        evidence = responder.respond(persona, a, b, response_rng)
         evidence.prompt_id = f"eval_q{t}_{a}_vs_{b}"
         state = model.update(state, evidence)
 

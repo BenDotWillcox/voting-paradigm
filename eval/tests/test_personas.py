@@ -1,10 +1,9 @@
-"""Tests for the synthetic persona fixtures."""
+"""Tests for the synthetic persona fixtures and generator."""
 
 import numpy as np
 
-from eval.personas import DEFAULT_PERSONAS, simulate_response
+from eval.personas import DEFAULT_PERSONAS, generate_personas
 from preferences.questions.bank import QuestionBank
-from preferences.types import EvidenceSource
 
 
 class TestProfiles:
@@ -35,42 +34,44 @@ class TestProfiles:
         assert persona.true_ranking(ids) == persona.true_ranking(ids)
 
 
-class TestSimulateResponse:
+class TestGeneratePersonas:
     def test_deterministic_given_seed(self):
-        persona = DEFAULT_PERSONAS[0]
-        ev1 = simulate_response(
-            persona,
-            "economic_freedom",
-            "economic_security",
-            np.random.default_rng(3),
-        )
-        ev2 = simulate_response(
-            persona,
-            "economic_freedom",
-            "economic_security",
-            np.random.default_rng(3),
-        )
-        assert ev1.value == ev2.value
+        p1 = generate_personas(10, seed=3)
+        p2 = generate_personas(10, seed=3)
+        assert [p.utilities for p in p1] == [p.utilities for p in p2]
+        assert [p.name for p in p1] == [p.name for p in p2]
 
-    def test_value_in_slider_range(self):
-        persona = DEFAULT_PERSONAS[0]
-        rng = np.random.default_rng(0)
-        for _ in range(200):
-            ev = simulate_response(
-                persona, "economic_freedom", "economic_security", rng,
-                noise_std=1.0,
-            )
-            assert -10.0 <= ev.value <= 10.0
+    def test_different_seeds_differ(self):
+        p1 = generate_personas(5, seed=1)
+        p2 = generate_personas(5, seed=2)
+        assert [p.utilities for p in p1] != [p.utilities for p in p2]
 
-    def test_noiseless_response_tracks_true_gap(self):
-        persona = DEFAULT_PERSONAS[0]  # market_libertarian
-        ev = simulate_response(
-            persona,
-            "economic_freedom",   # 0.9
-            "economic_security",  # -0.5
-            np.random.default_rng(0),
-            noise_std=0.0,
+    def test_covers_bank_and_stays_in_range(self):
+        bank_ids = set(QuestionBank.load_default().item_ids())
+        for persona in generate_personas(20, seed=0):
+            assert set(persona.utilities.keys()) == bank_ids
+            for u in persona.utilities.values():
+                assert -1.0 <= u <= 1.0
+
+    def test_mixture_recorded_in_description(self):
+        persona = generate_personas(1, seed=0)[0]
+        for arch in DEFAULT_PERSONAS:
+            assert arch.name in persona.description
+
+    def test_correlated_structure_preserved(self):
+        """Archetype-level value correlations must survive generation:
+        economic_freedom and property_rights agree in sign across every
+        archetype, so generated personas should mostly agree too — unlike
+        independent per-item sampling, which would agree ~50% of the time."""
+        personas = generate_personas(100, seed=7)
+        agree = sum(
+            1
+            for p in personas
+            if p.utilities["economic_freedom"] * p.utilities["property_rights"]
+            > 0
         )
-        # gap 1.4 * scale 5 = 7.0
-        assert ev.value == 7.0
-        assert ev.source is EvidenceSource.PAIRWISE
+        assert agree > 65
+
+    def test_names_are_unique(self):
+        personas = generate_personas(50, seed=4)
+        assert len({p.name for p in personas}) == 50

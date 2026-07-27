@@ -52,7 +52,12 @@ def main() -> None:
     parser.add_argument("--n-questions", type=int, default=25)
     parser.add_argument("--n-seeds", type=int, default=5)
     parser.add_argument("--base-seed", type=int, default=42)
-    parser.add_argument("--noise-std", type=float, default=0.3)
+    parser.add_argument(
+        "--response-model",
+        choices=["gaussian_gap", "logistic_choice", "sloppy"],
+        default="gaussian_gap",
+        help="How personas answer questions (misspecification axis)",
+    )
     parser.add_argument("--holdout-fraction", type=float, default=0.2)
     parser.add_argument(
         "--output",
@@ -66,7 +71,7 @@ def main() -> None:
         n_questions=args.n_questions,
         n_seeds=args.n_seeds,
         base_seed=args.base_seed,
-        noise_std=args.noise_std,
+        response_model=args.response_model,
         holdout_fraction=args.holdout_fraction,
     )
     results = run_comparison(config)
@@ -74,12 +79,14 @@ def main() -> None:
     print(
         f"\nPreference model comparison -- "
         f"{config.n_questions} questions, {config.n_seeds} seeds/persona, "
-        f"noise_std={config.noise_std}, holdout={config.holdout_fraction:.0%}\n"
+        f"response_model={config.response_model}, "
+        f"holdout={config.holdout_fraction:.0%}\n"
     )
     print(_format_table(results["summaries"]))
 
     output = args.output or (
-        RESULTS_DIR / f"preference_eval_seed{config.base_seed}.json"
+        RESULTS_DIR
+        / f"preference_eval_{config.response_model}_seed{config.base_seed}.json"
     )
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(results, indent=2), encoding="utf-8")
