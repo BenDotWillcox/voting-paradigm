@@ -8,7 +8,14 @@ Guidance for Codex working in this repository. This is a living document — edi
 
 The umbrella thesis: the gap between *what voting theory recommends* and *what real polities use* is technological as much as political. Better methods, better districts, better delegation, better preference articulation — none have spread because the practical machinery wasn't there. This project builds parts of that machinery as proofs of concept.
 
-**This is a portfolio project**, not a product. The audience is AI/ML engineers evaluating the author's work. The "users" are simulated personas authored by one real user. No real voters, no binding outcomes, no auth hardening, no crypto, no identity, no scale concerns. Optimization target: *demonstrated judgment, clean architecture, and depth in AI engineering, statistical modeling, and systems design.*
+**This is a portfolio project**, not a product. The audience is AI/ML
+engineers evaluating the author's work. Synthetic personas drive development
+benchmarks; final preference evidence may include one explicitly labeled
+personal case study and a separately approved small opt-in pilot. There are no
+real elections, binding outcomes, production accounts, auth-hardening, crypto,
+identity verification, or scale requirements. Optimization target:
+*demonstrated judgment, clean architecture, and depth in AI engineering,
+statistical modeling, and systems design.*
 
 ### The demos
 
@@ -92,7 +99,7 @@ personas/                   Python: simulated voter generation               (fu
 agents/                     Python: agent voting policies                    (future) [demo 2]
 districting/                Python: redistricting algorithms                 (future) [demo 3]
 delegation/                 Python: liquid democracy delegation graphs       (future) [demo 4]
-eval/                       Python: model evaluation harness                 (future) [cross-demo]
+eval/                       Python: synthetic + human-measure evaluation       [cross-demo]
 api/                        Python: FastAPI app, one router per demo
 prompts/                    Project scope + documentation
 .Codex/skills/             Project-specific review/guardrail skills
@@ -145,23 +152,48 @@ Each demo has its own AI/ML/systems story. The depth lives here. Demo 1 (voting 
 
 ## Demo 2: Agent voting via preference models
 
-### Preference models (two families, compared on what each is for)
+### Preference-model tracks
 
-**Classical baselines — fixed bank of ~30 civic-value items:**
+**Implemented structured baselines — fixed bank of 36 civic-value items:**
 
-- **Gaussian linear utility model** (renamed from `ThurstonePairwiseModel` — it isn't actually Thurstone Case V). Gaussian likelihood on continuous strength observations; closed-form Kalman-style posterior update. Fast, interpretable, native uncertainty. This is the existing code, with docstring corrections.
-- **Bradley-Terry + Laplace approximation**. Logistic likelihood on signed strength, with `|strength|/10` as per-observation weight. Posterior approximated as Gaussian around the MAP. The canonical classical pairwise-ranking baseline.
+- **Gaussian linear utility model.** Gaussian likelihood on continuous strength
+  observations; closed-form Kalman-style posterior update. Fast,
+  interpretable, and uncertainty-native.
+- **Bradley-Terry + Laplace approximation.** Logistic likelihood on signed
+  strength, with `|strength|/10` as per-observation weight. The posterior is
+  approximated as Gaussian around the MAP.
 
-**Primary showcase — dynamic items:**
+**Primary human-measure showcase — previously unanswered civic decisions:**
 
-- **Embedding + Bayesian last layer**. Items embedded with a pretrained `sentence-transformers` model (start: `all-MiniLM-L6-v2`, 384-dim). Posterior is over the user's weight vector `w ∈ ℝ³⁸⁴`; utility of any item `u_i = w · e_i`. Variational inference via **Pyro** (PyTorch-based; one framework for embeddings + inference). Supports LLM-generated items mid-session with zero state-shape changes.
+- The participant and model receive the same versioned neutral packet.
+- Political identity, partisan voting history, and demographic proxies are not
+  model inputs.
+- Every model freezes full option probabilities before the participant's
+  answer enters evidence.
+- Measures share one standardized fictional jurisdiction but remain legally and
+  fiscally independent; preference evidence accumulates.
+- The model ladder compares fixed/adaptive structured baselines, a direct LLM,
+  and an LLM-plus-explicit-posterior hybrid. Embeddings are a candidate
+  representation, not an assumed winner.
+- Primary outcomes are prequential log loss and high-confidence delegated
+  error. Question efficiency, follow-up quality, and cross-format ballot
+  fidelity are secondary.
+
+See `eval/README.md` for the source-level contract and
+`eval/fixtures/preference_eval_dev_v1.json` for the non-held-out Phase 1
+fixture.
 
 ### The comparison story
 
-- **Fixed-bank subtask:** all three models are scored head-to-head on the same data (log-likelihood on held-out pairs, Kendall τ on held-out rankings, calibration, sample efficiency).
-- **Dynamic-items subtask:** only the embedding model works. The portfolio payoff is cold-start accuracy — predicting preference for an item the user was never asked about.
-
-MCMC comparison is deferred to future work; VI alone is sufficient for this demo.
+- **Synthetic track:** Gaussian and Bradley-Terry models plus acquisition
+  policies are evaluated against seeded personas with known latent utilities.
+- **Human track:** all prediction models receive the same realized evidence
+  stream and predict the same standardized measure bank.
+- **Acquisition claims:** synthetic comparisons come first. A single person's
+  unanswered counterfactual questions cannot establish that one interactive
+  policy beat another.
+- **LLM claims:** a direct LLM baseline is mandatory so the hybrid must
+  demonstrate value beyond prompting an LLM with the transcript.
 
 ### Active learning loop
 
@@ -216,8 +248,12 @@ All LLM calls live in Python. One framework for prompts, Pydantic output schemas
 Proper ML evaluation, reproducible seeds, held-out splits. Each demo contributes its own metrics:
 
 - **Demo 1 — voting methods:** social welfare metrics (e.g., Borda-score of winner, Condorcet efficiency across simulated elections), and sensitivity of outcome to method choice given a fixed electorate.
-- **Demo 2 — preference models:** held-out pairwise log-likelihood, Kendall τ on ranking, Brier score + reliability diagram for calibration, questions-to-convergence curves, cold-start accuracy (embedding model only).
-- **Demo 2 — agent vote alignment:** precision/recall of agent's vote vs the user's stated preference on a held-out set of measures.
+- **Demo 2 — synthetic preference models:** held-out pairwise log-likelihood,
+  Kendall τ, Brier score, calibration, and questions-to-convergence curves.
+- **Demo 2 — human measure prediction:** prequential option log loss,
+  high-confidence delegated error with risk/coverage, calibration,
+  generalization gaps, test-retest stability, and secondary ballot-format
+  fidelity.
 - **Demo 3 — districting:** ensemble-based fairness comparisons (where does a proposed map sit in the distribution of ensemble maps?), efficiency gap, compactness scores.
 - **Demo 4 — delegation dynamics:** participation rates, super-delegate concentration (Gini on effective weights), outcome divergence vs. direct democracy, robustness to delegation churn.
 
@@ -287,10 +323,16 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 - Web shell: Next.js App Router, Drizzle schema scaffolding
 - Proposals removed: tables, queries, actions, components, and form deleted; migration `0004_optimal_mystique.sql` drops the 5 proposal tables + enum
 - Unified API: single FastAPI process at `api/` with `/api/voting/*` and `/api/preferences/*` routers on :8000; consolidated `requirements.txt`; `npm run dev:all` runs web + api concurrently
+- `eval/` fixed-bank harness: seeded held-out splits, deterministic trials,
+  synthetic personas, response-model robustness scenarios, and parameter
+  sweeps
+- Human-measure Phase 1: strict versioned contracts, an eight-domain
+  development fixture, canonical content hashes, and leakage-boundary tests
 
 **Next:**
 - Seed-plumb all stochastic operations for the reproducibility invariant
-- Build `eval/` harness skeleton with held-out splits and one baseline metric per demo
+- Add the prequential human-measure runner and primary metrics
+- Extend `eval/` with one baseline metric for demos 1/3/4 as they mature
 - Add a top-level navigation surfacing the demo set (`/methods`, `/preferences`, future `/districts`, `/delegation`)
 
 ### Demo 1: Voting methods comparison
@@ -311,21 +353,28 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 ### Demo 2: Agent voting via preference models
 
 **Done:**
-- Preferences package: Thurstone-named v1 model (actually a Gaussian linear utility model — to rename) + question bank + elicitation engine + pytest suite
-
-**In progress (this branch):**
-- Preferences elicitation flow UI
+- Preferences question bank, elicitation engine, typed `Evidence`, and
+  serialization upgrades
+- `GaussianLinearUtilityModel` and `BradleyTerryLaplaceModel`
+- Random and max-variance acquisition policies
+- Fixed-bank synthetic model/acquisition evaluation
+- Pydantic contracts for standardized jurisdiction, measures, evidence,
+  predictions, participant responses, ontology versions, and evaluation runs
+- Eight-domain non-held-out development fixture plus deterministic manifest CLI
 
 **Next, in order:**
-1. Zod-validate JSONB boundaries in preferences actions
-2. Fix `startPreferenceSession` race via client-generated UUID
-3. Rename `ThurstonePairwiseModel` → `GaussianLinearUtilityModel`, fix docstrings; ship max-variance question selection
-4. Implement `BradleyTerryLaplaceModel` on the fixed bank; run the three-way evaluation (current code counts as model #1)
-5. Implement `EmbeddingPreferenceModel` — pretrained sentence-transformers + Pyro SVI over user weight vector
-6. Wire LLM-generated dynamic items into elicitation flow; acquisition function over embedding directions
-7. Uncertainty-aware agent voting + elicitation loopback on low-confidence margins
-8. *(Deferred)* LLM-generated vote rationales
-9. *(Deferred)* LLM-generated personas
+1. Implement the Phase 2 prequential runner, prediction-model adapter, and
+   primary log-loss/risk-coverage metrics on the development fixture
+2. Author and neutrally review the standardized jurisdiction, 48-measure bank,
+   and retest variants
+3. Add the direct LLM baseline, confirmed evidence extraction, fixed/expanding
+   ontology ablation, and hybrid explicit posterior
+4. Evaluate LLM follow-ups after fixed, random, and max-variance policies
+5. Build separate blind evaluation and future-facing showcase modes
+6. Freeze inputs, models, prompts, thresholds, seeds, and metrics before Ben's
+   held-out case study
+7. *(Deferred)* LLM-generated vote rationales
+8. *(Deferred)* LLM-generated personas
 
 ### Demo 3: Algorithmic districting
 

@@ -1,0 +1,525 @@
+{
+  "schema_version": "preference_eval_fixture.v1",
+  "fixture_id": "preference_eval_dev_v1",
+  "fixture_version": 1,
+  "development_only": true,
+  "order_seed": 1701,
+  "created_at": "2026-07-28T00:00:00Z",
+  "jurisdiction": {
+    "record_version": "jurisdiction.v1",
+    "jurisdiction_id": "development_commonwealth",
+    "version": 1,
+    "name": "Development Commonwealth",
+    "description": "A deliberately fictional U.S. state and municipality used only to exercise evaluation contracts before the final standardized setting is authored.",
+    "reference_date": "2026-01-01",
+    "facts": [
+      {
+        "key": "population_context",
+        "label": "Population context",
+        "value": "The commonwealth has 4.2 million residents split between one large metropolitan area, several small cities, and rural counties."
+      },
+      {
+        "key": "governance",
+        "label": "Governance",
+        "value": "Statewide initiatives may set state policy and appropriate designated funds; municipal contests govern the shared metropolitan municipality."
+      },
+      {
+        "key": "budget_and_taxes",
+        "label": "Budget and taxes",
+        "value": "The annual state budget is balanced under current forecasts, with limited reserves and no automatic funding for new programs."
+      },
+      {
+        "key": "public_services",
+        "label": "Public services",
+        "value": "Schools, public health, courts, and emergency services currently operate near their authorized service targets."
+      },
+      {
+        "key": "housing",
+        "label": "Housing",
+        "value": "The metropolitan municipality has rising rents and low vacancy, while smaller communities have slower growth and more available land."
+      },
+      {
+        "key": "transportation",
+        "label": "Transportation",
+        "value": "Most trips are made by car; the metropolitan area also operates a bus network and a limited rail corridor."
+      }
+    ]
+  },
+  "measures": [
+    {
+      "record_version": "measure.v1",
+      "measure_id": "dev_fiscal_reserve",
+      "version": 1,
+      "title": "Emergency Reserve Contribution",
+      "domain": "fiscal_economy_labor",
+      "ballot_type": "single_choice",
+      "response_fields": [
+        "top_choice"
+      ],
+      "source_kind": "constructed",
+      "intended_generalization_tier": "familiar",
+      "options": [
+        {
+          "record_version": "measure_option.v1",
+          "option_id": "increase_reserve",
+          "label": "Increase the reserve contribution",
+          "description": "Move the available eight million dollars into the emergency reserve.",
+          "display_order": 0
+        },
+        {
+          "record_version": "measure_option.v1",
+          "option_id": "retain_program_funding",
+          "label": "Retain current program funding",
+          "description": "Keep the eight million dollars distributed across current agency operating budgets.",
+          "display_order": 1
+        }
+      ],
+      "packet": {
+        "record_version": "measure_packet.v1",
+        "packet_id": "dev_fiscal_reserve_packet",
+        "version": 1,
+        "status_quo": "The commonwealth contributes two percent of annual revenue to its emergency reserve and distributes remaining forecast revenue through existing agency budgets.",
+        "proposal": "Choose whether to transfer an additional eight million dollars from current agency operating allocations into the emergency reserve this fiscal year.",
+        "who_is_affected": "Residents who use state services may experience small agency-level reductions, while all residents would benefit from a larger reserve during a future emergency.",
+        "fiscal_or_operational_effects": "The transfer would increase reserves by eight million dollars and reduce current agency operating allocations by the same amount.",
+        "arguments_by_option": {
+          "increase_reserve": "A larger reserve reduces the chance that a future recession or disaster requires abrupt tax increases or deeper service cuts.",
+          "retain_program_funding": "Existing services address current needs, and reserving additional funds would reduce their capacity despite a presently balanced budget."
+        },
+        "uncertainties": [
+          "The timing and cost of the next fiscal emergency are unknown."
+        ],
+        "definitions": {
+          "Emergency reserve": "Funds held for major unexpected revenue losses or public emergencies."
+        },
+        "sources": [],
+        "authored_at": "2026-07-28T00:00:00Z"
+      },
+      "quadratic_credit_budget": null
+    },
+    {
+      "record_version": "measure.v1",
+      "measure_id": "dev_health_mobile_clinics",
+      "version": 1,
+      "title": "Rural Mobile Health Clinics",
+      "domain": "health_social_provision",
+      "ballot_type": "single_choice",
+      "response_fields": [
+        "top_choice"
+      ],
+      "source_kind": "constructed",
+      "intended_generalization_tier": "adjacent",
+      "options": [
+        {
+          "record_version": "measure_option.v1",
+          "option_id": "fund_mobile_clinics",
+          "label": "Fund the mobile clinic program",
+          "description": "Create a five-year mobile primary-care program in underserved rural counties.",
+          "display_order": 0
+        },
+        {
+          "record_version": "measure_option.v1",
+          "option_id": "maintain_current_grants",
+          "label": "Maintain current clinic grants",
+          "description": "Continue using the same funds for grants to permanent local clinics.",
+          "display_order": 1
+        }
+      ],
+      "packet": {
+        "record_version": "measure_packet.v1",
+        "packet_id": "dev_health_mobile_clinics_packet",
+        "version": 1,
+        "status_quo": "The commonwealth awards annual grants to permanent clinics, but six rural counties remain more than forty minutes from routine primary care.",
+        "proposal": "Choose whether to redirect twelve million dollars over five years from the existing clinic-grant program to a fleet of rotating mobile clinics.",
+        "who_is_affected": "Residents of underserved rural counties, patients of existing grant-supported clinics, and health workers would be most directly affected.",
+        "fiscal_or_operational_effects": "Total authorized spending would not change. Mobile operations would receive twelve million dollars that otherwise would support permanent-clinic grants.",
+        "arguments_by_option": {
+          "fund_mobile_clinics": "Mobile clinics can reach dispersed communities sooner and adjust routes as demand changes.",
+          "maintain_current_grants": "Permanent clinics provide continuity of care and local capacity that rotating services may not sustain."
+        },
+        "uncertainties": [
+          "Patient demand and staffing reliability along the proposed mobile routes are estimates."
+        ],
+        "definitions": {
+          "Primary care": "Routine preventive, diagnostic, and non-emergency medical care."
+        },
+        "sources": [],
+        "authored_at": "2026-07-28T00:00:00Z"
+      },
+      "quadratic_credit_budget": null
+    },
+    {
+      "record_version": "measure.v1",
+      "measure_id": "dev_education_calendar",
+      "version": 1,
+      "title": "Public School Calendar Model",
+      "domain": "education_family",
+      "ballot_type": "ranked",
+      "response_fields": [
+        "top_choice",
+        "ranking",
+        "approval",
+        "scores"
+      ],
+      "source_kind": "constructed",
+      "intended_generalization_tier": "familiar",
+      "options": [
+        {
+          "record_version": "measure_option.v1",
+          "option_id": "traditional_calendar",
+          "label": "Traditional calendar",
+          "description": "Keep the current long summer break and two shorter semester breaks.",
+          "display_order": 0
+        },
+        {
+          "record_version": "measure_option.v1",
+          "option_id": "balanced_calendar",
+          "label": "Balanced calendar",
+          "description": "Use a shorter summer break with three evenly spaced two-week breaks.",
+          "display_order": 1
+        },
+        {
+          "record_version": "measure_option.v1",
+          "option_id": "local_choice",
+          "label": "District choice",
+          "description": "Permit each school district to select either approved calendar model.",
+          "display_order": 2
+        }
+      ],
+      "packet": {
+        "record_version": "measure_packet.v1",
+        "packet_id": "dev_education_calendar_packet",
+        "version": 1,
+        "status_quo": "All public school districts currently follow a traditional calendar with a ten-week summer break.",
+        "proposal": "Select the calendar policy the commonwealth should use beginning in the next academic year.",
+        "who_is_affected": "Students, families, school employees, childcare providers, and organizations that coordinate services with schools would be affected.",
+        "fiscal_or_operational_effects": "Required instructional days and annual state funding would remain unchanged. Transition and facility scheduling costs would vary by district.",
+        "arguments_by_option": {
+          "traditional_calendar": "The existing calendar aligns with established family, staffing, extracurricular, and seasonal work arrangements.",
+          "balanced_calendar": "Shorter gaps between terms may reduce learning loss and distribute breaks more evenly throughout the year.",
+          "local_choice": "Districts face different climate, workforce, and family needs and can choose more appropriately than a statewide rule."
+        },
+        "uncertainties": [
+          "Research on calendar structure is mixed and implementation quality may matter more than the selected model."
+        ],
+        "definitions": {
+          "Balanced calendar": "The same number of instructional days distributed with shorter, more frequent breaks."
+        },
+        "sources": [],
+        "authored_at": "2026-07-28T00:00:00Z"
+      },
+      "quadratic_credit_budget": null
+    },
+    {
+      "record_version": "measure.v1",
+      "measure_id": "dev_housing_zoning_tools",
+      "version": 1,
+      "title": "Housing Zoning Tools",
+      "domain": "housing_land_use",
+      "ballot_type": "approval",
+      "response_fields": [
+        "top_choice",
+        "ranking",
+        "approval",
+        "scores"
+      ],
+      "source_kind": "constructed",
+      "intended_generalization_tier": "adjacent",
+      "options": [
+        {
+          "record_version": "measure_option.v1",
+          "option_id": "accessory_units",
+          "label": "Permit accessory dwelling units",
+          "description": "Allow one small secondary home on most residential lots.",
+          "display_order": 0
+        },
+        {
+          "record_version": "measure_option.v1",
+          "option_id": "transit_density",
+          "label": "Increase transit-area density",
+          "description": "Allow apartment buildings within a half mile of major transit stops.",
+          "display_order": 1
+        },
+        {
+          "record_version": "measure_option.v1",
+          "option_id": "vacancy_fee",
+          "label": "Create a long-term vacancy fee",
+          "description": "Charge an annual fee on homes left unoccupied for most of the year.",
+          "display_order": 2
+        },
+        {
+          "record_version": "measure_option.v1",
+          "option_id": "retain_local_rules",
+          "label": "Retain current local rules",
+          "description": "Make no commonwealth-level change to municipal zoning authority.",
+          "display_order": 3
+        }
+      ],
+      "packet": {
+        "record_version": "measure_packet.v1",
+        "packet_id": "dev_housing_zoning_tools_packet",
+        "version": 1,
+        "status_quo": "Municipalities set their own residential zoning rules, and the metropolitan municipality has low rental vacancy and rising housing costs.",
+        "proposal": "Approve any housing tools the commonwealth should authorize. More than one option may be approved.",
+        "who_is_affected": "Renters, homeowners, prospective residents, builders, municipalities, and neighborhoods near major transit stops would be affected.",
+        "fiscal_or_operational_effects": "Administrative costs would be modest. Housing production, property values, fee revenue, and neighborhood change would depend on which tools are approved and local market response.",
+        "arguments_by_option": {
+          "accessory_units": "Small secondary homes can add lower-cost supply gradually while allowing homeowners to use existing property.",
+          "transit_density": "Concentrating homes near transit can add substantial supply while reducing transportation demand.",
+          "vacancy_fee": "A fee may return underused homes to the market and recover public costs from scarce housing held vacant.",
+          "retain_local_rules": "Municipal residents are better positioned to balance growth, infrastructure, and neighborhood preferences."
+        },
+        "uncertainties": [
+          "The number, price, and location of homes produced by each tool are uncertain."
+        ],
+        "definitions": {
+          "Accessory dwelling unit": "A smaller independent home located on the same lot as a primary residence.",
+          "Rental vacancy": "The share of rental homes currently available for new tenants."
+        },
+        "sources": [],
+        "authored_at": "2026-07-28T00:00:00Z"
+      },
+      "quadratic_credit_budget": null
+    },
+    {
+      "record_version": "measure.v1",
+      "measure_id": "dev_transport_investment",
+      "version": 1,
+      "title": "Transportation Investment Priority",
+      "domain": "transportation_infrastructure",
+      "ballot_type": "score",
+      "response_fields": [
+        "top_choice",
+        "ranking",
+        "approval",
+        "scores"
+      ],
+      "source_kind": "constructed",
+      "intended_generalization_tier": "familiar",
+      "options": [
+        {
+          "record_version": "measure_option.v1",
+          "option_id": "road_repairs",
+          "label": "Road and bridge repair",
+          "description": "Prioritize maintenance of existing roads and structurally deficient bridges.",
+          "display_order": 0
+        },
+        {
+          "record_version": "measure_option.v1",
+          "option_id": "bus_frequency",
+          "label": "Frequent bus service",
+          "description": "Increase service frequency on high-ridership metropolitan bus routes.",
+          "display_order": 1
+        },
+        {
+          "record_version": "measure_option.v1",
+          "option_id": "rural_connections",
+          "label": "Rural transportation connections",
+          "description": "Expand demand-responsive transit and intercity links for smaller communities.",
+          "display_order": 2
+        },
+        {
+          "record_version": "measure_option.v1",
+          "option_id": "safe_streets",
+          "label": "Walking and cycling safety",
+          "description": "Build protected crossings, sidewalks, and connected bicycle routes.",
+          "display_order": 3
+        }
+      ],
+      "packet": {
+        "record_version": "measure_packet.v1",
+        "packet_id": "dev_transport_investment_packet",
+        "version": 1,
+        "status_quo": "Transportation capital funds are divided through annual agency plans without one voter-designated priority.",
+        "proposal": "Score the four investment priorities. The highest-scoring priority would receive first claim on a new forty-million-dollar capital allocation.",
+        "who_is_affected": "Drivers, transit riders, rural residents, pedestrians, cyclists, freight operators, and communities receiving projects would be affected.",
+        "fiscal_or_operational_effects": "The measure allocates forty million dollars already authorized for transportation capital work and does not change taxes.",
+        "arguments_by_option": {
+          "road_repairs": "Maintaining existing assets prevents more expensive failures and serves the majority of current trips.",
+          "bus_frequency": "Shorter waits make transit more useful and can improve access for people who do not drive.",
+          "rural_connections": "Smaller communities have few alternatives and face long distances to jobs, health care, and education.",
+          "safe_streets": "Safety projects reduce serious injuries and give residents lower-cost transportation options."
+        },
+        "uncertainties": [
+          "Project readiness and local matching funds may affect how quickly each priority can use the allocation."
+        ],
+        "definitions": {
+          "Capital allocation": "Funding for long-lived infrastructure rather than routine operating expenses."
+        },
+        "sources": [],
+        "authored_at": "2026-07-28T00:00:00Z"
+      },
+      "quadratic_credit_budget": null
+    },
+    {
+      "record_version": "measure.v1",
+      "measure_id": "dev_energy_building_standard",
+      "version": 1,
+      "title": "Large-Building Energy Standard",
+      "domain": "environment_energy",
+      "ballot_type": "single_choice",
+      "response_fields": [
+        "top_choice"
+      ],
+      "source_kind": "constructed",
+      "intended_generalization_tier": "adjacent",
+      "options": [
+        {
+          "record_version": "measure_option.v1",
+          "option_id": "adopt_standard",
+          "label": "Adopt the performance standard",
+          "description": "Require large buildings to meet phased energy-performance targets.",
+          "display_order": 0
+        },
+        {
+          "record_version": "measure_option.v1",
+          "option_id": "retain_incentives",
+          "label": "Retain voluntary incentives",
+          "description": "Continue rebates and technical assistance without mandatory targets.",
+          "display_order": 1
+        }
+      ],
+      "packet": {
+        "record_version": "measure_packet.v1",
+        "packet_id": "dev_energy_building_standard_packet",
+        "version": 1,
+        "status_quo": "Large commercial and residential buildings may receive rebates for energy upgrades but face no commonwealth performance requirement.",
+        "proposal": "Choose whether buildings above fifty thousand square feet must meet gradually tightening energy-use targets over ten years.",
+        "who_is_affected": "Building owners, tenants, contractors, utilities, and residents affected by energy costs and emissions would be affected.",
+        "fiscal_or_operational_effects": "Owners would bear upgrade costs and may receive existing rebates. Energy use and utility revenue would likely decline, but the size and timing are uncertain.",
+        "arguments_by_option": {
+          "adopt_standard": "A common requirement can produce emissions and energy savings that voluntary programs have not achieved.",
+          "retain_incentives": "Owners face different buildings and financing constraints, and mandates may increase rents or divert capital from other needs."
+        },
+        "uncertainties": [
+          "Future energy prices, financing costs, and the pass-through of upgrade costs to tenants are uncertain."
+        ],
+        "definitions": {
+          "Energy-performance target": "A limit on measured energy use per unit of building area."
+        },
+        "sources": [],
+        "authored_at": "2026-07-28T00:00:00Z"
+      },
+      "quadratic_credit_budget": null
+    },
+    {
+      "record_version": "measure.v1",
+      "measure_id": "dev_justice_oversight",
+      "version": 1,
+      "title": "Independent Public Safety Oversight",
+      "domain": "justice_safety_rights",
+      "ballot_type": "single_choice",
+      "response_fields": [
+        "top_choice"
+      ],
+      "source_kind": "constructed",
+      "intended_generalization_tier": "familiar",
+      "options": [
+        {
+          "record_version": "measure_option.v1",
+          "option_id": "create_independent_board",
+          "label": "Create an independent review board",
+          "description": "Authorize a civilian board to investigate serious complaints and publish findings.",
+          "display_order": 0
+        },
+        {
+          "record_version": "measure_option.v1",
+          "option_id": "retain_internal_review",
+          "label": "Retain internal and prosecutor review",
+          "description": "Keep complaint investigation with agency professional-standards units and prosecutors.",
+          "display_order": 1
+        }
+      ],
+      "packet": {
+        "record_version": "measure_packet.v1",
+        "packet_id": "dev_justice_oversight_packet",
+        "version": 1,
+        "status_quo": "Public safety agencies investigate employee complaints internally, while prosecutors review allegations that may be criminal.",
+        "proposal": "Choose whether to create an independent civilian board with subpoena authority for serious complaints and public reporting duties.",
+        "who_is_affected": "Residents filing complaints, public safety employees, agency leaders, prosecutors, and taxpayers would be affected.",
+        "fiscal_or_operational_effects": "The board would cost an estimated three million dollars annually and could require agencies to provide records and staff time.",
+        "arguments_by_option": {
+          "create_independent_board": "Independent investigation can improve accountability and public trust when agencies are accused of misconduct.",
+          "retain_internal_review": "Existing investigators have operational expertise, and an additional board may duplicate work or politicize disciplinary review."
+        },
+        "uncertainties": [
+          "The effect on complaint resolution time, employee retention, and public trust is uncertain."
+        ],
+        "definitions": {
+          "Subpoena authority": "Legal power to require testimony or production of specified records."
+        },
+        "sources": [],
+        "authored_at": "2026-07-28T00:00:00Z"
+      },
+      "quadratic_credit_budget": null
+    },
+    {
+      "record_version": "measure.v1",
+      "measure_id": "dev_governance_digital_budget",
+      "version": 1,
+      "title": "Digital Government Improvement Budget",
+      "domain": "governance_elections_technology",
+      "ballot_type": "quadratic",
+      "response_fields": [
+        "top_choice",
+        "quadratic"
+      ],
+      "source_kind": "constructed",
+      "intended_generalization_tier": "novel",
+      "options": [
+        {
+          "record_version": "measure_option.v1",
+          "option_id": "service_portal",
+          "label": "Unified service portal",
+          "description": "Create one accessible site for applications, renewals, and benefit status.",
+          "display_order": 0
+        },
+        {
+          "record_version": "measure_option.v1",
+          "option_id": "privacy_security",
+          "label": "Privacy and security upgrades",
+          "description": "Modernize identity controls, encryption, audits, and breach response.",
+          "display_order": 1
+        },
+        {
+          "record_version": "measure_option.v1",
+          "option_id": "open_data",
+          "label": "Public data and transparency",
+          "description": "Publish standardized budgets, contracts, performance measures, and public records.",
+          "display_order": 2
+        },
+        {
+          "record_version": "measure_option.v1",
+          "option_id": "offline_access",
+          "label": "Offline and assisted access",
+          "description": "Expand in-person, telephone, language, and disability support alongside digital services.",
+          "display_order": 3
+        }
+      ],
+      "packet": {
+        "record_version": "measure_packet.v1",
+        "packet_id": "dev_governance_digital_budget_packet",
+        "version": 1,
+        "status_quo": "Agencies maintain separate aging systems, and residents often repeat information across services.",
+        "proposal": "Use a one-hundred-credit quadratic voting budget across four digital-government priorities. Assigning a priority v votes costs v squared credits. The twenty-million-dollar improvement budget would follow the aggregate vote totals.",
+        "who_is_affected": "Residents using public services, agency employees, vendors, researchers, and people with limited digital access would be affected.",
+        "fiscal_or_operational_effects": "The total budget is fixed at twenty million dollars. Funding one priority more heavily leaves less capacity for the others.",
+        "arguments_by_option": {
+          "service_portal": "A unified portal can reduce repeated paperwork and make services easier to navigate.",
+          "privacy_security": "Security and privacy failures can cause severe individual harm and undermine every digital service.",
+          "open_data": "Consistent public information improves oversight, research, and accountability.",
+          "offline_access": "Modernization should not exclude residents who lack reliable internet, accessible interfaces, language support, or confidence online."
+        },
+        "uncertainties": [
+          "Legacy-system condition and procurement performance may change the cost and delivery time of each priority."
+        ],
+        "definitions": {
+          "Quadratic voting credit": "The cost unit for expressing support. Assigning v votes to an option costs v squared credits, and unused credits are permitted."
+        },
+        "sources": [],
+        "authored_at": "2026-07-28T00:00:00Z"
+      },
+      "quadratic_credit_budget": 100
+    }
+  ]
+}
