@@ -41,6 +41,10 @@ NonEmptyText = Annotated[str, StringConstraints(strip_whitespace=True, min_lengt
 PositiveVersion = Annotated[int, Field(ge=1)]
 EventSequence = Annotated[int, Field(ge=1)]
 Probability = Annotated[float, Field(ge=0.0, le=1.0)]
+Sha256Digest = Annotated[
+    str,
+    StringConstraints(pattern=r"^[0-9a-f]{64}$"),
+]
 
 REQUIRED_JURISDICTION_FACT_KEYS = frozenset(
     {
@@ -113,13 +117,17 @@ class ResponseStability(str, Enum):
     TENTATIVE = "tentative"
 
 
-class EvidenceSource(str, Enum):
+class EvidenceModality(str, Enum):
     STRUCTURED_RESPONSE = "structured_response"
     FREE_TEXT_EXTRACTION = "free_text_extraction"
     CORRECTION = "correction"
     OVERRIDE = "override"
-    RETEST = "retest"
     NON_INTERVENTION = "non_intervention"
+
+
+class PresentationKind(str, Enum):
+    INITIAL = "initial"
+    RETEST = "retest"
 
 
 class DimensionStatus(str, Enum):
@@ -240,6 +248,7 @@ class MeasureVersion(ContractModel):
     options: list[MeasureOption] = Field(min_length=2)
     packet: MeasurePacket
     quadratic_credit_budget: Annotated[int, Field(gt=0)] | None = None
+    quadratic_allow_negative: bool | None = None
 
     @model_validator(mode="after")
     def validate_measure(self) -> Self:
@@ -289,9 +298,17 @@ class MeasureVersion(ContractModel):
                 raise ValueError(
                     "quadratic measures require quadratic_credit_budget"
                 )
-        elif self.quadratic_credit_budget is not None:
+            if self.quadratic_allow_negative is None:
+                raise ValueError(
+                    "quadratic measures require an explicit "
+                    "quadratic_allow_negative policy"
+                )
+        elif (
+            self.quadratic_credit_budget is not None
+            or self.quadratic_allow_negative is not None
+        ):
             raise ValueError(
-                "quadratic_credit_budget is only valid for quadratic measures"
+                "quadratic settings are only valid for quadratic measures"
             )
 
         return self
@@ -340,10 +357,53 @@ class RankingTier(ContractModel):
         return value
 
 
+class MeasurePresentation(ContractModel):
+    """One participant exposure to a frozen measure packet."""
+
+    record_version: Literal["measure_presentation.v1"] = "measure_presentation.v1"
+    presentation_id: StableId
+    session_id: StableId
+    measure_id: StableId
+    measure_version: PositiveVersion
+    packet_version: PositiveVersion
+    kind: PresentationKind
+    retest_of_presentation_id: StableId | None = None
+    order_seed: Annotated[int, Field(ge=0)]
+    presented_at: datetime
+
+    @field_validator("presented_at")
+    @classmethod
+    def presentation_time_must_be_timezone_aware(
+        cls, value: datetime
+    ) -> datetime:
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("presented_at must include a timezone")
+        return value
+
+    @model_validator(mode="after")
+    def validate_retest_link(self) -> Self:
+        if (
+            self.kind is PresentationKind.INITIAL
+            and self.retest_of_presentation_id is not None
+        ):
+            raise ValueError(
+                "initial presentations cannot reference a prior presentation"
+            )
+        if (
+            self.kind is PresentationKind.RETEST
+            and self.retest_of_presentation_id is None
+        ):
+            raise ValueError(
+                "retest presentations require retest_of_presentation_id"
+            )
+        return self
+
+
 class ParticipantResponse(ContractModel):
     record_version: Literal["participant_response.v1"] = "participant_response.v1"
     response_id: StableId
     session_id: StableId
+    presentation_id: StableId
     measure_id: StableId
     measure_version: PositiveVersion
     packet_version: PositiveVersion
@@ -356,7 +416,7 @@ class ParticipantResponse(ContractModel):
     ranking_tiers: list[RankingTier] | None = None
     approved_option_ids: list[StableId] | None = None
     option_scores: dict[StableId, Annotated[int, Field(ge=0, le=10)]] | None = None
-    quadratic_allocations: dict[StableId, Annotated[int, Field(ge=0)]] | None = None
+    quadratic_allocations: dict[StableId, int] | None = None
     created_at: datetime
 
     @field_validator("created_at")
@@ -483,6 +543,17 @@ def validate_response_for_measure(
             raise ValueError("measure requires quadratic_allocations")
         for option_id in response.quadratic_allocations:
             require_known(option_id, "quadratic_allocations")
+        if not measure.quadratic_allow_negative:
+            negative_ids = sorted(
+                option_id
+                for option_id, votes in response.quadratic_allocations.items()
+                if votes < 0
+            )
+            if negative_ids:
+                raise ValueError(
+                    "quadratic measure does not allow negative allocations; "
+                    f"negative options={negative_ids}"
+                )
         budget = measure.quadratic_credit_budget
         if budget is None:
             raise ValueError("quadratic response requires a measure budget")
@@ -501,9 +572,13 @@ class EvidenceEvent(ContractModel):
     event_id: StableId
     session_id: StableId
     sequence: EventSequence
-    source: EvidenceSource
+    modality: EvidenceModality
     measure_id: StableId | None = None
+    measure_version: PositiveVersion | None = None
+    packet_version: PositiveVersion | None = None
+    presentation_id: StableId | None = None
     question_id: StableId | None = None
+    question_version: PositiveVersion | None = None
     response_id: StableId | None = None
     raw_response: NonEmptyText | None = None
     normalized_claims: list[NonEmptyText] = Field(default_factory=list)
@@ -521,9 +596,33 @@ class EvidenceEvent(ContractModel):
         return value
 
     @model_validator(mode="after")
-    def validate_weight_policy(self) -> Self:
+    def validate_provenance(self) -> Self:
+        measure_fields = (
+            self.measure_id,
+            self.measure_version,
+            self.packet_version,
+        )
+        if any(value is not None for value in measure_fields) and not all(
+            value is not None for value in measure_fields
+        ):
+            raise ValueError(
+                "measure_id, measure_version, and packet_version must be "
+                "supplied together"
+            )
+        if (self.question_id is None) != (self.question_version is None):
+            raise ValueError(
+                "question_id and question_version must be supplied together"
+            )
+        if self.presentation_id is not None and self.measure_id is None:
+            raise ValueError(
+                "presentation-linked evidence requires measure provenance"
+            )
+        if self.response_id is not None and self.presentation_id is None:
+            raise ValueError(
+                "response-linked evidence requires presentation_id"
+            )
         if (
-            self.source is EvidenceSource.NON_INTERVENTION
+            self.modality is EvidenceModality.NON_INTERVENTION
             and self.reliability_weight != 0.0
         ):
             raise ValueError(
@@ -562,6 +661,7 @@ class PredictionSnapshot(ContractModel):
     record_version: Literal["prediction_snapshot.v1"] = "prediction_snapshot.v1"
     snapshot_id: StableId
     session_id: StableId
+    target_presentation_id: StableId
     target_measure_id: StableId
     target_measure_version: PositiveVersion
     target_packet_version: PositiveVersion
@@ -651,6 +751,22 @@ def validate_prediction_for_measure(
             "option_probabilities must cover every measure option exactly; "
             f"missing={missing}, extra={extra}"
         )
+    top_probability = max(snapshot.option_probabilities.values())
+    expected_top_option_id = next(
+        option.option_id
+        for option in measure.options
+        if math.isclose(
+            snapshot.option_probabilities[option.option_id],
+            top_probability,
+            rel_tol=0.0,
+            abs_tol=1e-12,
+        )
+    )
+    if snapshot.top_option_id != expected_top_option_id:
+        raise ValueError(
+            "top_option_id must use measure display order to break exact "
+            f"probability ties; expected {expected_top_option_id!r}"
+        )
     for decision in snapshot.delegation_decisions:
         if decision.option_id is not None and decision.option_id not in option_ids:
             raise ValueError(
@@ -710,10 +826,12 @@ class EvaluationRun(ContractModel):
     run_id: StableId
     fixture_id: StableId
     fixture_version: PositiveVersion
+    fixture_sha256: Sha256Digest
     session_id: StableId
     created_at: datetime
     model_configurations: list[ModelConfiguration] = Field(default_factory=list)
     ontology_versions: list[OntologyVersion] = Field(default_factory=list)
+    measure_presentations: list[MeasurePresentation] = Field(default_factory=list)
     evidence_events: list[EvidenceEvent] = Field(default_factory=list)
     prediction_snapshots: list[PredictionSnapshot] = Field(default_factory=list)
     participant_responses: list[ParticipantResponse] = Field(default_factory=list)
@@ -727,12 +845,60 @@ class EvaluationRun(ContractModel):
 
     @model_validator(mode="after")
     def validate_references_and_cutoffs(self) -> Self:
+        self._validate_unique_ids()
+
+        presentation_by_id = {
+            presentation.presentation_id: presentation
+            for presentation in self.measure_presentations
+        }
+        response_by_id = {
+            response.response_id: response
+            for response in self.participant_responses
+        }
+        response_by_presentation_id = {
+            response.presentation_id: response
+            for response in self.participant_responses
+        }
+        event_by_id = {
+            event.event_id: event for event in self.evidence_events
+        }
+        config_ids = {
+            config.configuration_id for config in self.model_configurations
+        }
+        ontology_by_id = {
+            ontology.ontology_version_id: ontology
+            for ontology in self.ontology_versions
+        }
+
+        self._validate_event_sequences()
+        self._validate_session_ownership()
+        self._validate_presentations(presentation_by_id)
+        self._validate_responses(presentation_by_id)
+        self._validate_evidence_references(
+            presentation_by_id,
+            response_by_id,
+        )
+        self._validate_ontologies(event_by_id, config_ids)
+        self._validate_snapshots(
+            presentation_by_id=presentation_by_id,
+            response_by_presentation_id=response_by_presentation_id,
+            event_by_id=event_by_id,
+            config_ids=config_ids,
+            ontology_by_id=ontology_by_id,
+        )
+        return self
+
+    def _validate_unique_ids(self) -> None:
         collections = {
             "model configuration ids": [
                 config.configuration_id for config in self.model_configurations
             ],
             "ontology version ids": [
                 ontology.ontology_version_id for ontology in self.ontology_versions
+            ],
+            "measure presentation ids": [
+                presentation.presentation_id
+                for presentation in self.measure_presentations
             ],
             "evidence event ids": [event.event_id for event in self.evidence_events],
             "prediction snapshot ids": [
@@ -744,19 +910,23 @@ class EvaluationRun(ContractModel):
         }
         for label, values in collections.items():
             _assert_unique(values, label)
+        _assert_unique(
+            [
+                response.presentation_id
+                for response in self.participant_responses
+            ],
+            "response presentation ids",
+        )
+        _assert_unique(
+            [
+                f"{presentation.measure_id}@{presentation.measure_version}"
+                for presentation in self.measure_presentations
+                if presentation.kind is PresentationKind.INITIAL
+            ],
+            "initial presentation measure id/version pairs",
+        )
 
-        event_by_id = {event.event_id: event for event in self.evidence_events}
-        config_ids = {
-            config.configuration_id for config in self.model_configurations
-        }
-        ontology_ids = {
-            ontology.ontology_version_id for ontology in self.ontology_versions
-        }
-        ontology_by_id = {
-            ontology.ontology_version_id: ontology
-            for ontology in self.ontology_versions
-        }
-
+    def _validate_event_sequences(self) -> None:
         all_sequences = [
             event.sequence for event in self.evidence_events
         ] + [response.sequence for response in self.participant_responses]
@@ -765,6 +935,13 @@ class EvaluationRun(ContractModel):
                 "evidence and response records must share one unique event sequence"
             )
 
+    def _validate_session_ownership(self) -> None:
+        for presentation in self.measure_presentations:
+            if presentation.session_id != self.session_id:
+                raise ValueError(
+                    f"presentation {presentation.presentation_id} belongs to "
+                    "another session"
+                )
         for event in self.evidence_events:
             if event.session_id != self.session_id:
                 raise ValueError(
@@ -775,7 +952,140 @@ class EvaluationRun(ContractModel):
                 raise ValueError(
                     f"response {response.response_id} belongs to another session"
                 )
+        for snapshot in self.prediction_snapshots:
+            if snapshot.session_id != self.session_id:
+                raise ValueError(
+                    f"snapshot {snapshot.snapshot_id} belongs to another session"
+                )
 
+    def _validate_presentations(
+        self,
+        presentation_by_id: dict[str, MeasurePresentation],
+    ) -> None:
+        for presentation in self.measure_presentations:
+            if presentation.kind is not PresentationKind.RETEST:
+                continue
+            original_id = presentation.retest_of_presentation_id
+            original = presentation_by_id.get(original_id or "")
+            if original is None:
+                raise ValueError(
+                    f"retest presentation {presentation.presentation_id} "
+                    f"references unknown presentation {original_id}"
+                )
+            if original.kind is not PresentationKind.INITIAL:
+                raise ValueError(
+                    f"retest presentation {presentation.presentation_id} must "
+                    "reference an initial presentation"
+                )
+            if (
+                presentation.measure_id,
+                presentation.measure_version,
+            ) != (
+                original.measure_id,
+                original.measure_version,
+            ):
+                raise ValueError(
+                    f"retest presentation {presentation.presentation_id} must "
+                    "use the original measure id and version"
+                )
+            if presentation.presented_at <= original.presented_at:
+                raise ValueError(
+                    f"retest presentation {presentation.presentation_id} must "
+                    "occur after its original presentation"
+                )
+
+    def _validate_responses(
+        self,
+        presentation_by_id: dict[str, MeasurePresentation],
+    ) -> None:
+        for response in self.participant_responses:
+            presentation = presentation_by_id.get(response.presentation_id)
+            if presentation is None:
+                raise ValueError(
+                    f"response {response.response_id} references unknown "
+                    f"presentation {response.presentation_id}"
+                )
+            if (
+                response.measure_id,
+                response.measure_version,
+                response.packet_version,
+            ) != (
+                presentation.measure_id,
+                presentation.measure_version,
+                presentation.packet_version,
+            ):
+                raise ValueError(
+                    f"response {response.response_id} does not match "
+                    f"presentation {presentation.presentation_id}"
+                )
+            if response.created_at < presentation.presented_at:
+                raise ValueError(
+                    f"response {response.response_id} predates presentation "
+                    f"{presentation.presentation_id}"
+                )
+
+    def _validate_evidence_references(
+        self,
+        presentation_by_id: dict[str, MeasurePresentation],
+        response_by_id: dict[str, ParticipantResponse],
+    ) -> None:
+        for event in self.evidence_events:
+            presentation = None
+            if event.presentation_id is not None:
+                presentation = presentation_by_id.get(event.presentation_id)
+                if presentation is None:
+                    raise ValueError(
+                        f"evidence event {event.event_id} references unknown "
+                        f"presentation {event.presentation_id}"
+                    )
+                if (
+                    event.measure_id,
+                    event.measure_version,
+                    event.packet_version,
+                ) != (
+                    presentation.measure_id,
+                    presentation.measure_version,
+                    presentation.packet_version,
+                ):
+                    raise ValueError(
+                        f"evidence event {event.event_id} does not match "
+                        f"presentation {presentation.presentation_id}"
+                    )
+
+            if event.response_id is None:
+                continue
+            response = response_by_id.get(event.response_id)
+            if response is None:
+                raise ValueError(
+                    f"evidence event {event.event_id} references unknown "
+                    f"response {event.response_id}"
+                )
+            if event.presentation_id != response.presentation_id:
+                raise ValueError(
+                    f"evidence event {event.event_id} and response "
+                    f"{response.response_id} use different presentations"
+                )
+            if event.measure_id != response.measure_id:
+                raise ValueError(
+                    f"evidence event {event.event_id} and response "
+                    f"{response.response_id} use different measures"
+                )
+            if event.sequence <= response.sequence:
+                raise ValueError(
+                    f"evidence event {event.event_id} must follow response "
+                    f"{response.response_id} in the event sequence"
+                )
+            if event.occurred_at < response.created_at:
+                raise ValueError(
+                    f"evidence event {event.event_id} predates response "
+                    f"{response.response_id}"
+                )
+
+    def _validate_ontologies(
+        self,
+        event_by_id: dict[str, EvidenceEvent],
+        config_ids: set[str],
+    ) -> None:
         for ontology in self.ontology_versions:
             for dimension in ontology.dimensions:
                 if dimension.created_by_configuration_id not in config_ids:
@@ -799,10 +1109,41 @@ class EvaluationRun(ContractModel):
                             f"{ontology.evidence_cutoff_sequence}"
                         )
 
+    def _validate_snapshots(
+        self,
+        *,
+        presentation_by_id: dict[str, MeasurePresentation],
+        response_by_presentation_id: dict[str, ParticipantResponse],
+        event_by_id: dict[str, EvidenceEvent],
+        config_ids: set[str],
+        ontology_by_id: dict[str, OntologyVersion],
+    ) -> None:
         for snapshot in self.prediction_snapshots:
-            if snapshot.session_id != self.session_id:
+            presentation = presentation_by_id.get(
+                snapshot.target_presentation_id
+            )
+            if presentation is None:
                 raise ValueError(
-                    f"snapshot {snapshot.snapshot_id} belongs to another session"
+                    f"snapshot {snapshot.snapshot_id} references unknown "
+                    f"presentation {snapshot.target_presentation_id}"
+                )
+            if (
+                snapshot.target_measure_id,
+                snapshot.target_measure_version,
+                snapshot.target_packet_version,
+            ) != (
+                presentation.measure_id,
+                presentation.measure_version,
+                presentation.packet_version,
+            ):
+                raise ValueError(
+                    f"snapshot {snapshot.snapshot_id} does not match "
+                    f"presentation {presentation.presentation_id}"
+                )
+            if snapshot.created_at < presentation.presented_at:
+                raise ValueError(
+                    f"snapshot {snapshot.snapshot_id} predates presentation "
+                    f"{presentation.presentation_id}"
                 )
             if snapshot.model_configuration_id not in config_ids:
                 raise ValueError(
@@ -811,7 +1152,7 @@ class EvaluationRun(ContractModel):
                 )
             if (
                 snapshot.ontology_version_id is not None
-                and snapshot.ontology_version_id not in ontology_ids
+                and snapshot.ontology_version_id not in ontology_by_id
             ):
                 raise ValueError(
                     f"snapshot {snapshot.snapshot_id} references unknown ontology "
@@ -843,30 +1184,35 @@ class EvaluationRun(ContractModel):
                         f"after cutoff {snapshot.evidence_cutoff_sequence}"
                     )
 
-            leaked_events = [
+            presentation_leaks = [
                 event.event_id
                 for event in self.evidence_events
-                if event.measure_id == snapshot.target_measure_id
+                if event.presentation_id == snapshot.target_presentation_id
                 and event.sequence <= snapshot.evidence_cutoff_sequence
             ]
-            if leaked_events:
+            if presentation_leaks:
                 raise ValueError(
-                    f"snapshot {snapshot.snapshot_id} target answer is already "
-                    f"in evidence: {', '.join(leaked_events)}"
+                    f"snapshot {snapshot.snapshot_id} target presentation is "
+                    f"already in evidence: {', '.join(presentation_leaks)}"
                 )
 
-            target_responses = [
-                response
-                for response in self.participant_responses
-                if response.measure_id == snapshot.target_measure_id
-                and response.measure_version == snapshot.target_measure_version
-            ]
-            for response in target_responses:
-                if response.packet_version != snapshot.target_packet_version:
+            if presentation.kind is PresentationKind.INITIAL:
+                prior_target_events = [
+                    event.event_id
+                    for event in self.evidence_events
+                    if event.measure_id == snapshot.target_measure_id
+                    and event.sequence <= snapshot.evidence_cutoff_sequence
+                ]
+                if prior_target_events:
                     raise ValueError(
-                        f"snapshot {snapshot.snapshot_id} and target response "
-                        f"{response.response_id} use different packet versions"
+                        f"snapshot {snapshot.snapshot_id} initial target answer "
+                        f"is already in evidence: {', '.join(prior_target_events)}"
                     )
+
+            response = response_by_presentation_id.get(
+                snapshot.target_presentation_id
+            )
+            if response is not None:
                 if response.sequence <= snapshot.evidence_cutoff_sequence:
                     raise ValueError(
                         f"snapshot {snapshot.snapshot_id} was created after target "
@@ -877,5 +1223,3 @@ class EvaluationRun(ContractModel):
                         f"snapshot {snapshot.snapshot_id} must precede target "
                         f"response {response.response_id}"
                     )
-
-        return self

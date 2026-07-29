@@ -6,7 +6,7 @@ from pathlib import Path
 from eval.contracts import MeasureDomain
 from eval.fixture_io import (
     build_fixture_manifest,
-    canonical_json,
+    content_sha256,
     load_fixture,
     validate_development_fixture,
 )
@@ -46,11 +46,18 @@ def test_fixture_round_trips_without_database():
     assert replayed == fixture
 
 
-def test_canonical_hash_ignores_source_json_formatting():
+def test_canonical_hash_ignores_source_json_formatting(tmp_path):
     fixture = load_fixture(FIXTURE_PATH)
     parsed = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
+    reformatted_path = tmp_path / "reformatted.json"
+    reformatted_path.write_text(
+        json.dumps(parsed, ensure_ascii=False, indent=4),
+        encoding="utf-8",
+    )
 
-    assert canonical_json(fixture) == canonical_json(parsed)
+    assert content_sha256(fixture) == content_sha256(
+        load_fixture(reformatted_path)
+    )
 
 
 def test_cli_prints_machine_readable_manifest(capsys):

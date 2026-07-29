@@ -9,13 +9,15 @@ from pydantic import ValidationError
 from eval.contracts import (
     DimensionStatus,
     EvidenceEvent,
-    EvidenceSource,
+    EvidenceModality,
     EvaluationRun,
+    MeasurePresentation,
     MeasureSourceKind,
     MeasureVersion,
     ModelConfiguration,
     OntologyVersion,
     ParticipantResponse,
+    PresentationKind,
     PreferenceDimension,
     PredictionSnapshot,
     RankingTier,
@@ -24,7 +26,11 @@ from eval.contracts import (
     validate_prediction_for_measure,
     validate_response_for_measure,
 )
-from eval.fixture_io import load_fixture
+from eval.fixture_io import (
+    content_sha256,
+    load_fixture,
+    validate_run_against_fixture,
+)
 
 FIXTURE_PATH = (
     Path(__file__).parents[1]
@@ -52,6 +58,7 @@ def response_for(
     values = {
         "response_id": f"response_{measure.measure_id}",
         "session_id": "session_one",
+        "presentation_id": f"presentation_{measure.measure_id}",
         "measure_id": measure.measure_id,
         "measure_version": measure.version,
         "packet_version": measure.packet.version,
@@ -65,6 +72,24 @@ def response_for(
     }
     values.update(updates)
     return ParticipantResponse.model_validate(values)
+
+
+def presentation_for(
+    measure: MeasureVersion,
+    **updates,
+) -> MeasurePresentation:
+    values = {
+        "presentation_id": f"presentation_{measure.measure_id}",
+        "session_id": "session_one",
+        "measure_id": measure.measure_id,
+        "measure_version": measure.version,
+        "packet_version": measure.packet.version,
+        "kind": PresentationKind.INITIAL,
+        "order_seed": 7,
+        "presented_at": NOW,
+    }
+    values.update(updates)
+    return MeasurePresentation.model_validate(values)
 
 
 class TestMeasureContracts:
@@ -132,6 +157,25 @@ class TestParticipantResponses:
                 },
             )
 
+    def test_cross_format_inconsistency_is_retained_for_measurement(self, fixture):
+        measure = measure_by_id(fixture, "dev_education_calendar")
+        response = response_for(
+            measure,
+            selected_option_id="traditional_calendar",
+            ranking_tiers=[
+                {"option_ids": ["balanced_calendar"]},
+                {"option_ids": ["traditional_calendar"]},
+            ],
+            approved_option_ids=["balanced_calendar"],
+            option_scores={
+                "traditional_calendar": 4,
+                "balanced_calendar": 8,
+                "local_choice": 2,
+            },
+        )
+
+        validate_response_for_measure(response, measure)
+
     def test_unsure_and_abstain_are_distinct_non_ballot_states(self, fixture):
         measure = measure_by_id(fixture, "dev_fiscal_reserve")
         unsure = response_for(
@@ -196,6 +240,17 @@ class TestParticipantResponses:
         with pytest.raises(ValueError, match="exceeds credit budget 100"):
             validate_response_for_measure(response, measure)
 
+    def test_allocation_contest_rejects_negative_votes(self, fixture):
+        measure = measure_by_id(fixture, "dev_governance_digital_budget")
+        response = response_for(
+            measure,
+            selected_option_id="privacy_security",
+            quadratic_allocations={"privacy_security": 4, "offline_access": -2},
+        )
+
+        with pytest.raises(ValueError, match="does not allow negative"):
+            validate_response_for_measure(response, measure)
+
 
 class TestEvidenceAndLeakage:
     def test_non_intervention_cannot_receive_positive_weight(self):
@@ -204,7 +259,7 @@ class TestEvidenceAndLeakage:
                 event_id="evidence_silence",
                 session_id="session_one",
                 sequence=1,
-                source=EvidenceSource.NON_INTERVENTION,
+                modality=EvidenceModality.NON_INTERVENTION,
                 confirmed_by_participant=False,
                 stability=ResponseStability.TENTATIVE,
                 reliability_weight=0.5,
@@ -220,13 +275,15 @@ class TestEvidenceAndLeakage:
             model_version="v1",
             seed=7,
         )
+        presentation = presentation_for(target)
         evidence = EvidenceEvent(
             event_id="evidence_future",
             session_id="session_one",
             sequence=2,
-            source=EvidenceSource.STRUCTURED_RESPONSE,
+            modality=EvidenceModality.STRUCTURED_RESPONSE,
             measure_id=other.measure_id,
-            response_id="response_other",
+            measure_version=other.version,
+            packet_version=other.packet.version,
             confirmed_by_participant=True,
             stability=ResponseStability.STABLE,
             reliability_weight=1.0,
@@ -235,6 +292,7 @@ class TestEvidenceAndLeakage:
         snapshot = PredictionSnapshot(
             snapshot_id="snapshot_one",
             session_id="session_one",
+            target_presentation_id=presentation.presentation_id,
             target_measure_id=target.measure_id,
             target_measure_version=target.version,
             target_packet_version=target.packet.version,
@@ -256,9 +314,11 @@ class TestEvidenceAndLeakage:
                 run_id="run_one",
                 fixture_id=fixture.fixture_id,
                 fixture_version=fixture.fixture_version,
+                fixture_sha256=content_sha256(fixture),
                 session_id="session_one",
                 created_at=NOW,
                 model_configurations=[configuration],
+                measure_presentations=[presentation],
                 evidence_events=[evidence],
                 prediction_snapshots=[snapshot],
             )
@@ -268,6 +328,7 @@ class TestEvidenceAndLeakage:
         snapshot = PredictionSnapshot(
             snapshot_id="snapshot_bad_options",
             session_id="session_one",
+            target_presentation_id="presentation_bad_options",
             target_measure_id=target.measure_id,
             target_measure_version=target.version,
             target_packet_version=target.packet.version,
@@ -286,6 +347,30 @@ class TestEvidenceAndLeakage:
         with pytest.raises(ValueError, match="every measure option exactly"):
             validate_prediction_for_measure(snapshot, target)
 
+    def test_prediction_ties_use_measure_display_order(self, fixture):
+        target = measure_by_id(fixture, "dev_fiscal_reserve")
+        snapshot = PredictionSnapshot(
+            snapshot_id="snapshot_tied",
+            session_id="session_one",
+            target_presentation_id="presentation_tied",
+            target_measure_id=target.measure_id,
+            target_measure_version=target.version,
+            target_packet_version=target.packet.version,
+            evidence_cutoff_sequence=0,
+            option_probabilities={
+                target.options[0].option_id: 0.5,
+                target.options[1].option_id: 0.5,
+            },
+            top_option_id=target.options[1].option_id,
+            confidence=0.5,
+            settled_probability=0.8,
+            model_configuration_id="model_config",
+            created_at=NOW,
+        )
+
+        with pytest.raises(ValueError, match="display order"):
+            validate_prediction_for_measure(snapshot, target)
+
     def test_ontology_cannot_use_evidence_after_its_cutoff(self, fixture):
         target = measure_by_id(fixture, "dev_fiscal_reserve")
         configuration = ModelConfiguration(
@@ -298,9 +383,10 @@ class TestEvidenceAndLeakage:
             event_id="evidence_late",
             session_id="session_one",
             sequence=2,
-            source=EvidenceSource.STRUCTURED_RESPONSE,
+            modality=EvidenceModality.STRUCTURED_RESPONSE,
             measure_id=target.measure_id,
-            response_id="response_late",
+            measure_version=target.version,
+            packet_version=target.packet.version,
             confirmed_by_participant=True,
             stability=ResponseStability.STABLE,
             reliability_weight=1.0,
@@ -329,6 +415,7 @@ class TestEvidenceAndLeakage:
                 run_id="run_ontology_leak",
                 fixture_id=fixture.fixture_id,
                 fixture_version=fixture.fixture_version,
+                fixture_sha256=content_sha256(fixture),
                 session_id="session_one",
                 created_at=NOW,
                 model_configurations=[configuration],
@@ -344,10 +431,12 @@ class TestEvidenceAndLeakage:
             model_version="v1",
             seed=7,
         )
+        presentation = presentation_for(target)
         response = response_for(target, sequence=1)
         snapshot = PredictionSnapshot(
             snapshot_id="snapshot_late",
             session_id="session_one",
+            target_presentation_id=presentation.presentation_id,
             target_measure_id=target.measure_id,
             target_measure_version=target.version,
             target_packet_version=target.packet.version,
@@ -368,9 +457,11 @@ class TestEvidenceAndLeakage:
                 run_id="run_late",
                 fixture_id=fixture.fixture_id,
                 fixture_version=fixture.fixture_version,
+                fixture_sha256=content_sha256(fixture),
                 session_id="session_one",
                 created_at=NOW,
                 model_configurations=[configuration],
+                measure_presentations=[presentation],
                 prediction_snapshots=[snapshot],
                 participant_responses=[response],
             )
@@ -386,13 +477,15 @@ class TestEvidenceAndLeakage:
             model_version="v1",
             seed=7,
         )
+        presentation = presentation_for(target)
         evidence = EvidenceEvent(
             event_id="evidence_prior",
             session_id="session_one",
             sequence=1,
-            source=EvidenceSource.STRUCTURED_RESPONSE,
+            modality=EvidenceModality.STRUCTURED_RESPONSE,
             measure_id=other.measure_id,
-            response_id="response_prior",
+            measure_version=other.version,
+            packet_version=other.packet.version,
             confirmed_by_participant=True,
             stability=ResponseStability.STABLE,
             reliability_weight=1.0,
@@ -401,6 +494,7 @@ class TestEvidenceAndLeakage:
         snapshot = PredictionSnapshot(
             snapshot_id="snapshot_valid",
             session_id="session_one",
+            target_presentation_id=presentation.presentation_id,
             target_measure_id=target.measure_id,
             target_measure_version=target.version,
             target_packet_version=target.packet.version,
@@ -427,13 +521,155 @@ class TestEvidenceAndLeakage:
             run_id="run_valid",
             fixture_id=fixture.fixture_id,
             fixture_version=fixture.fixture_version,
+            fixture_sha256=content_sha256(fixture),
             session_id="session_one",
             created_at=NOW,
             model_configurations=[configuration],
+            measure_presentations=[presentation],
             evidence_events=[evidence],
             prediction_snapshots=[snapshot],
             participant_responses=[response],
         )
         replayed = EvaluationRun.model_validate_json(run.model_dump_json())
+        validate_run_against_fixture(replayed, fixture)
         assert replayed == run
         assert replayed.prediction_snapshots[0].evidence_cutoff_sequence == 1
+
+    def test_retest_prediction_can_use_original_response_evidence(self, fixture):
+        target = measure_by_id(fixture, "dev_fiscal_reserve")
+        configuration = ModelConfiguration(
+            configuration_id="model_config",
+            model_name="test model",
+            model_version="v1",
+            seed=7,
+        )
+        initial = presentation_for(
+            target,
+            presentation_id="presentation_initial",
+        )
+        initial_response = response_for(
+            target,
+            response_id="response_initial",
+            presentation_id=initial.presentation_id,
+            sequence=1,
+            created_at=NOW + timedelta(minutes=1),
+        )
+        initial_evidence = EvidenceEvent(
+            event_id="evidence_initial",
+            session_id="session_one",
+            sequence=2,
+            modality=EvidenceModality.STRUCTURED_RESPONSE,
+            measure_id=target.measure_id,
+            measure_version=target.version,
+            packet_version=target.packet.version,
+            presentation_id=initial.presentation_id,
+            response_id=initial_response.response_id,
+            confirmed_by_participant=True,
+            stability=ResponseStability.STABLE,
+            reliability_weight=1.0,
+            occurred_at=NOW + timedelta(minutes=2),
+        )
+        retest = presentation_for(
+            target,
+            presentation_id="presentation_retest",
+            kind=PresentationKind.RETEST,
+            retest_of_presentation_id=initial.presentation_id,
+            presented_at=NOW + timedelta(days=14),
+        )
+        retest_snapshot = PredictionSnapshot(
+            snapshot_id="snapshot_retest",
+            session_id="session_one",
+            target_presentation_id=retest.presentation_id,
+            target_measure_id=target.measure_id,
+            target_measure_version=target.version,
+            target_packet_version=target.packet.version,
+            evidence_cutoff_sequence=2,
+            evidence_event_ids=[initial_evidence.event_id],
+            option_probabilities={
+                target.options[0].option_id: 0.7,
+                target.options[1].option_id: 0.3,
+            },
+            top_option_id=target.options[0].option_id,
+            confidence=0.7,
+            settled_probability=0.85,
+            model_configuration_id=configuration.configuration_id,
+            created_at=NOW + timedelta(days=14, seconds=1),
+        )
+        retest_response = response_for(
+            target,
+            response_id="response_retest",
+            presentation_id=retest.presentation_id,
+            sequence=3,
+            created_at=NOW + timedelta(days=14, minutes=1),
+        )
+
+        run = EvaluationRun(
+            run_id="run_retest",
+            fixture_id=fixture.fixture_id,
+            fixture_version=fixture.fixture_version,
+            fixture_sha256=content_sha256(fixture),
+            session_id="session_one",
+            created_at=NOW,
+            model_configurations=[configuration],
+            measure_presentations=[initial, retest],
+            evidence_events=[initial_evidence],
+            prediction_snapshots=[retest_snapshot],
+            participant_responses=[initial_response, retest_response],
+        )
+
+        validate_run_against_fixture(run, fixture)
+
+    def test_evidence_response_reference_must_exist(self, fixture):
+        target = measure_by_id(fixture, "dev_fiscal_reserve")
+        presentation = presentation_for(target)
+        evidence = EvidenceEvent(
+            event_id="evidence_orphan",
+            session_id="session_one",
+            sequence=2,
+            modality=EvidenceModality.STRUCTURED_RESPONSE,
+            measure_id=target.measure_id,
+            measure_version=target.version,
+            packet_version=target.packet.version,
+            presentation_id=presentation.presentation_id,
+            response_id="response_missing",
+            confirmed_by_participant=True,
+            stability=ResponseStability.STABLE,
+            reliability_weight=1.0,
+            occurred_at=NOW + timedelta(minutes=2),
+        )
+
+        with pytest.raises(ValidationError, match="unknown response"):
+            EvaluationRun(
+                run_id="run_orphan_evidence",
+                fixture_id=fixture.fixture_id,
+                fixture_version=fixture.fixture_version,
+                fixture_sha256=content_sha256(fixture),
+                session_id="session_one",
+                created_at=NOW,
+                measure_presentations=[presentation],
+                evidence_events=[evidence],
+            )
+
+    def test_run_must_bind_measure_references_to_fixture(self, fixture):
+        invented_presentation = MeasurePresentation(
+            presentation_id="presentation_invented",
+            session_id="session_one",
+            measure_id="totally_invented_measure",
+            measure_version=99,
+            packet_version=99,
+            kind=PresentationKind.INITIAL,
+            order_seed=7,
+            presented_at=NOW,
+        )
+        run = EvaluationRun(
+            run_id="run_invented_measure",
+            fixture_id=fixture.fixture_id,
+            fixture_version=fixture.fixture_version,
+            fixture_sha256=content_sha256(fixture),
+            session_id="session_one",
+            created_at=NOW,
+            measure_presentations=[invented_presentation],
+        )
+
+        with pytest.raises(ValueError, match="unknown measure"):
+            validate_run_against_fixture(run, fixture)
