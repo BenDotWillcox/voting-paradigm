@@ -1,8 +1,12 @@
-"""
-Cross-demo evaluation harness.
+"""Cross-demo evaluation harness.
 
-Proper ML evaluation with reproducible seeds and held-out splits. Each demo
-contributes its own metrics; the first resident is the demo 2 preference-model
-comparison (fixed-bank models x acquisition policies against synthetic
-personas). See `eval/run_preference_eval.py` for the entry point.
+The preference demo currently has two deliberately separate tracks:
+
+- fixed-bank synthetic model/acquisition comparisons, entered through
+  ``eval.run_preference_eval``; and
+- versioned human-measure contracts and development fixtures, validated
+  through ``eval.validate_fixture``.
+
+The human-measure track stays file-backed so a published result can be replayed
+without a database snapshot.
 """
