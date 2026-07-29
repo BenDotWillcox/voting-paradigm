@@ -1,0 +1,220 @@
+{
+  "schema_version": "prequential_session_script.v1",
+  "script_id": "preference_eval_dev_session_v1",
+  "script_version": 1,
+  "run_id": "preference_eval_dev_run_v1",
+  "session_id": "synthetic_development_session",
+  "fixture_id": "preference_eval_dev_v1",
+  "fixture_version": 1,
+  "fixture_sha256": "a75cefc87a8aa983b84bae5af232007a6b08bb450a8bfcef18e3a3faa0d1d1b7",
+  "started_at": "2026-07-29T12:00:00Z",
+  "order_seed": 1701,
+  "wave_size": 4,
+  "onboarding_evidence": [
+    {
+      "record_version": "evidence_event.v1",
+      "event_id": "onboarding_budget_tradeoff",
+      "session_id": "synthetic_development_session",
+      "sequence": 1,
+      "modality": "free_text_extraction",
+      "question_id": "onboarding_budget_tradeoff",
+      "question_version": 1,
+      "raw_response": "For this synthetic participant, preserving essential current services generally matters more than building reserves beyond the existing policy.",
+      "normalized_claims": [
+        "Usually prioritizes essential current services over additional reserves."
+      ],
+      "confirmed_by_participant": true,
+      "stability": "stable",
+      "reliability_weight": 0.8,
+      "occurred_at": "2026-07-29T12:00:10Z",
+      "metadata": {
+        "synthetic": true
+      }
+    },
+    {
+      "record_version": "evidence_event.v1",
+      "event_id": "onboarding_governance_tradeoff",
+      "session_id": "synthetic_development_session",
+      "sequence": 2,
+      "modality": "free_text_extraction",
+      "question_id": "onboarding_governance_tradeoff",
+      "question_version": 1,
+      "raw_response": "For this synthetic participant, common statewide safeguards are acceptable when local decisions impose substantial costs on other residents.",
+      "normalized_claims": [
+        "Accepts statewide safeguards when local decisions create substantial spillovers."
+      ],
+      "confirmed_by_participant": true,
+      "stability": "stable",
+      "reliability_weight": 0.8,
+      "occurred_at": "2026-07-29T12:00:20Z",
+      "metadata": {
+        "synthetic": true
+      }
+    }
+  ],
+  "responses": [
+    {
+      "measure_id": "dev_fiscal_reserve",
+      "measure_version": 1,
+      "response_state": "choice",
+      "selected_option_id": "increase_reserve",
+      "confidence": 0.8,
+      "preference_strength": 7,
+      "stability": "stable",
+      "evidence_reliability_weight": 1.0
+    },
+    {
+      "measure_id": "dev_health_mobile_clinics",
+      "measure_version": 1,
+      "response_state": "choice",
+      "selected_option_id": "fund_mobile_clinics",
+      "confidence": 0.6,
+      "preference_strength": 5,
+      "stability": "tentative",
+      "evidence_reliability_weight": 0.7
+    },
+    {
+      "measure_id": "dev_education_calendar",
+      "measure_version": 1,
+      "response_state": "choice",
+      "selected_option_id": "balanced_calendar",
+      "confidence": 0.75,
+      "preference_strength": 6,
+      "stability": "stable",
+      "ranking_tiers": [
+        {
+          "option_ids": [
+            "balanced_calendar"
+          ]
+        },
+        {
+          "option_ids": [
+            "traditional_calendar",
+            "local_choice"
+          ]
+        }
+      ],
+      "approved_option_ids": [
+        "balanced_calendar",
+        "traditional_calendar"
+      ],
+      "option_scores": {
+        "traditional_calendar": 6,
+        "balanced_calendar": 8,
+        "local_choice": 6
+      },
+      "evidence_reliability_weight": 1.0
+    },
+    {
+      "measure_id": "dev_housing_zoning_tools",
+      "measure_version": 1,
+      "response_state": "choice",
+      "selected_option_id": "transit_density",
+      "confidence": 0.7,
+      "preference_strength": 7,
+      "stability": "stable",
+      "ranking_tiers": [
+        {
+          "option_ids": [
+            "transit_density"
+          ]
+        },
+        {
+          "option_ids": [
+            "accessory_units"
+          ]
+        },
+        {
+          "option_ids": [
+            "vacancy_fee",
+            "retain_local_rules"
+          ]
+        }
+      ],
+      "approved_option_ids": [
+        "transit_density",
+        "accessory_units"
+      ],
+      "option_scores": {
+        "accessory_units": 7,
+        "transit_density": 9,
+        "vacancy_fee": 5,
+        "retain_local_rules": 3
+      },
+      "evidence_reliability_weight": 1.0
+    },
+    {
+      "measure_id": "dev_transport_investment",
+      "measure_version": 1,
+      "response_state": "choice",
+      "selected_option_id": "road_repairs",
+      "confidence": 0.65,
+      "preference_strength": 6,
+      "stability": "stable",
+      "ranking_tiers": [
+        {
+          "option_ids": [
+            "road_repairs"
+          ]
+        },
+        {
+          "option_ids": [
+            "safe_streets",
+            "bus_frequency"
+          ]
+        },
+        {
+          "option_ids": [
+            "rural_connections"
+          ]
+        }
+      ],
+      "approved_option_ids": [
+        "road_repairs",
+        "safe_streets",
+        "bus_frequency"
+      ],
+      "option_scores": {
+        "road_repairs": 9,
+        "bus_frequency": 7,
+        "rural_connections": 5,
+        "safe_streets": 7
+      },
+      "evidence_reliability_weight": 1.0
+    },
+    {
+      "measure_id": "dev_energy_building_standard",
+      "measure_version": 1,
+      "response_state": "unsure",
+      "confidence": 0.45,
+      "preference_strength": 3,
+      "stability": "tentative",
+      "evidence_reliability_weight": 0.5
+    },
+    {
+      "measure_id": "dev_justice_oversight",
+      "measure_version": 1,
+      "response_state": "abstain",
+      "confidence": 0.85,
+      "preference_strength": 8,
+      "stability": "stable",
+      "evidence_reliability_weight": 1.0
+    },
+    {
+      "measure_id": "dev_governance_digital_budget",
+      "measure_version": 1,
+      "response_state": "choice",
+      "selected_option_id": "privacy_security",
+      "confidence": 0.8,
+      "preference_strength": 8,
+      "stability": "stable",
+      "quadratic_allocations": {
+        "service_portal": 5,
+        "privacy_security": 7,
+        "open_data": 3,
+        "offline_access": 4
+      },
+      "evidence_reliability_weight": 1.0
+    }
+  ]
+}

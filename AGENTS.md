@@ -183,9 +183,9 @@ below.
   error. Question efficiency, follow-up quality, and cross-format ballot
   fidelity are secondary.
 
-See `eval/README.md` for the source-level contract and
-`eval/fixtures/preference_eval_dev_v1.json` for the non-held-out Phase 1
-fixture.
+See `eval/README.md` for the source-level contract,
+`eval/fixtures/preference_eval_dev_v1.json` for the non-held-out fixture, and
+`python -m eval.run_human_measure_eval` for the deterministic Phase 2 replay.
 
 ### The comparison story
 
@@ -332,10 +332,12 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
   sweeps
 - Human-measure Phase 1: strict versioned contracts, an eight-domain
   development fixture, canonical content hashes, and leakage-boundary tests
+- Human-measure Phase 2: leakage-safe model adapter boundary, synthetic
+  prequential replay, option and delegated-risk metrics, and aggregate-only
+  public serializer
 
 **Next:**
 - Seed-plumb all stochastic operations for the reproducibility invariant
-- Add the prequential human-measure runner and primary metrics
 - Extend `eval/` with one baseline metric for demos 1/3/4 as they mature
 - Add a top-level navigation surfacing the demo set (`/methods`, `/preferences`, future `/districts`, `/delegation`)
 
@@ -365,23 +367,24 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 - Pydantic contracts for standardized jurisdiction, measures, evidence,
   predictions, participant responses, ontology versions, and evaluation runs
 - Eight-domain non-held-out development fixture plus deterministic manifest CLI
+- Deterministic human-measure session runner with zero-evidence,
+  post-onboarding, post-wave, and immediate pre-answer snapshots
+- Uniform-prior baseline, scripted test double, primary log-loss and
+  risk/coverage metrics, stable/tentative slices, and unsupported-delegation
+  accounting
+- Aggregate-only public artifact serializer with planted-sensitive-data tests
 
 **Next, in order:**
-1. Implement the Phase 2 prequential runner, prediction-model adapter, and
-   primary log-loss/risk-coverage metrics on the development fixture. Derive
-   primary eligibility from `MeasurePresentation`, exclude retests, and build
-   public artifacts through a tested allowlist serializer rather than dumping
-   private run records.
-2. Author and neutrally review the standardized jurisdiction, 48-measure bank,
+1. Author and neutrally review the standardized jurisdiction, 48-measure bank,
    and retest variants
-3. Add the direct LLM baseline, confirmed evidence extraction, fixed/expanding
+2. Add the direct LLM baseline, confirmed evidence extraction, fixed/expanding
    ontology ablation, and hybrid explicit posterior
-4. Evaluate LLM follow-ups after fixed, random, and max-variance policies
-5. Build separate blind evaluation and future-facing showcase modes
-6. Freeze inputs, models, prompts, thresholds, seeds, and metrics before Ben's
+3. Evaluate LLM follow-ups after fixed, random, and max-variance policies
+4. Build separate blind evaluation and future-facing showcase modes
+5. Freeze inputs, models, prompts, thresholds, seeds, and metrics before Ben's
    held-out case study
-7. *(Deferred)* LLM-generated vote rationales
-8. *(Deferred)* LLM-generated personas
+6. *(Deferred)* LLM-generated vote rationales
+7. *(Deferred)* LLM-generated personas
 
 ### Demo 3: Algorithmic districting
 

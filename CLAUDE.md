@@ -184,7 +184,8 @@ below.
   fidelity are secondary.
 
 Versioned file-backed contracts live in `eval/contracts.py`; the non-held-out
-Phase 1 fixture is `eval/fixtures/preference_eval_dev_v1.json`.
+fixture is `eval/fixtures/preference_eval_dev_v1.json`, and
+`python -m eval.run_human_measure_eval` runs the deterministic Phase 2 replay.
 
 ### The comparison story
 
@@ -329,6 +330,9 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 - `eval/` harness skeleton: seeded held-out splits, deterministic trials, demo 2 preference-model metrics first (results JSON gitignored under `eval/results/`)
 - Human-measure Phase 1: strict versioned contracts, an eight-domain
   development fixture, canonical content hashes, and leakage-boundary tests
+- Human-measure Phase 2: leakage-safe model adapter boundary, synthetic
+  prequential replay, option and delegated-risk metrics, and aggregate-only
+  public serializer
 
 **Next:**
 - Seed-plumb all stochastic operations for the reproducibility invariant
@@ -365,23 +369,24 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
   prediction snapshots, dynamic ontology versions, and evaluation runs
 - Eight-domain non-held-out fixture plus deterministic validator/manifest
   command documented in `eval/README.md`
+- Deterministic human-measure session runner with zero-evidence,
+  post-onboarding, post-wave, and immediate pre-answer snapshots
+- Uniform-prior baseline, scripted test double, primary log-loss and
+  risk/coverage metrics, stable/tentative slices, and unsupported-delegation
+  accounting
+- Aggregate-only public artifact serializer with planted-sensitive-data tests
 
 **Next, in order:**
-1. Implement the Phase 2 prequential runner, prediction-model adapter, and
-   primary log-loss/risk-coverage metrics on the development fixture. Derive
-   primary eligibility from `MeasurePresentation`, exclude retests, and build
-   public artifacts through a tested allowlist serializer rather than dumping
-   private run records.
-2. Author and neutrally review the standardized jurisdiction, 48-measure bank,
+1. Author and neutrally review the standardized jurisdiction, 48-measure bank,
    and retest variants
-3. Add the direct LLM baseline, confirmed evidence extraction, fixed/expanding
+2. Add the direct LLM baseline, confirmed evidence extraction, fixed/expanding
    ontology ablation, and hybrid explicit posterior
-4. Evaluate LLM follow-ups after fixed, random, and max-variance policies
-5. Build separate blind evaluation and future-facing showcase modes
-6. Freeze inputs, models, prompts, thresholds, seeds, and metrics before Ben's
+3. Evaluate LLM follow-ups after fixed, random, and max-variance policies
+4. Build separate blind evaluation and future-facing showcase modes
+5. Freeze inputs, models, prompts, thresholds, seeds, and metrics before Ben's
    held-out case study
-7. *(Deferred)* LLM-generated vote rationales
-8. *(Deferred)* LLM-generated personas
+6. *(Deferred)* LLM-generated vote rationales
+7. *(Deferred)* LLM-generated personas
 
 ### Demo 3: Algorithmic districting
 

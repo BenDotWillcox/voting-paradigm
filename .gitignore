@@ -53,6 +53,7 @@ __pycache__/
 # Private human preference-evaluation records. Public artifacts must be
 # generated separately without raw responses or direct identifiers.
 /eval/private_runs/
+/eval/results/
 
 # Raw districting algorithm artifacts (tract-level GeoJSON, ~5 GB total).
 # The display artifacts the site actually serves are derived from these via
