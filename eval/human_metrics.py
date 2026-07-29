@@ -6,7 +6,7 @@ import math
 from dataclasses import dataclass
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from .contracts import (
     ContractModel,
@@ -61,6 +61,24 @@ class RiskCoveragePoint(ContractModel):
     unsupported_vote_rate: Probability | None = None
 
 
+class CheckpointMetricSlice(ContractModel):
+    checkpoint: SnapshotCheckpoint
+    wave_index: int | None = Field(default=None, ge=0)
+    prediction_count: int = Field(gt=0)
+    evidence_event_count_min: int = Field(ge=0)
+    evidence_event_count_max: int = Field(ge=0)
+    choice: ChoiceMetricSummary
+    settledness: SettlednessMetricSummary
+
+    @model_validator(mode="after")
+    def evidence_range_is_ordered(self) -> "CheckpointMetricSlice":
+        if self.evidence_event_count_min > self.evidence_event_count_max:
+            raise ValueError(
+                "minimum evidence-event count cannot exceed maximum"
+            )
+        return self
+
+
 class ModelEvaluationMetrics(ContractModel):
     configuration_id: StableId
     choice: ChoiceMetricSummary
@@ -70,6 +88,7 @@ class ModelEvaluationMetrics(ContractModel):
     candidate_thresholds: list[RiskCoveragePoint]
     risk_coverage_curve: list[RiskCoveragePoint]
     wrong_vote_confidences: list[Probability]
+    checkpoint_slices: list[CheckpointMetricSlice]
 
 
 class HumanMeasureMetrics(ContractModel):
@@ -248,64 +267,151 @@ def _risk_coverage_point(
     )
 
 
-def _immediate_outcomes_by_configuration(
+CheckpointSliceKey = tuple[SnapshotCheckpoint, int | None]
+
+
+def _checkpoint_sort_key(
+    key: CheckpointSliceKey,
+) -> tuple[int, int]:
+    checkpoint, wave_index = key
+    if checkpoint is SnapshotCheckpoint.ZERO_EVIDENCE:
+        return (0, -1)
+    if checkpoint is SnapshotCheckpoint.POST_ONBOARDING:
+        return (1, -1)
+    if wave_index is None:
+        raise ValueError(f"{checkpoint.value} checkpoint requires a wave index")
+    if checkpoint is SnapshotCheckpoint.IMMEDIATE_PRE_ANSWER:
+        return (2 + 2 * wave_index, wave_index)
+    return (3 + 2 * wave_index, wave_index)
+
+
+def _checkpoint_outcomes_by_configuration(
     replay: PrequentialReplay,
-) -> dict[str, list[_PredictionOutcome]]:
+) -> dict[str, dict[CheckpointSliceKey, list[_PredictionOutcome]]]:
     run = replay.run
     trace_by_snapshot_id = {
         trace.snapshot_id: trace for trace in replay.snapshot_traces
     }
-    snapshot_groups: dict[tuple[str, str], list[PredictionSnapshot]] = {}
-    for snapshot in run.prediction_snapshots:
-        trace = trace_by_snapshot_id[snapshot.snapshot_id]
-        if trace.checkpoint is not SnapshotCheckpoint.IMMEDIATE_PRE_ANSWER:
-            continue
-        key = (
-            snapshot.model_configuration_id,
-            snapshot.target_presentation_id,
-        )
-        snapshot_groups.setdefault(key, []).append(snapshot)
-
+    presentation_by_id = {
+        presentation.presentation_id: presentation
+        for presentation in run.measure_presentations
+        if presentation.kind is PresentationKind.INITIAL
+    }
     response_by_presentation_id = {
         response.presentation_id: response
         for response in run.participant_responses
     }
-    outcomes_by_configuration = {
-        configuration.configuration_id: []
+    outcomes_by_configuration: dict[
+        str,
+        dict[CheckpointSliceKey, list[_PredictionOutcome]],
+    ] = {
+        configuration.configuration_id: {}
         for configuration in run.model_configurations
     }
-    for presentation in run.measure_presentations:
-        if presentation.kind is not PresentationKind.INITIAL:
-            continue
-        response = response_by_presentation_id.get(
-            presentation.presentation_id
+    seen_snapshots: set[
+        tuple[str, str, SnapshotCheckpoint, int | None]
+    ] = set()
+
+    for snapshot in run.prediction_snapshots:
+        trace = trace_by_snapshot_id[snapshot.snapshot_id]
+        presentation = presentation_by_id.get(
+            snapshot.target_presentation_id
         )
-        if response is None:
+        response = response_by_presentation_id.get(
+            snapshot.target_presentation_id
+        )
+        if presentation is None or response is None:
             continue
-        for configuration in run.model_configurations:
-            key = (
-                configuration.configuration_id,
-                presentation.presentation_id,
+        uniqueness_key = (
+            snapshot.model_configuration_id,
+            snapshot.target_presentation_id,
+            trace.checkpoint,
+            trace.wave_index,
+        )
+        if uniqueness_key in seen_snapshots:
+            raise ValueError(
+                "duplicate checkpoint snapshot for model and presentation; "
+                f"configuration={snapshot.model_configuration_id}, "
+                f"presentation={snapshot.target_presentation_id}, "
+                f"checkpoint={trace.checkpoint.value}, "
+                f"wave={trace.wave_index}"
             )
-            snapshots = snapshot_groups.get(key, [])
-            if len(snapshots) != 1:
-                raise ValueError(
-                    "each answered initial presentation requires exactly one "
-                    "immediate pre-answer snapshot per model; "
-                    f"configuration={configuration.configuration_id}, "
-                    f"presentation={presentation.presentation_id}, "
-                    f"count={len(snapshots)}"
-                )
-            outcomes_by_configuration[
-                configuration.configuration_id
-            ].append(
-                _PredictionOutcome(
-                    presentation=presentation,
-                    response=response,
-                    snapshot=snapshots[0],
-                )
+        seen_snapshots.add(uniqueness_key)
+        slice_key = (trace.checkpoint, trace.wave_index)
+        outcomes_by_configuration[
+            snapshot.model_configuration_id
+        ].setdefault(slice_key, []).append(
+            _PredictionOutcome(
+                presentation=presentation,
+                response=response,
+                snapshot=snapshot,
+            )
+        )
+
+    answered_initial_presentations = {
+        presentation_id
+        for presentation_id in presentation_by_id
+        if presentation_id in response_by_presentation_id
+    }
+    for configuration_id, slices in outcomes_by_configuration.items():
+        immediate_presentations = [
+            outcome.presentation.presentation_id
+            for key, outcomes in slices.items()
+            if key[0] is SnapshotCheckpoint.IMMEDIATE_PRE_ANSWER
+            for outcome in outcomes
+        ]
+        if (
+            len(immediate_presentations)
+            != len(set(immediate_presentations))
+            or set(immediate_presentations)
+            != answered_initial_presentations
+        ):
+            missing = sorted(
+                answered_initial_presentations - set(immediate_presentations)
+            )
+            extra = sorted(
+                set(immediate_presentations) - answered_initial_presentations
+            )
+            duplicates = sorted(
+                {
+                    presentation_id
+                    for presentation_id in immediate_presentations
+                    if immediate_presentations.count(presentation_id) > 1
+                }
+            )
+            raise ValueError(
+                "each answered initial presentation requires exactly one "
+                "immediate pre-answer snapshot per model; "
+                f"configuration={configuration_id}, missing={missing}, "
+                f"extra={extra}, duplicates={duplicates}"
             )
     return outcomes_by_configuration
+
+
+def _checkpoint_metric_slice(
+    *,
+    key: CheckpointSliceKey,
+    outcomes: list[_PredictionOutcome],
+    epsilon: float,
+) -> CheckpointMetricSlice:
+    evidence_counts = [
+        len(outcome.snapshot.evidence_event_ids)
+        for outcome in outcomes
+    ]
+    if not evidence_counts:
+        raise ValueError(
+            "checkpoint metric slices require at least one prediction"
+        )
+    checkpoint, wave_index = key
+    return CheckpointMetricSlice(
+        checkpoint=checkpoint,
+        wave_index=wave_index,
+        prediction_count=len(outcomes),
+        evidence_event_count_min=min(evidence_counts),
+        evidence_event_count_max=max(evidence_counts),
+        choice=_choice_summary(outcomes, epsilon=epsilon),
+        settledness=_settledness_summary(outcomes),
+    )
 
 
 def compute_human_measure_metrics(
@@ -334,10 +440,16 @@ def compute_human_measure_metrics(
         raise ValueError("candidate thresholds must fall between 0 and 1")
     thresholds = tuple(sorted(candidate_thresholds))
 
-    outcomes_by_configuration = _immediate_outcomes_by_configuration(replay)
+    checkpoint_outcomes = _checkpoint_outcomes_by_configuration(replay)
     model_metrics: list[ModelEvaluationMetrics] = []
-    for configuration_id in sorted(outcomes_by_configuration):
-        outcomes = outcomes_by_configuration[configuration_id]
+    for configuration_id in sorted(checkpoint_outcomes):
+        checkpoint_groups = checkpoint_outcomes[configuration_id]
+        outcomes = [
+            outcome
+            for key, slice_outcomes in checkpoint_groups.items()
+            if key[0] is SnapshotCheckpoint.IMMEDIATE_PRE_ANSWER
+            for outcome in slice_outcomes
+        ]
         stable_outcomes = [
             outcome
             for outcome in outcomes
@@ -396,6 +508,17 @@ def compute_human_measure_metrics(
                     for threshold in curve_thresholds
                 ],
                 wrong_vote_confidences=wrong_confidences,
+                checkpoint_slices=[
+                    _checkpoint_metric_slice(
+                        key=key,
+                        outcomes=checkpoint_groups[key],
+                        epsilon=log_loss_epsilon,
+                    )
+                    for key in sorted(
+                        checkpoint_groups,
+                        key=_checkpoint_sort_key,
+                    )
+                ],
             )
         )
     return HumanMeasureMetrics(

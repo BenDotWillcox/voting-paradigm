@@ -110,6 +110,7 @@ def test_public_artifact_omits_every_private_replay_surface():
         "evidence_event_ids",
         "risk_coverage_curve",
         "wrong_vote_confidences",
+        "checkpoint_slices",
     ):
         assert f'"{private_field}"' not in serialized
 
@@ -141,6 +142,7 @@ def test_cli_writes_reproducible_public_artifact(tmp_path, capsys):
     for model in artifact["models"]:
         assert "risk_coverage_curve" not in model
         assert "wrong_vote_confidences" not in model
+        assert "checkpoint_slices" not in model
         assert [
             point["threshold"]
             for point in model["candidate_thresholds"]

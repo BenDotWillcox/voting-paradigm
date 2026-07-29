@@ -94,10 +94,17 @@ the participant has reached a civic decision not to cast an option vote; unsure
 means the preference remains unresolved.
 
 The private metric object retains the full observed risk/coverage curve and
-wrong-vote confidence diagnostics. The allowlisted publication candidate emits
-only the fixed candidate-threshold grid and a machine-readable model role.
-Exact confidence diagnostics can permit per-measure response reconstruction
-when the fixture and model are reproducible, so they must never cross the public
+wrong-vote confidence diagnostics. It also reports checkpoint slices by model,
+checkpoint, and wave, including the prediction denominator and minimum/maximum
+available evidence-event counts. Zero-evidence and post-onboarding slices score
+the full eventual response set; post-wave slices score only measures still
+unanswered at that checkpoint, so their denominators and composition must be
+considered when comparing them.
+
+The allowlisted publication candidate emits only the fixed
+candidate-threshold grid and a machine-readable model role. Exact confidence
+and checkpoint diagnostics can permit per-measure response reconstruction when
+the fixture and model are reproducible, so they must never cross the public
 serializer. Aggregate output still requires explicit release review and is not
 a formal ballot-confidentiality guarantee for a single participant.
 

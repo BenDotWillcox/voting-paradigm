@@ -108,6 +108,36 @@ def test_uniform_prior_defers_at_candidate_thresholds(development_result):
     )
 
 
+def test_checkpoint_slices_report_evidence_accumulation(
+    development_result,
+):
+    _, _, metrics = development_result
+    uniform = metric_by_configuration(metrics, "uniform_prior_v1")
+
+    assert [
+        (metric.checkpoint, metric.wave_index)
+        for metric in uniform.checkpoint_slices
+    ] == [
+        (SnapshotCheckpoint.ZERO_EVIDENCE, None),
+        (SnapshotCheckpoint.POST_ONBOARDING, None),
+        (SnapshotCheckpoint.IMMEDIATE_PRE_ANSWER, 0),
+        (SnapshotCheckpoint.POST_WAVE, 0),
+        (SnapshotCheckpoint.IMMEDIATE_PRE_ANSWER, 1),
+    ]
+    assert [
+        metric.prediction_count for metric in uniform.checkpoint_slices
+    ] == [8, 8, 4, 4, 4]
+    assert [
+        (
+            metric.evidence_event_count_min,
+            metric.evidence_event_count_max,
+        )
+        for metric in uniform.checkpoint_slices
+    ] == [(0, 0), (2, 2), (2, 5), (6, 6), (6, 9)]
+    assert uniform.checkpoint_slices[0].choice.count == 6
+    assert uniform.checkpoint_slices[1].choice.count == 6
+
+
 def test_retest_response_is_excluded_from_primary_metrics(
     development_result,
 ):
