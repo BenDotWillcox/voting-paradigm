@@ -44,8 +44,6 @@ The list is open — additional demos can be added as peer packages without dist
 - **Python > TypeScript for numerical/ML work:** scipy, numpy, PyTorch ecosystem. TypeScript is for the web frontend only.
 - **Git workflow:** feature branches + PRs. Never commit without asking.
 
-See `.Codex/skills/` for project-specific review checklists (db-change, server-action, voting-method-correctness, voting-package-conventions, pr-reviewer).
-
 ## Architecture
 
 Two processes. One web app, one Python service.
@@ -102,7 +100,6 @@ delegation/                 Python: liquid democracy delegation graphs       (fu
 eval/                       Python: synthetic + human-measure evaluation       [cross-demo]
 api/                        Python: FastAPI app, one router per demo
 prompts/                    Project scope + documentation
-.Codex/skills/             Project-specific review/guardrail skills
 ```
 
 **Domain packages are import-isolated.** `voting/` does not import `preferences/`; `districting/` does not import `delegation/`. `api/` imports every domain but domains do not import `api/`. No circular deps; every package is testable without the HTTP layer.
@@ -148,7 +145,10 @@ Anticipated: a delegation graph (edges with topic + weight), per-topic effective
 
 ## Per-demo technical surface
 
-Each demo has its own AI/ML/systems story. The depth lives here. Demo 1 (voting methods) is mostly about correctness and rigor — its conventions are documented in `.Codex/skills/voting-method-correctness.md` and `.Codex/skills/voting-package-conventions.md`. Demos 2–4 are detailed below.
+Each demo has its own AI/ML/systems story. The depth lives here. Demo 1 (voting
+methods) is mostly about correctness and rigor; its conventions are enforced in
+the voting package tests and module documentation. Demos 2–4 are detailed
+below.
 
 ## Demo 2: Agent voting via preference models
 
@@ -173,8 +173,8 @@ Each demo has its own AI/ML/systems story. The depth lives here. Demo 1 (voting 
 - Measures share one standardized fictional jurisdiction but remain legally and
   fiscally independent; preference evidence accumulates.
 - The model ladder compares fixed/adaptive structured baselines, a direct LLM,
-  and an LLM-plus-explicit-posterior hybrid. Embeddings are a candidate
-  representation, not an assumed winner.
+  and an LLM-plus-explicit-posterior hybrid. An embedding/Bayesian-last-layer
+  model remains a candidate hybrid representation, not an assumed winner.
 - Primary outcomes are prequential log loss and high-confidence delegated
   error. Question efficiency, follow-up quality, and cross-format ballot
   fidelity are secondary.

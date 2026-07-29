@@ -46,6 +46,10 @@ __pycache__/
 .cache/
 .claude/
 
+# Private human preference-evaluation records. Public artifacts must be
+# generated separately without raw responses or direct identifiers.
+/eval/private_runs/
+
 # Raw districting algorithm artifacts (tract-level GeoJSON, ~5 GB total).
 # The display artifacts the site actually serves are derived from these via
 # scripts/build_district_topojson.py into districting-topo/ and

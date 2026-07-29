@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-from eval.contracts import MeasureDomain
+from eval.contracts import MeasureDomain, SourceRecord
 from eval.fixture_io import (
     build_fixture_manifest,
     content_sha256,
@@ -46,6 +46,12 @@ def test_fixture_round_trips_without_database():
     assert replayed == fixture
 
 
+def test_load_fixture_accepts_string_path():
+    fixture = load_fixture(str(FIXTURE_PATH))
+
+    assert fixture.fixture_id == "preference_eval_dev_v1"
+
+
 def test_canonical_hash_ignores_source_json_formatting(tmp_path):
     fixture = load_fixture(FIXTURE_PATH)
     parsed = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
@@ -60,6 +66,23 @@ def test_canonical_hash_ignores_source_json_formatting(tmp_path):
     )
 
 
+def test_canonical_hash_normalizes_urls_and_unicode():
+    source_without_slash = SourceRecord(
+        source_id="source_one",
+        title="Café source",
+        url="https://example.com",
+    )
+    source_with_slash = SourceRecord(
+        source_id="source_one",
+        title="Cafe\u0301 source",
+        url="https://example.com/",
+    )
+
+    assert content_sha256(source_without_slash) == content_sha256(
+        source_with_slash
+    )
+
+
 def test_cli_prints_machine_readable_manifest(capsys):
     exit_code = main([str(FIXTURE_PATH)])
 
@@ -68,3 +91,33 @@ def test_cli_prints_machine_readable_manifest(capsys):
     assert output["schema_version"] == "preference_eval_manifest.v1"
     assert output["fixture_id"] == "preference_eval_dev_v1"
     assert len(output["measures"]) == 8
+
+
+def test_cli_reports_malformed_json_without_traceback(tmp_path, capsys):
+    invalid_path = tmp_path / "invalid.json"
+    invalid_path.write_text("{not-json", encoding="utf-8")
+
+    exit_code = main([str(invalid_path)])
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert captured.out == ""
+    assert captured.err.startswith("error:")
+    assert "Traceback" not in captured.err
+
+
+def test_cli_can_require_development_profile(tmp_path, capsys):
+    parsed = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
+    parsed["development_only"] = False
+    nondevelopment_path = tmp_path / "nondevelopment.json"
+    nondevelopment_path.write_text(
+        json.dumps(parsed),
+        encoding="utf-8",
+    )
+
+    exit_code = main(
+        [str(nondevelopment_path), "--require-development-profile"]
+    )
+
+    assert exit_code == 1
+    assert "must be marked development_only" in capsys.readouterr().err

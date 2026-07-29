@@ -2,13 +2,14 @@
 
 The existing fixed-bank harness operates on synthetic latent utilities.  This
 module defines the file-backed boundary for the standardized civic-measure
-evaluation: immutable jurisdiction and measure inputs, auditable evidence,
+evaluation: versioned jurisdiction and measure inputs, auditable evidence,
 pre-answer prediction snapshots, participant responses, ontology versions,
 and replayable evaluation runs.
 
 These are Pydantic contracts rather than database models.  Frozen evaluation
-inputs must remain reproducible from versioned files even when the interactive
-demo later persists the same records in PostgreSQL.
+files and their manifests must remain reproducible even when the interactive
+demo later persists equivalent records in PostgreSQL. Runtime model instances
+are validated value containers, not deeply immutable objects.
 """
 
 from __future__ import annotations
@@ -38,6 +39,10 @@ StableId = Annotated[
     ),
 ]
 NonEmptyText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
+PrivateResponseText = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, min_length=1, max_length=20_000),
+]
 PositiveVersion = Annotated[int, Field(ge=1)]
 EventSequence = Annotated[int, Field(ge=1)]
 Probability = Annotated[float, Field(ge=0.0, le=1.0)]
@@ -580,7 +585,7 @@ class EvidenceEvent(ContractModel):
     question_id: StableId | None = None
     question_version: PositiveVersion | None = None
     response_id: StableId | None = None
-    raw_response: NonEmptyText | None = None
+    raw_response: PrivateResponseText | None = None
     normalized_claims: list[NonEmptyText] = Field(default_factory=list)
     confirmed_by_participant: bool
     stability: ResponseStability

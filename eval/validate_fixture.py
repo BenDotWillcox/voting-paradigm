@@ -8,8 +8,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
+
+from pydantic import ValidationError
 
 from .fixture_io import (
     build_fixture_manifest,
@@ -28,25 +31,37 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         help="Optional manifest output path. Defaults to stdout.",
     )
+    parser.add_argument(
+        "--require-development-profile",
+        action="store_true",
+        help=(
+            "Require the Phase 1 one-measure-per-domain development profile. "
+            "Development-only fixtures are checked automatically."
+        ),
+    )
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    fixture = load_fixture(args.fixture)
-    if fixture.development_only:
-        validate_development_fixture(fixture)
-    manifest = build_fixture_manifest(fixture)
-    rendered = json.dumps(
-        manifest.model_dump(mode="json"),
-        indent=2,
-        sort_keys=True,
-    )
-    if args.output is None:
-        print(rendered)
-    else:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(f"{rendered}\n", encoding="utf-8")
+    try:
+        fixture = load_fixture(args.fixture)
+        if args.require_development_profile or fixture.development_only:
+            validate_development_fixture(fixture)
+        manifest = build_fixture_manifest(fixture)
+        rendered = json.dumps(
+            manifest.model_dump(mode="json"),
+            indent=2,
+            sort_keys=True,
+        )
+        if args.output is None:
+            print(rendered)
+        else:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(f"{rendered}\n", encoding="utf-8")
+    except (OSError, json.JSONDecodeError, ValidationError, ValueError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 1
     return 0
 
 

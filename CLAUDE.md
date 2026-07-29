@@ -44,8 +44,6 @@ The list is open — additional demos can be added as peer packages without dist
 - **Python > TypeScript for numerical/ML work:** scipy, numpy, PyTorch ecosystem. TypeScript is for the web frontend only.
 - **Git workflow:** feature branches + PRs. Never commit without asking.
 
-See `.claude/skills/` for project-specific review checklists (db-change, server-action, voting-method-correctness, voting-package-conventions, pr-reviewer).
-
 ## Architecture
 
 Two processes. One web app, one Python service.
@@ -102,7 +100,6 @@ delegation/                 Python: liquid democracy delegation graphs       (fu
 eval/                       Python: synthetic + human-measure evaluation       [cross-demo]
 api/                        Python: FastAPI app, one router per demo
 prompts/                    Project scope + documentation
-.claude/skills/             Project-specific review/guardrail skills
 ```
 
 **Domain packages are import-isolated.** `voting/` does not import `preferences/`; `districting/` does not import `delegation/`. `api/` imports every domain but domains do not import `api/`. No circular deps; every package is testable without the HTTP layer.
@@ -148,7 +145,10 @@ Anticipated: a delegation graph (edges with topic + weight), per-topic effective
 
 ## Per-demo technical surface
 
-Each demo has its own AI/ML/systems story. The depth lives here. Demo 1 (voting methods) is mostly about correctness and rigor — its conventions are documented in `.claude/skills/voting-method-correctness.md` and `.claude/skills/voting-package-conventions.md`. Demos 2–4 are detailed below.
+Each demo has its own AI/ML/systems story. The depth lives here. Demo 1 (voting
+methods) is mostly about correctness and rigor; its conventions are enforced in
+the voting package tests and module documentation. Demos 2–4 are detailed
+below.
 
 ## Demo 2: Agent voting via preference models
 

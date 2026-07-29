@@ -266,6 +266,22 @@ class TestEvidenceAndLeakage:
                 occurred_at=NOW,
             )
 
+    def test_raw_response_has_private_ingestion_limit(self):
+        with pytest.raises(ValidationError, match="at most 20000 characters"):
+            EvidenceEvent(
+                event_id="evidence_too_large",
+                session_id="session_one",
+                sequence=1,
+                modality=EvidenceModality.FREE_TEXT_EXTRACTION,
+                question_id="question_one",
+                question_version=1,
+                raw_response="x" * 20_001,
+                confirmed_by_participant=False,
+                stability=ResponseStability.TENTATIVE,
+                reliability_weight=0.5,
+                occurred_at=NOW,
+            )
+
     def test_snapshot_cannot_reference_future_evidence(self, fixture):
         target = measure_by_id(fixture, "dev_fiscal_reserve")
         other = measure_by_id(fixture, "dev_health_mobile_clinics")

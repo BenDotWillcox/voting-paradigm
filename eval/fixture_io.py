@@ -4,49 +4,51 @@ from __future__ import annotations
 
 import hashlib
 import json
+import unicodedata
 from pathlib import Path
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, JsonValue
+from pydantic import BaseModel, JsonValue
 
 from .contracts import (
+    ContractModel,
     EvaluationRun,
     EvaluationFixture,
     MeasureDomain,
     MeasureVersion,
-    NonEmptyText,
     PositiveVersion,
+    Sha256Digest,
     StableId,
     validate_prediction_for_measure,
     validate_response_for_measure,
 )
 
 
-class MeasureManifestEntry(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
+class MeasureManifestEntry(ContractModel):
     measure_id: StableId
     measure_version: PositiveVersion
     packet_id: StableId
     packet_version: PositiveVersion
-    measure_sha256: NonEmptyText
-    packet_sha256: NonEmptyText
+    measure_sha256: Sha256Digest
+    packet_sha256: Sha256Digest
 
 
-class FixtureManifest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    schema_version: str = "preference_eval_manifest.v1"
+class FixtureManifest(ContractModel):
+    schema_version: Literal["preference_eval_manifest.v1"] = (
+        "preference_eval_manifest.v1"
+    )
     fixture_id: StableId
     fixture_version: PositiveVersion
-    fixture_sha256: NonEmptyText
-    jurisdiction_sha256: NonEmptyText
+    fixture_sha256: Sha256Digest
+    jurisdiction_sha256: Sha256Digest
     measures: list[MeasureManifestEntry]
 
 
-def load_fixture(path: Path) -> EvaluationFixture:
+def load_fixture(path: str | Path) -> EvaluationFixture:
     """Load and validate one JSON fixture."""
 
-    raw = json.loads(path.read_text(encoding="utf-8"))
+    fixture_path = Path(path)
+    raw = json.loads(fixture_path.read_text(encoding="utf-8"))
     return EvaluationFixture.model_validate(raw)
 
 
@@ -56,11 +58,30 @@ def _json_value(value: BaseModel | JsonValue) -> JsonValue:
     return value
 
 
+def _normalize_unicode(value: JsonValue) -> JsonValue:
+    if isinstance(value, str):
+        return unicodedata.normalize("NFC", value)
+    if isinstance(value, list):
+        return [_normalize_unicode(item) for item in value]
+    if isinstance(value, dict):
+        normalized: dict[str, JsonValue] = {}
+        for key, item in value.items():
+            normalized_key = unicodedata.normalize("NFC", key)
+            if normalized_key in normalized and normalized_key != key:
+                raise ValueError(
+                    "Unicode normalization produced duplicate JSON key "
+                    f"{normalized_key!r}"
+                )
+            normalized[normalized_key] = _normalize_unicode(item)
+        return normalized
+    return value
+
+
 def canonical_json(value: BaseModel | JsonValue) -> str:
-    """Canonical JSON used for content-addressed evaluation inputs."""
+    """Canonical normalized JSON used for content-addressed inputs."""
 
     return json.dumps(
-        _json_value(value),
+        _normalize_unicode(_json_value(value)),
         ensure_ascii=False,
         allow_nan=False,
         separators=(",", ":"),
