@@ -23,7 +23,7 @@ measures in one standardized fictional jurisdiction. Political identity is not
 a model input. The primary outcomes will be prequential log loss and
 high-confidence delegated error; question efficiency is secondary.
 
-Phase 1 adds:
+Phase 1 provides:
 
 - strict Pydantic contracts in `eval/contracts.py`;
 - deterministic fixture loading and canonical SHA-256 manifests in
@@ -44,6 +44,81 @@ outcomes from it: its one-measure-per-domain shape intentionally confounds
 domain, ballot format, option count, and authored novelty tier so every
 contract path can be exercised cheaply.
 
+## Phase 2 Deterministic Replay
+
+Phase 2 adds a leakage-safe prediction adapter boundary and prequential runner
+in `eval/prequential.py`. An adapter receives the frozen jurisdiction, one
+target packet, and only the evidence available at the snapshot cutoff. Future
+participant responses are held in a separate session script and enter the
+evidence stream only after the immediate pre-answer snapshot is frozen.
+
+The committed synthetic session exercises:
+
+- zero-evidence and post-onboarding snapshots for every target;
+- post-wave snapshots for every still-unanswered target;
+- one immediate pre-answer snapshot used for primary scoring;
+- stable and tentative choices, unsure, and deliberate abstention;
+- binary, ranked, approval, score, and quadratic response payloads; and
+- deterministic response ordering, timestamps, sequence numbers, and hashes.
+
+Run the complete development replay with:
+
+```bash
+python -m eval.run_human_measure_eval
+```
+
+The command compares a genuine uniform zero-information baseline with an
+explicitly labeled scripted test double. The scripted adapter exists to test
+replay, chronology, and metric behavior; it is not a research baseline and its
+development result is not evidence that preference modeling works.
+
+Primary option metrics include every initial `choice` response, including
+tentative choices. Stable and tentative results are also reported separately.
+`unsure`, `abstain`, and `retest` do not define option labels and are excluded
+from option log loss and delegated risk. Voting on an unsure or abstain response
+is counted separately as unsupported delegation.
+
+`eval/human_metrics.py` computes log loss, multiclass Brier score, top-choice
+accuracy, settledness Brier score, candidate-threshold risk/coverage, the full
+observed risk/coverage curve, and unsupported delegation. Candidate thresholds
+default to 65%, 75%, 85%, and 95%; no product default is selected. Exact
+probability ties receive fractional top-choice credit, making null-baseline
+accuracy independent of fixture option order. Delegated risk is conditional on
+coverage: `wrong automatic choice votes / automatic choice votes`; coverage is
+`automatic choice votes / eligible choices`. Report risk together with coverage
+and the automatic-vote count.
+
+Settledness treats a stable choice or stable deliberate abstention as settled,
+while unsure and tentative responses are unsettled. Deliberate abstention means
+the participant has reached a civic decision not to cast an option vote; unsure
+means the preference remains unresolved.
+
+The private metric object retains the full observed risk/coverage curve and
+wrong-vote confidence diagnostics. It also reports checkpoint slices by model,
+checkpoint, and wave, including the prediction denominator and minimum/maximum
+available evidence-event counts. Zero-evidence and post-onboarding slices score
+the full eventual response set; post-wave slices score only measures still
+unanswered at that checkpoint, so their denominators and composition must be
+considered when comparing them.
+
+The allowlisted publication candidate emits only the fixed
+candidate-threshold grid of 65%, 75%, 85%, and 95% and a machine-readable model
+role. The serializer enforces that grid regardless of additional thresholds
+used for private diagnostics. Exact confidence and checkpoint diagnostics can
+permit per-measure response reconstruction when the fixture and model are
+reproducible, so they must never cross the public serializer. Aggregate output
+still requires explicit release review and is not a formal
+ballot-confidentiality guarantee for a single participant.
+
+Before releasing an artifact based on real participant data:
+
+- obtain explicit participant approval for the exact artifact;
+- inspect consecutive-threshold count deltas for singleton or very small bins;
+- withhold the artifact or prepare a separately reviewed coarser aggregate when
+  those deltas create unsafe cells;
+- do not publish per-measure predictions beside the aggregate artifact; and
+- do not treat anonymous participant labels as sufficient privacy protection.
+
 ## Contract Invariants
 
 - Every persisted record declares a version.
@@ -59,7 +134,8 @@ contract path can be exercised cheaply.
   meaningful; the development budget-allocation contest does not allow them.
 - Prediction snapshots contain full option probabilities and an explicit
   evidence cutoff.
-- Exact probability ties resolve by frozen option display order.
+- Exact probability ties resolve to a deterministic snapshot option by frozen
+  display order; headline accuracy splits credit across tied maxima.
 - Presentations distinguish initial and retest exposures. A retest prediction
   may use the original answer, but cannot use evidence from the retest
   presentation it predicts.
@@ -77,9 +153,9 @@ contract path can be exercised cheaply.
 
 `EvidenceEvent` is the audit-level provenance record. Its `modality` says how
 the observation entered the session. `preferences.types.Evidence` is the
-model-level normalized pairwise or slider observation. Phase 2 adapters will
-perform that explicit, auditable conversion; the similarly named records are
-not interchangeable.
+model-level normalized pairwise or slider observation. Future structured-model
+adapters will perform that explicit, auditable conversion; the similarly named
+records are not interchangeable.
 
 Retest is a presentation kind, not an evidence modality. The underlying answer
 may still be a structured response, correction, override, or free-text
@@ -106,14 +182,16 @@ normalized claims, metadata, and pseudonymous identifiers—not only raw respons
 text. Store local run records under `eval/private_runs/`, which is ignored by
 Git. Never commit a human run.
 
-Phase 2 public artifacts must use a dedicated allowlist schema and serializer
-containing only approved aggregate metrics and explicitly public labels. They
-must never be produced with `EvaluationRun.model_dump*` or by subtracting a
-small denylist from a run record. Raw responses, normalized claims, metadata,
-and participant/run/evidence/presentation/response identifiers remain private.
-Serializer tests must plant sensitive strings in every private field and prove
+Public artifacts use the dedicated allowlist schema and serializer in
+`eval/public_artifact.py`, containing only approved aggregate metrics and
+explicitly public labels. They are never produced with
+`EvaluationRun.model_dump*` or by subtracting a small denylist from a run
+record. Raw responses, normalized claims, metadata, and
+participant/run/evidence/presentation/response identifiers remain private.
+Serializer tests plant sensitive strings across the private replay and prove
 none appear in the public artifact. The raw-response field's 20,000-character
-limit is an ingestion safeguard, not a privacy boundary.
+limit is an ingestion safeguard, not a privacy boundary. Generated aggregate
+results go under `eval/results/`, which is ignored by Git.
 
 Formal consent, retention, deletion, and publication records are required
 before any separately approved pilot. They are not implied by the Phase 1
@@ -121,12 +199,7 @@ development fixture or Ben's private self-case study.
 
 ## Next
 
-Phase 2 will add the prequential runner and primary metrics on top of these
-contracts. Primary scoring must derive eligibility from each target
-`MeasurePresentation` and exclude `PresentationKind.RETEST` by construction;
-retests feed only test-retest diagnostics. Do not add a redundant `held_out`
-flag. Phase 2 also owns the allowlisted public-artifact serializer and its
-planted-sensitive-string tests.
-
-The final standardized jurisdiction and 48-measure bank will be authored and
-frozen only after the development runner and validators are working.
+Phase 3 will author and freeze the final standardized jurisdiction,
+48-measure bank, and retest variants. The Phase 2 runner deliberately stops
+before classical-model adapters, direct LLM integration, the final bank, or a
+human-facing UI.

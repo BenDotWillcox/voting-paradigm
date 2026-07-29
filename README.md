@@ -102,6 +102,9 @@ npm run lint                    # Next.js + TypeScript checks
 
 # Validate and hash the non-held-out preference-evaluation fixture
 python -m eval.validate_fixture eval/fixtures/preference_eval_dev_v1.json
+
+# Replay the synthetic session and write an allowlisted publication candidate
+python -m eval.run_human_measure_eval
 ```
 
 ## Reproducibility
@@ -121,8 +124,10 @@ This is an active, in-progress portfolio project. Demo 1 (voting methods) has a
 complete Python package and a live comparison UI backed by curated scenarios.
 Demo 2 (agent voting) has Gaussian and Bradley-Terry preference models,
 max-variance acquisition, a fixed-bank synthetic harness, and the versioned
-contracts plus eight-domain development fixture for the future standardized
-human-measure evaluation. Demo 3 (algorithmic districting) currently ships the
+contracts, eight-domain development fixture, deterministic prequential runner,
+primary metrics, and allowlisted artifact boundary for the future standardized
+human-measure evaluation. Public aggregate artifacts still require explicit
+release review. Demo 3 (algorithmic districting) currently ships the
 apportionment slice; district polygon generation comes next. The ballot-measure,
 electorate, and resolution-run tables are internal reproducibility scaffolding
 for future persisted demos, not a current user-facing CRUD/feed product.
@@ -139,7 +144,7 @@ db/                 Drizzle schema, queries, migrations
 lib/                Typed Python API clients, Zod validations
 voting/             Python: pure voting methods + ballot types       [demo 1]
 preferences/        Python: preference modeling                      [demo 2]
-eval/               Python: synthetic + human-measure evaluation contracts
+eval/               Python: synthetic + prequential human-measure evaluation
 districting/        Python: redistricting algorithms       (planned) [demo 3]
 delegation/         Python: liquid-democracy delegation    (planned) [demo 4]
 api/                Python: FastAPI app, one router per demo
