@@ -26,7 +26,6 @@ from .prequential import (
     DEFAULT_DELEGATION_THRESHOLDS,
     load_session_script,
     run_prequential_session,
-    validate_session_script_against_fixture,
 )
 from .public_artifact import build_public_artifact, render_public_summary
 
@@ -41,7 +40,7 @@ def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Replay the synthetic human-measure development session and "
-            "write an aggregate public-safe artifact."
+            "write an allowlisted aggregate publication candidate."
         )
     )
     parser.add_argument("--fixture", type=Path, default=FIXTURE_PATH)
@@ -71,7 +70,6 @@ def main(argv: list[str] | None = None) -> int:
         fixture = load_fixture(args.fixture)
         validate_development_fixture(fixture)
         script = load_session_script(args.session_script)
-        validate_session_script_against_fixture(script, fixture)
         replay = run_prequential_session(
             fixture=fixture,
             script=script,

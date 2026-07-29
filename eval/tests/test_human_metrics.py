@@ -59,11 +59,16 @@ def test_primary_metrics_include_tentative_choices(development_result):
         + math.log(4)
         + math.log(4)
     ) / 6
+    expected_tie_adjusted_accuracy = (
+        1 / 2 + 1 / 2 + 1 / 3 + 1 / 4 + 1 / 4 + 1 / 4
+    ) / 6
     assert uniform.choice.count == 6
     assert uniform.stable_choice.count == 5
     assert uniform.tentative_choice.count == 1
     assert uniform.choice.mean_log_loss == pytest.approx(expected_log_loss)
-    assert uniform.choice.top_choice_accuracy == pytest.approx(0.5)
+    assert uniform.choice.top_choice_accuracy == pytest.approx(
+        expected_tie_adjusted_accuracy
+    )
 
 
 def test_risk_coverage_reports_unsupported_nonchoice_votes(

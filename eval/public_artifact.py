@@ -23,11 +23,20 @@ from .human_metrics import (
 )
 from .prequential import PrequentialReplay
 
+PublicModelRole = Literal[
+    "research_baseline",
+    "candidate_model",
+    "test_double",
+]
+
 
 class PublicChoiceMetrics(ContractModel):
     count: int = Field(ge=0)
     mean_log_loss: float | None = Field(default=None, ge=0.0)
-    top_choice_accuracy: Probability | None = None
+    top_choice_accuracy: Probability | None = Field(
+        default=None,
+        description="Mean top-choice credit with fractional credit for ties.",
+    )
     mean_brier_score: float | None = Field(default=None, ge=0.0)
 
 
@@ -52,13 +61,12 @@ class PublicModelMetrics(ContractModel):
     model_name: str = Field(min_length=1)
     model_version: str = Field(min_length=1)
     seed: int = Field(ge=0)
+    model_role: PublicModelRole
     choice: PublicChoiceMetrics
     stable_choice: PublicChoiceMetrics
     tentative_choice: PublicChoiceMetrics
     settledness: PublicSettlednessMetrics
     candidate_thresholds: list[PublicRiskCoveragePoint]
-    risk_coverage_curve: list[PublicRiskCoveragePoint]
-    wrong_vote_confidences: list[Probability]
 
 
 class PublicModelDescriptor(ContractModel):
@@ -67,10 +75,15 @@ class PublicModelDescriptor(ContractModel):
     model_name: str = Field(min_length=1)
     model_version: str = Field(min_length=1)
     seed: int = Field(ge=0)
+    model_role: PublicModelRole
 
 
 class PublicHumanMeasureArtifact(ContractModel):
-    """Aggregate-only schema safe for publication after explicit approval."""
+    """Allowlisted publication candidate requiring explicit release review.
+
+    Aggregate metrics are not a formal ballot-confidentiality guarantee,
+    especially for a single participant or a publicly reproducible model.
+    """
 
     schema_version: Literal["public_human_measure_eval.v1"] = (
         "public_human_measure_eval.v1"
@@ -192,6 +205,7 @@ def build_public_artifact(
                 model_name=descriptor.model_name,
                 model_version=descriptor.model_version,
                 seed=descriptor.seed,
+                model_role=descriptor.model_role,
                 choice=_public_choice(model_metrics.choice),
                 stable_choice=_public_choice(model_metrics.stable_choice),
                 tentative_choice=_public_choice(
@@ -204,13 +218,6 @@ def build_public_artifact(
                     _public_risk(point)
                     for point in model_metrics.candidate_thresholds
                 ],
-                risk_coverage_curve=[
-                    _public_risk(point)
-                    for point in model_metrics.risk_coverage_curve
-                ],
-                wrong_vote_confidences=list(
-                    model_metrics.wrong_vote_confidences
-                ),
             )
         )
     return PublicHumanMeasureArtifact(
@@ -268,4 +275,15 @@ def render_public_summary(
             "UNSURE, ABSTAIN, and RETEST are excluded from option metrics.",
         ]
     )
+    test_doubles = [
+        model.model_name
+        for model in artifact.models
+        if model.model_role == "test_double"
+    ]
+    if test_doubles:
+        lines.append(
+            "TEST DOUBLE — not a research result: "
+            + ", ".join(test_doubles)
+            + "."
+        )
     return "\n".join(lines)

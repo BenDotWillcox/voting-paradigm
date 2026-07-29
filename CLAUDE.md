@@ -331,8 +331,8 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 - Human-measure Phase 1: strict versioned contracts, an eight-domain
   development fixture, canonical content hashes, and leakage-boundary tests
 - Human-measure Phase 2: leakage-safe model adapter boundary, synthetic
-  prequential replay, option and delegated-risk metrics, and aggregate-only
-  public serializer
+  prequential replay, option and delegated-risk metrics, and an allowlisted
+  publication-candidate serializer
 
 **Next:**
 - Seed-plumb all stochastic operations for the reproducibility invariant

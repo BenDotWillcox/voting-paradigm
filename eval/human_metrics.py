@@ -34,7 +34,13 @@ DEFAULT_LOG_LOSS_EPSILON = 1e-15
 class ChoiceMetricSummary(ContractModel):
     count: int = Field(ge=0)
     mean_log_loss: float | None = Field(default=None, ge=0.0)
-    top_choice_accuracy: Probability | None = None
+    top_choice_accuracy: Probability | None = Field(
+        default=None,
+        description=(
+            "Mean top-choice credit, split equally across exact probability "
+            "ties so null baselines are invariant to option display order."
+        ),
+    )
     mean_brier_score: float | None = Field(default=None, ge=0.0)
 
 
@@ -97,7 +103,7 @@ def _choice_summary(
 
     log_losses: list[float] = []
     brier_scores: list[float] = []
-    correct = 0
+    top_choice_credit = 0.0
     for outcome in choices:
         selected_option_id = outcome.response.selected_option_id
         if selected_option_id is None:
@@ -120,12 +126,27 @@ def _choice_summary(
                 )
             )
         )
-        if outcome.snapshot.top_option_id == selected_option_id:
-            correct += 1
+        top_probability = max(
+            outcome.snapshot.option_probabilities.values()
+        )
+        tied_top_options = [
+            option_id
+            for option_id, probability in (
+                outcome.snapshot.option_probabilities.items()
+            )
+            if math.isclose(
+                probability,
+                top_probability,
+                rel_tol=0.0,
+                abs_tol=1e-12,
+            )
+        ]
+        if selected_option_id in tied_top_options:
+            top_choice_credit += 1.0 / len(tied_top_options)
     return ChoiceMetricSummary(
         count=len(choices),
         mean_log_loss=sum(log_losses) / len(log_losses),
-        top_choice_accuracy=correct / len(choices),
+        top_choice_accuracy=top_choice_credit / len(choices),
         mean_brier_score=sum(brier_scores) / len(brier_scores),
     )
 
@@ -137,6 +158,8 @@ def _settledness_summary(
         return SettlednessMetricSummary(count=0)
     errors = []
     for outcome in outcomes:
+        # A deliberate, stable abstention is a settled civic preference. UNSURE
+        # instead means the participant has not reached a settled position.
         is_settled = (
             outcome.response.stability is ResponseStability.STABLE
             and outcome.response.response_state is not ResponseState.UNSURE

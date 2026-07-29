@@ -143,10 +143,12 @@ def development_public_model_descriptors() -> dict[
             model_name="Uniform prior",
             model_version="v1",
             seed=0,
+            model_role="research_baseline",
         ),
         "scripted_test_double_v1": PublicModelDescriptor(
             model_name="Scripted test double",
             model_version="v1",
             seed=1701,
+            model_role="test_double",
         ),
     }

@@ -81,9 +81,25 @@ is counted separately as unsupported delegation.
 `eval/human_metrics.py` computes log loss, multiclass Brier score, top-choice
 accuracy, settledness Brier score, candidate-threshold risk/coverage, the full
 observed risk/coverage curve, and unsupported delegation. Candidate thresholds
-default to 65%, 75%, 85%, and 95%; no product default is selected. Settledness
-treats a stable choice or stable deliberate abstention as settled, while unsure
-and tentative responses are unsettled.
+default to 65%, 75%, 85%, and 95%; no product default is selected. Exact
+probability ties receive fractional top-choice credit, making null-baseline
+accuracy independent of fixture option order. Delegated risk is conditional on
+coverage: `wrong automatic choice votes / automatic choice votes`; coverage is
+`automatic choice votes / eligible choices`. Report risk together with coverage
+and the automatic-vote count.
+
+Settledness treats a stable choice or stable deliberate abstention as settled,
+while unsure and tentative responses are unsettled. Deliberate abstention means
+the participant has reached a civic decision not to cast an option vote; unsure
+means the preference remains unresolved.
+
+The private metric object retains the full observed risk/coverage curve and
+wrong-vote confidence diagnostics. The allowlisted publication candidate emits
+only the fixed candidate-threshold grid and a machine-readable model role.
+Exact confidence diagnostics can permit per-measure response reconstruction
+when the fixture and model are reproducible, so they must never cross the public
+serializer. Aggregate output still requires explicit release review and is not
+a formal ballot-confidentiality guarantee for a single participant.
 
 ## Contract Invariants
 
@@ -100,7 +116,8 @@ and tentative responses are unsettled.
   meaningful; the development budget-allocation contest does not allow them.
 - Prediction snapshots contain full option probabilities and an explicit
   evidence cutoff.
-- Exact probability ties resolve by frozen option display order.
+- Exact probability ties resolve to a deterministic snapshot option by frozen
+  display order; headline accuracy splits credit across tied maxima.
 - Presentations distinguish initial and retest exposures. A retest prediction
   may use the original answer, but cannot use evidence from the retest
   presentation it predicts.

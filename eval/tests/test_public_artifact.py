@@ -68,6 +68,7 @@ def test_public_artifact_omits_every_private_replay_surface():
                 model_name="Approved public model label",
                 model_version="v1",
                 seed=0,
+                model_role="candidate_model",
             )
         },
     )
@@ -107,6 +108,8 @@ def test_public_artifact_omits_every_private_replay_surface():
         "response_id",
         "snapshot_id",
         "evidence_event_ids",
+        "risk_coverage_curve",
+        "wrong_vote_confidences",
     ):
         assert f'"{private_field}"' not in serialized
 
@@ -130,7 +133,18 @@ def test_cli_writes_reproducible_public_artifact(tmp_path, capsys):
     )
     assert len(artifact["models"]) == 2
     assert "Human-measure prequential evaluation" in first_stdout
+    assert "TEST DOUBLE" in first_stdout
     assert "synthetic_development_session" not in first_content
+    assert {
+        model["model_role"] for model in artifact["models"]
+    } == {"research_baseline", "test_double"}
+    for model in artifact["models"]:
+        assert "risk_coverage_curve" not in model
+        assert "wrong_vote_confidences" not in model
+        assert [
+            point["threshold"]
+            for point in model["candidate_thresholds"]
+        ] == [0.65, 0.75, 0.85, 0.95]
 
 
 def test_public_artifact_requires_explicit_model_labels():
