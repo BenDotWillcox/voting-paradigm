@@ -23,11 +23,14 @@ from .development import (
 from .fixture_io import load_fixture, validate_development_fixture
 from .human_metrics import compute_human_measure_metrics
 from .prequential import (
-    DEFAULT_DELEGATION_THRESHOLDS,
     load_session_script,
     run_prequential_session,
 )
-from .public_artifact import build_public_artifact, render_public_summary
+from .public_artifact import (
+    PUBLIC_THRESHOLD_GRID,
+    build_public_artifact,
+    render_public_summary,
+)
 
 DEFAULT_OUTPUT_PATH = (
     Path(__file__).parent
@@ -56,8 +59,9 @@ def _parser() -> argparse.ArgumentParser:
         action="append",
         dest="thresholds",
         help=(
-            "Delegation threshold to report; repeat for multiple values "
-            "(default: 0.65, 0.75, 0.85, 0.95)."
+            "Additional threshold for private in-memory diagnostics; repeat "
+            "for multiple values. Public output is always restricted to "
+            "0.65, 0.75, 0.85, and 0.95."
         ),
     )
     return parser
@@ -65,7 +69,11 @@ def _parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
-    thresholds = tuple(args.thresholds or DEFAULT_DELEGATION_THRESHOLDS)
+    thresholds = tuple(
+        sorted(
+            set(PUBLIC_THRESHOLD_GRID).union(args.thresholds or ())
+        )
+    )
     try:
         fixture = load_fixture(args.fixture)
         validate_development_fixture(fixture)

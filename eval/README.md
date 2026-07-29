@@ -102,11 +102,22 @@ unanswered at that checkpoint, so their denominators and composition must be
 considered when comparing them.
 
 The allowlisted publication candidate emits only the fixed
-candidate-threshold grid and a machine-readable model role. Exact confidence
-and checkpoint diagnostics can permit per-measure response reconstruction when
-the fixture and model are reproducible, so they must never cross the public
-serializer. Aggregate output still requires explicit release review and is not
-a formal ballot-confidentiality guarantee for a single participant.
+candidate-threshold grid of 65%, 75%, 85%, and 95% and a machine-readable model
+role. The serializer enforces that grid regardless of additional thresholds
+used for private diagnostics. Exact confidence and checkpoint diagnostics can
+permit per-measure response reconstruction when the fixture and model are
+reproducible, so they must never cross the public serializer. Aggregate output
+still requires explicit release review and is not a formal
+ballot-confidentiality guarantee for a single participant.
+
+Before releasing an artifact based on real participant data:
+
+- obtain explicit participant approval for the exact artifact;
+- inspect consecutive-threshold count deltas for singleton or very small bins;
+- withhold the artifact or prepare a separately reviewed coarser aggregate when
+  those deltas create unsafe cells;
+- do not publish per-measure predictions beside the aggregate artifact; and
+- do not treat anonymous participant labels as sufficient privacy protection.
 
 ## Contract Invariants
 

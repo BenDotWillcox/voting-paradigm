@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from .contracts import (
     ContractModel,
@@ -28,6 +28,7 @@ PublicModelRole = Literal[
     "candidate_model",
     "test_double",
 ]
+PUBLIC_THRESHOLD_GRID = (0.65, 0.75, 0.85, 0.95)
 
 
 class PublicChoiceMetrics(ContractModel):
@@ -67,6 +68,18 @@ class PublicModelMetrics(ContractModel):
     tentative_choice: PublicChoiceMetrics
     settledness: PublicSettlednessMetrics
     candidate_thresholds: list[PublicRiskCoveragePoint]
+
+    @model_validator(mode="after")
+    def thresholds_match_public_grid(self) -> "PublicModelMetrics":
+        published_thresholds = tuple(
+            point.threshold for point in self.candidate_thresholds
+        )
+        if published_thresholds != PUBLIC_THRESHOLD_GRID:
+            raise ValueError(
+                "candidate thresholds must match the fixed public threshold "
+                f"grid {PUBLIC_THRESHOLD_GRID}"
+            )
+        return self
 
 
 class PublicModelDescriptor(ContractModel):
@@ -139,6 +152,24 @@ def _public_risk(
         unsupported_vote_count=point.unsupported_vote_count,
         unsupported_vote_rate=point.unsupported_vote_rate,
     )
+
+
+def _fixed_public_risk_points(
+    points: list[RiskCoveragePoint],
+) -> list[PublicRiskCoveragePoint]:
+    selected: list[PublicRiskCoveragePoint] = []
+    for threshold in PUBLIC_THRESHOLD_GRID:
+        matches = [
+            point for point in points if point.threshold == threshold
+        ]
+        if len(matches) != 1:
+            raise ValueError(
+                "private metrics must contain exactly one point for every "
+                "fixed public threshold; "
+                f"threshold={threshold}, count={len(matches)}"
+            )
+        selected.append(_public_risk(matches[0]))
+    return selected
 
 
 def build_public_artifact(
@@ -214,10 +245,9 @@ def build_public_artifact(
                 settledness=_public_settledness(
                     model_metrics.settledness
                 ),
-                candidate_thresholds=[
-                    _public_risk(point)
-                    for point in model_metrics.candidate_thresholds
-                ],
+                candidate_thresholds=_fixed_public_risk_points(
+                    model_metrics.candidate_thresholds
+                ),
             )
         )
     return PublicHumanMeasureArtifact(
@@ -282,7 +312,7 @@ def render_public_summary(
     ]
     if test_doubles:
         lines.append(
-            "TEST DOUBLE — not a research result: "
+            "TEST DOUBLE -- not a research result: "
             + ", ".join(test_doubles)
             + "."
         )

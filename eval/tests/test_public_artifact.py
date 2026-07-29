@@ -6,7 +6,11 @@ import json
 
 import pytest
 
-from eval.development import load_development_inputs
+from eval.development import (
+    build_development_adapters,
+    development_public_model_descriptors,
+    load_development_inputs,
+)
 from eval.human_metrics import compute_human_measure_metrics
 from eval.prequential import (
     AdapterPrediction,
@@ -15,6 +19,8 @@ from eval.prequential import (
     run_prequential_session,
 )
 from eval.public_artifact import (
+    PUBLIC_THRESHOLD_GRID,
+    PublicHumanMeasureArtifact,
     PublicModelDescriptor,
     build_public_artifact,
 )
@@ -38,6 +44,29 @@ class SensitiveUniformAdapter(UniformPredictionAdapter):
         return prediction.model_copy(
             update={"metadata": {"private_trace": self.secret}},
         )
+
+
+def build_development_artifact_with_thresholds(
+    thresholds: tuple[float, ...],
+) -> PublicHumanMeasureArtifact:
+    fixture, script = load_development_inputs()
+    replay = run_prequential_session(
+        fixture=fixture,
+        script=script,
+        adapters=build_development_adapters(fixture),
+        delegation_thresholds=thresholds,
+    )
+    metrics = compute_human_measure_metrics(
+        replay,
+        candidate_thresholds=thresholds,
+    )
+    artifact = build_public_artifact(
+        fixture=fixture,
+        replay=replay,
+        metrics=metrics,
+        public_model_descriptors=development_public_model_descriptors(),
+    )
+    return artifact
 
 
 def test_public_artifact_omits_every_private_replay_surface():
@@ -117,15 +146,28 @@ def test_public_artifact_omits_every_private_replay_surface():
 
 def test_cli_writes_reproducible_public_artifact(tmp_path, capsys):
     output_path = tmp_path / "public_eval.json"
+    custom_output_path = tmp_path / "public_eval_custom_threshold.json"
 
     first_exit = main(["--output", str(output_path)])
     first_content = output_path.read_text(encoding="utf-8")
     first_stdout = capsys.readouterr().out
     second_exit = main(["--output", str(output_path)])
     second_content = output_path.read_text(encoding="utf-8")
+    custom_exit = main(
+        [
+            "--threshold",
+            "0.4413",
+            "--output",
+            str(custom_output_path),
+        ]
+    )
+    custom_artifact = json.loads(
+        custom_output_path.read_text(encoding="utf-8")
+    )
 
     assert first_exit == 0
     assert second_exit == 0
+    assert custom_exit == 0
     assert first_content == second_content
     artifact = json.loads(first_content)
     assert artifact["schema_version"] == "public_human_measure_eval.v1"
@@ -134,7 +176,7 @@ def test_cli_writes_reproducible_public_artifact(tmp_path, capsys):
     )
     assert len(artifact["models"]) == 2
     assert "Human-measure prequential evaluation" in first_stdout
-    assert "TEST DOUBLE" in first_stdout
+    assert "TEST DOUBLE -- not a research result" in first_stdout
     assert "synthetic_development_session" not in first_content
     assert {
         model["model_role"] for model in artifact["models"]
@@ -146,7 +188,55 @@ def test_cli_writes_reproducible_public_artifact(tmp_path, capsys):
         assert [
             point["threshold"]
             for point in model["candidate_thresholds"]
-        ] == [0.65, 0.75, 0.85, 0.95]
+        ] == list(PUBLIC_THRESHOLD_GRID)
+    for model in custom_artifact["models"]:
+        assert [
+            point["threshold"]
+            for point in model["candidate_thresholds"]
+        ] == list(PUBLIC_THRESHOLD_GRID)
+
+
+def test_public_artifact_rejects_metrics_missing_fixed_thresholds():
+    private_thresholds = (0.4413, 0.5527, 0.6631)
+    fixture, script = load_development_inputs()
+    replay = run_prequential_session(
+        fixture=fixture,
+        script=script,
+        adapters=build_development_adapters(fixture),
+        delegation_thresholds=private_thresholds,
+    )
+    metrics = compute_human_measure_metrics(
+        replay,
+        candidate_thresholds=private_thresholds,
+    )
+
+    with pytest.raises(ValueError, match="fixed public threshold"):
+        build_public_artifact(
+            fixture=fixture,
+            replay=replay,
+            metrics=metrics,
+            public_model_descriptors=(
+                development_public_model_descriptors()
+            ),
+        )
+
+
+def test_public_schema_rejects_an_off_grid_threshold():
+    thresholds = tuple(
+        sorted(set(PUBLIC_THRESHOLD_GRID).union({0.4413}))
+    )
+    artifact = build_development_artifact_with_thresholds(thresholds)
+    artifact_data = artifact.model_dump(mode="json")
+    injected_point = dict(
+        artifact_data["models"][0]["candidate_thresholds"][0]
+    )
+    injected_point["threshold"] = 0.4413
+    artifact_data["models"][0]["candidate_thresholds"].append(
+        injected_point
+    )
+
+    with pytest.raises(ValueError, match="fixed public threshold grid"):
+        PublicHumanMeasureArtifact.model_validate(artifact_data)
 
 
 def test_public_artifact_requires_explicit_model_labels():
