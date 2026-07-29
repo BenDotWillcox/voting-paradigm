@@ -63,6 +63,9 @@ contract path can be exercised cheaply.
 - Presentations distinguish initial and retest exposures. A retest prediction
   may use the original answer, but cannot use evidence from the retest
   presentation it predicts.
+- Event and response sequence numbers share one chronological stream. Sequence
+  order must agree with wall-clock time, and artifact cutoffs cannot include
+  records created after the artifact.
 - Runs carry the fixture hash and must pass `validate_run_against_fixture`
   before scoring or replay.
 - Dynamic ontology versions cannot use evidence after their own cutoff.
@@ -98,12 +101,19 @@ schema.
 
 ## Private Human Data
 
-Raw human responses are private by default. Store local run records under
-`eval/private_runs/`, which is ignored by Git, and use pseudonymous session
-identifiers. Never commit a run containing raw responses or direct identifiers.
-Public evaluation artifacts must omit raw response text and expose only the
-approved derived metrics or redacted examples. The raw-response field is
-bounded to 20,000 characters as a basic ingestion safeguard.
+Every `EvaluationRun` and `EvidenceEvent` is private by default, including
+normalized claims, metadata, and pseudonymous identifiers—not only raw response
+text. Store local run records under `eval/private_runs/`, which is ignored by
+Git. Never commit a human run.
+
+Phase 2 public artifacts must use a dedicated allowlist schema and serializer
+containing only approved aggregate metrics and explicitly public labels. They
+must never be produced with `EvaluationRun.model_dump*` or by subtracting a
+small denylist from a run record. Raw responses, normalized claims, metadata,
+and participant/run/evidence/presentation/response identifiers remain private.
+Serializer tests must plant sensitive strings in every private field and prove
+none appear in the public artifact. The raw-response field's 20,000-character
+limit is an ingestion safeguard, not a privacy boundary.
 
 Formal consent, retention, deletion, and publication records are required
 before any separately approved pilot. They are not implied by the Phase 1
@@ -112,6 +122,11 @@ development fixture or Ben's private self-case study.
 ## Next
 
 Phase 2 will add the prequential runner and primary metrics on top of these
-contracts. The final standardized jurisdiction and 48-measure bank will be
-authored and frozen only after the development runner and validators are
-working.
+contracts. Primary scoring must derive eligibility from each target
+`MeasurePresentation` and exclude `PresentationKind.RETEST` by construction;
+retests feed only test-retest diagnostics. Do not add a redundant `held_out`
+flag. Phase 2 also owns the allowlisted public-artifact serializer and its
+planted-sensitive-string tests.
+
+The final standardized jurisdiction and 48-measure bank will be authored and
+frozen only after the development runner and validators are working.

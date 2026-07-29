@@ -43,6 +43,9 @@ The list is open — additional demos can be added as peer packages without dist
 - **Reviews code before committing:** walk through logic when requested; don't bundle unrelated changes.
 - **Python > TypeScript for numerical/ML work:** scipy, numpy, PyTorch ecosystem. TypeScript is for the web frontend only.
 - **Git workflow:** feature branches + PRs. Never commit without asking.
+- **Project review skills:** use the focused checklists under `.claude/skills/`
+  for database, Server Action, voting-package, voting-method, and PR-review
+  work.
 
 ## Architecture
 
@@ -80,6 +83,7 @@ Two processes. One web app, one Python service.
 ## Repository layout
 
 ```
+.claude/skills/              Versioned project review checklists
 app/                        Next.js App Router pages (incl. /methods demo explorer)
 components/                 React components (domain subfolders + ui/ for shadcn)
 actions/                    Server Actions — "use server", return ActionResult<T>
@@ -338,7 +342,7 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 ### Demo 1: Voting methods comparison
 
 **Done:**
-- Voting package: plurality, approval, IRV, Borda, Ranked Pairs, Score, Quadratic — all with injectable tiebreak, abstention support, typed result classes, full test coverage
+- Voting package: plurality, approval, IRV, Borda, Ranked Pairs, Score, Quadratic — all with injectable tiebreak, abstention support, typed result classes, full test coverage. Review changes with `.claude/skills/voting-package-conventions/` and `.claude/skills/voting-method-correctness/`.
 - Ballot-measure schema: tables `ballot_measure`, `measure_option`, `measure_topic`, `electorate`, `resolution_run` (cache key `(measure_id, electorate_id, method, seed)`); enums `ballot_type`, `measure_status`, `measure_source`. Migration `0005_green_mandrill.sql`. Schema only — no queries/actions/UI persisting yet.
 - User-facing rename: demo route `/elections` → `/methods`; corresponding `lib/`, `components/`, `actions/`, `types/` renames. TS types `ElectionMethod`/`ElectionScenario`/`ElectionDemo` → `VotingMethod`/`MethodScenario`/`MethodDemo`. Voting-result type names (`ElectionResult`, `IRVResult`, etc.) kept — they are the canonical voting-theory term.
 
@@ -364,7 +368,10 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 
 **Next, in order:**
 1. Implement the Phase 2 prequential runner, prediction-model adapter, and
-   primary log-loss/risk-coverage metrics on the development fixture
+   primary log-loss/risk-coverage metrics on the development fixture. Derive
+   primary eligibility from `MeasurePresentation`, exclude retests, and build
+   public artifacts through a tested allowlist serializer rather than dumping
+   private run records.
 2. Author and neutrally review the standardized jurisdiction, 48-measure bank,
    and retest variants
 3. Add the direct LLM baseline, confirmed evidence extraction, fixed/expanding
