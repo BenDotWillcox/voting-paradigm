@@ -282,6 +282,130 @@ class TestEvidenceAndLeakage:
                 occurred_at=NOW,
             )
 
+    def test_event_sequence_must_agree_with_record_times(self, fixture):
+        first = EvidenceEvent(
+            event_id="evidence_first",
+            session_id="session_one",
+            sequence=1,
+            modality=EvidenceModality.FREE_TEXT_EXTRACTION,
+            confirmed_by_participant=False,
+            stability=ResponseStability.TENTATIVE,
+            reliability_weight=0.5,
+            occurred_at=NOW + timedelta(minutes=2),
+        )
+        second = EvidenceEvent(
+            event_id="evidence_second",
+            session_id="session_one",
+            sequence=2,
+            modality=EvidenceModality.FREE_TEXT_EXTRACTION,
+            confirmed_by_participant=False,
+            stability=ResponseStability.TENTATIVE,
+            reliability_weight=0.5,
+            occurred_at=NOW + timedelta(minutes=1),
+        )
+
+        with pytest.raises(ValidationError, match="sequence must agree with time"):
+            EvaluationRun(
+                run_id="run_reversed_time",
+                fixture_id=fixture.fixture_id,
+                fixture_version=fixture.fixture_version,
+                fixture_sha256=content_sha256(fixture),
+                session_id="session_one",
+                created_at=NOW,
+                evidence_events=[first, second],
+            )
+
+    def test_snapshot_cutoff_cannot_include_future_retest_response(
+        self, fixture
+    ):
+        target = measure_by_id(fixture, "dev_fiscal_reserve")
+        configuration = ModelConfiguration(
+            configuration_id="model_config",
+            model_name="test model",
+            model_version="v1",
+            seed=7,
+        )
+        initial = presentation_for(
+            target,
+            presentation_id="presentation_initial",
+        )
+        retest = presentation_for(
+            target,
+            presentation_id="presentation_retest",
+            kind=PresentationKind.RETEST,
+            retest_of_presentation_id=initial.presentation_id,
+            presented_at=NOW + timedelta(days=14),
+        )
+        snapshot = PredictionSnapshot(
+            snapshot_id="snapshot_before_retest",
+            session_id="session_one",
+            target_presentation_id=initial.presentation_id,
+            target_measure_id=target.measure_id,
+            target_measure_version=target.version,
+            target_packet_version=target.packet.version,
+            evidence_cutoff_sequence=5,
+            option_probabilities={
+                target.options[0].option_id: 0.7,
+                target.options[1].option_id: 0.3,
+            },
+            top_option_id=target.options[0].option_id,
+            confidence=0.7,
+            settled_probability=0.8,
+            model_configuration_id=configuration.configuration_id,
+            created_at=NOW + timedelta(seconds=1),
+        )
+        retest_response = response_for(
+            target,
+            response_id="response_retest",
+            presentation_id=retest.presentation_id,
+            sequence=3,
+            created_at=NOW + timedelta(days=14, minutes=1),
+        )
+
+        with pytest.raises(ValidationError, match="cutoff includes future"):
+            EvaluationRun(
+                run_id="run_future_retest_cutoff",
+                fixture_id=fixture.fixture_id,
+                fixture_version=fixture.fixture_version,
+                fixture_sha256=content_sha256(fixture),
+                session_id="session_one",
+                created_at=NOW,
+                model_configurations=[configuration],
+                measure_presentations=[initial, retest],
+                prediction_snapshots=[snapshot],
+                participant_responses=[retest_response],
+            )
+
+    def test_ontology_cutoff_cannot_include_future_record(self, fixture):
+        future_event = EvidenceEvent(
+            event_id="evidence_after_ontology",
+            session_id="session_one",
+            sequence=1,
+            modality=EvidenceModality.FREE_TEXT_EXTRACTION,
+            confirmed_by_participant=False,
+            stability=ResponseStability.TENTATIVE,
+            reliability_weight=0.5,
+            occurred_at=NOW + timedelta(minutes=2),
+        )
+        ontology = OntologyVersion(
+            ontology_version_id="ontology_before_evidence",
+            version=1,
+            evidence_cutoff_sequence=1,
+            created_at=NOW + timedelta(minutes=1),
+        )
+
+        with pytest.raises(ValidationError, match="cutoff includes future"):
+            EvaluationRun(
+                run_id="run_future_ontology_cutoff",
+                fixture_id=fixture.fixture_id,
+                fixture_version=fixture.fixture_version,
+                fixture_sha256=content_sha256(fixture),
+                session_id="session_one",
+                created_at=NOW,
+                ontology_versions=[ontology],
+                evidence_events=[future_event],
+            )
+
     def test_snapshot_cannot_reference_future_evidence(self, fixture):
         target = measure_by_id(fixture, "dev_fiscal_reserve")
         other = measure_by_id(fixture, "dev_health_mobile_clinics")

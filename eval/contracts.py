@@ -875,7 +875,8 @@ class EvaluationRun(ContractModel):
             for ontology in self.ontology_versions
         }
 
-        self._validate_event_sequences()
+        event_stream = self._ordered_event_stream()
+        self._validate_event_sequences(event_stream)
         self._validate_session_ownership()
         self._validate_presentations(presentation_by_id)
         self._validate_responses(presentation_by_id)
@@ -883,13 +884,14 @@ class EvaluationRun(ContractModel):
             presentation_by_id,
             response_by_id,
         )
-        self._validate_ontologies(event_by_id, config_ids)
+        self._validate_ontologies(event_by_id, config_ids, event_stream)
         self._validate_snapshots(
             presentation_by_id=presentation_by_id,
             response_by_presentation_id=response_by_presentation_id,
             event_by_id=event_by_id,
             config_ids=config_ids,
             ontology_by_id=ontology_by_id,
+            event_stream=event_stream,
         )
         return self
 
@@ -931,14 +933,60 @@ class EvaluationRun(ContractModel):
             "initial presentation measure id/version pairs",
         )
 
-    def _validate_event_sequences(self) -> None:
-        all_sequences = [
-            event.sequence for event in self.evidence_events
-        ] + [response.sequence for response in self.participant_responses]
+    def _ordered_event_stream(self) -> list[tuple[int, datetime, str]]:
+        records = [
+            (
+                event.sequence,
+                event.occurred_at,
+                f"evidence event {event.event_id}",
+            )
+            for event in self.evidence_events
+        ]
+        records.extend(
+            (
+                response.sequence,
+                response.created_at,
+                f"response {response.response_id}",
+            )
+            for response in self.participant_responses
+        )
+        return sorted(records, key=lambda record: record[0])
+
+    def _validate_event_sequences(
+        self,
+        event_stream: list[tuple[int, datetime, str]],
+    ) -> None:
+        all_sequences = [sequence for sequence, _, _ in event_stream]
         if len(all_sequences) != len(set(all_sequences)):
             raise ValueError(
                 "evidence and response records must share one unique event sequence"
             )
+        for previous, current in zip(event_stream, event_stream[1:]):
+            previous_sequence, previous_time, previous_label = previous
+            current_sequence, current_time, current_label = current
+            if current_time < previous_time:
+                raise ValueError(
+                    "evidence and response sequence must agree with time: "
+                    f"{current_label} at sequence {current_sequence} predates "
+                    f"{previous_label} at sequence {previous_sequence}"
+                )
+
+    @staticmethod
+    def _validate_cutoff_chronology(
+        *,
+        owner_label: str,
+        cutoff_sequence: int,
+        created_at: datetime,
+        event_stream: list[tuple[int, datetime, str]],
+    ) -> None:
+        for sequence, recorded_at, record_label in event_stream:
+            if sequence > cutoff_sequence:
+                break
+            if recorded_at > created_at:
+                raise ValueError(
+                    f"{owner_label} cutoff includes future {record_label} at "
+                    f"sequence {sequence}"
+                )
 
     def _validate_session_ownership(self) -> None:
         for presentation in self.measure_presentations:
@@ -1090,8 +1138,15 @@ class EvaluationRun(ContractModel):
         self,
         event_by_id: dict[str, EvidenceEvent],
         config_ids: set[str],
+        event_stream: list[tuple[int, datetime, str]],
     ) -> None:
         for ontology in self.ontology_versions:
+            self._validate_cutoff_chronology(
+                owner_label=f"ontology {ontology.ontology_version_id}",
+                cutoff_sequence=ontology.evidence_cutoff_sequence,
+                created_at=ontology.created_at,
+                event_stream=event_stream,
+            )
             for dimension in ontology.dimensions:
                 if dimension.created_by_configuration_id not in config_ids:
                     raise ValueError(
@@ -1122,6 +1177,7 @@ class EvaluationRun(ContractModel):
         event_by_id: dict[str, EvidenceEvent],
         config_ids: set[str],
         ontology_by_id: dict[str, OntologyVersion],
+        event_stream: list[tuple[int, datetime, str]],
     ) -> None:
         for snapshot in self.prediction_snapshots:
             presentation = presentation_by_id.get(
@@ -1228,3 +1284,10 @@ class EvaluationRun(ContractModel):
                         f"snapshot {snapshot.snapshot_id} must precede target "
                         f"response {response.response_id}"
                     )
+
+            self._validate_cutoff_chronology(
+                owner_label=f"snapshot {snapshot.snapshot_id}",
+                cutoff_sequence=snapshot.evidence_cutoff_sequence,
+                created_at=snapshot.created_at,
+                event_stream=event_stream,
+            )
