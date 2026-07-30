@@ -1,0 +1,751 @@
+{
+  "schema_version": "preference_eval_bank_profile.v1",
+  "profile_id": "preference_eval_bank_profile_v1",
+  "profile_version": 1,
+  "created_at": "2026-07-29T12:00:00-05:00",
+  "jurisdiction": {
+    "record_version": "jurisdiction.v1",
+    "jurisdiction_id": "meridian_harborview",
+    "version": 1,
+    "name": "State of Meridian and City of Harborview",
+    "description": "A fictional but real-world-anchored U.S. state and its largest municipality. Participants vote as themselves, assuming their relevant current circumstances carry into this setting. Every measure is evaluated independently against this same baseline.",
+    "reference_date": "2026-01-01",
+    "facts": [
+      {
+        "key": "population_context",
+        "label": "Population and settlement",
+        "value": "Meridian has 6.4 million residents: 58% live in urban counties, 27% in suburban counties, and 15% in rural counties. Harborview has 640,000 residents and anchors a 1.4 million-person metropolitan area."
+      },
+      {
+        "key": "governance",
+        "label": "Governing structure and authority",
+        "value": "Meridian has an elected governor, a bicameral legislature, independently elected statewide officers, and citizen-initiated statutes and constitutional amendments. Harborview uses a mayor-council government. A packet states whether a proposal is statewide or municipal and identifies the government with legal authority."
+      },
+      {
+        "key": "budget_and_taxes",
+        "label": "Budget, taxes, and dollar basis",
+        "value": "All packet estimates use constant 2026 dollars. Meridian's annual general-fund revenue is $48.0 billion, planned spending is $47.5 billion, and its rainy-day reserve is $5.2 billion. The state levies a 4.5% flat personal-income tax and a 5.0% sales tax before local additions. Harborview's annual operating budget is $3.4 billion and its unrestricted reserve equals 12% of annual operating spending."
+      },
+      {
+        "key": "public_services",
+        "label": "Existing public services",
+        "value": "Meridian funds K-12 education, MeridianCare health coverage, highways, courts, corrections, environmental regulation, and aid to local governments. Harborview operates police, fire, libraries, sanitation, local streets, parks, housing programs, and a regional transit authority with neighboring municipalities. Existing services continue unless a packet explicitly changes them."
+      },
+      {
+        "key": "housing",
+        "label": "Housing and cost conditions",
+        "value": "The statewide median owner-occupied home is valued at $335,000 and median gross rent is $1,450 per month. In Harborview those figures are $410,000 and $1,800. Harborview's rental vacancy rate is 4.8%; housing production has lagged household growth for five years, with the largest shortage among homes affordable below the area median income."
+      },
+      {
+        "key": "transportation",
+        "label": "Transportation and infrastructure",
+        "value": "Across Meridian, private vehicles remain the dominant travel mode and rural areas have limited alternatives. In Harborview, 68% of work trips use a private vehicle, 12% public transit, 8% walking or cycling, and 12% remote work or other modes. Twenty-two percent of city-maintained lane miles are rated poor, and peak-period transit crowding is concentrated on six corridors."
+      },
+      {
+        "key": "health_social_provision",
+        "label": "Health and social provision",
+        "value": "MeridianCare covers 1.15 million low-income residents, children, disabled residents, and older adults under state and federal rules. Eight percent of residents lack health insurance. Harborview and nonprofit partners operate shelter, behavioral-health, food-assistance, and emergency-rental programs, but access and wait times vary by service."
+      },
+      {
+        "key": "education_family",
+        "label": "Education and family conditions",
+        "value": "Meridian public schools enroll 910,000 K-12 students; the state supplies 56% of operating revenue and local governments supply most of the remainder. Harborview's district enrolls 78,000 students. Licensed infant care in the Harborview region averages $1,650 per month, and provider capacity is below estimated demand."
+      },
+      {
+        "key": "environment_energy",
+        "label": "Environment and energy",
+        "value": "Meridian's annual electricity generation is 42% natural gas, 28% renewable, 20% nuclear, and 10% coal. Existing law targets 50% renewable electricity by 2035. The state faces periodic summer heat, river flooding, and drought; costs and exposure vary substantially across regions."
+      },
+      {
+        "key": "justice_safety_rights",
+        "label": "Justice, safety, and rights",
+        "value": "Meridian operates state courts, prisons, parole, and statewide law-enforcement standards; counties operate jails and most trial-court services. Harborview provides municipal policing and contracts with the county for jail services. Packets distinguish prevention, enforcement, adjudication, incarceration, and civil-rights safeguards rather than treating public safety as one service."
+      },
+      {
+        "key": "elections_technology",
+        "label": "Elections, records, and public technology",
+        "value": "Meridian administers elections through county offices under statewide standards and offers early in-person and no-excuse mail voting. Harborview maintains public records, service portals, automated decision tools, and resident data under state open-records and privacy law. Political identity and partisan history are never model inputs."
+      },
+      {
+        "key": "decision_baseline",
+        "label": "Independent-measure rule",
+        "value": "Treat each measure as the only proposed change to this frozen baseline. Fiscal, legal, and service effects from earlier or later measures do not accumulate. Preference evidence from prior answers may accumulate, but the jurisdiction itself resets before every decision."
+      }
+    ]
+  },
+  "jurisdiction_calibration_sources": [
+    {
+      "record_version": "source.v1",
+      "source_id": "calibration_census_quickfacts",
+      "title": "U.S. Census Bureau QuickFacts: United States",
+      "publisher": "U.S. Census Bureau",
+      "url": "https://www.census.gov/quickfacts/fact/table/US/HSD310221",
+      "accessed_date": "2026-07-29",
+      "adaptation_notes": "Used only to keep fictional population, home-value, rent, and household figures within plausible contemporary U.S. ranges; no QuickFacts value is represented as a fact about a real jurisdiction."
+    },
+    {
+      "record_version": "source.v1",
+      "source_id": "calibration_census_government_finances",
+      "title": "Annual Survey of State and Local Government Finances",
+      "publisher": "U.S. Census Bureau",
+      "url": "https://www.census.gov/programs-surveys/gov-finances/about.html",
+      "accessed_date": "2026-07-29",
+      "adaptation_notes": "Used to calibrate the scale and categories of the fictional state and municipal fiscal baseline, not to copy one government's budget."
+    },
+    {
+      "record_version": "source.v1",
+      "source_id": "calibration_hud_fair_market_rents",
+      "title": "Fair Market Rents",
+      "publisher": "U.S. Department of Housing and Urban Development",
+      "url": "https://www.huduser.gov/portal/datasets/fmr.html",
+      "accessed_date": "2026-07-29",
+      "adaptation_notes": "Used as a reasonableness check on the fictional metropolitan rental-cost context; the profile uses a simplified median-rent baseline rather than a HUD eligibility figure."
+    },
+    {
+      "record_version": "source.v1",
+      "source_id": "calibration_fhwa_highway_statistics",
+      "title": "Highway Statistics 2024",
+      "publisher": "Federal Highway Administration",
+      "url": "https://www.fhwa.dot.gov/policyinformation/statistics/2024/",
+      "accessed_date": "2026-07-29",
+      "adaptation_notes": "Used to identify realistic transportation-condition and finance categories. Fictional mode shares and road-condition figures are not attributed to a real state."
+    },
+    {
+      "record_version": "source.v1",
+      "source_id": "calibration_eia_state_electricity",
+      "title": "State Electricity Profiles",
+      "publisher": "U.S. Energy Information Administration",
+      "url": "https://www.eia.gov/electricity/state/",
+      "accessed_date": "2026-07-29",
+      "adaptation_notes": "Used to keep the fictional generation mix plausible while avoiding a one-to-one copy of any state's portfolio."
+    },
+    {
+      "record_version": "source.v1",
+      "source_id": "calibration_nces_digest",
+      "title": "Digest of Education Statistics",
+      "publisher": "National Center for Education Statistics",
+      "url": "https://nces.ed.gov/programs/digest/",
+      "accessed_date": "2026-07-29",
+      "adaptation_notes": "Used to calibrate the order of magnitude of statewide enrollment and education-finance shares; all Meridian figures remain fictional."
+    },
+    {
+      "record_version": "source.v1",
+      "source_id": "calibration_cms_medicaid_enrollment",
+      "title": "Medicaid and CHIP Enrollment Data",
+      "publisher": "Centers for Medicare and Medicaid Services",
+      "url": "https://www.medicaid.gov/medicaid/national-medicaid-chip-program-information/medicaid-chip-enrollment-data/monthly-medicaid-chip-application-eligibility-determination-and-enrollment-reports-data",
+      "accessed_date": "2026-07-29",
+      "adaptation_notes": "Used as a national scale check for fictional public-health coverage enrollment, not as a direct source for MeridianCare."
+    },
+    {
+      "record_version": "source.v1",
+      "source_id": "calibration_bjs_data_tools",
+      "title": "Data Analysis Tools",
+      "publisher": "Bureau of Justice Statistics",
+      "url": "https://bjs.ojp.gov/data/data-analysis-tools",
+      "accessed_date": "2026-07-29",
+      "adaptation_notes": "Used to identify separable justice-system functions and expenditure categories for the fictional baseline."
+    },
+    {
+      "record_version": "source.v1",
+      "source_id": "calibration_eac_eavs_2024",
+      "title": "Election Administration and Voting Survey 2024 Comprehensive Report",
+      "publisher": "U.S. Election Assistance Commission",
+      "url": "https://www.eac.gov/sites/default/files/2025-06/2024_EAVS_Report_508c.pdf",
+      "published_date": "2025-06-30",
+      "accessed_date": "2026-07-29",
+      "adaptation_notes": "Used to calibrate the election-administration vocabulary in the fictional baseline without importing state party or candidate information."
+    }
+  ],
+  "composition": {
+    "total_measures": 48,
+    "measures_per_domain": 6,
+    "real_world_anchored": 32,
+    "constructed": 16,
+    "familiar": 16,
+    "adjacent": 16,
+    "novel": 16,
+    "single_choice": 38,
+    "ranked": 3,
+    "approval": 3,
+    "score": 3,
+    "quadratic": 1,
+    "source_tier": {
+      "real_world_familiar": 11,
+      "real_world_adjacent": 11,
+      "real_world_novel": 10,
+      "constructed_familiar": 5,
+      "constructed_adjacent": 5,
+      "constructed_novel": 6
+    }
+  },
+  "source_policy": {
+    "real_world_min_url_sources": 2,
+    "real_world_min_primary_official_sources": 1,
+    "constructed_min_context_url_sources": 1,
+    "require_publisher": true,
+    "require_accessed_date": true,
+    "require_adaptation_notes": true,
+    "primary_source_role_recorded_in_review_ledger": true,
+    "preserve_source_and_adapted_text": true
+  },
+  "packet_and_model_policy": {
+    "same_frozen_packet_for_participant_and_model": true,
+    "measures_are_independent_from_common_baseline": true,
+    "political_identity_collected_only_after_retest": true,
+    "unstated_material_context_remains_explicitly_unknown": true,
+    "models_must_not_invent_participant_circumstances": true,
+    "excluded_participant_packet_cues": [
+      "party_labels",
+      "politician_names",
+      "sponsors_and_campaigns",
+      "endorsements",
+      "polling",
+      "campaign_slogans"
+    ],
+    "excluded_model_inputs": [
+      "political_identity",
+      "partisan_voting_history",
+      "demographic_proxies"
+    ]
+  },
+  "neutrality_review_policy": {
+    "required_checks": [
+      "option_distinctness",
+      "word_count_balance",
+      "specificity_balance",
+      "valence_balance",
+      "cost_and_benefit_symmetry",
+      "uncertainty_symmetry",
+      "material_context_sufficiency"
+    ],
+    "factual_traceability_review_required": true,
+    "contextual_sufficiency_review_required": true,
+    "adversarial_neutrality_review_required": true,
+    "participant_independent_approval_required": true,
+    "reviewer_type_and_version_required": true,
+    "review_prompt_hash_required_when_ai": true,
+    "disposition_log_required": true
+  },
+  "case_study_exposure_policy": {
+    "exposure_mode": "cold_first_exposure",
+    "packet_author_system": "codex",
+    "content_reviewer_system": "claude",
+    "exact_packet_content_withheld_from_participant": true,
+    "participant_receives_nonrevealing_review_summary_only": true,
+    "describe_as_ai_assisted_not_human_review": true,
+    "human_content_review_required_before_external_pilot": true
+  },
+  "presentation_order_policy": {
+    "measure_ordering": "seeded_stratified_six_waves",
+    "wave_count": 6,
+    "measures_per_wave": 8,
+    "option_ordering": "seeded_per_presentation",
+    "order_seed": 20260729
+  },
+  "retest_target": {
+    "target_count": 12,
+    "interval_min_days": 7,
+    "interval_max_days": 14,
+    "minimum_per_domain": 1,
+    "real_world_anchored": 8,
+    "constructed": 4,
+    "familiar": 4,
+    "adjacent": 4,
+    "novel": 4,
+    "single_choice": 8,
+    "ranked": 1,
+    "approval": 1,
+    "score": 1,
+    "quadratic": 1,
+    "variant_rules": [
+      "paraphrase_without_material_change",
+      "reorder_options",
+      "preserve_facts_and_fiscal_estimates",
+      "preserve_option_set",
+      "hide_prior_response_and_prediction"
+    ]
+  },
+  "slots": [
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "fiscal_01",
+      "domain": "fiscal_economy_labor",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "familiar",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Adapt a state minimum-wage indexing initiative with an explicit wage path, inflation rule, affected workers, employer compliance cost, and uncertainty about employment and price effects.",
+      "concept_ids": ["income_floor", "labor_market", "small_business_cost"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "fiscal_02",
+      "domain": "fiscal_economy_labor",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "adjacent",
+      "ballot_type": "ranked",
+      "authoring_brief": "Adapt real municipal revenue alternatives into a mutually exclusive ranked choice among property tax, sales tax, service fees, and a lower-service status quo for one specified funding need.",
+      "concept_ids": ["tax_incidence", "service_level", "revenue_stability"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "fiscal_03",
+      "domain": "fiscal_economy_labor",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "novel",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Adapt a portable-benefits policy for app-based and contract workers, specifying contribution responsibility, covered benefits, worker eligibility, administrative cost, and classification uncertainty.",
+      "concept_ids": ["worker_flexibility", "benefit_portability", "employer_obligation"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "fiscal_04",
+      "domain": "fiscal_economy_labor",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "novel",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Adapt an automatic recession-response rule that changes reserve deposits and temporary aid when public economic indicators cross stated thresholds, including trigger error and budget risks.",
+      "concept_ids": ["fiscal_stabilization", "rule_discretion", "budget_reserve"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "fiscal_05",
+      "domain": "fiscal_economy_labor",
+      "source_kind": "constructed",
+      "intended_generalization_tier": "familiar",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Construct a revenue-neutral choice between a universal household rebate and a larger income-targeted rebate, holding the total program budget and payment timing constant.",
+      "concept_ids": ["universalism", "targeting", "administrative_simplicity"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "fiscal_06",
+      "domain": "fiscal_economy_labor",
+      "source_kind": "constructed",
+      "intended_generalization_tier": "adjacent",
+      "ballot_type": "score",
+      "authoring_brief": "Construct a score ballot over distinct economic-development grant priorities with one shared budget, comparable expected job ranges, explicit distributional differences, and a no-expansion option.",
+      "concept_ids": ["economic_development", "regional_equity", "public_investment"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "health_01",
+      "domain": "health_social_provision",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "familiar",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Adapt an expansion of public health-coverage eligibility with a stated income threshold, enrollment estimate, state and federal cost shares, provider access concerns, and alternatives.",
+      "concept_ids": ["health_coverage", "public_spending", "access_to_care"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "health_02",
+      "domain": "health_social_provision",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "adjacent",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Adapt authorization of supervised overdose-prevention sites with operating safeguards, local siting rules, expected public-health effects, neighborhood concerns, and federal-law uncertainty.",
+      "concept_ids": ["harm_reduction", "public_order", "local_control"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "health_03",
+      "domain": "health_social_provision",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "novel",
+      "ballot_type": "approval",
+      "authoring_brief": "Adapt an approval ballot over independently implementable behavioral-health crisis responses, with per-option costs, staffing constraints, overlap, and a fixed rule for funding approved items.",
+      "concept_ids": ["behavioral_health", "crisis_response", "institutional_capacity"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "health_04",
+      "domain": "health_social_provision",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "novel",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Adapt a public medical-debt purchase and discharge program with eligibility, acquisition price, credit-reporting effects, administrative cost, and uncertainty about provider pricing behavior.",
+      "concept_ids": ["medical_debt", "consumer_relief", "market_incentives"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "health_05",
+      "domain": "health_social_provision",
+      "source_kind": "constructed",
+      "intended_generalization_tier": "familiar",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Construct a budget-matched choice between a modest universal child benefit and a larger benefit limited by income, with take-up and administrative tradeoffs stated symmetrically.",
+      "concept_ids": ["family_support", "universalism", "targeting"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "health_06",
+      "domain": "health_social_provision",
+      "source_kind": "constructed",
+      "intended_generalization_tier": "adjacent",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Construct a long-term-care guarantee financed by a small payroll contribution, contrasting broad home-care access with contribution burden, workforce limits, and current means-tested services.",
+      "concept_ids": ["long_term_care", "social_insurance", "payroll_cost"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "education_01",
+      "domain": "education_family",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "familiar",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Adapt a time-limited school capital bond with an itemized facility plan, property-tax effect, debt schedule, building-condition evidence, and risk of delay or cost overrun.",
+      "concept_ids": ["school_facilities", "public_debt", "property_tax"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "education_02",
+      "domain": "education_family",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "adjacent",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Adapt a statewide universal school-meals program with participation, federal offset, state cost, stigma and nutrition arguments, food waste risk, and existing eligibility rules.",
+      "concept_ids": ["student_nutrition", "universal_service", "program_cost"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "education_03",
+      "domain": "education_family",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "adjacent",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Adapt a change to charter-school authorization and enrollment limits, specifying oversight, funding flows, access, district planning effects, and uncertainty about school quality.",
+      "concept_ids": ["school_choice", "public_accountability", "district_stability"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "education_04",
+      "domain": "education_family",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "novel",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Adapt an outcomes-based funding formula for public colleges, identifying the metrics, equity weights, budget redistribution, institutional incentives, and measurement-gaming risk.",
+      "concept_ids": ["higher_education", "performance_incentive", "measurement_risk"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "education_05",
+      "domain": "education_family",
+      "source_kind": "constructed",
+      "intended_generalization_tier": "familiar",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Construct a districtwide later high-school start-time policy with the same evidence and transition costs applied to benefits for sleep and learning versus family, sports, and transport disruption.",
+      "concept_ids": ["student_wellbeing", "family_logistics", "school_operations"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "education_06",
+      "domain": "education_family",
+      "source_kind": "constructed",
+      "intended_generalization_tier": "novel",
+      "ballot_type": "ranked",
+      "authoring_brief": "Construct a ranked choice among equally budgeted family-learning supports: direct childcare slots, refundable family credits, school-based tutoring, and retaining the current mixed program.",
+      "concept_ids": ["family_autonomy", "direct_service", "educational_support"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "housing_01",
+      "domain": "housing_land_use",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "familiar",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Adapt a citywide rule allowing duplexes on lots currently limited to detached homes, with realistic production estimates, infrastructure limits, neighborhood effects, and affordability uncertainty.",
+      "concept_ids": ["housing_supply", "neighborhood_change", "property_rights"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "housing_02",
+      "domain": "housing_land_use",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "adjacent",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Adapt a tenant right-to-counsel program for eviction cases, stating eligibility, expected caseload, city cost, landlord and court effects, and uncertainty about displacement outcomes.",
+      "concept_ids": ["housing_stability", "legal_assistance", "landlord_cost"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "housing_03",
+      "domain": "housing_land_use",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "adjacent",
+      "ballot_type": "approval",
+      "authoring_brief": "Adapt an approval ballot over separable housing-production reforms, with the legal scope, expected units, public cost, affected neighborhoods, and implementation interaction for every option.",
+      "concept_ids": ["housing_supply", "local_control", "regulatory_reform"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "housing_04",
+      "domain": "housing_land_use",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "novel",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Adapt a revenue-neutral shift from conventional property tax toward land-value taxation, specifying rates, phase-in, likely winners and losers, valuation appeals, and development incentives.",
+      "concept_ids": ["land_value_tax", "tax_incidence", "development_incentive"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "housing_05",
+      "domain": "housing_land_use",
+      "source_kind": "constructed",
+      "intended_generalization_tier": "familiar",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Construct a budget-neutral choice between broad property-tax relief and an income-tested circuit breaker, holding municipal revenue constant and stating distribution and administrative costs.",
+      "concept_ids": ["property_tax", "ability_to_pay", "administrative_burden"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "housing_06",
+      "domain": "housing_land_use",
+      "source_kind": "constructed",
+      "intended_generalization_tier": "novel",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Construct a public land-lease program that lowers upfront home prices while the city retains land ownership, with resale limits, public risk, wealth-building, and governance tradeoffs.",
+      "concept_ids": ["community_land", "homeownership", "public_stewardship"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "transportation_01",
+      "domain": "transportation_infrastructure",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "familiar",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Adapt a transportation bond focused on repairing poor-condition roads and bridges, with project scope, debt service, tax effect, safety benefits, construction disruption, and overrun risk.",
+      "concept_ids": ["infrastructure_maintenance", "public_debt", "road_safety"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "transportation_02",
+      "domain": "transportation_infrastructure",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "adjacent",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Adapt a dedicated transit-service levy that increases frequency and span on defined routes, including ridership estimates, household tax effect, labor constraints, and geographic distribution.",
+      "concept_ids": ["public_transit", "service_frequency", "tax_burden"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "transportation_03",
+      "domain": "transportation_infrastructure",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "adjacent",
+      "ballot_type": "score",
+      "authoring_brief": "Adapt a score ballot over transportation capital priorities with comparable lifecycle costs and explicit effects for road repair, bus priority, protected cycling, and pedestrian safety.",
+      "concept_ids": ["transportation_mode", "capital_priority", "accessibility"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "transportation_04",
+      "domain": "transportation_infrastructure",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "novel",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Adapt peak-period congestion pricing with a defined zone, fee schedule, exemptions, use of net revenue, traffic and emissions estimates, privacy safeguards, and diversion risk.",
+      "concept_ids": ["congestion_pricing", "travel_behavior", "privacy"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "transportation_05",
+      "domain": "transportation_infrastructure",
+      "source_kind": "constructed",
+      "intended_generalization_tier": "familiar",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Construct a neighborhood safety standard that trades parking and vehicle throughput for lower design speeds, with equivalent descriptions of crash reduction, access, and spillover uncertainty.",
+      "concept_ids": ["traffic_safety", "parking_access", "travel_time"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "transportation_06",
+      "domain": "transportation_infrastructure",
+      "source_kind": "constructed",
+      "intended_generalization_tier": "novel",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Construct an employer commute-benefit reform replacing tax-favored parking with equal-value mobility credits, stating employee choice, employer administration, mode effects, and equity concerns.",
+      "concept_ids": ["commute_benefit", "mode_neutrality", "employer_burden"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "environment_01",
+      "domain": "environment_energy",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "familiar",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Adapt an increase to the state's clean-electricity standard, with compliance dates, eligible resources, projected bill and emissions ranges, reliability provisions, and technology-cost uncertainty.",
+      "concept_ids": ["clean_energy", "electricity_cost", "grid_reliability"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "environment_02",
+      "domain": "environment_energy",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "familiar",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Adapt a water-system resilience bond covering conservation, leak repair, storage, and watershed work, with household cost, regional allocation, drought benefit, and project-delivery risk.",
+      "concept_ids": ["water_security", "infrastructure_investment", "conservation"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "environment_03",
+      "domain": "environment_energy",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "adjacent",
+      "ballot_type": "ranked",
+      "authoring_brief": "Adapt a ranked choice among reliability-compliant clean-energy portfolios that differ in renewable buildout, nuclear retention, gas backup, storage, cost, and construction risk.",
+      "concept_ids": ["energy_portfolio", "grid_reliability", "technology_risk"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "environment_04",
+      "domain": "environment_energy",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "novel",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Adapt a community-solar access requirement for renters and low-income households, specifying utility obligations, subscriber savings, cost allocation, siting, and enrollment uncertainty.",
+      "concept_ids": ["distributed_energy", "energy_access", "cost_shifting"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "environment_05",
+      "domain": "environment_energy",
+      "source_kind": "constructed",
+      "intended_generalization_tier": "adjacent",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Construct a carbon fee that returns equal household dividends, with a frozen fee path, modeled price and emissions ranges, treatment of trade-exposed firms, and dividend uncertainty.",
+      "concept_ids": ["carbon_price", "household_dividend", "industrial_competitiveness"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "environment_06",
+      "domain": "environment_energy",
+      "source_kind": "constructed",
+      "intended_generalization_tier": "novel",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Construct a seasonal household water-budget trading system, contrasting flexible conservation incentives with distribution, privacy, market-power, and administrative concerns.",
+      "concept_ids": ["water_market", "conservation_incentive", "essential_access"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "justice_01",
+      "domain": "justice_safety_rights",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "familiar",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Adapt automatic record sealing for specified past low-level offenses, with eligibility, waiting periods, public-safety exclusions, employment effects, administrative cost, and implementation error.",
+      "concept_ids": ["second_chance", "public_records", "public_safety"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "justice_02",
+      "domain": "justice_safety_rights",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "familiar",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Adapt a police body-camera and public-release standard, specifying activation, retention, privacy redaction, discipline, disclosure timing, fiscal cost, and evidentiary uncertainty.",
+      "concept_ids": ["police_accountability", "privacy", "public_transparency"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "justice_03",
+      "domain": "justice_safety_rights",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "adjacent",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Adapt dedicated public-defender funding tied to caseload standards, with staffing targets, state and county costs, court-delay effects, recruitment limits, and local-control arguments.",
+      "concept_ids": ["right_to_counsel", "court_capacity", "state_local_control"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "justice_04",
+      "domain": "justice_safety_rights",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "novel",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Adapt a temporary restriction on predictive risk tools in pretrial decisions until independent validation standards are met, including detention, consistency, bias, and transparency tradeoffs.",
+      "concept_ids": ["algorithmic_risk", "pretrial_liberty", "decision_consistency"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "justice_05",
+      "domain": "justice_safety_rights",
+      "source_kind": "constructed",
+      "intended_generalization_tier": "adjacent",
+      "ballot_type": "approval",
+      "authoring_brief": "Construct an approval ballot over independently fundable community-safety interventions, with comparable evidence ranges, costs, implementation limits, civil-rights safeguards, and a fixed funding rule.",
+      "concept_ids": ["violence_prevention", "emergency_response", "civil_liberty"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "justice_06",
+      "domain": "justice_safety_rights",
+      "source_kind": "constructed",
+      "intended_generalization_tier": "novel",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Construct a restorative diversion default for eligible youth offenses with opt-out criteria, victim participation safeguards, capacity limits, accountability measures, and uncertain recidivism effects.",
+      "concept_ids": ["restorative_justice", "youth_accountability", "victim_choice"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "governance_01",
+      "domain": "governance_elections_technology",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "familiar",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Adapt adoption of ranked-choice voting for specified state primary and general elections, with ballot rules, counting process, implementation cost, voter education, and exhausted-ballot evidence.",
+      "concept_ids": ["electoral_method", "voter_expression", "administrative_complexity"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "governance_02",
+      "domain": "governance_elections_technology",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "familiar",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Adapt creation of an independent legislative-redistricting commission with selection rules, criteria, transparency, judicial review, transition cost, and accountability arguments.",
+      "concept_ids": ["redistricting", "institutional_independence", "democratic_accountability"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "governance_03",
+      "domain": "governance_elections_technology",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "adjacent",
+      "ballot_type": "score",
+      "authoring_brief": "Adapt a score ballot over election-administration investments with comparable costs and evidence for equipment resilience, poll-worker capacity, ballot tracking, accessibility, and audits.",
+      "concept_ids": ["election_administration", "accessibility", "system_resilience"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "governance_04",
+      "domain": "governance_elections_technology",
+      "source_kind": "real_world_anchored",
+      "intended_generalization_tier": "novel",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Adapt an independent audit and notice requirement for high-impact government algorithms, defining covered systems, disclosure, appeal, trade-secret protection, cost, and enforcement limits.",
+      "concept_ids": ["algorithmic_accountability", "due_process", "administrative_cost"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "governance_05",
+      "domain": "governance_elections_technology",
+      "source_kind": "constructed",
+      "intended_generalization_tier": "adjacent",
+      "ballot_type": "single_choice",
+      "authoring_brief": "Construct a resident data-trust model for optional cross-agency service coordination, with consent, fiduciary governance, access benefits, cybersecurity risk, and a nonparticipation path.",
+      "concept_ids": ["data_governance", "service_coordination", "individual_consent"]
+    },
+    {
+      "record_version": "preference_eval_bank_slot.v1",
+      "slot_id": "governance_06",
+      "domain": "governance_elections_technology",
+      "source_kind": "constructed",
+      "intended_generalization_tier": "novel",
+      "ballot_type": "quadratic",
+      "authoring_brief": "Construct the single 100-credit quadratic contest across four independent civic budget additions, with equal cost units, explicit status quo, votes-squared accounting, and no negative allocations.",
+      "concept_ids": ["quadratic_voice", "budget_priority", "preference_intensity"]
+    }
+  ]
+}
