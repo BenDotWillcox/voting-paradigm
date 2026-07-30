@@ -215,6 +215,12 @@ running `python -m eval.validate_bank_profile` against that path.
   bank and Claude may perform the disclosed participant-blinded AI content
   review; a human content review is required before an external pilot. Novel-
   tier analysis must carry the topic-exposure caveat.
+- **Restricted Phase 3B artifacts:** exact batches, fixtures, retest variants,
+  and detailed review logs remain in Git-ignored `eval/restricted_bank/`;
+  retrieved source documents remain in `.cache/eval-authoring/sources/`.
+  Claude reviews them locally. Do not stage or open a content PR before every
+  predeclared blinded participant finishes initial presentations and retests.
+  Only generated safe summaries and aggregate hashes may enter interim PRs.
 - **Delegation claims:** sincere-choice prediction evaluates the substrate for
   future delegated voting, not real-world willingness to delegate or refrain
   from overriding the model.
@@ -402,12 +408,18 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
   32/16 real/constructed split, 16/16/16 intended tiers, 38/9/1 ballot mix,
   source and political-cue boundaries, contextual-sufficiency and cold-review
   gates, and 12-item retest target
+- Phase 3B authoring infrastructure: source-content hashes and exact adapted-
+  text traces, six-measure domain batches, deterministic 48-measure assembly,
+  a hash-locked Claude review prompt, restricted disposition logs, and
+  nonrevealing aggregate summaries
 
 **Next, in order:**
-1. Source and draft the 48 exact packets in domain batches, bind them to a
+1. Source and draft the 48 exact packets in the versioned domain batches,
+   populate their source captures and content traces, bind them to a
    slot-to-measure reviewer-provenance ledger, conduct participant-blinded
-   Claude review, then author and neutrally review the linked retest registry
-   and add run-level validation for wave execution and retest timing
+   Claude review with the locked prompt, then author and neutrally review the
+   linked retest registry and add run-level validation for wave execution and
+   retest timing
 2. Add the direct LLM baseline; structured/conversational/combined evidence
    ablation; evidence IDs and unsupported-assumption flags; fixed/expanding
    ontology ablation; hybrid explicit posterior; and prompt/order robustness

@@ -232,6 +232,55 @@ Ben has already seen the topic-level authoring briefs; exact packet language,
 options, quantitative values, arguments, and uncertainties remain withheld
 until presentation. Intended-novel results must carry that exposure caveat.
 
+Phase 3B infrastructure lives in `eval/bank_authoring.py` and
+`eval/review_artifacts.py`. Each six-measure `DomainBankBatch` binds frozen
+slots to exact measures and `MeasureSourceEvidence`; source captures preserve
+retrieved-content hashes and explicit source roles, while content traces bind
+exact adapted strings to packet sources or frozen jurisdiction facts. The
+assembler fails unless it
+receives exactly one valid batch for every domain, then emits measures in
+frozen slot order:
+
+```bash
+python -m eval.build_final_bank \
+  eval/fixtures/preference_eval_bank_profile_v1.json \
+  eval/restricted_bank/batches/fiscal_economy_labor.json \
+  eval/restricted_bank/batches/health_social_provision.json \
+  eval/restricted_bank/batches/education_family.json \
+  eval/restricted_bank/batches/housing_land_use.json \
+  eval/restricted_bank/batches/transportation_infrastructure.json \
+  eval/restricted_bank/batches/environment_energy.json \
+  eval/restricted_bank/batches/justice_safety_rights.json \
+  eval/restricted_bank/batches/governance_elections_technology.json \
+  --fixture-id preference_eval_final_v1 \
+  --created-at 2026-08-01T12:00:00-05:00 \
+  --output eval/restricted_bank/preference_eval_final_v1.json
+```
+
+Exact review uses `eval/prompts/phase3_packet_review_v1.md`, whose canonical
+hash is pinned in code. Restricted disposition logs may contain packet text;
+participant-facing review evidence must be produced only through
+`build_nonrevealing_review_summary`, which emits hashes, provenance, approval,
+and aggregate counts without copying free text.
+`bank_review_ledger_entries_for_batch` deterministically turns the same
+validated review and source-role records into final ledger entries.
+
+`python -m eval.validate_domain_batch PROFILE BATCH` prints only aggregate
+counts and hashes. After exact-content review,
+`python -m eval.validate_batch_review PROFILE BATCH RESTRICTED_LOG
+--summary-output SAFE_SUMMARY` validates the frozen Claude prompt and writes
+the allowlisted participant-safe summary.
+
+Until every predeclared blinded participant has completed both initial
+presentations and retests, exact batches, fixtures, variants, and detailed
+review logs remain under the Git-ignored `eval/restricted_bank/` directory and
+never enter a PR. Claude reviews those files locally. Retrieved source
+documents remain under `.cache/eval-authoring/sources/` and are never
+committed. Only generated safe summaries and aggregate hashes under
+`eval/review_summaries/` may be reviewed or committed during this period.
+Keep a separate access-controlled backup of ignored artifacts and verify its
+hashes. See `eval/PHASE3_AUTHORING.md` for the later disclosure rules.
+
 Retest paraphrases are separate `RetestPacketVariant` records linked to
 canonical measures, not duplicate fixture measures. A
 `RetestVariantRegistry` freezes those links and
