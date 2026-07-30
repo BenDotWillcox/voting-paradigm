@@ -149,18 +149,25 @@ benefit or cost belongs in the packet even when the source evidence is
 asymmetric. Neutrality means the adaptation does not silently advocate; it
 does not mean pretending the evidence is evenly divided.
 
-## Cold Case-Study Exposure
+## Packet-Blind Case-Study Exposure
 
-Ben receives a cold first exposure to the exact packets. Codex may author the
-bank and Claude may perform the participant-blinded adversarial content review.
-Before Ben answers, he may inspect the schema, allocation counts, nonrevealing
-review summary, dispositions by category and severity, and final content
-hashes, but not measure identities or packet language.
+Ben has seen the 48 topic-level authoring briefs in the Phase 3A profile as of
+July 30, 2026. He remains blind to the exact frozen packet language, option
+wording, quantitative values, arguments, and uncertainties until each measure
+is presented. Codex may author the bank and Claude may perform the
+participant-blinded adversarial content review. Before Ben answers, he may
+inspect the schema, allocation counts, nonrevealing review summary,
+dispositions by category and severity, and final content hashes, but not the
+exact packet contents.
 
 The review is described as **participant-blinded, AI-assisted independent
 review**, not independent human review. The ledger records the Claude
 model/version and locked review-prompt hash. A human content review is required
 before an external participant pilot or a broader claim of human validity.
+The case study is described as cold to exact packet content, not as an
+unqualified cold first exposure. Analysis of the intended-novel slice must
+carry the topic-exposure caveat because prior knowledge of the planned
+mechanisms may reduce realized novelty.
 
 ## Multi-Option And Retest Rules
 
@@ -185,6 +192,13 @@ Analysis reports participant self-consistency, including stable-answer and
 changed-answer slices, as a secondary benchmark. It does not mechanically
 normalize the primary log-loss or delegated-risk results from twelve retests.
 
+Retest variants live in a separate linked registry rather than as duplicate
+fixture measures. Each variant identifies one canonical `measure_id@version`,
+retains its packet lineage with a higher packet version, preserves canonical
+option IDs and source IDs, and carries its own option-order seed. Run validation
+resolves the alternate packet only for a retest presentation. This keeps the
+canonical bank at exactly 48 measures.
+
 ## Remaining Phase 3 Deliverables
 
 The bank profile is Phase 3A. The remaining work is:
@@ -201,6 +215,7 @@ The bank profile is Phase 3A. The remaining work is:
 6. freeze the fixture, review ledger, retest variants, and manifests by content
    hash.
 
-The cold exposure policy above is now frozen for Ben's case study. If exact
-packet content is exposed early despite that policy, record the protocol
-deviation and do not describe the affected result as a cold first exposure.
+The packet-blind exposure policy above is now frozen for Ben's case study. If
+exact packet content is exposed early despite that policy, record the protocol
+deviation and do not describe the affected result as cold to exact packet
+content.

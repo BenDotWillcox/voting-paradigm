@@ -222,11 +222,21 @@ review, reviewer provenance, and participant-independent approval remain
 explicit review-ledger gates rather than guesses made from packet prose.
 
 See `eval/PHASE3_AUTHORING.md` for the authoring matrix, review workflow,
-retest rules, remaining deliverables, and cold case-study exposure policy.
+retest rules, remaining deliverables, and packet-blind case-study exposure
+policy.
 Phase 3B will source and draft the exact measures in domain batches. Codex may
 author the bank and Claude may conduct the participant-blinded content review;
 the ledger must disclose the AI reviewer and bind its model/version and locked
 prompt by hash. Human content review remains required before an external pilot.
+Ben has already seen the topic-level authoring briefs; exact packet language,
+options, quantitative values, arguments, and uncertainties remain withheld
+until presentation. Intended-novel results must carry that exposure caveat.
+
+Retest paraphrases are separate `RetestPacketVariant` records linked to
+canonical measures, not duplicate fixture measures. A
+`RetestVariantRegistry` freezes those links and
+`validate_final_bank_bundle` validates the canonical fixture, retest selection,
+slot-to-measure review ledger, content hashes, and reviewer provenance together.
 
 Phase 4 will compare structured, conversational, and combined evidence inputs.
 LLM predictions will retain private supporting-evidence IDs and unsupported-

@@ -128,8 +128,8 @@ contracts, eight-domain development fixture, deterministic prequential runner,
 primary metrics, and allowlisted artifact boundary for the future standardized
 human-measure evaluation. Its Phase 3 authoring profile now freezes the
 fictional jurisdiction, exact 48-slot bank matrix, source and neutrality
-requirements, contextual-sufficiency review, participant-blinded Claude review
-path, presentation-order policy, and retest target before packet drafting.
+requirements, contextual-sufficiency review, packet-blind Claude review path,
+presentation-order policy, and linked retest target before packet drafting.
 Phase 4 will add evidence-grounding and prompt/order robustness diagnostics.
 Public aggregate artifacts still require explicit release review.
 Demo 3 (algorithmic districting) currently ships the apportionment slice;

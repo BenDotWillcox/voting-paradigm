@@ -209,9 +209,12 @@ running `python -m eval.validate_bank_profile` against that path.
   policy beat another.
 - **LLM claims:** a direct LLM baseline is mandatory so the hybrid must
   demonstrate value beyond prompting an LLM with the transcript.
-- **Case-study exposure:** Ben receives a cold first exposure. Codex may author
-  the bank and Claude may perform the disclosed participant-blinded AI content
-  review; a human content review is required before an external pilot.
+- **Case-study exposure:** Ben has seen the topic-level Phase 3A authoring
+  briefs but remains blind to exact packet language, options, quantitative
+  values, arguments, and uncertainties until presentation. Codex may author the
+  bank and Claude may perform the disclosed participant-blinded AI content
+  review; a human content review is required before an external pilot. Novel-
+  tier analysis must carry the topic-exposure caveat.
 - **Delegation claims:** sincere-choice prediction evaluates the substrate for
   future delegated voting, not real-world willingness to delegate or refrain
   from overriding the model.
@@ -402,8 +405,8 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 
 **Next, in order:**
 1. Source and draft the 48 exact packets in domain batches, bind them to a
-   reviewer-provenance ledger, conduct participant-blinded Claude review, then
-   author and neutrally review the retest variants
+   slot-to-measure reviewer-provenance ledger, conduct participant-blinded
+   Claude review, then author and neutrally review the linked retest registry
 2. Add the direct LLM baseline; structured/conversational/combined evidence
    ablation; evidence IDs and unsupported-assumption flags; fixed/expanding
    ontology ablation; hybrid explicit posterior; and prompt/order robustness

@@ -21,6 +21,7 @@ from eval.contracts import (
     PreferenceDimension,
     PredictionSnapshot,
     RankingTier,
+    RetestPacketVariant,
     ResponseStability,
     ResponseState,
     validate_prediction_for_measure,
@@ -677,6 +678,28 @@ class TestEvidenceAndLeakage:
 
     def test_retest_prediction_can_use_original_response_evidence(self, fixture):
         target = measure_by_id(fixture, "dev_fiscal_reserve")
+        variant_packet = target.packet.model_copy(
+            update={
+                "version": target.packet.version + 1,
+                "status_quo": (
+                    "Meridian currently keeps the same reserve policy, "
+                    "restated for the retest."
+                ),
+            }
+        )
+        variant = RetestPacketVariant(
+            variant_id="retest_variant_fiscal_reserve",
+            source_measure_id=target.measure_id,
+            source_measure_version=target.version,
+            packet=variant_packet,
+            order_seed=17,
+        )
+        variant_measure = MeasureVersion.model_validate(
+            {
+                **target.model_dump(mode="python"),
+                "packet": variant_packet.model_dump(mode="python"),
+            }
+        )
         configuration = ModelConfiguration(
             configuration_id="model_config",
             model_name="test model",
@@ -710,10 +733,11 @@ class TestEvidenceAndLeakage:
             occurred_at=NOW + timedelta(minutes=2),
         )
         retest = presentation_for(
-            target,
+            variant_measure,
             presentation_id="presentation_retest",
             kind=PresentationKind.RETEST,
             retest_of_presentation_id=initial.presentation_id,
+            order_seed=variant.order_seed,
             presented_at=NOW + timedelta(days=14),
         )
         retest_snapshot = PredictionSnapshot(
@@ -722,7 +746,7 @@ class TestEvidenceAndLeakage:
             target_presentation_id=retest.presentation_id,
             target_measure_id=target.measure_id,
             target_measure_version=target.version,
-            target_packet_version=target.packet.version,
+            target_packet_version=variant.packet.version,
             evidence_cutoff_sequence=2,
             evidence_event_ids=[initial_evidence.event_id],
             option_probabilities={
@@ -736,7 +760,7 @@ class TestEvidenceAndLeakage:
             created_at=NOW + timedelta(days=14, seconds=1),
         )
         retest_response = response_for(
-            target,
+            variant_measure,
             response_id="response_retest",
             presentation_id=retest.presentation_id,
             sequence=3,
@@ -757,7 +781,14 @@ class TestEvidenceAndLeakage:
             participant_responses=[initial_response, retest_response],
         )
 
-        validate_run_against_fixture(run, fixture)
+        with pytest.raises(ValueError, match="registered retest variant"):
+            validate_run_against_fixture(run, fixture)
+
+        validate_run_against_fixture(
+            run,
+            fixture,
+            retest_variants=[variant],
+        )
 
     def test_evidence_response_reference_must_exist(self, fixture):
         target = measure_by_id(fixture, "dev_fiscal_reserve")

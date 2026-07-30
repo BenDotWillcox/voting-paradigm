@@ -319,6 +319,19 @@ class MeasureVersion(ContractModel):
         return self
 
 
+class RetestPacketVariant(ContractModel):
+    """Alternate packet wording for a retest of one canonical measure."""
+
+    record_version: Literal["retest_packet_variant.v1"] = (
+        "retest_packet_variant.v1"
+    )
+    variant_id: StableId
+    source_measure_id: StableId
+    source_measure_version: PositiveVersion
+    packet: MeasurePacket
+    order_seed: Annotated[int, Field(ge=0)]
+
+
 class EvaluationFixture(ContractModel):
     schema_version: Literal["preference_eval_fixture.v1"]
     fixture_id: StableId

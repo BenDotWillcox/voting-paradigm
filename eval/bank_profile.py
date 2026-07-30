@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import json
 from collections import Counter
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 from pathlib import Path
 from typing import Literal, Self, TypeVar
@@ -30,7 +30,10 @@ from .contracts import (
     JurisdictionVersion,
     MeasureDomain,
     MeasureSourceKind,
+    MeasureVersion,
+    PositiveVersion,
     ResponseField,
+    RetestPacketVariant,
     Sha256Digest,
     SourceRecord,
     StableId,
@@ -53,6 +56,11 @@ class ModelExcludedInput(str, Enum):
     POLITICAL_IDENTITY = "political_identity"
     PARTISAN_VOTING_HISTORY = "partisan_voting_history"
     DEMOGRAPHIC_PROXIES = "demographic_proxies"
+
+
+class ReviewActorType(str, Enum):
+    HUMAN = "human"
+    AI = "ai"
 
 
 class NeutralityCheck(str, Enum):
@@ -189,14 +197,19 @@ class NeutralityReviewPolicy(ContractModel):
 
 
 class CaseStudyExposurePolicy(ContractModel):
-    """Cold-exposure and reviewer-provenance rules for Ben's case study."""
+    """Packet-blind exposure and reviewer rules for Ben's case study."""
 
-    exposure_mode: Literal["cold_first_exposure"] = "cold_first_exposure"
+    exposure_mode: Literal["cold_to_exact_packet_content"] = (
+        "cold_to_exact_packet_content"
+    )
     packet_author_system: Literal["codex"] = "codex"
     content_reviewer_system: Literal["claude"] = "claude"
-    exact_packet_content_withheld_from_participant: Literal[True] = True
+    topic_level_authoring_briefs_disclosed: Literal[True] = True
+    topic_brief_disclosure_date: date
+    exact_packet_text_options_and_values_withheld: Literal[True] = True
     participant_receives_nonrevealing_review_summary_only: Literal[True] = True
     describe_as_ai_assisted_not_human_review: Literal[True] = True
+    topic_exposure_caveat_required_for_novel_analysis: Literal[True] = True
     human_content_review_required_before_external_pilot: Literal[True] = True
 
 
@@ -420,6 +433,191 @@ class EvaluationBankProfile(ContractModel):
             )
 
 
+class RetestVariantRegistry(ContractModel):
+    """The twelve linked packet variants used for the final retest."""
+
+    schema_version: Literal["preference_eval_retest_registry.v1"] = (
+        "preference_eval_retest_registry.v1"
+    )
+    registry_id: StableId
+    registry_version: PositiveVersion
+    profile_id: StableId
+    profile_version: PositiveVersion
+    profile_sha256: Sha256Digest
+    fixture_id: StableId
+    fixture_version: PositiveVersion
+    fixture_sha256: Sha256Digest
+    created_at: datetime
+    variants: list[RetestPacketVariant] = Field(min_length=1)
+
+    @field_validator("created_at")
+    @classmethod
+    def created_at_must_be_timezone_aware(
+        cls,
+        value: datetime,
+    ) -> datetime:
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("created_at must include a timezone")
+        return value
+
+    @model_validator(mode="after")
+    def require_unique_variants(self) -> Self:
+        variant_ids = [variant.variant_id for variant in self.variants]
+        if len(variant_ids) != len(set(variant_ids)):
+            raise ValueError("retest variant ids must be unique")
+        measure_refs = [
+            (
+                variant.source_measure_id,
+                variant.source_measure_version,
+            )
+            for variant in self.variants
+        ]
+        if len(measure_refs) != len(set(measure_refs)):
+            raise ValueError(
+                "retest variants must reference distinct source measures"
+            )
+        packet_refs = [
+            (
+                variant.packet.packet_id,
+                variant.packet.version,
+            )
+            for variant in self.variants
+        ]
+        if len(packet_refs) != len(set(packet_refs)):
+            raise ValueError("retest packet id/version pairs must be unique")
+        return self
+
+
+class PacketReviewRecord(ContractModel):
+    """Auditable participant-independent approval of exact frozen content."""
+
+    record_version: Literal["packet_review.v1"] = "packet_review.v1"
+    reviewer_type: ReviewActorType
+    reviewer_system: str = Field(min_length=1)
+    reviewer_model_version: str | None = Field(default=None, min_length=1)
+    review_prompt_sha256: Sha256Digest | None = None
+    findings_count: int = Field(ge=0)
+    disposition_log_sha256: Sha256Digest
+    approved: Literal[True] = True
+    completed_at: datetime
+
+    @field_validator("completed_at")
+    @classmethod
+    def completed_at_must_be_timezone_aware(
+        cls,
+        value: datetime,
+    ) -> datetime:
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("completed_at must include a timezone")
+        return value
+
+    @model_validator(mode="after")
+    def require_ai_provenance(self) -> Self:
+        if self.reviewer_type is ReviewActorType.AI and (
+            self.reviewer_model_version is None
+            or self.review_prompt_sha256 is None
+        ):
+            raise ValueError(
+                "AI review requires reviewer_model_version and "
+                "review_prompt_sha256"
+            )
+        return self
+
+
+class BankReviewLedgerEntry(ContractModel):
+    """Bind one authored slot to one exact reviewed canonical measure."""
+
+    record_version: Literal["bank_review_entry.v1"] = "bank_review_entry.v1"
+    slot_id: StableId
+    measure_id: StableId
+    measure_version: PositiveVersion
+    measure_sha256: Sha256Digest
+    primary_official_source_ids: list[StableId] = Field(default_factory=list)
+    factual_traceability_reviewed: Literal[True] = True
+    contextual_sufficiency_reviewed: Literal[True] = True
+    adversarial_neutrality_reviewed: Literal[True] = True
+    approval: PacketReviewRecord
+
+    @field_validator("primary_official_source_ids")
+    @classmethod
+    def primary_source_ids_must_be_unique(
+        cls,
+        value: list[str],
+    ) -> list[str]:
+        if len(value) != len(set(value)):
+            raise ValueError("primary official source ids must be unique")
+        return value
+
+
+class RetestReviewLedgerEntry(ContractModel):
+    """Bind one linked retest variant to its semantic-preservation review."""
+
+    record_version: Literal["retest_review_entry.v1"] = (
+        "retest_review_entry.v1"
+    )
+    variant_id: StableId
+    source_measure_id: StableId
+    source_measure_version: PositiveVersion
+    packet_sha256: Sha256Digest
+    paraphrase_without_material_change_reviewed: Literal[True] = True
+    facts_and_fiscal_estimates_preserved: Literal[True] = True
+    option_set_preserved: Literal[True] = True
+    prior_response_and_prediction_hidden_by_protocol: Literal[True] = True
+    approval: PacketReviewRecord
+
+
+class BankReviewLedger(ContractModel):
+    """Review provenance and one-to-one bindings for a final bank bundle."""
+
+    schema_version: Literal["preference_eval_bank_review_ledger.v1"] = (
+        "preference_eval_bank_review_ledger.v1"
+    )
+    ledger_id: StableId
+    ledger_version: PositiveVersion
+    profile_id: StableId
+    profile_version: PositiveVersion
+    profile_sha256: Sha256Digest
+    fixture_id: StableId
+    fixture_version: PositiveVersion
+    fixture_sha256: Sha256Digest
+    retest_registry_id: StableId
+    retest_registry_version: PositiveVersion
+    retest_registry_sha256: Sha256Digest
+    created_at: datetime
+    measure_entries: list[BankReviewLedgerEntry] = Field(min_length=1)
+    retest_entries: list[RetestReviewLedgerEntry] = Field(min_length=1)
+
+    @field_validator("created_at")
+    @classmethod
+    def created_at_must_be_timezone_aware(
+        cls,
+        value: datetime,
+    ) -> datetime:
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("created_at must include a timezone")
+        return value
+
+    @model_validator(mode="after")
+    def require_unique_bindings(self) -> Self:
+        slot_ids = [entry.slot_id for entry in self.measure_entries]
+        if len(slot_ids) != len(set(slot_ids)):
+            raise ValueError("review-ledger slot ids must be unique")
+        measure_refs = [
+            (entry.measure_id, entry.measure_version)
+            for entry in self.measure_entries
+        ]
+        if len(measure_refs) != len(set(measure_refs)):
+            raise ValueError(
+                "review-ledger canonical measure references must be unique"
+            )
+        variant_ids = [entry.variant_id for entry in self.retest_entries]
+        if len(variant_ids) != len(set(variant_ids)):
+            raise ValueError(
+                "review-ledger retest variant ids must be unique"
+            )
+        return self
+
+
 class BankProfileManifest(ContractModel):
     schema_version: Literal["preference_eval_bank_profile_manifest.v1"] = (
         "preference_eval_bank_profile_manifest.v1"
@@ -438,6 +636,24 @@ def load_bank_profile(path: str | Path) -> EvaluationBankProfile:
     profile_path = Path(path)
     raw = json.loads(profile_path.read_text(encoding="utf-8"))
     return EvaluationBankProfile.model_validate(raw)
+
+
+def load_retest_variant_registry(
+    path: str | Path,
+) -> RetestVariantRegistry:
+    """Load and validate one linked retest-variant registry."""
+
+    registry_path = Path(path)
+    raw = json.loads(registry_path.read_text(encoding="utf-8"))
+    return RetestVariantRegistry.model_validate(raw)
+
+
+def load_bank_review_ledger(path: str | Path) -> BankReviewLedger:
+    """Load and validate one final-bank review ledger."""
+
+    ledger_path = Path(path)
+    raw = json.loads(ledger_path.read_text(encoding="utf-8"))
+    return BankReviewLedger.model_validate(raw)
 
 
 def build_bank_profile_manifest(
@@ -594,6 +810,305 @@ def validate_final_fixture_against_profile(
                     f"{measure.measure_id} source {source.source_id} requires "
                     "publisher, URL, accessed_date, and adaptation_notes"
                 )
+
+
+def validate_retest_registry_against_bank(
+    registry: RetestVariantRegistry,
+    fixture: EvaluationFixture,
+    profile: EvaluationBankProfile,
+) -> None:
+    """Validate linked retest packets and their frozen selection target."""
+
+    if (
+        registry.profile_id,
+        registry.profile_version,
+        registry.profile_sha256,
+    ) != (
+        profile.profile_id,
+        profile.profile_version,
+        content_sha256(profile),
+    ):
+        raise ValueError("retest registry does not match the bank profile")
+    if (
+        registry.fixture_id,
+        registry.fixture_version,
+        registry.fixture_sha256,
+    ) != (
+        fixture.fixture_id,
+        fixture.fixture_version,
+        content_sha256(fixture),
+    ):
+        raise ValueError("retest registry does not match the final fixture")
+
+    target = profile.retest_target
+    if len(registry.variants) != target.target_count:
+        raise ValueError(
+            "retest registry count does not match the frozen target"
+        )
+
+    measure_by_ref = {
+        (measure.measure_id, measure.version): measure
+        for measure in fixture.measures
+    }
+    selected_measures: list[MeasureVersion] = []
+    for variant in registry.variants:
+        measure_ref = (
+            variant.source_measure_id,
+            variant.source_measure_version,
+        )
+        measure = measure_by_ref.get(measure_ref)
+        if measure is None:
+            raise ValueError(
+                f"retest variant {variant.variant_id} references unknown "
+                f"measure {variant.source_measure_id}@"
+                f"{variant.source_measure_version}"
+            )
+        if variant.packet.packet_id != measure.packet.packet_id:
+            raise ValueError(
+                f"retest variant {variant.variant_id} must retain packet_id "
+                f"{measure.packet.packet_id!r}"
+            )
+        if variant.packet.version <= measure.packet.version:
+            raise ValueError(
+                f"retest variant {variant.variant_id} packet version must be "
+                f"greater than canonical version {measure.packet.version}"
+            )
+        if set(variant.packet.arguments_by_option) != {
+            option.option_id for option in measure.options
+        }:
+            raise ValueError(
+                f"retest variant {variant.variant_id} must preserve the "
+                "canonical option ids"
+            )
+        if {
+            source.source_id for source in variant.packet.sources
+        } != {
+            source.source_id for source in measure.packet.sources
+        }:
+            raise ValueError(
+                f"retest variant {variant.variant_id} must preserve the "
+                "canonical source set"
+            )
+        selected_measures.append(measure)
+
+    domain_counts = Counter(measure.domain for measure in selected_measures)
+    missing_domains = [
+        domain.value
+        for domain in MeasureDomain
+        if domain_counts[domain] < target.minimum_per_domain
+    ]
+    if missing_domains:
+        raise ValueError(
+            "retest registry does not meet minimum domain coverage; "
+            f"missing={missing_domains}"
+        )
+
+    EvaluationBankProfile._require_count(
+        "retest source kind",
+        Counter(measure.source_kind for measure in selected_measures),
+        {
+            MeasureSourceKind.REAL_WORLD_ANCHORED: (
+                target.real_world_anchored
+            ),
+            MeasureSourceKind.CONSTRUCTED: target.constructed,
+        },
+    )
+    EvaluationBankProfile._require_count(
+        "retest generalization tier",
+        Counter(
+            measure.intended_generalization_tier
+            for measure in selected_measures
+        ),
+        {
+            GeneralizationTier.FAMILIAR: target.familiar,
+            GeneralizationTier.ADJACENT: target.adjacent,
+            GeneralizationTier.NOVEL: target.novel,
+        },
+    )
+    EvaluationBankProfile._require_count(
+        "retest ballot type",
+        Counter(measure.ballot_type for measure in selected_measures),
+        {
+            BallotType.SINGLE_CHOICE: target.single_choice,
+            BallotType.RANKED: target.ranked,
+            BallotType.APPROVAL: target.approval,
+            BallotType.SCORE: target.score,
+            BallotType.QUADRATIC: target.quadratic,
+        },
+    )
+
+
+def _validate_review_actor(
+    review: PacketReviewRecord,
+    profile: EvaluationBankProfile,
+) -> None:
+    exposure = profile.case_study_exposure_policy
+    if review.reviewer_type is not ReviewActorType.AI:
+        raise ValueError(
+            "Ben's case-study content approval must record the disclosed "
+            "AI-assisted reviewer"
+        )
+    if review.reviewer_system.casefold() != (
+        exposure.content_reviewer_system.casefold()
+    ):
+        raise ValueError(
+            "reviewer system does not match the frozen exposure policy"
+        )
+    if review.reviewer_system.casefold() == (
+        exposure.packet_author_system.casefold()
+    ):
+        raise ValueError(
+            "participant-independent reviewer must differ from packet author"
+        )
+
+
+def validate_review_ledger_against_bank(
+    ledger: BankReviewLedger,
+    fixture: EvaluationFixture,
+    profile: EvaluationBankProfile,
+    registry: RetestVariantRegistry,
+) -> None:
+    """Validate exact slot bindings and review provenance for a final bank."""
+
+    if (
+        ledger.profile_id,
+        ledger.profile_version,
+        ledger.profile_sha256,
+    ) != (
+        profile.profile_id,
+        profile.profile_version,
+        content_sha256(profile),
+    ):
+        raise ValueError("review ledger does not match the bank profile")
+    if (
+        ledger.fixture_id,
+        ledger.fixture_version,
+        ledger.fixture_sha256,
+    ) != (
+        fixture.fixture_id,
+        fixture.fixture_version,
+        content_sha256(fixture),
+    ):
+        raise ValueError("review ledger does not match the final fixture")
+    if (
+        ledger.retest_registry_id,
+        ledger.retest_registry_version,
+        ledger.retest_registry_sha256,
+    ) != (
+        registry.registry_id,
+        registry.registry_version,
+        content_sha256(registry),
+    ):
+        raise ValueError("review ledger does not match the retest registry")
+
+    slot_by_id = {slot.slot_id: slot for slot in profile.slots}
+    measure_by_ref = {
+        (measure.measure_id, measure.version): measure
+        for measure in fixture.measures
+    }
+    if {entry.slot_id for entry in ledger.measure_entries} != set(slot_by_id):
+        raise ValueError(
+            "review ledger must contain exactly one entry for every bank slot"
+        )
+    if {
+        (entry.measure_id, entry.measure_version)
+        for entry in ledger.measure_entries
+    } != set(measure_by_ref):
+        raise ValueError(
+            "review ledger must bind every canonical measure exactly once"
+        )
+
+    for entry in ledger.measure_entries:
+        slot = slot_by_id[entry.slot_id]
+        measure = measure_by_ref[
+            (entry.measure_id, entry.measure_version)
+        ]
+        if _slot_allocation_key(
+            domain=measure.domain,
+            source_kind=measure.source_kind,
+            tier=measure.intended_generalization_tier,
+            ballot_type=measure.ballot_type,
+        ) != _slot_allocation_key(
+            domain=slot.domain,
+            source_kind=slot.source_kind,
+            tier=slot.intended_generalization_tier,
+            ballot_type=slot.ballot_type,
+        ):
+            raise ValueError(
+                f"review entry {entry.slot_id} binds a measure with the "
+                "wrong slot allocation"
+            )
+        if entry.measure_sha256 != content_sha256(measure):
+            raise ValueError(
+                f"review entry {entry.slot_id} measure hash does not match"
+            )
+        packet_source_ids = {
+            source.source_id for source in measure.packet.sources
+        }
+        if not set(entry.primary_official_source_ids).issubset(
+            packet_source_ids
+        ):
+            raise ValueError(
+                f"review entry {entry.slot_id} classifies an unknown source"
+            )
+        if (
+            measure.source_kind
+            is MeasureSourceKind.REAL_WORLD_ANCHORED
+            and len(entry.primary_official_source_ids)
+            < profile.source_policy.real_world_min_primary_official_sources
+        ):
+            raise ValueError(
+                f"review entry {entry.slot_id} lacks the required primary "
+                "official source classification"
+            )
+        _validate_review_actor(entry.approval, profile)
+
+    variant_by_id = {
+        variant.variant_id: variant for variant in registry.variants
+    }
+    if {
+        entry.variant_id for entry in ledger.retest_entries
+    } != set(variant_by_id):
+        raise ValueError(
+            "review ledger must contain exactly one entry for every retest "
+            "variant"
+        )
+    for entry in ledger.retest_entries:
+        variant = variant_by_id[entry.variant_id]
+        if (
+            entry.source_measure_id,
+            entry.source_measure_version,
+        ) != (
+            variant.source_measure_id,
+            variant.source_measure_version,
+        ):
+            raise ValueError(
+                f"retest review {entry.variant_id} references the wrong "
+                "canonical measure"
+            )
+        if entry.packet_sha256 != content_sha256(variant.packet):
+            raise ValueError(
+                f"retest review {entry.variant_id} packet hash does not match"
+            )
+        _validate_review_actor(entry.approval, profile)
+
+
+def validate_final_bank_bundle(
+    fixture: EvaluationFixture,
+    profile: EvaluationBankProfile,
+    registry: RetestVariantRegistry,
+    ledger: BankReviewLedger,
+) -> None:
+    """Validate the canonical bank, retest registry, and review bindings."""
+
+    validate_final_fixture_against_profile(fixture, profile)
+    validate_retest_registry_against_bank(registry, fixture, profile)
+    validate_review_ledger_against_bank(
+        ledger,
+        fixture,
+        profile,
+        registry,
+    )
 
 
 def bank_profile_summary(profile: EvaluationBankProfile) -> JsonValue:

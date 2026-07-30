@@ -17,6 +17,8 @@ from .contracts import (
     MeasureDomain,
     MeasureVersion,
     PositiveVersion,
+    PresentationKind,
+    RetestPacketVariant,
     Sha256Digest,
     StableId,
     validate_prediction_for_measure,
@@ -122,8 +124,10 @@ def build_fixture_manifest(fixture: EvaluationFixture) -> FixtureManifest:
 def validate_run_against_fixture(
     run: EvaluationRun,
     fixture: EvaluationFixture,
+    *,
+    retest_variants: list[RetestPacketVariant] | None = None,
 ) -> None:
-    """Bind a replayable run to the exact validated fixture it names."""
+    """Bind a replayable run to its fixture and linked retest packets."""
 
     if run.fixture_id != fixture.fixture_id:
         raise ValueError(
@@ -146,12 +150,61 @@ def validate_run_against_fixture(
         (measure.measure_id, measure.version): measure
         for measure in fixture.measures
     }
+    variant_measure_by_key: dict[
+        tuple[str, int, int],
+        MeasureVersion,
+    ] = {}
+    for variant in retest_variants or []:
+        measure_key = (
+            variant.source_measure_id,
+            variant.source_measure_version,
+        )
+        canonical = measure_by_key.get(measure_key)
+        if canonical is None:
+            raise ValueError(
+                f"retest variant {variant.variant_id} references unknown "
+                f"measure {variant.source_measure_id}@"
+                f"{variant.source_measure_version}"
+            )
+        if variant.packet.packet_id != canonical.packet.packet_id:
+            raise ValueError(
+                f"retest variant {variant.variant_id} must retain packet_id "
+                f"{canonical.packet.packet_id!r}"
+            )
+        if variant.packet.version <= canonical.packet.version:
+            raise ValueError(
+                f"retest variant {variant.variant_id} packet version must be "
+                f"greater than canonical version {canonical.packet.version}"
+            )
+        variant_key = (
+            variant.source_measure_id,
+            variant.source_measure_version,
+            variant.packet.version,
+        )
+        if variant_key in variant_measure_by_key:
+            raise ValueError(
+                "retest variant measure/packet references must be unique; "
+                f"duplicate {variant_key}"
+            )
+        variant_measure_by_key[variant_key] = MeasureVersion.model_validate(
+            {
+                **canonical.model_dump(mode="python"),
+                "packet": variant.packet.model_dump(mode="python"),
+            }
+        )
+
+    presentation_by_id = {
+        presentation.presentation_id: presentation
+        for presentation in run.measure_presentations
+    }
 
     def require_measure(
         measure_id: str,
         measure_version: int,
         packet_version: int,
         record_label: str,
+        *,
+        allow_retest_variant: bool,
     ) -> MeasureVersion:
         measure = measure_by_key.get((measure_id, measure_version))
         if measure is None:
@@ -159,12 +212,23 @@ def validate_run_against_fixture(
                 f"{record_label} references unknown measure "
                 f"{measure_id}@{measure_version}"
             )
-        if packet_version != measure.packet.version:
+        if packet_version == measure.packet.version:
+            return measure
+        variant = variant_measure_by_key.get(
+            (measure_id, measure_version, packet_version)
+        )
+        if variant is not None and allow_retest_variant:
+            return variant
+        if variant is not None:
             raise ValueError(
-                f"{record_label} packet_version {packet_version} does not "
-                f"match {measure.packet.version}"
+                f"{record_label} cannot use retest packet version "
+                f"{packet_version} outside a retest presentation"
             )
-        return measure
+        raise ValueError(
+            f"{record_label} packet_version {packet_version} does not match "
+            f"canonical version {measure.packet.version} or a registered "
+            "retest variant"
+        )
 
     for presentation in run.measure_presentations:
         require_measure(
@@ -172,23 +236,34 @@ def validate_run_against_fixture(
             presentation.measure_version,
             presentation.packet_version,
             f"presentation {presentation.presentation_id}",
+            allow_retest_variant=(
+                presentation.kind is PresentationKind.RETEST
+            ),
         )
 
     for response in run.participant_responses:
+        presentation = presentation_by_id[response.presentation_id]
         measure = require_measure(
             response.measure_id,
             response.measure_version,
             response.packet_version,
             f"response {response.response_id}",
+            allow_retest_variant=(
+                presentation.kind is PresentationKind.RETEST
+            ),
         )
         validate_response_for_measure(response, measure)
 
     for snapshot in run.prediction_snapshots:
+        presentation = presentation_by_id[snapshot.target_presentation_id]
         measure = require_measure(
             snapshot.target_measure_id,
             snapshot.target_measure_version,
             snapshot.target_packet_version,
             f"snapshot {snapshot.snapshot_id}",
+            allow_retest_variant=(
+                presentation.kind is PresentationKind.RETEST
+            ),
         )
         validate_prediction_for_measure(snapshot, measure)
 
@@ -197,11 +272,20 @@ def validate_run_against_fixture(
             continue
         assert event.measure_version is not None
         assert event.packet_version is not None
+        presentation = (
+            presentation_by_id[event.presentation_id]
+            if event.presentation_id is not None
+            else None
+        )
         require_measure(
             event.measure_id,
             event.measure_version,
             event.packet_version,
             f"evidence event {event.event_id}",
+            allow_retest_variant=(
+                presentation is not None
+                and presentation.kind is PresentationKind.RETEST
+            ),
         )
 
 

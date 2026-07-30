@@ -59,7 +59,7 @@ def test_profile_manifest_pins_the_phase_3a_inputs():
 
     assert (
         manifest.profile_sha256
-        == "60f9103841fff123d0c65c5cb0e876f394eba681cfc061dab3d4b52de0df6ea7"
+        == "4c473b6abcb428b938298e72a26b49300b60d1b6c514f2e17c620702c6b563b9"
     )
     assert (
         manifest.jurisdiction_sha256
@@ -139,15 +139,18 @@ def test_profile_freezes_the_ballot_mix():
     }
 
 
-def test_profile_freezes_cold_ai_assisted_review_path():
+def test_profile_records_packet_blind_ai_assisted_review_path():
     profile = load_bank_profile(PROFILE_PATH)
 
     exposure = profile.case_study_exposure_policy
-    assert exposure.exposure_mode == "cold_first_exposure"
+    assert exposure.exposure_mode == "cold_to_exact_packet_content"
     assert exposure.packet_author_system == "codex"
     assert exposure.content_reviewer_system == "claude"
-    assert exposure.exact_packet_content_withheld_from_participant
+    assert exposure.topic_level_authoring_briefs_disclosed
+    assert exposure.topic_brief_disclosure_date.isoformat() == "2026-07-30"
+    assert exposure.exact_packet_text_options_and_values_withheld
     assert exposure.describe_as_ai_assisted_not_human_review
+    assert exposure.topic_exposure_caveat_required_for_novel_analysis
     assert exposure.human_content_review_required_before_external_pilot
     assert (
         NeutralityCheck.MATERIAL_CONTEXT_SUFFICIENCY
@@ -226,7 +229,7 @@ def test_cli_prints_manifest_and_inspectable_summary(capsys):
     )
     assert output["summary"]["measure_count"] == 48
     assert output["summary"]["case_study_exposure_mode"] == (
-        "cold_first_exposure"
+        "cold_to_exact_packet_content"
     )
     assert output["summary"]["content_reviewer_system"] == "claude"
 
