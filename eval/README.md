@@ -232,6 +232,38 @@ Ben has already seen the topic-level authoring briefs; exact packet language,
 options, quantitative values, arguments, and uncertainties remain withheld
 until presentation. Intended-novel results must carry that exposure caveat.
 
+Phase 3B infrastructure lives in `eval/bank_authoring.py` and
+`eval/review_artifacts.py`. Each six-measure `DomainBankBatch` binds frozen
+slots to exact measures and `MeasureSourceEvidence`; source captures preserve
+retrieved-content hashes and explicit source roles, while content traces bind
+exact adapted strings to packet sources or frozen jurisdiction facts. The
+assembler fails unless it
+receives exactly one valid batch for every domain, then emits measures in
+frozen slot order:
+
+```bash
+python -m eval.build_final_bank \
+  eval/fixtures/preference_eval_bank_profile_v1.json \
+  path/to/batch-1.json path/to/batch-2.json ... path/to/batch-8.json \
+  --fixture-id preference_eval_final_v1 \
+  --created-at 2026-08-01T12:00:00-05:00 \
+  --output eval/fixtures/preference_eval_final_v1.json
+```
+
+Exact review uses `eval/prompts/phase3_packet_review_v1.md`, whose canonical
+hash is pinned in code. Restricted disposition logs may contain packet text;
+participant-facing review evidence must be produced only through
+`build_nonrevealing_review_summary`, which emits hashes, provenance, approval,
+and aggregate counts without copying free text.
+`bank_review_ledger_entries_for_batch` deterministically turns the same
+validated review and source-role records into final ledger entries.
+
+`python -m eval.validate_domain_batch PROFILE BATCH` prints only aggregate
+counts and hashes. After exact-content review,
+`python -m eval.validate_batch_review PROFILE BATCH RESTRICTED_LOG
+--summary-output SAFE_SUMMARY` validates the frozen Claude prompt and writes
+the allowlisted participant-safe summary.
+
 Retest paraphrases are separate `RetestPacketVariant` records linked to
 canonical measures, not duplicate fixture measures. A
 `RetestVariantRegistry` freezes those links and

@@ -20,6 +20,21 @@ slot bindings, and review provenance. Realized six-wave execution and the
 7-14 day retest interval remain run-level checks that must land before the
 held-out freeze.
 
+Phase 3B authors the exact bank through reviewable six-measure domain batches.
+`eval/bank_authoring.py` defines the source-evidence and batch contracts, and
+`python -m eval.build_final_bank` accepts only one conforming batch from every
+domain before writing the canonical 48-measure fixture. The command prints an
+aggregate manifest rather than exact packet content:
+
+```bash
+python -m eval.build_final_bank \
+  eval/fixtures/preference_eval_bank_profile_v1.json \
+  path/to/batch-1.json path/to/batch-2.json ... path/to/batch-8.json \
+  --fixture-id preference_eval_final_v1 \
+  --created-at 2026-08-01T12:00:00-05:00 \
+  --output eval/fixtures/preference_eval_final_v1.json
+```
+
 ## Frozen Jurisdiction
 
 The evaluation uses the fictional State of Meridian and City of Harborview as
@@ -117,6 +132,18 @@ notes. The fixture validator can enforce those fields and the numeric source
 minimums. It cannot safely infer that a publisher string represents a primary
 official source; that classification belongs in the signed review ledger.
 
+Every `SourceRecord` is paired with a `SourceCaptureRecord` that records its
+primary-official, official-context, or independent-context role and binds the
+record hash to the retrieved document bytes or a normalized claim-relevant
+text extraction. A `ContentTraceRecord` stores one exact participant-facing
+string, its JSON Pointer within the measure, the supporting packet source IDs
+or frozen jurisdiction facts, and its adaptation notes. Validation fails if a
+real-world adaptation lacks a primary official capture, a source is
+decorative, a source record changes, a jurisdiction fact is unknown, or the
+adapted packet text drifts. Full third-party documents belong only in the
+ignored authoring cache; the repository stores their hashes and locators, not
+wholesale copyrighted copies.
+
 Packets exclude party labels, politicians, sponsors or campaign organizations,
 endorsements, polling, and campaign slogans. Political identity, partisan
 voting history, and demographic proxies remain unavailable to every live
@@ -129,8 +156,8 @@ Author the bank in domain batches. A batch is not frozen merely because it
 passes schema validation.
 
 1. **Source capture:** identify the primary official material and independent
-   context; record source roles, access dates, source text or a durable
-   content hash, and the exact adaptation.
+   context; record access dates, source-record hashes, retrieved-content
+   hashes and scopes, locators, and exact content traces.
 2. **Packet draft:** write the packet from the frozen slot brief and common
    jurisdiction, without party or campaign cues.
 3. **Structural validation:** check option IDs and order, packet completeness,
@@ -165,6 +192,33 @@ participant-blinded adversarial content review. Before Ben answers, he may
 inspect the schema, allocation counts, nonrevealing review summary,
 dispositions by category and severity, and final content hashes, but not the
 exact packet contents.
+
+The Claude review uses the immutable
+`eval/prompts/phase3_packet_review_v1.md` prompt. Its canonical SHA-256 is
+`b2e0cc374e0de755fb45ed8e6997cbdeeefc32f75827fcedf5e6abac435f7f32`.
+The restricted `DomainBatchReviewLog` may contain exact packet excerpts and
+measure-level findings. Only the output of
+`build_nonrevealing_review_summary` is participant-safe: it contains hashes,
+reviewer provenance, approval status, and aggregate category/severity/
+disposition counts, with no finding or packet prose.
+After validation, `bank_review_ledger_entries_for_batch` converts source roles,
+completed checks, exact measure hashes, and review provenance into the six
+canonical `BankReviewLedgerEntry` records without manual re-entry.
+
+Validate an individual batch before review, then validate the restricted
+review log and write its safe summary with:
+
+```bash
+python -m eval.validate_domain_batch \
+  eval/fixtures/preference_eval_bank_profile_v1.json \
+  path/to/domain-batch.json
+
+python -m eval.validate_batch_review \
+  eval/fixtures/preference_eval_bank_profile_v1.json \
+  path/to/domain-batch.json \
+  path/to/restricted-review-log.json \
+  --summary-output path/to/nonrevealing-summary.json
+```
 
 The review is described as **participant-blinded, AI-assisted independent
 review**, not independent human review. The ledger records the Claude
@@ -201,17 +255,22 @@ normalize the primary log-loss or delegated-risk results from twelve retests.
 Retest variants live in a separate linked registry rather than as duplicate
 fixture measures. Each variant identifies one canonical `measure_id@version`,
 retains its packet lineage with a higher packet version, preserves canonical
-option IDs and source IDs, and carries its own option-order seed. Run validation
-resolves the alternate packet only for a retest presentation. This keeps the
-canonical bank at exactly 48 measures.
+option IDs and source IDs. The presentation plan owns seeded option ordering
+for both initial and retest presentations. Run validation resolves the
+alternate packet only for a retest presentation. This keeps the canonical bank
+at exactly 48 measures.
 
 ## Remaining Phase 3 Deliverables
 
-The bank profile is Phase 3A. The remaining work is:
+The bank profile is Phase 3A. Phase 3B infrastructure now supplies exact source
+capture, domain batches, deterministic assembly, a locked Claude review prompt,
+restricted disposition logs, and nonrevealing aggregate summaries. The
+remaining content and finalization work is:
 
 1. source and draft the 32 real-world and 16 constructed packets in domain
    batches;
-2. add a review ledger binding each final measure to its authoring slot,
+2. review each exact batch and populate the final ledger binding every measure
+   to its authoring slot,
    primary-source classification, factual review, contextual-sufficiency
    review, neutrality review, reviewer provenance, findings, dispositions, and
    participant-independent approval;

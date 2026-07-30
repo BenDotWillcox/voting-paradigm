@@ -685,6 +685,91 @@ def _slot_allocation_key(
     return (domain, source_kind, tier, ballot_type)
 
 
+def validate_final_measure_against_profile(
+    measure: MeasureVersion,
+    profile: EvaluationBankProfile,
+) -> None:
+    """Enforce the final-bank requirements local to one exact measure."""
+
+    rich_fields = [
+        ResponseField.TOP_CHOICE,
+        ResponseField.RANKING,
+        ResponseField.APPROVAL,
+        ResponseField.SCORES,
+    ]
+    if measure.ballot_type is BallotType.SINGLE_CHOICE:
+        if measure.response_fields != [ResponseField.TOP_CHOICE]:
+            raise ValueError(
+                f"{measure.measure_id} must record only top_choice"
+            )
+        if len(measure.options) != 2:
+            raise ValueError(
+                f"{measure.measure_id} binary initiative must have "
+                "exactly two options"
+            )
+    elif measure.ballot_type in {
+        BallotType.RANKED,
+        BallotType.APPROVAL,
+        BallotType.SCORE,
+    }:
+        if measure.response_fields != rich_fields:
+            raise ValueError(
+                f"{measure.measure_id} ordinary multi-option contest must "
+                "record top_choice, ranking, approval, and scores in the "
+                "frozen order"
+            )
+        if len(measure.options) < 3:
+            raise ValueError(
+                f"{measure.measure_id} multi-option contest requires "
+                "at least three options"
+            )
+    elif measure.ballot_type is BallotType.QUADRATIC:
+        if measure.response_fields != [ResponseField.QUADRATIC]:
+            raise ValueError(
+                f"{measure.measure_id} quadratic contest must record only "
+                "quadratic allocations"
+            )
+        if measure.quadratic_credit_budget != 100:
+            raise ValueError(
+                f"{measure.measure_id} quadratic contest must use the "
+                "frozen 100-credit budget"
+            )
+        if measure.quadratic_allow_negative is not False:
+            raise ValueError(
+                f"{measure.measure_id} quadratic contest must prohibit "
+                "negative allocations"
+            )
+    else:
+        raise ValueError(
+            f"{measure.measure_id} uses unsupported ballot type "
+            f"{measure.ballot_type!r}"
+        )
+
+    source_policy = profile.source_policy
+    required_sources = (
+        source_policy.real_world_min_url_sources
+        if measure.source_kind
+        is MeasureSourceKind.REAL_WORLD_ANCHORED
+        else source_policy.constructed_min_context_url_sources
+    )
+    if len(measure.packet.sources) < required_sources:
+        raise ValueError(
+            f"{measure.measure_id} requires at least {required_sources} "
+            "source records"
+        )
+    for source in measure.packet.sources:
+        if (
+            source.publisher is None
+            or source.url is None
+            or source.accessed_date is None
+            or source.adaptation_notes is None
+        ):
+            raise ValueError(
+                f"{measure.measure_id} source {source.source_id} requires "
+                "publisher, URL, accessed_date, and adaptation_notes"
+            )
+
+
 def validate_final_fixture_against_profile(
     fixture: EvaluationFixture,
     profile: EvaluationBankProfile,
@@ -736,84 +821,8 @@ def validate_final_fixture_against_profile(
             "final bank allocation does not match the frozen 48-slot matrix"
         )
 
-    rich_fields = [
-        ResponseField.TOP_CHOICE,
-        ResponseField.RANKING,
-        ResponseField.APPROVAL,
-        ResponseField.SCORES,
-    ]
     for measure in fixture.measures:
-        if measure.ballot_type is BallotType.SINGLE_CHOICE:
-            if measure.response_fields != [ResponseField.TOP_CHOICE]:
-                raise ValueError(
-                    f"{measure.measure_id} must record only top_choice"
-                )
-            if len(measure.options) != 2:
-                raise ValueError(
-                    f"{measure.measure_id} binary initiative must have "
-                    "exactly two options"
-                )
-        elif measure.ballot_type in {
-            BallotType.RANKED,
-            BallotType.APPROVAL,
-            BallotType.SCORE,
-        }:
-            if measure.response_fields != rich_fields:
-                raise ValueError(
-                    f"{measure.measure_id} ordinary multi-option contest must "
-                    "record top_choice, ranking, approval, and scores in the "
-                    "frozen order"
-                )
-            if len(measure.options) < 3:
-                raise ValueError(
-                    f"{measure.measure_id} multi-option contest requires "
-                    "at least three options"
-                )
-        elif measure.ballot_type is BallotType.QUADRATIC:
-            if measure.response_fields != [ResponseField.QUADRATIC]:
-                raise ValueError(
-                    f"{measure.measure_id} quadratic contest must record only "
-                    "quadratic allocations"
-                )
-            if measure.quadratic_credit_budget != 100:
-                raise ValueError(
-                    f"{measure.measure_id} quadratic contest must use the "
-                    "frozen 100-credit budget"
-                )
-            if measure.quadratic_allow_negative is not False:
-                raise ValueError(
-                    f"{measure.measure_id} quadratic contest must prohibit "
-                    "negative allocations"
-                )
-        else:
-            raise ValueError(
-                f"{measure.measure_id} uses unsupported ballot type "
-                f"{measure.ballot_type!r}"
-            )
-
-        source_policy = profile.source_policy
-        required_sources = (
-            source_policy.real_world_min_url_sources
-            if measure.source_kind
-            is MeasureSourceKind.REAL_WORLD_ANCHORED
-            else source_policy.constructed_min_context_url_sources
-        )
-        if len(measure.packet.sources) < required_sources:
-            raise ValueError(
-                f"{measure.measure_id} requires at least {required_sources} "
-                "source records"
-            )
-        for source in measure.packet.sources:
-            if (
-                source.publisher is None
-                or source.url is None
-                or source.accessed_date is None
-                or source.adaptation_notes is None
-            ):
-                raise ValueError(
-                    f"{measure.measure_id} source {source.source_id} requires "
-                    "publisher, URL, accessed_date, and adaptation_notes"
-                )
+        validate_final_measure_against_profile(measure, profile)
 
 
 def validate_retest_registry_against_bank(

@@ -130,6 +130,10 @@ human-measure evaluation. Its Phase 3 authoring profile now freezes the
 fictional jurisdiction, exact 48-slot bank matrix, source and neutrality
 requirements, contextual-sufficiency review, packet-blind Claude review path,
 presentation-order policy, and linked retest target before packet drafting.
+Phase 3B infrastructure adds exact source captures and adapted-text traces,
+six-measure domain batches, deterministic final-fixture assembly, a locked
+Claude review prompt, restricted disposition logs, and participant-safe
+aggregate review summaries. Exact packet authoring remains pending.
 Phase 4 will add evidence-grounding and prompt/order robustness diagnostics.
 Public aggregate artifacts still require explicit release review.
 Demo 3 (algorithmic districting) currently ships the apportionment slice;
