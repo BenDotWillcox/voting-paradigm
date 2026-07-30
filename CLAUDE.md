@@ -215,6 +215,12 @@ running `python -m eval.validate_bank_profile` against that path.
   bank and Claude may perform the disclosed participant-blinded AI content
   review; a human content review is required before an external pilot. Novel-
   tier analysis must carry the topic-exposure caveat.
+- **Restricted Phase 3B artifacts:** exact batches, fixtures, retest variants,
+  and detailed review logs remain in Git-ignored `eval/restricted_bank/`;
+  retrieved source documents remain in `.cache/eval-authoring/sources/`.
+  Claude reviews them locally. Do not stage or open a content PR before every
+  predeclared blinded participant finishes initial presentations and retests.
+  Only generated safe summaries and aggregate hashes may enter interim PRs.
 - **Delegation claims:** sincere-choice prediction evaluates the substrate for
   future delegated voting, not real-world willingness to delegate or refrain
   from overriding the model.

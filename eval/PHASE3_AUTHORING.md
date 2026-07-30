@@ -29,10 +29,17 @@ aggregate manifest rather than exact packet content:
 ```bash
 python -m eval.build_final_bank \
   eval/fixtures/preference_eval_bank_profile_v1.json \
-  path/to/batch-1.json path/to/batch-2.json ... path/to/batch-8.json \
+  eval/restricted_bank/batches/fiscal_economy_labor.json \
+  eval/restricted_bank/batches/health_social_provision.json \
+  eval/restricted_bank/batches/education_family.json \
+  eval/restricted_bank/batches/housing_land_use.json \
+  eval/restricted_bank/batches/transportation_infrastructure.json \
+  eval/restricted_bank/batches/environment_energy.json \
+  eval/restricted_bank/batches/justice_safety_rights.json \
+  eval/restricted_bank/batches/governance_elections_technology.json \
   --fixture-id preference_eval_final_v1 \
   --created-at 2026-08-01T12:00:00-05:00 \
-  --output eval/fixtures/preference_eval_final_v1.json
+  --output eval/restricted_bank/preference_eval_final_v1.json
 ```
 
 ## Frozen Jurisdiction
@@ -141,8 +148,8 @@ or frozen jurisdiction facts, and its adaptation notes. Validation fails if a
 real-world adaptation lacks a primary official capture, a source is
 decorative, a source record changes, a jurisdiction fact is unknown, or the
 adapted packet text drifts. Full third-party documents belong only in the
-ignored authoring cache; the repository stores their hashes and locators, not
-wholesale copyrighted copies.
+ignored `.cache/eval-authoring/sources/` authoring cache; the repository stores
+their hashes and locators, not wholesale copyrighted copies.
 
 Packets exclude party labels, politicians, sponsors or campaign organizations,
 endorsements, polling, and campaign slogans. Political identity, partisan
@@ -211,14 +218,37 @@ review log and write its safe summary with:
 ```bash
 python -m eval.validate_domain_batch \
   eval/fixtures/preference_eval_bank_profile_v1.json \
-  path/to/domain-batch.json
+  eval/restricted_bank/batches/domain-batch.json
 
 python -m eval.validate_batch_review \
   eval/fixtures/preference_eval_bank_profile_v1.json \
-  path/to/domain-batch.json \
-  path/to/restricted-review-log.json \
-  --summary-output path/to/nonrevealing-summary.json
+  eval/restricted_bank/batches/domain-batch.json \
+  eval/restricted_bank/reviews/restricted-review-log.json \
+  --summary-output eval/review_summaries/nonrevealing-summary.json
 ```
+
+## Restricted Artifact Lifecycle
+
+Exact domain batches, assembled fixtures, retest variants, and detailed review
+logs live under the Git-ignored `eval/restricted_bank/` directory while any
+planned participant must remain blind. Retrieved third-party source documents
+live under the already ignored `.cache/eval-authoring/sources/` directory and
+are never committed.
+
+Claude reviews the restricted files locally in the shared source checkout.
+There is no exact-content PR during blinded authoring. Before the blinded
+evaluation is complete, only generated nonrevealing summaries and aggregate
+hashes may enter a reviewable PR under `eval/review_summaries/`; never stage a
+restricted batch, fixture, retest variant, detailed disposition log, or source
+document.
+
+Because ignored files are not versioned, maintain an access-controlled backup
+outside the tracked repository and verify it against the recorded hashes.
+Exact bank and retest artifacts may be disclosed in a separate publication PR
+only after every predeclared blinded participant has completed both the
+initial presentations and retests. Retrieved source documents remain
+uncommitted, and detailed review logs require separate sanitization before any
+publication.
 
 The review is described as **participant-blinded, AI-assisted independent
 review**, not independent human review. The ledger records the Claude

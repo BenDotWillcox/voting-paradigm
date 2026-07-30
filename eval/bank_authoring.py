@@ -159,6 +159,15 @@ def _json_pointer_token(token: str) -> str:
     return token.replace("~1", "/").replace("~0", "~")
 
 
+def _canonical_array_index(token: str) -> bool:
+    return token == "0" or (
+        bool(token)
+        and token.isascii()
+        and token[0] in "123456789"
+        and (len(token) == 1 or token[1:].isdigit())
+    )
+
+
 def _participant_text_pointer(pointer: str) -> bool:
     tokens = [
         _json_pointer_token(token)
@@ -169,7 +178,7 @@ def _participant_text_pointer(pointer: str) -> bool:
     if (
         len(tokens) == 3
         and tokens[0] == "options"
-        and tokens[1].isdigit()
+        and _canonical_array_index(tokens[1])
         and tokens[2] in {"label", "description"}
     ):
         return True
@@ -188,7 +197,7 @@ def _participant_text_pointer(pointer: str) -> bool:
     if (
         len(tokens) == 3
         and tokens[:2] == ["packet", "uncertainties"]
-        and tokens[2].isdigit()
+        and _canonical_array_index(tokens[2])
     ):
         return True
     if (

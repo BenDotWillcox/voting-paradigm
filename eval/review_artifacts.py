@@ -107,7 +107,7 @@ class MeasureReviewApproval(ContractModel):
     measure_id: StableId
     measure_version: PositiveVersion
     measure_sha256: Sha256Digest
-    findings_count: int = Field(ge=0)
+    findings_count: NonNegativeCount
     completed_checks: list[PacketReviewCategory]
     approved: Literal[True] = True
 

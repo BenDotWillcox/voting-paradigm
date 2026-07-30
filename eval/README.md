@@ -244,10 +244,17 @@ frozen slot order:
 ```bash
 python -m eval.build_final_bank \
   eval/fixtures/preference_eval_bank_profile_v1.json \
-  path/to/batch-1.json path/to/batch-2.json ... path/to/batch-8.json \
+  eval/restricted_bank/batches/fiscal_economy_labor.json \
+  eval/restricted_bank/batches/health_social_provision.json \
+  eval/restricted_bank/batches/education_family.json \
+  eval/restricted_bank/batches/housing_land_use.json \
+  eval/restricted_bank/batches/transportation_infrastructure.json \
+  eval/restricted_bank/batches/environment_energy.json \
+  eval/restricted_bank/batches/justice_safety_rights.json \
+  eval/restricted_bank/batches/governance_elections_technology.json \
   --fixture-id preference_eval_final_v1 \
   --created-at 2026-08-01T12:00:00-05:00 \
-  --output eval/fixtures/preference_eval_final_v1.json
+  --output eval/restricted_bank/preference_eval_final_v1.json
 ```
 
 Exact review uses `eval/prompts/phase3_packet_review_v1.md`, whose canonical
@@ -263,6 +270,16 @@ counts and hashes. After exact-content review,
 `python -m eval.validate_batch_review PROFILE BATCH RESTRICTED_LOG
 --summary-output SAFE_SUMMARY` validates the frozen Claude prompt and writes
 the allowlisted participant-safe summary.
+
+Until every predeclared blinded participant has completed both initial
+presentations and retests, exact batches, fixtures, variants, and detailed
+review logs remain under the Git-ignored `eval/restricted_bank/` directory and
+never enter a PR. Claude reviews those files locally. Retrieved source
+documents remain under `.cache/eval-authoring/sources/` and are never
+committed. Only generated safe summaries and aggregate hashes under
+`eval/review_summaries/` may be reviewed or committed during this period.
+Keep a separate access-controlled backup of ignored artifacts and verify its
+hashes. See `eval/PHASE3_AUTHORING.md` for the later disclosure rules.
 
 Retest paraphrases are separate `RetestPacketVariant` records linked to
 canonical measures, not duplicate fixture measures. A

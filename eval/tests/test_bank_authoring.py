@@ -381,6 +381,30 @@ def test_source_evidence_rejects_tracing_source_metadata_as_packet_text():
         validate_measure_source_evidence(invalid, item.measure)
 
 
+@pytest.mark.parametrize(
+    "content_path",
+    [
+        "/options/01/label",
+        "/options/\u0661/label",
+        "/packet/uncertainties/00",
+    ],
+)
+def test_source_evidence_rejects_noncanonical_array_indices(
+    content_path,
+):
+    _, batches = _domain_batches()
+    item = batches[0].items[0]
+    trace = item.source_evidence.content_traces[0].model_copy(
+        update={"content_path": content_path}
+    )
+    invalid = item.source_evidence.model_copy(
+        update={"content_traces": [trace]}
+    )
+
+    with pytest.raises(ValueError, match="participant-facing text field"):
+        validate_measure_source_evidence(invalid, item.measure)
+
+
 def test_domain_batch_rejects_a_wrong_slot_binding():
     profile, batches = _domain_batches()
     batch = batches[0]
@@ -494,6 +518,17 @@ def test_locked_review_prompt_matches_its_pinned_hash():
     )
 
 
+def test_exact_authoring_and_source_cache_paths_are_gitignored():
+    ignore_rules = set(
+        (Path(__file__).parents[2] / ".gitignore")
+        .read_text(encoding="utf-8")
+        .splitlines()
+    )
+
+    assert "/eval/restricted_bank/" in ignore_rules
+    assert ".cache/" in ignore_rules
+
+
 def test_review_log_builds_a_final_ledger_record():
     profile, batches = _domain_batches()
     batch = batches[0]
@@ -565,6 +600,34 @@ def test_review_log_rejects_an_unlocked_ai_prompt():
     )
 
     with pytest.raises(ValueError, match="locked Phase 3 prompt"):
+        validate_domain_batch_review_log(invalid, batch, profile)
+
+
+def test_review_log_rejects_the_packet_author_as_reviewer():
+    profile, batches = _domain_batches()
+    batch = batches[0]
+    invalid = _review_log(batch, profile).model_copy(
+        update={"reviewer_system": "CODEX"}
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="participant-independent reviewer must differ",
+    ):
+        validate_domain_batch_review_log(invalid, batch, profile)
+
+
+def test_review_log_rejects_an_unapproved_ai_reviewer():
+    profile, batches = _domain_batches()
+    batch = batches[0]
+    invalid = _review_log(batch, profile).model_copy(
+        update={"reviewer_system": "other_ai"}
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="does not match the frozen exposure policy",
+    ):
         validate_domain_batch_review_log(invalid, batch, profile)
 
 
