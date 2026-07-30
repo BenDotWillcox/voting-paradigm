@@ -196,7 +196,7 @@ def _retest_registry(
         for measure in fixture.measures
     }
     variants = []
-    for index, slot_id in enumerate(slot_ids):
+    for slot_id in slot_ids:
         measure = measure_by_slot_id[slot_id]
         canonical = measure.packet
         packet = canonical.model_copy(
@@ -217,9 +217,6 @@ def _retest_registry(
                 source_measure_id=measure.measure_id,
                 source_measure_version=measure.version,
                 packet=packet,
-                order_seed=(
-                    profile.presentation_order_policy.order_seed + index + 1
-                ),
             )
         )
     return RetestVariantRegistry(
@@ -641,6 +638,92 @@ def test_review_ledger_rejects_an_unbound_slot():
     )
 
     with pytest.raises(ValueError, match="every bank slot"):
+        validate_review_ledger_against_bank(
+            invalid,
+            fixture,
+            profile,
+            registry,
+        )
+
+
+def test_review_ledger_accepts_an_independent_human_reviewer():
+    profile, fixture, registry, ledger = _conforming_final_bank_bundle()
+    human_approval = PacketReviewRecord(
+        reviewer_type=ReviewActorType.HUMAN,
+        reviewer_system="independent_human_reviewer",
+        findings_count=0,
+        disposition_log_sha256="3" * 64,
+        approved=True,
+        completed_at=NOW + timedelta(days=5),
+    )
+    first = ledger.measure_entries[0].model_copy(
+        update={"approval": human_approval}
+    )
+    reviewed = ledger.model_copy(
+        update={
+            "measure_entries": [first, *ledger.measure_entries[1:]],
+        }
+    )
+
+    validate_review_ledger_against_bank(
+        reviewed,
+        fixture,
+        profile,
+        registry,
+    )
+
+
+def test_review_ledger_rejects_the_packet_author_as_human_reviewer():
+    profile, fixture, registry, ledger = _conforming_final_bank_bundle()
+    author_approval = PacketReviewRecord(
+        reviewer_type=ReviewActorType.HUMAN,
+        reviewer_system=(
+            profile.case_study_exposure_policy.packet_author_system
+        ),
+        findings_count=0,
+        disposition_log_sha256="3" * 64,
+        approved=True,
+        completed_at=NOW + timedelta(days=5),
+    )
+    first = ledger.measure_entries[0].model_copy(
+        update={"approval": author_approval}
+    )
+    invalid = ledger.model_copy(
+        update={
+            "measure_entries": [first, *ledger.measure_entries[1:]],
+        }
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="participant-independent reviewer must differ",
+    ):
+        validate_review_ledger_against_bank(
+            invalid,
+            fixture,
+            profile,
+            registry,
+        )
+
+
+def test_review_ledger_rejects_an_unexpected_ai_reviewer():
+    profile, fixture, registry, ledger = _conforming_final_bank_bundle()
+    unexpected_approval = _approval_record().model_copy(
+        update={"reviewer_system": "other_ai"}
+    )
+    first = ledger.measure_entries[0].model_copy(
+        update={"approval": unexpected_approval}
+    )
+    invalid = ledger.model_copy(
+        update={
+            "measure_entries": [first, *ledger.measure_entries[1:]],
+        }
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="does not match the frozen exposure policy",
+    ):
         validate_review_ledger_against_bank(
             invalid,
             fixture,

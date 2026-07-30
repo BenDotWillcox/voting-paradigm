@@ -43,6 +43,18 @@ from .fixture_io import content_sha256
 CountKey = TypeVar("CountKey")
 
 
+def _require_count(
+    label: str,
+    actual: Counter[CountKey],
+    expected: dict[CountKey, int],
+) -> None:
+    if actual != Counter(expected):
+        raise ValueError(
+            f"bank {label} counts do not match the frozen target; "
+            f"expected={dict(expected)}, actual={dict(actual)}"
+        )
+
+
 class ParticipantPacketExcludedCue(str, Enum):
     PARTY_LABELS = "party_labels"
     POLITICIAN_NAMES = "politician_names"
@@ -316,7 +328,7 @@ class EvaluationBankProfile(ContractModel):
         if len(slot_ids) != len(set(slot_ids)):
             raise ValueError("bank slot ids must be unique")
 
-        self._require_count(
+        _require_count(
             "source kind",
             Counter(slot.source_kind for slot in self.slots),
             {
@@ -326,7 +338,7 @@ class EvaluationBankProfile(ContractModel):
                 MeasureSourceKind.CONSTRUCTED: self.composition.constructed,
             },
         )
-        self._require_count(
+        _require_count(
             "generalization tier",
             Counter(
                 slot.intended_generalization_tier for slot in self.slots
@@ -337,7 +349,7 @@ class EvaluationBankProfile(ContractModel):
                 GeneralizationTier.NOVEL: self.composition.novel,
             },
         )
-        self._require_count(
+        _require_count(
             "ballot type",
             Counter(slot.ballot_type for slot in self.slots),
             {
@@ -350,7 +362,7 @@ class EvaluationBankProfile(ContractModel):
         )
 
         domain_counts = Counter(slot.domain for slot in self.slots)
-        self._require_count(
+        _require_count(
             "domain",
             domain_counts,
             {
@@ -362,7 +374,7 @@ class EvaluationBankProfile(ContractModel):
             domain_slots = [
                 slot for slot in self.slots if slot.domain is domain
             ]
-            self._require_count(
+            _require_count(
                 f"{domain.value} source kind",
                 Counter(slot.source_kind for slot in domain_slots),
                 {
@@ -370,7 +382,7 @@ class EvaluationBankProfile(ContractModel):
                     MeasureSourceKind.CONSTRUCTED: 2,
                 },
             )
-            self._require_count(
+            _require_count(
                 f"{domain.value} generalization tier",
                 Counter(
                     slot.intended_generalization_tier
@@ -388,7 +400,7 @@ class EvaluationBankProfile(ContractModel):
             for slot in self.slots
         )
         source_tier = self.composition.source_tier
-        self._require_count(
+        _require_count(
             "source/tier",
             source_tier_counts,
             {
@@ -419,19 +431,6 @@ class EvaluationBankProfile(ContractModel):
             },
         )
         return self
-
-    @staticmethod
-    def _require_count(
-        label: str,
-        actual: Counter[CountKey],
-        expected: dict[CountKey, int],
-    ) -> None:
-        if actual != Counter(expected):
-            raise ValueError(
-                f"bank {label} counts do not match the frozen target; "
-                f"expected={dict(expected)}, actual={dict(actual)}"
-            )
-
 
 class RetestVariantRegistry(ContractModel):
     """The twelve linked packet variants used for the final retest."""
@@ -908,7 +907,7 @@ def validate_retest_registry_against_bank(
             f"missing={missing_domains}"
         )
 
-    EvaluationBankProfile._require_count(
+    _require_count(
         "retest source kind",
         Counter(measure.source_kind for measure in selected_measures),
         {
@@ -918,7 +917,7 @@ def validate_retest_registry_against_bank(
             MeasureSourceKind.CONSTRUCTED: target.constructed,
         },
     )
-    EvaluationBankProfile._require_count(
+    _require_count(
         "retest generalization tier",
         Counter(
             measure.intended_generalization_tier
@@ -930,7 +929,7 @@ def validate_retest_registry_against_bank(
             GeneralizationTier.NOVEL: target.novel,
         },
     )
-    EvaluationBankProfile._require_count(
+    _require_count(
         "retest ballot type",
         Counter(measure.ballot_type for measure in selected_measures),
         {
@@ -948,22 +947,19 @@ def _validate_review_actor(
     profile: EvaluationBankProfile,
 ) -> None:
     exposure = profile.case_study_exposure_policy
-    if review.reviewer_type is not ReviewActorType.AI:
-        raise ValueError(
-            "Ben's case-study content approval must record the disclosed "
-            "AI-assisted reviewer"
-        )
-    if review.reviewer_system.casefold() != (
-        exposure.content_reviewer_system.casefold()
-    ):
-        raise ValueError(
-            "reviewer system does not match the frozen exposure policy"
-        )
     if review.reviewer_system.casefold() == (
         exposure.packet_author_system.casefold()
     ):
         raise ValueError(
             "participant-independent reviewer must differ from packet author"
+        )
+    if (
+        review.reviewer_type is ReviewActorType.AI
+        and review.reviewer_system.casefold()
+        != exposure.content_reviewer_system.casefold()
+    ):
+        raise ValueError(
+            "reviewer system does not match the frozen exposure policy"
         )
 
 

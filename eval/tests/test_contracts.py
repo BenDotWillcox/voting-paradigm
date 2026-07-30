@@ -692,7 +692,6 @@ class TestEvidenceAndLeakage:
             source_measure_id=target.measure_id,
             source_measure_version=target.version,
             packet=variant_packet,
-            order_seed=17,
         )
         variant_measure = MeasureVersion.model_validate(
             {
@@ -737,7 +736,7 @@ class TestEvidenceAndLeakage:
             presentation_id="presentation_retest",
             kind=PresentationKind.RETEST,
             retest_of_presentation_id=initial.presentation_id,
-            order_seed=variant.order_seed,
+            order_seed=17,
             presented_at=NOW + timedelta(days=14),
         )
         retest_snapshot = PredictionSnapshot(

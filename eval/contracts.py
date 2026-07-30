@@ -329,7 +329,6 @@ class RetestPacketVariant(ContractModel):
     source_measure_id: StableId
     source_measure_version: PositiveVersion
     packet: MeasurePacket
-    order_seed: Annotated[int, Field(ge=0)]
 
 
 class EvaluationFixture(ContractModel):
