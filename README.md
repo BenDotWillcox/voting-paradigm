@@ -126,11 +126,16 @@ Demo 2 (agent voting) has Gaussian and Bradley-Terry preference models,
 max-variance acquisition, a fixed-bank synthetic harness, and the versioned
 contracts, eight-domain development fixture, deterministic prequential runner,
 primary metrics, and allowlisted artifact boundary for the future standardized
-human-measure evaluation. Public aggregate artifacts still require explicit
-release review. Demo 3 (algorithmic districting) currently ships the
-apportionment slice; district polygon generation comes next. The ballot-measure,
-electorate, and resolution-run tables are internal reproducibility scaffolding
-for future persisted demos, not a current user-facing CRUD/feed product.
+human-measure evaluation. Its Phase 3 authoring profile now freezes the
+fictional jurisdiction, exact 48-slot bank matrix, source and neutrality
+requirements, contextual-sufficiency review, packet-blind Claude review path,
+presentation-order policy, and linked retest target before packet drafting.
+Phase 4 will add evidence-grounding and prompt/order robustness diagnostics.
+Public aggregate artifacts still require explicit release review.
+Demo 3 (algorithmic districting) currently ships the apportionment slice;
+district polygon generation comes next. The ballot-measure, electorate, and
+resolution-run tables are internal reproducibility scaffolding for future
+persisted demos, not a current user-facing CRUD/feed product.
 
 For deeper architectural context — invariants, layering rules, per-demo technical surfaces, the build queue — see [CLAUDE.md](CLAUDE.md).
 

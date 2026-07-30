@@ -176,9 +176,17 @@ below.
   answer enters evidence.
 - Measures share one standardized fictional jurisdiction but remain legally and
   fiscally independent; preference evidence accumulates.
+- Packets pass a contextual-sufficiency audit so known decision-relevant facts
+  are stated and unresolved facts remain explicit unknowns.
 - The model ladder compares fixed/adaptive structured baselines, a direct LLM,
   and an LLM-plus-explicit-posterior hybrid. An embedding/Bayesian-last-layer
   model remains a candidate hybrid representation, not an assumed winner.
+- LLM comparisons expose structured-only, conversational-only, and combined
+  evidence conditions. Predictions retain private supporting-evidence IDs and
+  unsupported-assumption flags.
+- Semantically equivalent prompts and option-order/label permutations measure
+  sensitivity before the final LLM estimator is frozen. Repeated calls are
+  diagnostics, not independent human observations.
 - Primary outcomes are prequential log loss and high-confidence delegated
   error. Question efficiency, follow-up quality, and cross-format ballot
   fidelity are secondary.
@@ -186,6 +194,9 @@ below.
 Versioned file-backed contracts live in `eval/contracts.py`; the non-held-out
 fixture is `eval/fixtures/preference_eval_dev_v1.json`, and
 `python -m eval.run_human_measure_eval` runs the deterministic Phase 2 replay.
+The Phase 3 authoring contract is
+`eval/fixtures/preference_eval_bank_profile_v1.json`; validate and hash it by
+running `python -m eval.validate_bank_profile` against that path.
 
 ### The comparison story
 
@@ -198,6 +209,15 @@ fixture is `eval/fixtures/preference_eval_dev_v1.json`, and
   policy beat another.
 - **LLM claims:** a direct LLM baseline is mandatory so the hybrid must
   demonstrate value beyond prompting an LLM with the transcript.
+- **Case-study exposure:** Ben has seen the topic-level Phase 3A authoring
+  briefs but remains blind to exact packet language, options, quantitative
+  values, arguments, and uncertainties until presentation. Codex may author the
+  bank and Claude may perform the disclosed participant-blinded AI content
+  review; a human content review is required before an external pilot. Novel-
+  tier analysis must carry the topic-exposure caveat.
+- **Delegation claims:** sincere-choice prediction evaluates the substrate for
+  future delegated voting, not real-world willingness to delegate or refrain
+  from overriding the model.
 
 ### Active learning loop
 
@@ -333,6 +353,9 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 - Human-measure Phase 2: leakage-safe model adapter boundary, synthetic
   prequential replay, option and delegated-risk metrics, and an allowlisted
   publication-candidate serializer
+- Human-measure Phase 3A: frozen Meridian/Harborview jurisdiction, exact
+  48-slot source/tier/format matrix, packet/source/neutrality policy, seeded
+  wave-order policy, balanced retest target, and final-bank profile validator
 
 **Next:**
 - Seed-plumb all stochastic operations for the reproducibility invariant
@@ -375,12 +398,19 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
   risk/coverage metrics, stable/tentative slices, and unsupported-delegation
   accounting
 - Aggregate-only public artifact serializer with planted-sensitive-data tests
+- Phase 3 bank-authoring profile and validator: frozen fictional jurisdiction,
+  32/16 real/constructed split, 16/16/16 intended tiers, 38/9/1 ballot mix,
+  source and political-cue boundaries, contextual-sufficiency and cold-review
+  gates, and 12-item retest target
 
 **Next, in order:**
-1. Author and neutrally review the standardized jurisdiction, 48-measure bank,
-   and retest variants
-2. Add the direct LLM baseline, confirmed evidence extraction, fixed/expanding
-   ontology ablation, and hybrid explicit posterior
+1. Source and draft the 48 exact packets in domain batches, bind them to a
+   slot-to-measure reviewer-provenance ledger, conduct participant-blinded
+   Claude review, then author and neutrally review the linked retest registry
+   and add run-level validation for wave execution and retest timing
+2. Add the direct LLM baseline; structured/conversational/combined evidence
+   ablation; evidence IDs and unsupported-assumption flags; fixed/expanding
+   ontology ablation; hybrid explicit posterior; and prompt/order robustness
 3. Evaluate LLM follow-ups after fixed, random, and max-variance policies
 4. Build separate blind evaluation and future-facing showcase modes
 5. Freeze inputs, models, prompts, thresholds, seeds, and metrics before Ben's

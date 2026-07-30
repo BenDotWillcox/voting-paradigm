@@ -199,7 +199,55 @@ development fixture or Ben's private self-case study.
 
 ## Next
 
-Phase 3 will author and freeze the final standardized jurisdiction,
-48-measure bank, and retest variants. The Phase 2 runner deliberately stops
+Phase 3A freezes the authoring inputs for the final standardized bank:
+
+- the fictional State of Meridian and City of Harborview baseline;
+- the exact 48-slot domain/source/tier/ballot matrix;
+- source, political-cue, and neutrality-review requirements;
+- a seeded six-wave presentation-order policy; and
+- the balanced 12-measure retest target.
+
+Validate and hash that profile with:
+
+```bash
+python -m eval.validate_bank_profile \
+  eval/fixtures/preference_eval_bank_profile_v1.json
+```
+
+`eval/bank_profile.py` also provides
+`validate_final_fixture_against_profile`, which enforces every
+machine-checkable bank requirement. Primary-official source classification,
+factual traceability, contextual-sufficiency review, adversarial neutrality
+review, reviewer provenance, and participant-independent approval remain
+explicit review-ledger gates rather than guesses made from packet prose.
+
+See `eval/PHASE3_AUTHORING.md` for the authoring matrix, review workflow,
+retest rules, remaining deliverables, and packet-blind case-study exposure
+policy.
+Phase 3B will source and draft the exact measures in domain batches. Codex may
+author the bank and Claude may conduct the participant-blinded content review;
+the ledger must disclose the AI reviewer and bind its model/version and locked
+prompt by hash. Human content review remains required before an external pilot.
+Ben has already seen the topic-level authoring briefs; exact packet language,
+options, quantitative values, arguments, and uncertainties remain withheld
+until presentation. Intended-novel results must carry that exposure caveat.
+
+Retest paraphrases are separate `RetestPacketVariant` records linked to
+canonical measures, not duplicate fixture measures. A
+`RetestVariantRegistry` freezes those links and
+`validate_final_bank_bundle` validates the canonical fixture, retest selection,
+slot-to-measure review ledger, content hashes, and reviewer provenance together.
+The profile pins six waves of eight and a 7-14 day retest interval, but those
+are realized-session requirements rather than final-bank fields. A later
+presentation-plan/run validator must enforce the actual wave membership,
+per-presentation seeds, elapsed interval, and retest use before the held-out
+freeze; Phase 3A does not claim end-to-end run enforcement.
+
+Phase 4 will compare structured, conversational, and combined evidence inputs.
+LLM predictions will retain private supporting-evidence IDs and unsupported-
+assumption flags, and development evaluation will measure sensitivity to
+semantically equivalent prompts plus option-order and option-label
+permutations. Repeated calls are sensitivity or Monte Carlo diagnostics, not
+independent human observations. The Phase 2 runner still deliberately stops
 before classical-model adapters, direct LLM integration, the final bank, or a
 human-facing UI.
