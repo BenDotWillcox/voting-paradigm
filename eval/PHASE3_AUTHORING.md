@@ -14,6 +14,12 @@ research result. It freezes the common setting, allocation matrix, source and
 neutrality requirements, order policy, and retest target before exact measure
 language is drafted.
 
+Profile validation proves that these targets are internally consistent. Final-
+bank validation enforces the canonical fixture shape, linked retest selection,
+slot bindings, and review provenance. Realized six-wave execution and the
+7-14 day retest interval remain run-level checks that must land before the
+held-out freeze.
+
 ## Frozen Jurisdiction
 
 The evaluation uses the fictional State of Meridian and City of Harborview as
@@ -212,7 +218,9 @@ The bank profile is Phase 3A. The remaining work is:
 3. select and write the twelve retest variants;
 4. derive the seeded six-wave order and per-presentation option order;
 5. validate the complete non-development fixture against the profile; and
-6. freeze the fixture, review ledger, retest variants, and manifests by content
+6. add presentation-plan/run validation for realized wave membership,
+   presentation seeds, and retest timing; and
+7. freeze the fixture, review ledger, retest variants, and manifests by content
    hash.
 
 The packet-blind exposure policy above is now frozen for Ben's case study. If

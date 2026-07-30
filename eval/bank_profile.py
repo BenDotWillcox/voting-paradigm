@@ -690,7 +690,7 @@ def validate_final_fixture_against_profile(
     fixture: EvaluationFixture,
     profile: EvaluationBankProfile,
 ) -> None:
-    """Enforce all machine-checkable final-bank requirements.
+    """Enforce fixture-shape requirements represented in the bank profile.
 
     Primary-official source classification, factual review, contextual-
     sufficiency review, adversarial neutrality review, reviewer provenance,
@@ -770,7 +770,7 @@ def validate_final_fixture_against_profile(
                     f"{measure.measure_id} multi-option contest requires "
                     "at least three options"
                 )
-        else:
+        elif measure.ballot_type is BallotType.QUADRATIC:
             if measure.response_fields != [ResponseField.QUADRATIC]:
                 raise ValueError(
                     f"{measure.measure_id} quadratic contest must record only "
@@ -781,23 +781,28 @@ def validate_final_fixture_against_profile(
                     f"{measure.measure_id} quadratic contest must use the "
                     "frozen 100-credit budget"
                 )
+            if measure.quadratic_allow_negative is not False:
+                raise ValueError(
+                    f"{measure.measure_id} quadratic contest must prohibit "
+                    "negative allocations"
+                )
+        else:
+            raise ValueError(
+                f"{measure.measure_id} uses unsupported ballot type "
+                f"{measure.ballot_type!r}"
+            )
 
         source_policy = profile.source_policy
-        url_sources = [
-            source
-            for source in measure.packet.sources
-            if source.url is not None
-        ]
-        required_urls = (
+        required_sources = (
             source_policy.real_world_min_url_sources
             if measure.source_kind
             is MeasureSourceKind.REAL_WORLD_ANCHORED
             else source_policy.constructed_min_context_url_sources
         )
-        if len(url_sources) < required_urls:
+        if len(measure.packet.sources) < required_sources:
             raise ValueError(
-                f"{measure.measure_id} requires at least {required_urls} "
-                "URL-backed source records"
+                f"{measure.measure_id} requires at least {required_sources} "
+                "source records"
             )
         for source in measure.packet.sources:
             if (
@@ -1128,7 +1133,7 @@ def bank_profile_summary(profile: EvaluationBankProfile) -> JsonValue:
         "content_reviewer_system": (
             profile.case_study_exposure_policy.content_reviewer_system
         ),
-        "domain_count": len(MeasureDomain),
+        "domain_count": len({slot.domain for slot in profile.slots}),
         "measure_count": len(profile.slots),
         "source_tier_counts": {
             f"{source_kind}/{tier}": count

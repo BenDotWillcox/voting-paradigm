@@ -407,6 +407,7 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 1. Source and draft the 48 exact packets in domain batches, bind them to a
    slot-to-measure reviewer-provenance ledger, conduct participant-blinded
    Claude review, then author and neutrally review the linked retest registry
+   and add run-level validation for wave execution and retest timing
 2. Add the direct LLM baseline; structured/conversational/combined evidence
    ablation; evidence IDs and unsupported-assumption flags; fixed/expanding
    ontology ablation; hybrid explicit posterior; and prompt/order robustness

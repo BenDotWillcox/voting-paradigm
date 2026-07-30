@@ -237,6 +237,11 @@ canonical measures, not duplicate fixture measures. A
 `RetestVariantRegistry` freezes those links and
 `validate_final_bank_bundle` validates the canonical fixture, retest selection,
 slot-to-measure review ledger, content hashes, and reviewer provenance together.
+The profile pins six waves of eight and a 7-14 day retest interval, but those
+are realized-session requirements rather than final-bank fields. A later
+presentation-plan/run validator must enforce the actual wave membership,
+per-presentation seeds, elapsed interval, and retest use before the held-out
+freeze; Phase 3A does not claim end-to-end run enforcement.
 
 Phase 4 will compare structured, conversational, and combined evidence inputs.
 LLM predictions will retain private supporting-evidence IDs and unsupported-
