@@ -9,6 +9,7 @@ from pydantic import ValidationError
 
 from eval.bank_authoring import (
     ContentTraceRecord,
+    ConstructedAssumptionRecord,
     DomainBankBatch,
     DomainBankBatchItem,
     MeasureSourceEvidence,
@@ -60,6 +61,9 @@ PROFILE_PATH = (
 NOW = datetime(2026, 7, 31, 12, 0, tzinfo=timezone.utc)
 PLANTED_RESTRICTED_TEXT = (
     "RESTRICTED_PACKET_DETAIL_9173 should never enter the safe summary"
+)
+PLANTED_ASSUMPTION_TEXT = (
+    "RESTRICTED_ASSUMPTION_DETAIL_4021 must remain participant-blind"
 )
 
 
@@ -180,26 +184,59 @@ def _source_evidence(measure: MeasureVersion) -> MeasureSourceEvidence:
         )
         for index, source in enumerate(measure.packet.sources)
     ]
+    constructed_assumptions = (
+        [
+            ConstructedAssumptionRecord(
+                assumption_id=f"{measure.measure_id}_controlled_assumption",
+                statement=PLANTED_ASSUMPTION_TEXT,
+                selection_rationale=(
+                    "The contract test needs an explicit constructed ground."
+                ),
+                calibration_source_ids=[
+                    measure.packet.sources[0].source_id
+                ],
+            )
+        ]
+        if measure.source_kind is MeasureSourceKind.CONSTRUCTED
+        else []
+    )
+    content_traces = [
+        ContentTraceRecord(
+            trace_id=f"{measure.measure_id}_status_quo",
+            content_path="/packet/status_quo",
+            adapted_text=measure.packet.status_quo,
+            source_ids=[
+                source.source_id
+                for source in measure.packet.sources
+            ],
+            adaptation_notes=(
+                "The exact test status quo is traced to every packet "
+                "source."
+            ),
+        )
+    ]
+    if constructed_assumptions:
+        content_traces.append(
+            ContentTraceRecord(
+                trace_id=f"{measure.measure_id}_proposal_assumption",
+                content_path="/packet/proposal",
+                adapted_text=measure.packet.proposal,
+                constructed_assumption_ids=[
+                    constructed_assumptions[0].assumption_id
+                ],
+                adaptation_notes=(
+                    "The synthetic proposal is grounded in the explicit "
+                    "controlled assumption."
+                ),
+            )
+        )
     return MeasureSourceEvidence(
         measure_id=measure.measure_id,
         measure_version=measure.version,
         measure_sha256=content_sha256(measure),
         source_captures=captures,
-        content_traces=[
-            ContentTraceRecord(
-                trace_id=f"{measure.measure_id}_status_quo",
-                content_path="/packet/status_quo",
-                adapted_text=measure.packet.status_quo,
-                source_ids=[
-                    source.source_id
-                    for source in measure.packet.sources
-                ],
-                adaptation_notes=(
-                    "The exact test status quo is traced to every packet "
-                    "source."
-                ),
-            )
-        ],
+        constructed_assumptions=constructed_assumptions,
+        content_traces=content_traces,
     )
 
 
@@ -358,6 +395,202 @@ def test_source_evidence_rejects_a_decorative_untraced_source():
 
     with pytest.raises(ValueError, match="every packet source"):
         validate_measure_source_evidence(incomplete, item.measure)
+
+
+def test_constructed_measure_requires_an_explicit_assumption():
+    _, batches = _domain_batches()
+    item = next(
+        candidate
+        for candidate in batches[0].items
+        if candidate.measure.source_kind is MeasureSourceKind.CONSTRUCTED
+    )
+    invalid = item.source_evidence.model_copy(
+        update={"constructed_assumptions": []}
+    )
+
+    with pytest.raises(ValueError, match="explicit constructed assumption"):
+        validate_measure_source_evidence(invalid, item.measure)
+
+
+def test_source_evidence_rejects_an_unknown_constructed_assumption():
+    _, batches = _domain_batches()
+    item = next(
+        candidate
+        for candidate in batches[0].items
+        if candidate.measure.source_kind is MeasureSourceKind.CONSTRUCTED
+    )
+    proposal_trace = item.source_evidence.content_traces[1].model_copy(
+        update={
+            "constructed_assumption_ids": ["unknown_assumption"]
+        }
+    )
+    invalid = item.source_evidence.model_copy(
+        update={
+            "content_traces": [
+                item.source_evidence.content_traces[0],
+                proposal_trace,
+            ]
+        }
+    )
+
+    with pytest.raises(ValueError, match="unknown constructed assumptions"):
+        validate_measure_source_evidence(invalid, item.measure)
+
+
+def test_source_evidence_rejects_a_decorative_assumption():
+    _, batches = _domain_batches()
+    item = next(
+        candidate
+        for candidate in batches[0].items
+        if candidate.measure.source_kind is MeasureSourceKind.CONSTRUCTED
+    )
+    invalid = item.source_evidence.model_copy(
+        update={"content_traces": [item.source_evidence.content_traces[0]]}
+    )
+
+    with pytest.raises(ValueError, match="every constructed assumption"):
+        validate_measure_source_evidence(invalid, item.measure)
+
+
+def test_source_evidence_rejects_unknown_assumption_calibration_source():
+    _, batches = _domain_batches()
+    item = next(
+        candidate
+        for candidate in batches[0].items
+        if candidate.measure.source_kind is MeasureSourceKind.CONSTRUCTED
+    )
+    assumption = item.source_evidence.constructed_assumptions[0].model_copy(
+        update={"calibration_source_ids": ["unknown_source"]}
+    )
+    invalid = item.source_evidence.model_copy(
+        update={"constructed_assumptions": [assumption]}
+    )
+
+    with pytest.raises(ValueError, match="unknown calibration sources"):
+        validate_measure_source_evidence(invalid, item.measure)
+
+
+def test_source_evidence_rejects_duplicate_constructed_assumptions():
+    _, batches = _domain_batches()
+    item = next(
+        candidate
+        for candidate in batches[0].items
+        if candidate.measure.source_kind is MeasureSourceKind.CONSTRUCTED
+    )
+    assumption = item.source_evidence.constructed_assumptions[0]
+
+    with pytest.raises(ValidationError, match="assumption ids must be unique"):
+        MeasureSourceEvidence(
+            measure_id=item.measure.measure_id,
+            measure_version=item.measure.version,
+            measure_sha256=content_sha256(item.measure),
+            source_captures=item.source_evidence.source_captures,
+            constructed_assumptions=[assumption, assumption],
+            content_traces=item.source_evidence.content_traces,
+        )
+
+
+def test_traced_assumption_can_bind_its_calibration_source():
+    _, batches = _domain_batches()
+    item = next(
+        candidate
+        for candidate in batches[0].items
+        if candidate.measure.source_kind is MeasureSourceKind.CONSTRUCTED
+    )
+    status_quo_trace = ContentTraceRecord(
+        trace_id=f"{item.measure.measure_id}_jurisdiction_status_quo",
+        content_path="/packet/status_quo",
+        adapted_text=item.measure.packet.status_quo,
+        jurisdiction_fact_keys=["decision_baseline"],
+        adaptation_notes="The test status quo uses the frozen baseline.",
+    )
+    evidence = item.source_evidence.model_copy(
+        update={
+            "content_traces": [
+                status_quo_trace,
+                item.source_evidence.content_traces[1],
+            ]
+        }
+    )
+
+    validate_measure_source_evidence(evidence, item.measure)
+
+
+def test_source_evidence_rejects_unknown_assumption_jurisdiction_fact():
+    profile, batches = _domain_batches()
+    item = next(
+        candidate
+        for candidate in batches[0].items
+        if candidate.measure.source_kind is MeasureSourceKind.CONSTRUCTED
+    )
+    assumption = item.source_evidence.constructed_assumptions[0].model_copy(
+        update={"jurisdiction_fact_keys": ["unknown_fact"]}
+    )
+    invalid = item.source_evidence.model_copy(
+        update={"constructed_assumptions": [assumption]}
+    )
+
+    with pytest.raises(ValueError, match="unknown jurisdiction facts"):
+        validate_measure_source_evidence(
+            invalid,
+            item.measure,
+            jurisdiction_fact_keys={
+                fact.key for fact in profile.jurisdiction.facts
+            },
+        )
+
+
+def test_real_world_measure_may_have_no_constructed_assumptions():
+    _, batches = _domain_batches()
+    item = next(
+        candidate
+        for candidate in batches[0].items
+        if (
+            candidate.measure.source_kind
+            is MeasureSourceKind.REAL_WORLD_ANCHORED
+        )
+    )
+
+    validate_measure_source_evidence(item.source_evidence, item.measure)
+
+
+def test_authoring_v1_content_trace_is_rejected():
+    _, batches = _domain_batches()
+    trace = batches[0].items[0].source_evidence.content_traces[0]
+    serialized = trace.model_dump(mode="json")
+    serialized["record_version"] = "content_trace.v1"
+
+    with pytest.raises(ValidationError):
+        ContentTraceRecord.model_validate(serialized)
+
+
+def test_authoring_v1_domain_batch_is_rejected():
+    _, batches = _domain_batches()
+    serialized = batches[0].model_dump(mode="json")
+    serialized["schema_version"] = "preference_eval_domain_batch.v1"
+
+    with pytest.raises(ValidationError):
+        DomainBankBatch.model_validate(serialized)
+
+
+def test_authoring_v1_batch_item_is_rejected():
+    _, batches = _domain_batches()
+    serialized = batches[0].items[0].model_dump(mode="json")
+    serialized["record_version"] = (
+        "preference_eval_domain_batch_item.v1"
+    )
+
+    with pytest.raises(ValidationError):
+        DomainBankBatchItem.model_validate(serialized)
+
+
+def test_authoring_v1_source_evidence_is_rejected():
+    _, batches = _domain_batches()
+    serialized = batches[0].items[0].source_evidence.model_dump(mode="json")
+    serialized["record_version"] = "measure_source_evidence.v1"
+
+    with pytest.raises(ValidationError):
+        MeasureSourceEvidence.model_validate(serialized)
 
 
 def test_source_evidence_rejects_tracing_source_metadata_as_packet_text():
@@ -640,6 +873,7 @@ def test_nonrevealing_summary_drops_all_restricted_free_text():
     rendered = summary.model_dump_json()
 
     assert PLANTED_RESTRICTED_TEXT not in rendered
+    assert PLANTED_ASSUMPTION_TEXT not in rendered
     assert batch.items[0].measure.title not in rendered
     assert str(batch.items[0].measure.packet.sources[0].url) not in rendered
     assert summary.findings_count == 1
@@ -712,6 +946,7 @@ def test_build_cli_writes_exact_content_only_to_output(
     assert output["measure_count"] == 48
     assert output["exact_packet_content_omitted"]
     assert "Measure for" not in json.dumps(output)
+    assert PLANTED_ASSUMPTION_TEXT not in json.dumps(output)
     assert len(load_fixture(output_path).measures) == 48
 
 
@@ -733,6 +968,7 @@ def test_domain_batch_cli_prints_only_aggregate_validation(
 
     assert exit_code == 0
     output = json.loads(capsys.readouterr().out)
+    assert output["schema_version"] == "preference_eval_domain_batch.v2"
     assert output["measure_count"] == 6
     assert output["exact_packet_content_omitted"]
     assert "Measure for" not in json.dumps(output)
@@ -772,6 +1008,8 @@ def test_review_cli_emits_only_the_nonrevealing_summary(
     written = summary_path.read_text(encoding="utf-8")
     assert PLANTED_RESTRICTED_TEXT not in stdout
     assert PLANTED_RESTRICTED_TEXT not in written
+    assert PLANTED_ASSUMPTION_TEXT not in stdout
+    assert PLANTED_ASSUMPTION_TEXT not in written
     assert json.loads(stdout) == json.loads(written)
 
 

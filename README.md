@@ -133,9 +133,11 @@ presentation-order policy, and linked retest target before packet drafting.
 Phase 3B infrastructure adds exact source captures and adapted-text traces,
 six-measure domain batches, deterministic final-fixture assembly, a locked
 Claude review prompt, restricted disposition logs, and participant-safe
-aggregate review summaries. Exact packet authoring remains pending and will
-stay outside Git under `eval/restricted_bank/` until all predeclared blinded
-presentations and retests are complete.
+aggregate review summaries. Restricted packet authoring is underway and stays
+outside Git under `eval/restricted_bank/` until all predeclared blinded
+presentations and retests are complete. The first six-measure domain batch is
+participant-independently approved at its exact hashes; only its generated
+aggregate review summary is tracked.
 Phase 4 will add evidence-grounding and prompt/order robustness diagnostics.
 Public aggregate artifacts still require explicit release review.
 Demo 3 (algorithmic districting) currently ships the apportionment slice;

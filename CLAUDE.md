@@ -221,6 +221,12 @@ running `python -m eval.validate_bank_profile` against that path.
   Claude reviews them locally. Do not stage or open a content PR before every
   predeclared blinded participant finishes initial presentations and retests.
   Only generated safe summaries and aggregate hashes may enter interim PRs.
+  Reviewer chat/status updates must also remain aggregate-only: do not name a
+  slot or measure in connection with a finding, even without quoting prose.
+- **Constructed authoring grounds:** content-bearing Phase 3B authoring uses
+  the v2 trace/evidence/batch family. Every constructed measure declares an
+  explicit structured assumption, and every source and assumption must bind
+  to at least one exact participant-text trace.
 - **Delegation claims:** sincere-choice prediction evaluates the substrate for
   future delegated voting, not real-world willingness to delegate or refrain
   from overriding the model.
@@ -412,9 +418,12 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
   text traces, six-measure domain batches, deterministic 48-measure assembly,
   a hash-locked Claude review prompt, restricted disposition logs, and
   nonrevealing aggregate summaries
+- First Phase 3B domain batch: six exact measures structurally validated and
+  approved by the locked participant-independent Claude review; the restricted
+  batch/log remain ignored and only the generated safe summary is tracked
 
 **Next, in order:**
-1. Source and draft the 48 exact packets in the versioned domain batches,
+1. Source and draft the remaining 42 exact packets in seven domain batches,
    populate their source captures and content traces, bind them to a
    slot-to-measure reviewer-provenance ledger, conduct participant-blinded
    Claude review with the locked prompt, then author and neutrally review the

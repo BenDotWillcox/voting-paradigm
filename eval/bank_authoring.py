@@ -102,15 +102,47 @@ class SourceCaptureRecord(ContractModel):
         return value
 
 
-class ContentTraceRecord(ContractModel):
-    """Trace one exact authored string to sources or jurisdiction facts."""
+class ConstructedAssumptionRecord(ContractModel):
+    """One explicit authoring assumption behind participant-facing text."""
 
-    record_version: Literal["content_trace.v1"] = "content_trace.v1"
+    record_version: Literal["constructed_assumption.v1"] = (
+        "constructed_assumption.v1"
+    )
+    assumption_id: StableId
+    statement: NonEmptyText
+    selection_rationale: NonEmptyText
+    calibration_source_ids: list[StableId] = Field(default_factory=list)
+    jurisdiction_fact_keys: list[StableId] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def require_unique_calibration_grounds(self) -> Self:
+        if len(self.calibration_source_ids) != len(
+            set(self.calibration_source_ids)
+        ):
+            raise ValueError(
+                "constructed-assumption calibration source ids must be "
+                "unique"
+            )
+        if len(self.jurisdiction_fact_keys) != len(
+            set(self.jurisdiction_fact_keys)
+        ):
+            raise ValueError(
+                "constructed-assumption jurisdiction fact keys must be "
+                "unique"
+            )
+        return self
+
+
+class ContentTraceRecord(ContractModel):
+    """Trace exact text to sources, jurisdiction facts, or assumptions."""
+
+    record_version: Literal["content_trace.v2"] = "content_trace.v2"
     trace_id: StableId
     content_path: str = Field(min_length=2, pattern=r"^/")
     adapted_text: NonEmptyText
     source_ids: list[StableId] = Field(default_factory=list)
     jurisdiction_fact_keys: list[StableId] = Field(default_factory=list)
+    constructed_assumption_ids: list[StableId] = Field(default_factory=list)
     adaptation_notes: NonEmptyText
 
     @model_validator(mode="after")
@@ -123,23 +155,37 @@ class ContentTraceRecord(ContractModel):
             raise ValueError(
                 "content-trace jurisdiction fact keys must be unique"
             )
-        if not self.source_ids and not self.jurisdiction_fact_keys:
+        if len(self.constructed_assumption_ids) != len(
+            set(self.constructed_assumption_ids)
+        ):
             raise ValueError(
-                "content trace requires a packet source or jurisdiction fact"
+                "content-trace constructed assumption ids must be unique"
+            )
+        if (
+            not self.source_ids
+            and not self.jurisdiction_fact_keys
+            and not self.constructed_assumption_ids
+        ):
+            raise ValueError(
+                "content trace requires a packet source, jurisdiction fact, "
+                "or constructed assumption"
             )
         return self
 
 
 class MeasureSourceEvidence(ContractModel):
-    """Durable source captures and exact adapted-text traces for one measure."""
+    """Durable sources, assumptions, and exact traces for one measure."""
 
-    record_version: Literal["measure_source_evidence.v1"] = (
-        "measure_source_evidence.v1"
+    record_version: Literal["measure_source_evidence.v2"] = (
+        "measure_source_evidence.v2"
     )
     measure_id: StableId
     measure_version: PositiveVersion
     measure_sha256: Sha256Digest
     source_captures: list[SourceCaptureRecord] = Field(min_length=1)
+    constructed_assumptions: list[ConstructedAssumptionRecord] = Field(
+        default_factory=list
+    )
     content_traces: list[ContentTraceRecord] = Field(min_length=1)
 
     @model_validator(mode="after")
@@ -149,6 +195,12 @@ class MeasureSourceEvidence(ContractModel):
         ]
         if len(source_ids) != len(set(source_ids)):
             raise ValueError("source-capture ids must be unique")
+        assumption_ids = [
+            assumption.assumption_id
+            for assumption in self.constructed_assumptions
+        ]
+        if len(assumption_ids) != len(set(assumption_ids)):
+            raise ValueError("constructed-assumption ids must be unique")
         trace_ids = [trace.trace_id for trace in self.content_traces]
         if len(trace_ids) != len(set(trace_ids)):
             raise ValueError("content-trace ids must be unique")
@@ -291,7 +343,41 @@ def validate_measure_source_evidence(
             )
 
     measure_document = measure.model_dump(mode="json")
+    assumption_by_id = {
+        assumption.assumption_id: assumption
+        for assumption in evidence.constructed_assumptions
+    }
+    if (
+        measure.source_kind is MeasureSourceKind.CONSTRUCTED
+        and not assumption_by_id
+    ):
+        raise ValueError(
+            "constructed measures require at least one explicit "
+            "constructed assumption"
+        )
+    for assumption in assumption_by_id.values():
+        unknown_sources = (
+            set(assumption.calibration_source_ids) - set(source_by_id)
+        )
+        if unknown_sources:
+            raise ValueError(
+                f"constructed assumption {assumption.assumption_id} "
+                "references unknown calibration sources: "
+                f"{sorted(unknown_sources)}"
+            )
+        if jurisdiction_fact_keys is not None:
+            unknown_fact_keys = (
+                set(assumption.jurisdiction_fact_keys)
+                - jurisdiction_fact_keys
+            )
+            if unknown_fact_keys:
+                raise ValueError(
+                    f"constructed assumption {assumption.assumption_id} "
+                    "references unknown jurisdiction facts: "
+                    f"{sorted(unknown_fact_keys)}"
+                )
     traced_source_ids: set[str] = set()
+    traced_assumption_ids: set[str] = set()
     for trace in evidence.content_traces:
         if not _participant_text_pointer(trace.content_path):
             raise ValueError(
@@ -303,6 +389,15 @@ def validate_measure_source_evidence(
             raise ValueError(
                 f"content trace {trace.trace_id} references unknown packet "
                 f"sources: {sorted(unknown_sources)}"
+            )
+        unknown_assumptions = (
+            set(trace.constructed_assumption_ids) - set(assumption_by_id)
+        )
+        if unknown_assumptions:
+            raise ValueError(
+                f"content trace {trace.trace_id} references unknown "
+                "constructed assumptions: "
+                f"{sorted(unknown_assumptions)}"
             )
         if jurisdiction_fact_keys is not None:
             unknown_fact_keys = (
@@ -328,6 +423,11 @@ def validate_measure_source_evidence(
                 "adapted text"
             )
         traced_source_ids.update(trace.source_ids)
+        traced_assumption_ids.update(trace.constructed_assumption_ids)
+        for assumption_id in trace.constructed_assumption_ids:
+            traced_source_ids.update(
+                assumption_by_id[assumption_id].calibration_source_ids
+            )
 
     if traced_source_ids != set(source_by_id):
         missing = sorted(set(source_by_id) - traced_source_ids)
@@ -335,13 +435,19 @@ def validate_measure_source_evidence(
             "every packet source must support at least one exact content "
             f"trace; missing={missing}"
         )
+    if traced_assumption_ids != set(assumption_by_id):
+        missing = sorted(set(assumption_by_id) - traced_assumption_ids)
+        raise ValueError(
+            "every constructed assumption must support at least one exact "
+            f"content trace; missing={missing}"
+        )
 
 
 class DomainBankBatchItem(ContractModel):
     """One frozen profile slot, authored measure, and its source evidence."""
 
-    record_version: Literal["preference_eval_domain_batch_item.v1"] = (
-        "preference_eval_domain_batch_item.v1"
+    record_version: Literal["preference_eval_domain_batch_item.v2"] = (
+        "preference_eval_domain_batch_item.v2"
     )
     slot_id: StableId
     measure: MeasureVersion
@@ -359,8 +465,8 @@ class DomainBankBatchItem(ContractModel):
 class DomainBankBatch(ContractModel):
     """Six exact measures authored for one frozen profile domain."""
 
-    schema_version: Literal["preference_eval_domain_batch.v1"] = (
-        "preference_eval_domain_batch.v1"
+    schema_version: Literal["preference_eval_domain_batch.v2"] = (
+        "preference_eval_domain_batch.v2"
     )
     batch_id: StableId
     batch_version: PositiveVersion

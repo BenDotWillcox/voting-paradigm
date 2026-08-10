@@ -236,8 +236,12 @@ Phase 3B infrastructure lives in `eval/bank_authoring.py` and
 `eval/review_artifacts.py`. Each six-measure `DomainBankBatch` binds frozen
 slots to exact measures and `MeasureSourceEvidence`; source captures preserve
 retrieved-content hashes and explicit source roles, while content traces bind
-exact adapted strings to packet sources or frozen jurisdiction facts. The
-assembler fails unless it
+exact adapted strings to packet sources, frozen jurisdiction facts, or
+explicit structured assumptions. Constructed measures must declare at least
+one assumption, and every declared source and assumption must support an exact
+trace. These first content-bearing authoring records use the v2 trace,
+source-evidence, batch-item, and domain-batch contract family; the final
+fixture, bank profile, and review-log contracts remain v1. The assembler fails unless it
 receives exactly one valid batch for every domain, then emits measures in
 frozen slot order:
 
@@ -256,6 +260,18 @@ python -m eval.build_final_bank \
   --created-at 2026-08-01T12:00:00-05:00 \
   --output eval/restricted_bank/preference_eval_final_v1.json
 ```
+
+The first restricted six-measure domain batch passed structural validation and
+the locked participant-independent Claude review on 2026-08-10. Its canonical
+batch hash is
+`1a4a46a6c99908869d5b7ebcb6d2bd4b8608b1224d3328b49e674d13e97393a9`;
+the participant-safe review result is
+`eval/review_summaries/fiscal_economy_labor_summary.json`. The exact batch,
+source cache, and disposition log remain ignored and separately backed up.
+The first review's mid-review status associated finding existence with
+specific slots without exposing exact content. That non-content communication
+deviation is documented in `eval/PHASE3_AUTHORING.md`; future review status
+must remain aggregate-only throughout.
 
 Exact review uses `eval/prompts/phase3_packet_review_v1.md`, whose canonical
 hash is pinned in code. Restricted disposition logs may contain packet text;
