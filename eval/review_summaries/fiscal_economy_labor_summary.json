@@ -1,0 +1,46 @@
+{
+  "all_packets_approved": true,
+  "batch_id": "fiscal_economy_labor_batch",
+  "batch_sha256": "1a4a46a6c99908869d5b7ebcb6d2bd4b8608b1224d3328b49e674d13e97393a9",
+  "batch_version": 1,
+  "exact_packet_content_omitted": true,
+  "findings_by_category": {
+    "contextual_sufficiency": 2,
+    "cost_and_benefit_symmetry": 0,
+    "factual_traceability": 0,
+    "format_fidelity": 0,
+    "option_distinctness": 0,
+    "political_cue_exclusion": 0,
+    "slot_fidelity": 0,
+    "source_integrity": 1,
+    "specificity_balance": 1,
+    "uncertainty_symmetry": 1,
+    "valence_balance": 0,
+    "word_count_balance": 0
+  },
+  "findings_by_disposition": {
+    "accepted_limitation": 0,
+    "defended": 5,
+    "resolved": 0
+  },
+  "findings_by_severity": {
+    "blocking": 0,
+    "major": 0,
+    "minor": 2,
+    "note": 3
+  },
+  "findings_count": 5,
+  "profile_id": "preference_eval_bank_profile_v1",
+  "profile_sha256": "f2d456de6ddd23925cb360eb000aaa96f53329be27b5f8462c27070e03156564",
+  "profile_version": 1,
+  "review_log_id": "fiscal_economy_labor_review",
+  "review_log_sha256": "9e9f80e63a1c1841b9ae7f0f058f69e0ecdf631e19e979e9c0184a0ab5884f32",
+  "review_log_version": 1,
+  "review_prompt_sha256": "b2e0cc374e0de755fb45ed8e6997cbdeeefc32f75827fcedf5e6abac435f7f32",
+  "reviewed_measure_count": 6,
+  "reviewer_model_version": "claude-fable-5",
+  "reviewer_system": "claude",
+  "reviewer_type": "ai",
+  "schema_version": "preference_eval_nonrevealing_review_summary.v1",
+  "summary_id": "fiscal_economy_labor_review_summary"
+}

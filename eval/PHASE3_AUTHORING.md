@@ -142,14 +142,26 @@ official source; that classification belongs in the signed review ledger.
 Every `SourceRecord` is paired with a `SourceCaptureRecord` that records its
 primary-official, official-context, or independent-context role and binds the
 record hash to the retrieved document bytes or a normalized claim-relevant
-text extraction. A `ContentTraceRecord` stores one exact participant-facing
-string, its JSON Pointer within the measure, the supporting packet source IDs
-or frozen jurisdiction facts, and its adaptation notes. Validation fails if a
-real-world adaptation lacks a primary official capture, a source is
-decorative, a source record changes, a jurisdiction fact is unknown, or the
-adapted packet text drifts. Full third-party documents belong only in the
-ignored `.cache/eval-authoring/sources/` authoring cache; the repository stores
-their hashes and locators, not wholesale copyrighted copies.
+text extraction. A `ConstructedAssumptionRecord` makes every author-created
+quantity, held-constant condition, or synthetic mechanism explicit, including
+why it was selected and any source or jurisdiction facts used to calibrate it.
+A `ContentTraceRecord` stores one exact participant-facing string, its JSON
+Pointer within the measure, the supporting packet source IDs, frozen
+jurisdiction facts, or structured assumption IDs, and its adaptation notes.
+Validation fails if a real-world adaptation lacks a primary official capture,
+a source or assumption is decorative, a source record changes, a jurisdiction
+fact or assumption reference is unknown, a constructed measure has no explicit
+assumption, or the adapted packet text drifts. Full third-party documents
+belong only in the ignored `.cache/eval-authoring/sources/` authoring cache;
+the repository stores their hashes and locators, not wholesale copyrighted
+copies.
+
+The first content-bearing authoring artifacts use `content_trace.v2`,
+`measure_source_evidence.v2`, `preference_eval_domain_batch_item.v2`, and
+`preference_eval_domain_batch.v2`. Their v1 forms were retired before any real
+bank record existed because they could not represent explicit constructed
+assumptions. The final fixture, bank profile, source-capture, and review-log
+contract families remain v1.
 
 Packets exclude party labels, politicians, sponsors or campaign organizations,
 endorsements, polling, and campaign slogans. Political identity, partisan
@@ -208,6 +220,14 @@ measure-level findings. Only the output of
 `build_nonrevealing_review_summary` is participant-safe: it contains hashes,
 reviewer provenance, approval status, and aggregate category/severity/
 disposition counts, with no finding or packet prose.
+The aggregate-only boundary applies throughout review, not merely to the final
+summary. Reviewer status messages must not associate a finding, severity, or
+disposition with a slot or measure. On 2026-08-10, mid-review status for the
+first domain associated finding existence with specific slots but exposed no
+packet, option, source, assumption, or finding prose. This is recorded as a
+non-content communication deviation; it does not defeat the narrower
+cold-to-exact-packet-content claim. Later reviews must keep all measure-level
+associations inside the restricted log.
 After validation, `bank_review_ledger_entries_for_batch` converts source roles,
 completed checks, exact measure hashes, and review provenance into the six
 canonical `BankReviewLedgerEntry` records without manual re-entry.
@@ -297,8 +317,15 @@ capture, domain batches, deterministic assembly, a locked Claude review prompt,
 restricted disposition logs, and nonrevealing aggregate summaries. The
 remaining content and finalization work is:
 
-1. source and draft the 32 real-world and 16 constructed packets in domain
-   batches;
+As of 2026-08-10, the first six-measure domain batch has completed source
+capture, exact tracing, structural validation, and locked Claude review. All
+six exact measure hashes are approved. The generated participant-safe summary
+is `eval/review_summaries/fiscal_economy_labor_summary.json`; the canonical
+batch hash is
+`1a4a46a6c99908869d5b7ebcb6d2bd4b8608b1224d3328b49e674d13e97393a9`.
+
+1. source and draft the remaining 28 real-world and 14 constructed packets in
+   seven domain batches;
 2. review each exact batch and populate the final ledger binding every measure
    to its authoring slot,
    primary-source classification, factual review, contextual-sufficiency
