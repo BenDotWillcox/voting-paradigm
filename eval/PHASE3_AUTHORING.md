@@ -315,28 +315,25 @@ at exactly 48 measures.
 The bank profile is Phase 3A. Phase 3B infrastructure now supplies exact source
 capture, domain batches, deterministic assembly, a locked Claude review prompt,
 restricted disposition logs, and nonrevealing aggregate summaries. The
-remaining content and finalization work is:
+remaining finalization work is:
 
-As of 2026-08-10, the first six-measure domain batch has completed source
+As of 2026-08-11, all eight six-measure domain batches have completed source
 capture, exact tracing, structural validation, and locked Claude review. All
-six exact measure hashes are approved. The generated participant-safe summary
-is `eval/review_summaries/fiscal_economy_labor_summary.json`; the canonical
-batch hash is
-`1a4a46a6c99908869d5b7ebcb6d2bd4b8608b1224d3328b49e674d13e97393a9`.
+48 exact measure versions are participant-independently approved. The eight
+generated participant-safe summaries live under `eval/review_summaries/`;
+restricted batches, source caches, and disposition logs remain ignored and
+separately backed up.
 
-1. source and draft the remaining 28 real-world and 14 constructed packets in
-   seven domain batches;
-2. review each exact batch and populate the final ledger binding every measure
-   to its authoring slot,
-   primary-source classification, factual review, contextual-sufficiency
-   review, neutrality review, reviewer provenance, findings, dispositions, and
-   participant-independent approval;
-3. select and write the twelve retest variants;
-4. derive the seeded six-wave order and per-presentation option order;
-5. validate the complete non-development fixture against the profile; and
-6. add presentation-plan/run validation for realized wave membership,
+1. select, write, and independently review the twelve retest variants;
+2. assemble the complete non-development fixture and populate the final
+   slot-to-measure ledger with source classification, review provenance,
+   findings, dispositions, and exact approvals;
+3. derive the seeded six-wave order and per-presentation option order;
+4. validate the fixture, ledger, and retest registry together against the
+   frozen profile;
+5. add presentation-plan/run validation for realized wave membership,
    presentation seeds, and retest timing; and
-7. freeze the fixture, review ledger, retest variants, and manifests by content
+6. freeze the fixture, review ledger, retest variants, and manifests by content
    hash.
 
 The packet-blind exposure policy above is now frozen for Ben's case study. If
