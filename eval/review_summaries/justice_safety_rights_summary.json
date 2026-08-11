@@ -1,0 +1,46 @@
+{
+  "all_packets_approved": true,
+  "batch_id": "justice_safety_rights_batch",
+  "batch_sha256": "7586a7b6ef60a1f770bbc9ce36bcd2321e5e310649948114c83a631668291f71",
+  "batch_version": 1,
+  "exact_packet_content_omitted": true,
+  "findings_by_category": {
+    "contextual_sufficiency": 0,
+    "cost_and_benefit_symmetry": 0,
+    "factual_traceability": 1,
+    "format_fidelity": 0,
+    "option_distinctness": 0,
+    "political_cue_exclusion": 0,
+    "slot_fidelity": 0,
+    "source_integrity": 0,
+    "specificity_balance": 0,
+    "uncertainty_symmetry": 0,
+    "valence_balance": 0,
+    "word_count_balance": 0
+  },
+  "findings_by_disposition": {
+    "accepted_limitation": 0,
+    "defended": 1,
+    "resolved": 0
+  },
+  "findings_by_severity": {
+    "blocking": 0,
+    "major": 0,
+    "minor": 1,
+    "note": 0
+  },
+  "findings_count": 1,
+  "profile_id": "preference_eval_bank_profile_v1",
+  "profile_sha256": "f2d456de6ddd23925cb360eb000aaa96f53329be27b5f8462c27070e03156564",
+  "profile_version": 1,
+  "review_log_id": "justice_safety_rights_review",
+  "review_log_sha256": "4aa9936d0bcaeaea0602d62527ade7a75d1a6942093244a5bd8760b5b52ef15b",
+  "review_log_version": 1,
+  "review_prompt_sha256": "b2e0cc374e0de755fb45ed8e6997cbdeeefc32f75827fcedf5e6abac435f7f32",
+  "reviewed_measure_count": 6,
+  "reviewer_model_version": "claude-fable-5",
+  "reviewer_system": "claude",
+  "reviewer_type": "ai",
+  "schema_version": "preference_eval_nonrevealing_review_summary.v1",
+  "summary_id": "justice_safety_rights_review_summary"
+}

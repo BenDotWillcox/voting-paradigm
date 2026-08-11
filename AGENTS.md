@@ -373,10 +373,13 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
   risk/coverage metrics, stable/tentative slices, and unsupported-delegation
   accounting
 - Aggregate-only public artifact serializer with planted-sensitive-data tests
+- Participant-blinded source capture, exact tracing, and locked independent
+  review for the 48-measure bank, with eight participant-safe review summaries
 
 **Next, in order:**
-1. Author and neutrally review the standardized jurisdiction, 48-measure bank,
-   and retest variants
+1. Finish Phase 3 finalization: author and review the retest registry, assemble
+   the final fixture and reviewer-provenance ledger, then enforce wave order,
+   presentation seeds, and retest timing at the run boundary
 2. Add the direct LLM baseline, confirmed evidence extraction, fixed/expanding
    ontology ablation, and hybrid explicit posterior
 3. Evaluate LLM follow-ups after fixed, random, and max-variance policies
