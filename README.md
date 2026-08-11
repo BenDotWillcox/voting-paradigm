@@ -137,8 +137,21 @@ aggregate review summaries. All eight domain batches and all 48 measures are
 participant-independently approved at their exact hashes. Exact packets and
 review logs stay outside Git under `eval/restricted_bank/` until all
 predeclared blinded presentations and retests are complete; only the eight
-generated aggregate review summaries are tracked. Retest variants, the final
-review-provenance ledger, and run-level wave and timing validation remain.
+batch summaries and one retest aggregate review summary are tracked. Retest
+variants, the final
+review-provenance ledger, and final bundle freeze remain restricted. The 12
+authored variants and deterministic plan pass the Phase 3C structural gate.
+Locked review rejected the near-verbatim first registry and the mechanically
+rewritten second registry. Direct review found nine version-3 packets
+approval-ready and requested three targeted passage repairs. Version 4 carries
+those nine packet hashes forward unchanged, revises exactly one field in each
+of three packets, and is approved at all 12 exact packet hashes. The final
+review-provenance ledger and execution-bundle manifest bind the approved
+48-measure fixture, registry version 4, and presentation plan version 4.
+Phase 3C also provides per-presentation option-order seeds and run validation
+for wave order, retest independence, and the 7-14 day interval. The frozen
+bundle is ready for blinded case-study scheduling; the six waves and retests
+have not yet been executed.
 Phase 4 will add evidence-grounding and prompt/order robustness diagnostics.
 Public aggregate artifacts still require explicit release review.
 Demo 3 (algorithmic districting) currently ships the apportionment slice;

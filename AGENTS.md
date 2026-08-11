@@ -375,17 +375,19 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 - Aggregate-only public artifact serializer with planted-sensitive-data tests
 - Participant-blinded source capture, exact tracing, and locked independent
   review for the 48-measure bank, with eight participant-safe review summaries
+- Phase 3C retest registry approved at all 12 exact hashes, with the final
+  reviewer-provenance ledger, six-wave plan, and execution bundle frozen
 
 **Next, in order:**
-1. Finish Phase 3 finalization: author and review the retest registry, assemble
-   the final fixture and reviewer-provenance ledger, then enforce wave order,
-   presentation seeds, and retest timing at the run boundary
-2. Add the direct LLM baseline, confirmed evidence extraction, fixed/expanding
+1. Add the direct LLM baseline, confirmed evidence extraction, fixed/expanding
    ontology ablation, and hybrid explicit posterior
-3. Evaluate LLM follow-ups after fixed, random, and max-variance policies
-4. Build separate blind evaluation and future-facing showcase modes
-5. Freeze inputs, models, prompts, thresholds, seeds, and metrics before Ben's
+2. Evaluate LLM follow-ups after fixed, random, and max-variance policies
+3. Build separate blind evaluation and future-facing showcase modes
+4. Freeze inputs, models, prompts, thresholds, seeds, and metrics before Ben's
    held-out case study
+5. Schedule and execute the six blinded waves and 7-14 day retests. Run
+   validation enforces wave order, presentation seeds, retest independence,
+   and timing.
 6. *(Deferred)* LLM-generated vote rationales
 7. *(Deferred)* LLM-generated personas
 
