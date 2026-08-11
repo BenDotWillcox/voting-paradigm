@@ -300,11 +300,50 @@ canonical measures, not duplicate fixture measures. A
 `RetestVariantRegistry` freezes those links and
 `validate_final_bank_bundle` validates the canonical fixture, retest selection,
 slot-to-measure review ledger, content hashes, and reviewer provenance together.
-The profile pins six waves of eight and a 7-14 day retest interval, but those
-are realized-session requirements rather than final-bank fields. A later
-presentation-plan/run validator must enforce the actual wave membership,
-per-presentation seeds, elapsed interval, and retest use before the held-out
-freeze; Phase 3A does not claim end-to-end run enforcement.
+Phase 3C realizes the profile's six waves of eight and 7-14 day retest interval
+through a deterministic presentation plan. Run validation enforces exact wave
+order, per-presentation option-order seeds, canonical-versus-retest packet
+versions, original-response-before-retest independence, elapsed intervals,
+and complete planned coverage. Its progressive form accepts honest run
+prefixes without claiming completion.
+
+The restricted retest review uses
+`eval/prompts/phase3_retest_review_v1.md`; its normalized canonical hash is
+pinned in `eval/retest_review.py`. The registry remains unusable until the
+locked review approves every exact variant hash. The first near-verbatim
+registry and second mechanically rewritten registry were both rejected and
+remain in the restricted audit trail. Direct review found nine version-3
+packets approval-ready and requested three targeted repairs. Version 4 keeps
+the nine approval-ready packet hashes unchanged, changes one field in each of
+three packets, and is approved at all 12 exact packet hashes. The final review
+ledger and execution-bundle manifest bind the approved 48-measure fixture,
+registry version 4, and presentation plan version 4. Automated quantity,
+source, decision-rule, and identity guards do not establish semantic
+equivalence. The four Phase 3C commands
+keep exact content in ignored paths and print only aggregate manifests:
+
+```bash
+python -m eval.build_presentation_plan PROFILE FIXTURE RETEST_REGISTRY \
+  --plan-id PLAN_ID --created-at CREATED_AT --output RESTRICTED_PLAN
+
+python -m eval.validate_retest_review PROFILE FIXTURE RETEST_REGISTRY \
+  RESTRICTED_REVIEW_LOG --summary-output SAFE_SUMMARY
+
+python -m eval.build_final_review_ledger PROFILE FIXTURE RETEST_REGISTRY \
+  RESTRICTED_RETEST_REVIEW \
+  --batch-review DOMAIN_BATCH DOMAIN_REVIEW \
+  --ledger-id LEDGER_ID --created-at CREATED_AT --output RESTRICTED_LEDGER
+
+python -m eval.validate_final_bundle PROFILE FIXTURE RETEST_REGISTRY \
+  RESTRICTED_LEDGER RESTRICTED_PLAN --created-at CREATED_AT \
+  --manifest-output RESTRICTED_MANIFEST
+```
+
+Repeat `--batch-review DOMAIN_BATCH DOMAIN_REVIEW` once for each of the eight
+domains. `validate_final_bundle` is the final structural gate; a completed run
+must additionally pass `validate_completed_run_against_plan` before analysis.
+The frozen Phase 3C bundle is ready for blinded case-study scheduling, but the
+six waves and retests have not yet been executed.
 
 Phase 4 will compare structured, conversational, and combined evidence inputs.
 LLM predictions will retain private supporting-evidence IDs and unsupported-

@@ -1,0 +1,44 @@
+{
+  "all_variants_approved": true,
+  "exact_variant_content_omitted": true,
+  "findings_by_category": {
+    "canonical_linkage": 0,
+    "fact_and_value_preservation": 0,
+    "format_fidelity": 0,
+    "neutrality_preservation": 1,
+    "option_and_source_preservation": 0,
+    "prior_response_exclusion": 0,
+    "semantic_equivalence": 2
+  },
+  "findings_by_disposition": {
+    "accepted_limitation": 0,
+    "defended": 0,
+    "resolved": 3
+  },
+  "findings_by_severity": {
+    "blocking": 1,
+    "major": 0,
+    "minor": 2,
+    "note": 0
+  },
+  "findings_count": 3,
+  "fixture_id": "preference_eval_final_v1",
+  "fixture_sha256": "69e822094d7434f4a80cd766e4990947a8fedca512a6778426c657cb82ea7b26",
+  "fixture_version": 1,
+  "profile_id": "preference_eval_bank_profile_v1",
+  "profile_sha256": "f2d456de6ddd23925cb360eb000aaa96f53329be27b5f8462c27070e03156564",
+  "profile_version": 1,
+  "registry_id": "preference_eval_retest_registry_v1",
+  "registry_sha256": "2f288810cb67d80fd0a64cc43fd3d44dca66147bfde06891b842c65e645cd488",
+  "registry_version": 4,
+  "review_log_id": "preference_eval_retest_review_v4",
+  "review_log_sha256": "22f5658cbe5c4aea05a5b2315a1969cca3c92ba0bf0a5faa01da78f4a5993ae8",
+  "review_log_version": 1,
+  "review_prompt_sha256": "f12ff8b812fcb395b620d759340b2dad5a54ff58126ed0ee66f8fd0958b98786",
+  "reviewed_variant_count": 12,
+  "reviewer_model_version": "claude-fable-5",
+  "reviewer_system": "claude",
+  "reviewer_type": "ai",
+  "schema_version": "preference_eval_nonrevealing_retest_review_summary.v1",
+  "summary_id": "preference_eval_retest_review_v4_summary"
+}

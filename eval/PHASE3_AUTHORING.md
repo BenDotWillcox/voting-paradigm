@@ -310,12 +310,14 @@ for both initial and retest presentations. Run validation resolves the
 alternate packet only for a retest presentation. This keeps the canonical bank
 at exactly 48 measures.
 
-## Remaining Phase 3 Deliverables
+## Phase 3 Completion Status
 
-The bank profile is Phase 3A. Phase 3B infrastructure now supplies exact source
-capture, domain batches, deterministic assembly, a locked Claude review prompt,
-restricted disposition logs, and nonrevealing aggregate summaries. The
-remaining finalization work is:
+The bank profile is Phase 3A. Phase 3B supplies exact source capture, domain
+batches, deterministic assembly, a locked Claude review prompt, restricted
+disposition logs, and nonrevealing aggregate summaries. Phase 3C now supplies
+the deterministic presentation plan, locked retest-review contract, final
+review-ledger assembler, final-bundle validator, and progressive/completed run
+validation.
 
 As of 2026-08-11, all eight six-measure domain batches have completed source
 capture, exact tracing, structural validation, and locked Claude review. All
@@ -324,17 +326,41 @@ generated participant-safe summaries live under `eval/review_summaries/`;
 restricted batches, source caches, and disposition logs remain ignored and
 separately backed up.
 
-1. select, write, and independently review the twelve retest variants;
-2. assemble the complete non-development fixture and populate the final
-   slot-to-measure ledger with source classification, review provenance,
-   findings, dispositions, and exact approvals;
-3. derive the seeded six-wave order and per-presentation option order;
-4. validate the fixture, ledger, and retest registry together against the
-   frozen profile;
-5. add presentation-plan/run validation for realized wave membership,
-   presentation seeds, and retest timing; and
-6. freeze the fixture, review ledger, retest variants, and manifests by content
-   hash.
+The complete non-development fixture is assembled, the twelve retest source
+measures are deterministically selected against the frozen target, and the
+exact variants and presentation plan pass the pre-review structural gate. The
+first retest registry received no approvals: locked review rejected all twelve
+variants because fixed labels and near-verbatim prose were not genuine
+paraphrases. The second registry also received no approvals: its mechanical
+synonym and clause-rotation rewrite damaged modality, qualifier binding,
+technical terms, grammar, and neutrality despite passing numeric and structural
+checks. Both rounds remain in the restricted audit trail. Version 3 was written
+field by field from canonical meaning with no mechanical rewrite transform. It
+preserves field-level quantities, defined-term keys, source records, protected
+technical terms, and comparable lengths; 31 field-local guards additionally
+pin high-risk permissions, prohibitions, obligations, ballot rules, and
+conditionals. Direct round-3 review found nine packets approval-ready and three
+targeted defects: one asymmetric argument-quality issue and two minor semantic
+or copy defects. Version 4 carries the nine approval-ready packet hashes
+forward byte-identically and changes exactly one participant-facing field in
+each of the other three packets. Registry version 4 and plan version 4 pass the
+delta, frozen-profile, and plan-binding gates. Locked delta review approved all
+twelve version-4 variants at their exact hashes, carrying the three round-3
+findings forward as resolved. Mechanical gates remain backstops only; direct
+side-by-side review is authoritative.
+
+The final reviewer-provenance ledger now records 48 canonical approvals and 12
+retest approvals. Final-bundle validation binds that ledger to the frozen
+profile, 48-measure fixture, registry version 4, and presentation plan version
+4. The Phase 3C authoring and freeze milestone is complete. The frozen bundle
+is ready for blinded case-study scheduling; the six waves and retests have not
+yet been executed.
+
+The plan/run validator already enforces realized wave membership,
+per-presentation seeds, alternate packet use, original-response-before-retest
+independence, and the 7-14 day interval. Every retest variant is now approved
+by the locked review; completed runs must still pass the run-level validator
+before analysis.
 
 The packet-blind exposure policy above is now frozen for Ben's case study. If
 exact packet content is exposed early despite that policy, record the protocol

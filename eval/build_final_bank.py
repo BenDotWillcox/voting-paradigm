@@ -10,32 +10,17 @@ import argparse
 import json
 import sys
 from collections.abc import Sequence
-from datetime import datetime
 from pathlib import Path
 
 from pydantic import ValidationError
 
-from .authoring_cli import safe_authoring_error
+from .authoring_cli import aware_datetime_arg, safe_authoring_error
 from .bank_authoring import (
     assemble_final_fixture,
     load_domain_bank_batch,
 )
 from .bank_profile import load_bank_profile
 from .fixture_io import build_fixture_manifest
-
-
-def _aware_datetime(value: str) -> datetime:
-    try:
-        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
-    except ValueError as error:
-        raise argparse.ArgumentTypeError(
-            "created-at must be an ISO-8601 datetime"
-        ) from error
-    if parsed.tzinfo is None or parsed.utcoffset() is None:
-        raise argparse.ArgumentTypeError(
-            "created-at must include a timezone"
-        )
-    return parsed
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -65,7 +50,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--created-at",
-        type=_aware_datetime,
+        type=aware_datetime_arg,
         required=True,
         help="Frozen timezone-aware ISO-8601 fixture timestamp.",
     )

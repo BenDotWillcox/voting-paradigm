@@ -418,24 +418,35 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
   text traces, six-measure domain batches, deterministic 48-measure assembly,
   a hash-locked Claude review prompt, restricted disposition logs, and
   nonrevealing aggregate summaries
-- First Phase 3B domain batch: six exact measures structurally validated and
-  approved by the locked participant-independent Claude review; the restricted
-  batch/log remain ignored and only the generated safe summary is tracked
+- Phase 3B bank content: all eight domain batches and all 48 exact measures
+  structurally validated and approved by the locked participant-independent
+  Claude review; restricted content remains ignored and only the eight
+  generated safe summaries are tracked
+- Phase 3C infrastructure: deterministic six-wave and option-order plan,
+  7-14 day run-boundary enforcement with retest-independence checks, a locked
+  retest-review prompt and aggregate summary, final review-ledger assembly,
+  and a final execution-bundle manifest
+- Phase 3C retest content: round one was correctly rejected because all twelve
+  alternates were near-verbatim, and round two was rejected because mechanical
+  rewrites damaged modality, qualifier binding, technical language, and prose.
+  Direct review found nine manually authored version-3 packets approval-ready
+  and requested three targeted passage repairs. Version 4 preserves those nine
+  packet hashes, changes one participant-facing field in each of three packets,
+  and is approved at all twelve exact packet hashes. The final restricted
+  review ledger and execution-bundle manifest bind the approved 48-measure
+  fixture, registry version 4, and presentation plan version 4; every prior
+  round remains in the restricted audit trail
 
 **Next, in order:**
-1. Source and draft the remaining 42 exact packets in seven domain batches,
-   populate their source captures and content traces, bind them to a
-   slot-to-measure reviewer-provenance ledger, conduct participant-blinded
-   Claude review with the locked prompt, then author and neutrally review the
-   linked retest registry and add run-level validation for wave execution and
-   retest timing
-2. Add the direct LLM baseline; structured/conversational/combined evidence
+1. Add the direct LLM baseline; structured/conversational/combined evidence
    ablation; evidence IDs and unsupported-assumption flags; fixed/expanding
    ontology ablation; hybrid explicit posterior; and prompt/order robustness
-3. Evaluate LLM follow-ups after fixed, random, and max-variance policies
-4. Build separate blind evaluation and future-facing showcase modes
-5. Freeze inputs, models, prompts, thresholds, seeds, and metrics before Ben's
+2. Evaluate LLM follow-ups after fixed, random, and max-variance policies
+3. Build separate blind evaluation and future-facing showcase modes
+4. Freeze inputs, models, prompts, thresholds, seeds, and metrics before Ben's
    held-out case study
+5. Schedule and execute the six blinded waves and 7-14 day retests only after
+   the remaining model/evaluation freeze is complete
 6. *(Deferred)* LLM-generated vote rationales
 7. *(Deferred)* LLM-generated personas
 
