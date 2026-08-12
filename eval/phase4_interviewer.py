@@ -18,7 +18,7 @@ from dataclasses import asdict
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Annotated, Literal, Optional, Protocol, Self, TypeAlias
+from typing import Annotated, Literal, Protocol, Self, TypeAlias
 
 from pydantic import Field, TypeAdapter, field_validator, model_validator
 
@@ -35,6 +35,7 @@ from .contracts import (
     Probability,
     Sha256Digest,
     StableId,
+    require_complete_enum_set,
 )
 from .fixture_io import content_sha256
 from .phase4_protocol import InterviewerAction, InterviewerTool
@@ -139,16 +140,16 @@ class InterviewerTurnRequest(ContractModel):
 
     @model_validator(mode="after")
     def validate_complete_input(self) -> Self:
-        action_set = set(InterviewerAction)
-        if set(self.allowed_actions) != action_set or len(
-            self.allowed_actions
-        ) != len(action_set):
-            raise ValueError("allowed_actions must contain the complete v1 set")
-        tool_set = set(InterviewerTool)
-        if set(self.allowed_tools) != tool_set or len(self.allowed_tools) != len(
-            tool_set
-        ):
-            raise ValueError("allowed_tools must contain the complete v1 set")
+        require_complete_enum_set(
+            "allowed_actions",
+            self.allowed_actions,
+            InterviewerAction,
+        )
+        require_complete_enum_set(
+            "allowed_tools",
+            self.allowed_tools,
+            InterviewerTool,
+        )
 
         event_ids = [ref.evidence_event_id for ref in self.evidence_references]
         if len(event_ids) != len(set(event_ids)):
@@ -178,7 +179,7 @@ class PairReference(ContractModel):
     item_b: StableId
 
     @model_validator(mode="after")
-    def canonicalize_pair(self) -> Self:
+    def require_canonical_pair(self) -> Self:
         if self.item_a >= self.item_b:
             raise ValueError("pair reference items must be distinct and canonical")
         return self
@@ -201,7 +202,7 @@ class VettedQuestionCandidate(ContractModel):
     item_b: StableId
     prompt: NonEmptyText
     options: list[VettedQuestionOption]
-    domain: Optional[NonEmptyText] = None
+    domain: NonEmptyText | None = None
     score: Annotated[float, Field(ge=0.0, allow_inf_nan=False)]
     score_kind: Literal["posterior_gap_std"] = "posterior_gap_std"
 
@@ -265,10 +266,16 @@ class ReadEvidenceCoverageRequest(ContractModel):
 
 
 class DomainEvidenceCoverage(ContractModel):
+    """Coverage touching one domain, not a partition of all evidence.
+
+    One cross-domain observation contributes to both domains, so the sum of
+    ``touching_evidence_count`` can exceed the top-level ``evidence_count``.
+    """
+
     domain: NonEmptyText
     item_count: NonNegativeCount
     observed_item_count: NonNegativeCount
-    evidence_count: NonNegativeCount
+    touching_evidence_count: NonNegativeCount
 
 
 class ReadEvidenceCoverageResult(ContractModel):
@@ -508,7 +515,7 @@ class InterviewerBackend(Protocol):
 
 
 class InterviewerCache(Protocol):
-    def get(self, key: str) -> Optional[CachedInterviewerOutput]: ...
+    def get(self, key: str) -> CachedInterviewerOutput | None: ...
 
     def put(self, key: str, output: CachedInterviewerOutput) -> None: ...
 
@@ -559,6 +566,7 @@ def _question_candidate(
     state: PreferenceState,
     item_a: ItemId,
     item_b: ItemId,
+    question_version: int,
 ) -> VettedQuestionCandidate:
     question = bank.build_pairwise_question(item_a, item_b)
     options = [
@@ -573,7 +581,7 @@ def _question_candidate(
     unhashed = VettedQuestionCandidate.model_construct(
         question_sha256="0" * 64,
         question_id=question.id,
-        question_version=1,
+        question_version=question_version,
         item_a=item_a,
         item_b=item_b,
         prompt=question.prompt,
@@ -584,7 +592,7 @@ def _question_candidate(
     return VettedQuestionCandidate(
         question_sha256=vetted_question_sha256(unhashed),
         question_id=question.id,
-        question_version=1,
+        question_version=question_version,
         item_a=item_a,
         item_b=item_b,
         prompt=question.prompt,
@@ -595,7 +603,11 @@ def _question_candidate(
 
 
 class PreferenceInterviewerTools:
-    """Read-only typed views over one exact preference-state cutoff."""
+    """Read-only typed views over one exact preference-state cutoff.
+
+    Generated vetted questions inherit the verified question-bank version;
+    Phase 4B does not maintain independent per-question version counters.
+    """
 
     def __init__(
         self,
@@ -603,11 +615,15 @@ class PreferenceInterviewerTools:
         model: PreferenceModel,
         bank: QuestionBank,
         evidence_references: list[EvidenceAuditReference],
+        question_version: int,
     ) -> None:
+        if question_version < 1:
+            raise ValueError("question version must be positive")
         self._state = state
         self._model = model
         self._bank = bank
         self._evidence_references = list(evidence_references)
+        self._question_version = question_version
 
     def _require_bank_pair(self, pair: PairReference) -> None:
         item_ids = set(self._bank.item_ids())
@@ -644,6 +660,7 @@ class PreferenceInterviewerTools:
                 self._state,
                 item_ids[i],
                 item_ids[j],
+                self._question_version,
             )
             for i in range(len(item_ids))
             for j in range(i + 1, len(item_ids))
@@ -683,7 +700,7 @@ class PreferenceInterviewerTools:
                     domain=domain,
                     item_count=len(domain_items),
                     observed_item_count=len(domain_items & observed_items),
-                    evidence_count=sum(
+                    touching_evidence_count=sum(
                         1
                         for ref in self._evidence_references
                         if ref.item_a in domain_items or ref.item_b in domain_items
@@ -795,7 +812,7 @@ class InMemoryInterviewerCache:
     def __init__(self) -> None:
         self._outputs: dict[str, CachedInterviewerOutput] = {}
 
-    def get(self, key: str) -> Optional[CachedInterviewerOutput]:
+    def get(self, key: str) -> CachedInterviewerOutput | None:
         return self._outputs.get(key)
 
     def put(self, key: str, output: CachedInterviewerOutput) -> None:
@@ -806,7 +823,13 @@ class InMemoryInterviewerCache:
 
 
 class JsonDirectoryInterviewerCache:
-    """Content-addressed cache that never writes raw conversation text."""
+    """Content-addressed cache without raw conversation text.
+
+    Outputs still contain participant-derived question, coverage, conflict,
+    and evidence-link structure. Callers must use an ignored,
+    access-controlled directory; the class cannot infer repository policy from
+    an arbitrary filesystem path.
+    """
 
     def __init__(self, directory: str | Path) -> None:
         self._directory = Path(directory)
@@ -816,7 +839,7 @@ class JsonDirectoryInterviewerCache:
             raise ValueError("interviewer cache key must be a SHA-256 digest")
         return self._directory / f"{key}.json"
 
-    def get(self, key: str) -> Optional[CachedInterviewerOutput]:
+    def get(self, key: str) -> CachedInterviewerOutput | None:
         path = self._path(key)
         if not path.exists():
             return None
@@ -973,6 +996,47 @@ def _validate_decision(
             raise ValueError("clarification links unknown or later evidence")
 
 
+def _execute_tool_call(
+    tools: InterviewerToolProvider,
+    call: InterviewerToolCallRecord,
+) -> ToolResult:
+    request = call.request
+    if call.tool is InterviewerTool.READ_POSTERIOR_UNCERTAINTY:
+        if not isinstance(request, ReadPosteriorUncertaintyRequest):
+            raise ValueError("uncertainty tool call has the wrong request type")
+        return tools.read_posterior_uncertainty(request)
+    if call.tool is InterviewerTool.READ_CANDIDATE_QUESTION_SCORES:
+        if not isinstance(request, ReadCandidateQuestionScoresRequest):
+            raise ValueError("candidate-score tool call has the wrong request type")
+        return tools.read_candidate_question_scores(request)
+    if call.tool is InterviewerTool.READ_EVIDENCE_COVERAGE:
+        if not isinstance(request, ReadEvidenceCoverageRequest):
+            raise ValueError("coverage tool call has the wrong request type")
+        return tools.read_evidence_coverage(request)
+    if call.tool is InterviewerTool.READ_EVIDENCE_CONFLICTS:
+        if not isinstance(request, ReadEvidenceConflictsRequest):
+            raise ValueError("conflict tool call has the wrong request type")
+        return tools.read_evidence_conflicts(request)
+    raise ValueError("cached tool call names an unsupported tool")
+
+
+def _validate_cached_tool_calls(
+    tools: InterviewerToolProvider,
+    tool_calls: list[InterviewerToolCallRecord],
+) -> None:
+    """Re-derive pure tool results before trusting a cached provider output."""
+
+    for call in tool_calls:
+        live_result = _execute_tool_call(tools, call)
+        if (
+            live_result != call.result
+            or content_sha256(live_result) != call.result_sha256
+        ):
+            raise ValueError(
+                "cached tool result does not match current tool implementation"
+            )
+
+
 class InterviewerOrchestrator:
     """Runs, validates, caches, and audits one constrained interviewer turn."""
 
@@ -981,11 +1045,19 @@ class InterviewerOrchestrator:
         *,
         state_model: PreferenceModel,
         bank: QuestionBank,
+        question_bank_id: str,
+        question_bank_version: int,
         backend: InterviewerBackend,
         cache: InterviewerCache,
     ) -> None:
+        if not question_bank_id:
+            raise ValueError("question bank id cannot be empty")
+        if question_bank_version < 1:
+            raise ValueError("question bank version must be positive")
         self._state_model = state_model
         self._bank = bank
+        self._question_bank_id = question_bank_id
+        self._question_bank_version = question_bank_version
         self._backend = backend
         self._cache = cache
 
@@ -1001,6 +1073,10 @@ class InterviewerOrchestrator:
             raise ValueError("turn request backend does not match orchestrator")
         if request.session_id != state.session_id:
             raise ValueError("turn request session does not match preference state")
+        if request.question_bank_id != self._question_bank_id:
+            raise ValueError("turn request question-bank id does not match")
+        if request.question_bank_version != self._question_bank_version:
+            raise ValueError("turn request question-bank version does not match")
         if request.preference_state_sha256 != preference_state_sha256(state):
             raise ValueError("turn request preference-state hash does not match")
         if request.question_bank_sha256 != question_bank_sha256(self._bank):
@@ -1016,13 +1092,14 @@ class InterviewerOrchestrator:
         backend_hash = content_sha256(request.backend)
         cached = self._cache.get(request_hash)
         cache_hit = cached is not None
+        tools = PreferenceInterviewerTools(
+            state,
+            self._state_model,
+            self._bank,
+            request.evidence_references,
+            request.question_bank_version,
+        )
         if cached is None:
-            tools = PreferenceInterviewerTools(
-                state,
-                self._state_model,
-                self._bank,
-                request.evidence_references,
-            )
             recording_tools = RecordingInterviewerTools(tools)
             decision = _DECISION_ADAPTER.validate_python(
                 self._backend.decide(request.model_copy(deep=True), recording_tools)
@@ -1041,6 +1118,7 @@ class InterviewerOrchestrator:
                 raise ValueError("cached output request hash does not match key")
             if output.backend_configuration_sha256 != backend_hash:
                 raise ValueError("cached output backend hash does not match request")
+            _validate_cached_tool_calls(tools, output.tool_calls)
             _validate_decision(output.decision, request, output.tool_calls)
 
         return InterviewerTurnRecord(

@@ -9,6 +9,7 @@ import pytest
 from eval.fixture_io import content_sha256
 from eval.phase4_interviewer import (
     AskVettedQuestionDecision,
+    CachedInterviewerOutput,
     ClarificationKind,
     ClarifyExistingEvidenceDecision,
     DeterministicToolUsingBackend,
@@ -17,10 +18,12 @@ from eval.phase4_interviewer import (
     InterviewerBackendConfiguration,
     InterviewerMessage,
     InterviewerOrchestrator,
+    InterviewerToolCallRecord,
     JsonDirectoryInterviewerCache,
     PairReference,
     PreferenceInterviewerTools,
     ReadCandidateQuestionScoresRequest,
+    ReadCandidateQuestionScoresResult,
     ReadEvidenceConflictsRequest,
     ReadEvidenceCoverageRequest,
     ReadPosteriorUncertaintyRequest,
@@ -200,6 +203,8 @@ class TestFixedInputBindings:
         orchestrator = InterviewerOrchestrator(
             state_model=model,
             bank=small_bank(),
+            question_bank_id="phase4_test_bank",
+            question_bank_version=1,
             backend=(backend := DeterministicToolUsingBackend(config)),
             cache=InMemoryInterviewerCache(),
         )
@@ -217,7 +222,7 @@ class TestReadOnlyTools:
         model, state = initial_state()
         state = model.update(state, evidence("a", "b", 7.0, prompt_id="q1"))
         tools = PreferenceInterviewerTools(
-            state, model, small_bank(), evidence_references(state)
+            state, model, small_bank(), evidence_references(state), 3
         )
 
         first = tools.read_candidate_question_scores(
@@ -228,6 +233,7 @@ class TestReadOnlyTools:
         )
 
         assert first == second
+        assert {candidate.question_version for candidate in first.candidates} == {3}
         assert all(
             {candidate.item_a, candidate.item_b} != {"a", "b"}
             for candidate in first.candidates
@@ -241,7 +247,9 @@ class TestReadOnlyTools:
         model, state = initial_state()
         state = model.update(state, evidence("a", "b", 7.0, prompt_id="q1"))
         references = evidence_references(state)
-        tools = PreferenceInterviewerTools(state, model, small_bank(), references)
+        tools = PreferenceInterviewerTools(
+            state, model, small_bank(), references, 1
+        )
         before = preference_state_sha256(state)
 
         candidates = tools.read_candidate_question_scores(
@@ -262,7 +270,7 @@ class TestReadOnlyTools:
 
     def test_uncertainty_rejects_pair_outside_vetted_bank(self):
         model, state = initial_state()
-        tools = PreferenceInterviewerTools(state, model, small_bank(), [])
+        tools = PreferenceInterviewerTools(state, model, small_bank(), [], 1)
         with pytest.raises(ValueError, match="vetted bank"):
             tools.read_posterior_uncertainty(
                 ReadPosteriorUncertaintyRequest(
@@ -274,7 +282,7 @@ class TestReadOnlyTools:
         model, state = initial_state()
         state = model.update(state, evidence("a", "c", 5.0, prompt_id="q1"))
         tools = PreferenceInterviewerTools(
-            state, model, small_bank(), evidence_references(state)
+            state, model, small_bank(), evidence_references(state), 1
         )
         result = tools.read_evidence_coverage(ReadEvidenceCoverageRequest())
 
@@ -283,14 +291,20 @@ class TestReadOnlyTools:
         assert result.observed_item_count == 2
         assert result.possible_pair_count == 6
         assert result.observed_pair_count == 1
-        assert [domain.domain for domain in result.domains] == ["one", "two"]
+        assert [
+            (domain.domain, domain.touching_evidence_count)
+            for domain in result.domains
+        ] == [("one", 1), ("two", 1)]
+        assert sum(
+            domain.touching_evidence_count for domain in result.domains
+        ) > result.evidence_count
 
     def test_conflict_detection_normalizes_pair_direction(self):
         model, state = initial_state()
         state = model.update(state, evidence("a", "b", 7.0, prompt_id="q1"))
         state = model.update(state, evidence("b", "a", 4.0, prompt_id="q2"))
         tools = PreferenceInterviewerTools(
-            state, model, small_bank(), evidence_references(state)
+            state, model, small_bank(), evidence_references(state), 1
         )
         result = tools.read_evidence_conflicts(ReadEvidenceConflictsRequest())
 
@@ -301,6 +315,27 @@ class TestReadOnlyTools:
 
 
 class TestOrchestrator:
+    def test_rejects_unowned_question_bank_version_before_backend_call(self):
+        model, state = initial_state()
+        config = backend_configuration()
+        backend = DeterministicToolUsingBackend(config)
+        orchestrator = InterviewerOrchestrator(
+            state_model=model,
+            bank=small_bank(),
+            question_bank_id="phase4_test_bank",
+            question_bank_version=2,
+            backend=backend,
+            cache=InMemoryInterviewerCache(),
+        )
+
+        with pytest.raises(ValueError, match="question-bank version"):
+            orchestrator.run_turn(
+                state=state,
+                request=request_for(state, config),
+                created_at=NOW,
+            )
+        assert backend.call_count == 0
+
     def test_records_versions_seed_cutoff_question_and_every_tool_result(self):
         model, state = initial_state()
         config = backend_configuration(seed=19)
@@ -308,6 +343,8 @@ class TestOrchestrator:
         record = InterviewerOrchestrator(
             state_model=model,
             bank=small_bank(),
+            question_bank_id="phase4_test_bank",
+            question_bank_version=1,
             backend=backend,
             cache=InMemoryInterviewerCache(),
         ).run_turn(
@@ -341,6 +378,8 @@ class TestOrchestrator:
         orchestrator = InterviewerOrchestrator(
             state_model=model,
             bank=small_bank(),
+            question_bank_id="phase4_test_bank",
+            question_bank_version=1,
             backend=backend,
             cache=cache,
         )
@@ -355,6 +394,94 @@ class TestOrchestrator:
         assert first.decision == second.decision
         assert backend.call_count == 1
 
+    def test_cache_hit_rejects_result_disagreeing_with_live_tools(self):
+        model, state = initial_state()
+        config = backend_configuration()
+        request = request_for(state, config)
+        cache = InMemoryInterviewerCache()
+        InterviewerOrchestrator(
+            state_model=model,
+            bank=small_bank(),
+            question_bank_id="phase4_test_bank",
+            question_bank_version=1,
+            backend=DeterministicToolUsingBackend(config),
+            cache=cache,
+        ).run_turn(state=state, request=request, created_at=NOW)
+        request_hash = content_sha256(request)
+        cached = cache.get(request_hash)
+        assert cached is not None
+
+        calls = list(cached.tool_calls)
+        candidate_index = next(
+            index
+            for index, call in enumerate(calls)
+            if call.tool is InterviewerTool.READ_CANDIDATE_QUESTION_SCORES
+        )
+        candidate_call = calls[candidate_index]
+        assert isinstance(
+            candidate_call.result, ReadCandidateQuestionScoresResult
+        )
+        live_candidate = candidate_call.result.candidates[0]
+        unhashed_candidate = live_candidate.model_copy(
+            update={
+                "question_id": "invented_question",
+                "question_sha256": "0" * 64,
+                "prompt": "INVENTED QUESTION NEVER IN THE VETTED BANK",
+            }
+        )
+        stale_candidate = live_candidate.model_copy(
+            update={
+                "question_id": unhashed_candidate.question_id,
+                "question_sha256": vetted_question_sha256(
+                    unhashed_candidate
+                ),
+                "prompt": unhashed_candidate.prompt,
+            }
+        )
+        stale_result = ReadCandidateQuestionScoresResult(
+            candidates=[
+                stale_candidate,
+                *candidate_call.result.candidates[1:],
+            ],
+            model_version=candidate_call.result.model_version,
+        )
+        calls[candidate_index] = InterviewerToolCallRecord(
+            call_sequence=candidate_call.call_sequence,
+            tool=candidate_call.tool,
+            request=candidate_call.request,
+            request_sha256=candidate_call.request_sha256,
+            result=stale_result,
+            result_sha256=content_sha256(stale_result),
+        )
+        poisoned_output = CachedInterviewerOutput(
+            request_sha256=cached.request_sha256,
+            backend_configuration_sha256=(
+                cached.backend_configuration_sha256
+            ),
+            decision=AskVettedQuestionDecision(question=stale_candidate),
+            tool_calls=calls,
+        )
+
+        class StaticPoisonedCache:
+            def get(self, key):
+                assert key == request_hash
+                return poisoned_output
+
+            def put(self, key, output):
+                raise AssertionError("cache hit must not write")
+
+        backend = DeterministicToolUsingBackend(config)
+        with pytest.raises(ValueError, match="current tool implementation"):
+            InterviewerOrchestrator(
+                state_model=model,
+                bank=small_bank(),
+                question_bank_id="phase4_test_bank",
+                question_bank_version=1,
+                backend=backend,
+                cache=StaticPoisonedCache(),
+            ).run_turn(state=state, request=request, created_at=NOW)
+        assert backend.call_count == 0
+
     def test_conflicting_evidence_produces_linked_clarification(self):
         model, state = initial_state()
         state = model.update(state, evidence("a", "b", 7.0, prompt_id="q1"))
@@ -363,6 +490,8 @@ class TestOrchestrator:
         record = InterviewerOrchestrator(
             state_model=model,
             bank=small_bank(),
+            question_bank_id="phase4_test_bank",
+            question_bank_version=1,
             backend=DeterministicToolUsingBackend(config),
             cache=InMemoryInterviewerCache(),
         ).run_turn(
@@ -395,6 +524,8 @@ class TestOrchestrator:
             InterviewerOrchestrator(
                 state_model=model,
                 bank=small_bank(),
+                question_bank_id="phase4_test_bank",
+                question_bank_version=1,
                 backend=backend,
                 cache=InMemoryInterviewerCache(),
             ).run_turn(
@@ -433,6 +564,8 @@ class TestOrchestrator:
             InterviewerOrchestrator(
                 state_model=model,
                 bank=small_bank(),
+                question_bank_id="phase4_test_bank",
+                question_bank_version=1,
                 backend=backend,
                 cache=InMemoryInterviewerCache(),
             ).run_turn(
@@ -453,6 +586,8 @@ class TestOrchestrator:
             InterviewerOrchestrator(
                 state_model=model,
                 bank=small_bank(),
+                question_bank_id="phase4_test_bank",
+                question_bank_version=1,
                 backend=DeterministicToolUsingBackend(config),
                 cache=InMemoryInterviewerCache(),
             ).run_turn(state=changed_state, request=request, created_at=NOW)
@@ -470,6 +605,8 @@ class TestPersistentCache:
         first = InterviewerOrchestrator(
             state_model=model,
             bank=small_bank(),
+            question_bank_id="phase4_test_bank",
+            question_bank_version=1,
             backend=first_backend,
             cache=JsonDirectoryInterviewerCache(cache_path),
         ).run_turn(state=state, request=request, created_at=NOW)
@@ -479,6 +616,8 @@ class TestPersistentCache:
         second = InterviewerOrchestrator(
             state_model=model,
             bank=small_bank(),
+            question_bank_id="phase4_test_bank",
+            question_bank_version=1,
             backend=second_backend,
             cache=JsonDirectoryInterviewerCache(cache_path),
         ).run_turn(state=state, request=request, created_at=NOW)

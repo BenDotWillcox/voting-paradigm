@@ -404,11 +404,17 @@ stream rather than being simulated as a conventional selector.
   and
 - in-memory and content-addressed directory caches. The persistent cache stores
   only the input hash plus structured output/tool trace, never raw private
-  conversation text.
+  conversation text. Cache hits re-run the pure local tools and reject any
+  stored result that differs from the current implementation.
 
 The deterministic backend is a test double, not the LLM experimental arm. A
 later live adapter must implement the same `InterviewerBackend` protocol and
 use a private ignored directory such as `eval/private_runs/interviewer_cache/`.
+Although raw conversation is excluded, cached tool traces contain
+participant-derived structure such as observed pairs, conflicts, domain
+coverage, and evidence links. The ignored, access-controlled path protects
+that structure; `JsonDirectoryInterviewerCache` cannot make an arbitrary path
+private.
 No target packet is part of an interviewer request, and the contract pins
 `target_packet_visible` to false. Phase 4B ends at a validated structured
 decision and uses canonical vetted question rendering; participant-facing
