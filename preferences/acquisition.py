@@ -1,7 +1,11 @@
 """
 Acquisition policies: which pair of items to ask about next.
 
-Stage 1 of the active-learning roadmap. Two policies ship today:
+Stage 1 of the active-learning roadmap. Three policies ship today:
+
+- ``fixed_sequence``: the canonical first unseen pair. This is the
+  questionnaire baseline: its sequence depends only on the versioned bank and
+  exclusions, never on answers, posterior state, or a random seed.
 
 - ``random``: uniform over unseen pairs (the baseline the eval harness
   scores active selection against).
@@ -12,9 +16,9 @@ Stage 1 of the active-learning roadmap. Two policies ship today:
 Stage 2 (expected information gain / BALD) plugs in as another selector
 behind the same protocol.
 
-Determinism: ``max_variance`` breaks ties lexicographically on the sorted
-pair, so the same state always yields the same question. ``random`` takes an
-injected ``random.Random`` seeded by the engine.
+Determinism: ``fixed_sequence`` and ``max_variance`` break ties
+lexicographically on the sorted pair, so the same inputs always yield the same
+question. ``random`` takes an injected ``random.Random`` seeded by the engine.
 """
 
 import random
@@ -77,6 +81,29 @@ class RandomPairSelector:
         return rng.choice(candidates)
 
 
+class FixedSequencePairSelector:
+    """Canonical non-adaptive questionnaire baseline.
+
+    The selector deliberately ignores posterior state and RNG. Holding the
+    question bank and exclusions fixed therefore produces the same question
+    sequence for every participant, which is the Phase 4 fixed-acquisition
+    control.
+    """
+
+    name = "fixed_sequence"
+
+    def select_pair(
+        self,
+        state: PreferenceState,
+        model: PreferenceModel,
+        bank: QuestionBank,
+        exclude_pairs: set[frozenset[ItemId]],
+        rng: random.Random,
+    ) -> Optional[Pair]:
+        candidates = _unseen_pairs(bank, exclude_pairs)
+        return candidates[0] if candidates else None
+
+
 class MaxVariancePairSelector:
     """Greedy uncertainty sampling: highest posterior std of (u_a - u_b)."""
 
@@ -102,6 +129,7 @@ class MaxVariancePairSelector:
 
 
 SELECTOR_REGISTRY: dict[str, type] = {
+    FixedSequencePairSelector.name: FixedSequencePairSelector,
     RandomPairSelector.name: RandomPairSelector,
     MaxVariancePairSelector.name: MaxVariancePairSelector,
 }

@@ -70,14 +70,16 @@ class TestRunTrial:
 class TestRunComparison:
     def test_smoke_all_cells(self):
         results = run_comparison(TINY, personas=DEFAULT_PERSONAS[:1])
-        # 2 models x 2 policies
-        assert len(results["summaries"]) == 4
+        # 2 models x 3 policies
+        assert len(results["summaries"]) == 6
         cells = {
             (s["model_name"], s["policy_name"]) for s in results["summaries"]
         }
         assert cells == {
+            ("gaussian_linear", "fixed_sequence"),
             ("gaussian_linear", "random"),
             ("gaussian_linear", "max_variance"),
+            ("bradley_terry", "fixed_sequence"),
             ("bradley_terry", "random"),
             ("bradley_terry", "max_variance"),
         }

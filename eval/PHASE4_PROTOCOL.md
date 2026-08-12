@@ -132,9 +132,11 @@ history, and demographic proxies remain excluded throughout.
 
 - **4A — architecture and experiment contract:** freeze the boundaries,
   comparison matrix, target isolation, and action rule. No provider calls.
-- **4B — tool-using interviewer:** implement provider-neutral tool request and
-  result contracts, a deterministic fixed-sequence selector, deterministic test
-  doubles, and the constrained interviewer.
+- **4B — tool-using interviewer (implemented):** provider-neutral tool request
+  and result contracts, deterministic fixed-sequence acquisition, constrained
+  structured actions, complete input/tool auditing, content-addressed
+  private-safe caching, and deterministic test doubles. This phase is
+  implemented without selecting or calling a live provider adapter.
 - **4C — confirmed conversational evidence:** implement proposal,
   confirmation, correction, provenance, and later ontology-expansion paths.
 - **4D — prediction readouts:** add `prediction_snapshot.v2` and a compatible
