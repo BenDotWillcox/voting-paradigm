@@ -198,6 +198,27 @@ The Phase 3 authoring contract is
 `eval/fixtures/preference_eval_bank_profile_v1.json`; validate and hash it by
 running `python -m eval.validate_bank_profile` against that path.
 
+**Phase 4A architecture (frozen):** the LLM is a provider-neutral elicitation
+orchestrator, not the durable preference store. It may choose vetted questions,
+clarify existing evidence, and inspect typed posterior uncertainty, candidate
+scores, coverage, and conflicts. Only the explicit preference model may move
+posterior state from eligible typed evidence; inferred conversational evidence
+has zero weight until participant confirmation. Ballot semantic mapping and
+prediction readout remain separate from preference storage. The direct LLM
+predictor is mandatory as an experimental control, while the intended
+candidate architecture is an LLM plus explicit posterior.
+
+Primary held-out elicitation cannot inspect a target packet or ask a
+target-specific follow-up after packet exposure. Prediction arms receive the
+same neutral packet and evidence cutoff. The action policy is held constant:
+select the top-probability option for single choice, emit a valid format-
+specific prediction for rich ballots, display confidence, and allow the
+participant to override or abstain. The model itself cannot abstain or defer;
+confidence thresholds are diagnostics and a possible future user-controlled
+authorization policy. The machine-readable contract is
+`eval/fixtures/preference_eval_phase4_protocol_v1.json`; the rationale and
+Phase 4A-4E sequence are in `eval/PHASE4_PROTOCOL.md`.
+
 ### The comparison story
 
 - **Synthetic track:** Gaussian and Bradley-Terry models plus acquisition
@@ -241,7 +262,12 @@ Question selection evolves in three stages, each a shippable step:
 
 ### Uncertainty-aware agent voting
 
-Agent consults the posterior when casting a simulated ballot. If the margin between top candidates is within the posterior's noise envelope for the relevant utility differences, the agent flags low confidence and recommends targeted elicitation (looping back into stage 3 above). This is the link between model, agent, and question generator that makes the thesis concrete.
+The agent consults the posterior when casting a simulated ballot and always
+selects the top-probability option in the evaluation. A small margin is shown
+as low confidence rather than converted into model abstention. Targeted
+elicitation may reduce uncertainty before a future target is exposed, or in a
+separately reported consultation mode; it is not a target-specific escape hatch
+in the primary held-out prediction.
 
 ### Deferred within demo 2 (do not build yet)
 
@@ -438,17 +464,20 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
   round remains in the restricted audit trail
 
 **Next, in order:**
-1. Add the direct LLM baseline; structured/conversational/combined evidence
-   ablation; evidence IDs and unsupported-assumption flags; fixed/expanding
-   ontology ablation; hybrid explicit posterior; and prompt/order robustness
-2. Evaluate LLM follow-ups after fixed, random, and max-variance policies
-3. Build separate blind evaluation and future-facing showcase modes
-4. Freeze inputs, models, prompts, thresholds, seeds, and metrics before Ben's
+1. Implement the Phase 4B provider-neutral interviewer tool surface and
+   deterministic test doubles under the Phase 4A contract
+2. Add confirmed conversational evidence with evidence IDs and unsupported-
+   assumption flags, then fixed/expanding ontology variants
+3. Implement authored semantic mapping, direct LLM control, and hybrid
+   probability readouts on common evidence cutoffs
+4. Add prompt, option-order/label, and stochastic robustness diagnostics;
+   freeze inputs, models, prompts, seeds, weights, and metrics before Ben's
    held-out case study
-5. Schedule and execute the six blinded waves and 7-14 day retests only after
+5. Build separate blind evaluation and future-facing showcase modes
+6. Schedule and execute the six blinded waves and 7-14 day retests only after
    the remaining model/evaluation freeze is complete
-6. *(Deferred)* LLM-generated vote rationales
-7. *(Deferred)* LLM-generated personas
+7. *(Deferred)* LLM-generated vote rationales
+8. *(Deferred)* LLM-generated personas
 
 ### Demo 3: Algorithmic districting
 

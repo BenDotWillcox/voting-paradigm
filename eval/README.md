@@ -345,11 +345,48 @@ must additionally pass `validate_completed_run_against_plan` before analysis.
 The frozen Phase 3C bundle is ready for blinded case-study scheduling, but the
 six waves and retests have not yet been executed.
 
-Phase 4 will compare structured, conversational, and combined evidence inputs.
-LLM predictions will retain private supporting-evidence IDs and unsupported-
-assumption flags, and development evaluation will measure sensitivity to
-semantically equivalent prompts plus option-order and option-label
-permutations. Repeated calls are sensitivity or Monte Carlo diagnostics, not
-independent human observations. The Phase 2 runner still deliberately stops
-before classical-model adapters, direct LLM integration, the final bank, or a
-human-facing UI.
+## Phase 4A Architecture And Comparison Freeze
+
+Phase 4A defines the preference-system experiment before selecting an LLM
+provider or prompt. The LLM interviewer is an elicitation orchestrator with
+typed access to posterior uncertainty, candidate-question scores, evidence
+coverage, and conflicts. An explicit probabilistic model remains the sole
+owner of durable preference state; LLM-extracted evidence has zero weight
+until participant confirmation. The direct LLM predictor is a required
+experimental control, not the intended state architecture.
+
+The public profile freezes four acquisition policies, six reporting-anchor
+model arms, six component ablations, three evidence conditions, held-out
+target isolation, and one action rule. Model representation and readout
+variants replay the same realized evidence at the same cutoffs. Acquisition
+policies create different evidence streams, so causal acquisition claims
+require seeded synthetic counterfactuals or later randomized participants;
+one case-study path is descriptive only.
+The separately declared party-conditioned prior is evaluation-only, requires
+external support, and may use optional metadata collected only after retest; it
+never enters the live preference evidence.
+
+Validate and hash the public contract without loading the restricted measure
+bank:
+
+```bash
+python -m eval.validate_phase4_protocol \
+  eval/fixtures/preference_eval_phase4_protocol_v1.json \
+  eval/fixtures/preference_eval_bank_profile_v1.json
+```
+
+The complete rationale and Phase 4A-4E sequence are in
+`eval/PHASE4_PROTOCOL.md`. The evaluated action policy selects the
+top-probability option for single-choice measures and requires valid
+format-specific outputs for ranked, approval, score, and quadratic measures.
+It displays confidence and permits participant override or abstention.
+Confidence thresholds remain diagnostics; the model cannot improve its score
+by abstaining or deferring.
+
+Later Phase 4 work will add provider-neutral interviewer tools, confirmed
+conversational evidence, authored/direct-LLM/hybrid prediction readouts, and
+prompt/order robustness. LLM predictions will retain private supporting-
+evidence IDs and unsupported-assumption flags. Repeated calls are sensitivity
+or Monte Carlo diagnostics, not independent human observations. The Phase 2
+runner still deliberately stops before those implementations or a human-facing
+UI.
