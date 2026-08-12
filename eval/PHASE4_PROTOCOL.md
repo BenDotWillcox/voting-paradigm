@@ -68,11 +68,12 @@ answered on the unasked counterfactual paths.
 
 Representation, evidence-condition, readout, and evidence-weighting variants
 can be replayed at identical evidence cutoffs on the same realized history.
-The six named model arms are the minimum reporting anchors rather than a claim
-that the component choices are inseparable. The required ablations independently
-compare acquisition, structured versus confirmed LLM extraction, evidence
-condition, fixed versus expanding ontology, authored versus direct-LLM versus
-hybrid readout, and reliability-weighted versus uniform evidence.
+The six named model arms are the exact frozen reporting anchors. Additional
+component variants are reported as ablation replays rather than added as new
+arms. The required ablations independently compare acquisition, structured
+versus confirmed LLM extraction, evidence condition, fixed versus expanding
+ontology, authored versus direct-LLM versus hybrid readout, and reliability-
+weighted versus uniform evidence.
 
 ### Evidence condition and ballot readout
 
@@ -132,11 +133,15 @@ history, and demographic proxies remain excluded throughout.
 - **4A — architecture and experiment contract:** freeze the boundaries,
   comparison matrix, target isolation, and action rule. No provider calls.
 - **4B — tool-using interviewer:** implement provider-neutral tool request and
-  result contracts, deterministic test doubles, and the constrained interviewer.
+  result contracts, a deterministic fixed-sequence selector, deterministic test
+  doubles, and the constrained interviewer.
 - **4C — confirmed conversational evidence:** implement proposal,
   confirmation, correction, provenance, and later ontology-expansion paths.
-- **4D — prediction readouts:** implement authored semantic mapping, direct LLM
-  control, and hybrid readouts on common snapshots.
+- **4D — prediction readouts:** add `prediction_snapshot.v2` and a compatible
+  versioned run contract for ranking tiers, approval sets, scores, and
+  quadratic allocations; preserve `prediction_snapshot.v1` and the frozen
+  Phase 3C bundle hashes. Then implement authored semantic mapping, direct LLM
+  control, and hybrid readouts on common evidence cutoffs.
 - **4E — robustness and final freeze:** test prompt paraphrases, option order
   and labels, stochastic sensitivity, and unsupported assumptions before the
   held-out case study.

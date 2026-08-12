@@ -404,12 +404,14 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
   reviewer-provenance ledger, six-wave plan, and execution bundle frozen
 
 **Next, in order:**
-1. Implement the Phase 4B provider-neutral interviewer tool surface and
-   deterministic test doubles under the Phase 4A contract
+1. Implement the Phase 4B provider-neutral interviewer tool surface, the
+   missing deterministic fixed-sequence selector, and deterministic test
+   doubles under the Phase 4A contract
 2. Add confirmed conversational evidence, then fixed/expanding ontology
    variants without allowing unconfirmed LLM output to move the posterior
-3. Implement authored semantic mapping, direct LLM control, and hybrid
-   probability readouts on common evidence cutoffs
+3. Add `prediction_snapshot.v2` plus a compatible run contract without
+   mutating v1, then implement authored semantic mapping, direct LLM control,
+   and hybrid probability readouts on common evidence cutoffs
 4. Add prompt, option-order/label, and stochastic robustness diagnostics;
    freeze inputs, models, prompts, seeds, weights, and metrics before Ben's
    held-out case study

@@ -64,8 +64,12 @@ def test_manifest_binds_each_architecture_surface():
     manifest = build_phase4_protocol_manifest(protocol)
 
     assert manifest.protocol_sha256 == content_sha256(protocol)
+    assert manifest.bank_profile_sha256 == protocol.bank_profile_sha256
     assert manifest.architecture_sha256 == content_sha256(protocol.architecture)
     assert manifest.interviewer_sha256 == content_sha256(protocol.interviewer)
+    assert manifest.target_isolation_sha256 == content_sha256(
+        protocol.target_isolation
+    )
     assert manifest.comparison_sha256 == content_sha256(protocol.comparison)
     assert manifest.action_policy_sha256 == content_sha256(
         protocol.action_policy
@@ -77,6 +81,17 @@ def test_protocol_rejects_unknown_fields():
     raw["provider"] = "not-frozen-in-phase-4a"
 
     with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
+        Phase4Protocol.model_validate(raw)
+
+
+def test_protocol_requires_timezone_aware_created_at():
+    raw = _raw_protocol()
+    raw["created_at"] = "2026-08-11T12:00:00"
+
+    with pytest.raises(
+        ValidationError,
+        match="created_at must include a timezone",
+    ):
         Phase4Protocol.model_validate(raw)
 
 
@@ -227,6 +242,44 @@ def test_direct_llm_must_remain_a_control_without_posterior_ownership():
         Phase4Protocol.model_validate(raw)
 
 
+def test_model_arm_evidence_conditions_must_be_unique():
+    raw = _raw_protocol()
+    arm = _arm(raw, "direct_llm_control")
+    evidence_conditions = arm["evidence_conditions"]
+    assert isinstance(evidence_conditions, list)
+    evidence_conditions.append("structured_only")
+
+    with pytest.raises(ValidationError, match="must be unique"):
+        Phase4Protocol.model_validate(raw)
+
+
+def test_model_arm_explicit_posterior_flag_must_match_representation():
+    raw = _raw_protocol()
+    arm = _arm(raw, "gaussian_linear_fixed")
+    arm["uses_explicit_posterior"] = False
+
+    with pytest.raises(ValidationError, match="must agree with representation"):
+        Phase4Protocol.model_validate(raw)
+
+
+def test_expanding_ontology_requires_expanding_representation():
+    raw = _raw_protocol()
+    arm = _arm(raw, "hybrid_expanding_ontology")
+    arm["representation"] = "explicit_posterior_fixed"
+
+    with pytest.raises(ValidationError, match="expanding ontology requires"):
+        Phase4Protocol.model_validate(raw)
+
+
+def test_uniform_prior_cannot_consume_participant_evidence():
+    raw = _raw_protocol()
+    arm = _arm(raw, "uniform_prior")
+    arm["evidence_conditions"] = ["structured_only"]
+
+    with pytest.raises(ValidationError, match="uniform prior cannot consume"):
+        Phase4Protocol.model_validate(raw)
+
+
 def test_hybrid_readout_requires_explicit_posterior():
     raw = _raw_protocol()
     arm = _arm(raw, "hybrid_fixed_ontology")
@@ -324,13 +377,25 @@ def test_action_policy_rejects_top_choice_only_rich_ballots():
         Phase4Protocol.model_validate(raw)
 
 
-def test_protocol_rejects_wrong_public_bank_profile_hash():
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("bank_profile_id", "wrong_profile", "bank_profile_id"),
+        ("bank_profile_version", 2, "bank_profile_version"),
+        ("bank_profile_sha256", "0" * 64, "bank_profile_sha256"),
+    ],
+)
+def test_protocol_rejects_wrong_public_bank_profile_binding(
+    field,
+    value,
+    message,
+):
     raw = _raw_protocol()
-    raw["bank_profile_sha256"] = "0" * 64
+    raw[field] = value
     protocol = Phase4Protocol.model_validate(raw)
     bank_profile = load_bank_profile(BANK_PROFILE_PATH)
 
-    with pytest.raises(ValueError, match="bank_profile_sha256"):
+    with pytest.raises(ValueError, match=message):
         validate_phase4_protocol_against_bank_profile(protocol, bank_profile)
 
 

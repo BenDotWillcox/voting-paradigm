@@ -40,10 +40,14 @@ def _require_complete_enum_set(
     label: str,
     values: list[EnumValue],
     enum_type: type[EnumValue],
+    *,
+    set_name: str = "v1",
 ) -> None:
     expected = set(enum_type)
     if set(values) != expected:
-        raise ValueError(f"{label} must contain the complete v1 set")
+        raise ValueError(
+            f"{label} must contain the complete {set_name} set"
+        )
     if len(values) != len(expected):
         raise ValueError(f"{label} cannot contain duplicates")
 
@@ -196,22 +200,24 @@ class InterviewerV1Policy(ContractModel):
 
     @model_validator(mode="after")
     def require_complete_v1_surface(self) -> Self:
-        if set(self.allowed_actions) != set(InterviewerAction):
-            raise ValueError(
-                "allowed_actions must contain the complete Phase 4A v1 set"
-            )
-        if len(self.allowed_actions) != len(InterviewerAction):
-            raise ValueError("allowed_actions cannot contain duplicates")
-        if set(self.allowed_tools) != set(InterviewerTool):
-            raise ValueError(
-                "allowed_tools must contain the complete Phase 4A v1 set"
-            )
-        if len(self.allowed_tools) != len(InterviewerTool):
-            raise ValueError("allowed_tools cannot contain duplicates")
+        _require_complete_enum_set(
+            "allowed_actions",
+            self.allowed_actions,
+            InterviewerAction,
+            set_name="Phase 4A v1",
+        )
+        _require_complete_enum_set(
+            "allowed_tools",
+            self.allowed_tools,
+            InterviewerTool,
+            set_name="Phase 4A v1",
+        )
         return self
 
 
 class TargetIsolationPolicy(ContractModel):
+    """Input boundary for live model arms, excluding evaluation-only benchmarks."""
+
     primary_mode: Literal["held_out_delegation_prediction"] = (
         "held_out_delegation_prediction"
     )
@@ -231,12 +237,11 @@ class TargetIsolationPolicy(ContractModel):
     def require_complete_exclusion_set(
         cls, value: list[ModelExcludedInput]
     ) -> list[ModelExcludedInput]:
-        if set(value) != set(ModelExcludedInput):
-            raise ValueError(
-                "excluded_model_inputs must contain the complete v1 set"
-            )
-        if len(value) != len(ModelExcludedInput):
-            raise ValueError("excluded_model_inputs cannot contain duplicates")
+        _require_complete_enum_set(
+            "excluded_model_inputs",
+            value,
+            ModelExcludedInput,
+        )
         return value
 
 
@@ -296,7 +301,7 @@ class ModelArm(ContractModel):
             self.representation is PreferenceRepresentation.UNIFORM_PRIOR
             and self.evidence_conditions
         ):
-            raise ValueError("population prior cannot consume participant evidence")
+            raise ValueError("uniform prior cannot consume participant evidence")
         return self
 
 
@@ -473,12 +478,11 @@ class ActionPolicy(ContractModel):
     def require_every_supported_ballot_type(
         cls, value: list[BallotType]
     ) -> list[BallotType]:
-        if set(value) != set(BallotType):
-            raise ValueError(
-                "supported_ballot_types must contain the complete v1 set"
-            )
-        if len(value) != len(BallotType):
-            raise ValueError("supported_ballot_types cannot contain duplicates")
+        _require_complete_enum_set(
+            "supported_ballot_types",
+            value,
+            BallotType,
+        )
         return value
 
 
@@ -552,6 +556,8 @@ def validate_phase4_protocol_against_bank_profile(
 def build_phase4_protocol_manifest(
     protocol: Phase4Protocol,
 ) -> Phase4ProtocolManifest:
+    """Hash a protocol after its public bank-profile binding is validated."""
+
     return Phase4ProtocolManifest(
         protocol_id=protocol.protocol_id,
         protocol_version=protocol.protocol_version,
