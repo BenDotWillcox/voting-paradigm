@@ -152,7 +152,14 @@ Phase 3C also provides per-presentation option-order seeds and run validation
 for wave order, retest independence, and the 7-14 day interval. The frozen
 bundle is ready for blinded case-study scheduling; the six waves and retests
 have not yet been executed.
-Phase 4 will add evidence-grounding and prompt/order robustness diagnostics.
+Phase 4A now freezes the provider-neutral preference-system architecture:
+the LLM is a tool-using elicitation orchestrator, an explicit posterior owns
+durable preference state, a direct LLM predictor remains a required control,
+and primary elicitation cannot inspect held-out target packets. Its public
+six-arm comparison profile binds to the Phase 3A bank profile without loading
+restricted content. Later Phase 4 work will implement the interviewer tools,
+confirmed conversational evidence, ballot readouts, and prompt/order
+robustness diagnostics.
 Public aggregate artifacts still require explicit release review.
 Demo 3 (algorithmic districting) currently ships the apportionment slice;
 district polygon generation comes next. The ballot-measure, electorate, and
