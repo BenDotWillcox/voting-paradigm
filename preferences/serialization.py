@@ -72,6 +72,10 @@ def _evidence_from_dict(data: dict[str, Any]) -> Evidence:
         response_time_ms=data.get("response_time_ms"),
         timestamp=data.get("timestamp"),
         metadata=dict(data.get("metadata", {})),
+        event_id=data.get("event_id"),
+        confirmed_by_participant=bool(
+            data.get("confirmed_by_participant", False)
+        ),
     )
 
 

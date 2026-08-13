@@ -209,6 +209,7 @@ export async function submitPreferenceResponseAction(input: {
       item_a: left.item_id,
       item_b: right.item_id,
       value: input.chosenOptionId === left.item_id ? magnitude : -magnitude,
+      confirmed_by_participant: false,
       confidence: 1,
       prompt_id: currentQuestion.id,
       extracted_claims: [],

@@ -99,6 +99,8 @@ def _evidence_from_schema(schema: EvidenceSchema) -> Evidence:
         response_time_ms=schema.response_time_ms,
         timestamp=schema.timestamp,
         metadata=dict(schema.metadata),
+        event_id=schema.event_id,
+        confirmed_by_participant=schema.confirmed_by_participant,
     )
 
 
@@ -141,9 +143,9 @@ def start_session(req: StartSessionRequest):
 def submit_evidence(req: SubmitEvidenceRequest):
     """Apply one piece of typed evidence and return the next question (or null).
 
-    Evidence sources without an implemented likelihood (free_text_extraction,
-    correction, override) are part of the declared contract but rejected with
-    422 until their handlers land.
+    This legacy direct endpoint accepts only structured evidence. Confirmed
+    inferred and correction evidence requires a separate future server-side
+    Phase 4C ledger integration; override never trains.
     """
     state = _state_from_schema(req.state)
     try:

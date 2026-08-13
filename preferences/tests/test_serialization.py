@@ -42,6 +42,16 @@ class TestRoundtrip:
         data = state_to_dict(make_state())
         assert data["evidence"][0]["source"] == "pairwise"
 
+    def test_typed_confirmation_and_event_id_round_trip(self):
+        state = make_state()
+        state.evidence[0].event_id = "evidence_one"
+        state.evidence[0].confirmed_by_participant = True
+
+        restored = state_from_dict(state_to_dict(state))
+
+        assert restored.evidence[0].event_id == "evidence_one"
+        assert restored.evidence[0].confirmed_by_participant is True
+
 
 class TestLegacyUpgrade:
     def legacy_dict(self):

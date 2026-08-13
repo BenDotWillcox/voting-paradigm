@@ -22,7 +22,7 @@ probit-flavored baseline in this package is ``BradleyTerryLaplaceModel``
 
 The evidence weight provides noise scaling: |value| near 10 with confidence
 1.0 => high-information observation (low noise); |value| near 0 or low
-extractor confidence => high noise.
+evidence confidence => high noise.
 """
 
 import numpy as np

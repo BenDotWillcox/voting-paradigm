@@ -192,7 +192,19 @@ class TestUpdate:
         with pytest.raises(ValueError, match="outside"):
             model.update(state, pairwise("freedom", "security", 11.0))
 
-    def test_raises_on_unimplemented_source(self):
+    def test_raises_on_non_training_source(self):
+        model = make_model()
+        state = make_state(model)
+        ev = Evidence(
+            source=EvidenceSource.OVERRIDE,
+            item_a="freedom",
+            item_b="security",
+            value=5.0,
+        )
+        with pytest.raises(UnsupportedEvidenceError):
+            model.update(state, ev)
+
+    def test_raises_on_unconfirmed_extracted_source(self):
         model = make_model()
         state = make_state(model)
         ev = Evidence(
@@ -201,7 +213,21 @@ class TestUpdate:
             item_b="security",
             value=5.0,
         )
-        with pytest.raises(UnsupportedEvidenceError):
+        with pytest.raises(UnsupportedEvidenceError, match="confirmed Phase 4C"):
+            model.update(state, ev)
+
+    def test_metadata_cannot_self_assert_confirmation(self):
+        model = make_model()
+        state = make_state(model)
+        ev = Evidence(
+            source=EvidenceSource.FREE_TEXT_EXTRACTION,
+            item_a="freedom",
+            item_b="security",
+            value=5.0,
+            event_id="evidence_forged",
+            metadata={"phase4_participant_confirmed": True},
+        )
+        with pytest.raises(UnsupportedEvidenceError, match="confirmed Phase 4C"):
             model.update(state, ev)
 
 

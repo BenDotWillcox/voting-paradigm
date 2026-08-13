@@ -24,6 +24,8 @@ export const evidenceSchema = z.object({
   item_a: z.string(),
   item_b: z.string(),
   value: z.number().min(-10).max(10),
+  event_id: z.string().nullish(),
+  confirmed_by_participant: z.literal(false).default(false),
   confidence: z.number().gt(0).max(1).default(1),
   prompt_id: z.string().nullish(),
   raw_response: z.string().nullish(),
@@ -32,6 +34,12 @@ export const evidenceSchema = z.object({
   timestamp: z.string().nullish(),
   metadata: z.record(z.unknown()).default({}),
 });
+
+const directWireEvidenceSchema = evidenceSchema.refine(
+  (evidence) =>
+    evidence.source === "pairwise" || evidence.source === "slider",
+  "Legacy preference state accepts only pairwise or slider evidence"
+);
 
 /** Pre-Evidence snapshots stored a `responses` list; passed through so the
  * Python API can upgrade them (see preferences/serialization.py). */
@@ -49,7 +57,7 @@ export const preferenceStateSchema = z.object({
   item_ids: z.array(z.string()),
   mu: z.array(z.number()),
   sigma_flat: z.array(z.number()),
-  evidence: z.array(evidenceSchema).nullish(),
+  evidence: z.array(directWireEvidenceSchema).nullish(),
   responses: z.array(legacyResponseSchema).nullish(),
   n_questions_asked: z.number().int().nonnegative(),
   asked_question_ids: z.array(z.string()).default([]),

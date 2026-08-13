@@ -12,6 +12,7 @@ import numpy as np
 from ..types import (
     IMPLEMENTED_EVIDENCE_SOURCES,
     Evidence,
+    EvidenceSource,
     ItemId,
     PreferenceState,
     UnsupportedEvidenceError,
@@ -63,13 +64,25 @@ def normalize_pairwise_evidence(
     signed_gap = value / 10 in [-1, 1] is the observed utility gap u_a - u_b.
     weight in [min_weight, 1] scales observation informativeness: it grows
     with |value| (a confident slider position) and with the evidence
-    confidence (1.0 for direct input, lower for extracted claims).
+    confidence (1.0 for direct and currently confirmed input; lower only under
+    an explicitly evaluated weighting policy).
     """
     if evidence.source not in IMPLEMENTED_EVIDENCE_SOURCES:
         raise UnsupportedEvidenceError(
             f"No likelihood implemented for evidence source "
             f"'{evidence.source.value}'. Supported: "
             f"{sorted(s.value for s in IMPLEMENTED_EVIDENCE_SOURCES)}"
+        )
+    if evidence.source in {
+        EvidenceSource.FREE_TEXT_EXTRACTION,
+        EvidenceSource.CORRECTION,
+    } and (
+        evidence.event_id is None
+        or not evidence.confirmed_by_participant
+    ):
+        raise UnsupportedEvidenceError(
+            f"evidence source '{evidence.source.value}' requires a confirmed "
+            "Phase 4C evidence event"
         )
     if evidence.item_a not in item_index or evidence.item_b not in item_index:
         raise ValueError(

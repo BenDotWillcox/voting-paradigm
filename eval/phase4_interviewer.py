@@ -87,10 +87,10 @@ class InterviewerMessage(ContractModel):
 class EvidenceAuditReference(ContractModel):
     """Stable audit identity for evidence already present in a state.
 
-    Phase 4C will make the event id part of the durable evidence contract. In
-    4B the caller supplies the id and this record binds it to one exact index
-    and value in the current posterior state so clarification cannot point at
-    invented or later evidence.
+    Phase 4C materialized evidence carries the event id directly. Legacy and
+    synthetic states may still omit it, so this record continues to bind a
+    caller-supplied id to one exact index and value in the current posterior
+    state.
     """
 
     record_version: Literal["phase4_evidence_audit_reference.v1"] = (
@@ -915,7 +915,11 @@ def _validate_reference_against_evidence(
     evidence: Evidence,
 ) -> None:
     if (
-        reference.evidence_sha256 != preference_evidence_sha256(evidence)
+        (
+            evidence.event_id is not None
+            and reference.evidence_event_id != evidence.event_id
+        )
+        or reference.evidence_sha256 != preference_evidence_sha256(evidence)
         or reference.item_a != evidence.item_a
         or reference.item_b != evidence.item_b
         or reference.value != evidence.value
