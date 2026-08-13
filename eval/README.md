@@ -417,13 +417,56 @@ that structure; `JsonDirectoryInterviewerCache` cannot make an arbitrary path
 private.
 No target packet is part of an interviewer request, and the contract pins
 `target_packet_visible` to false. Phase 4B ends at a validated structured
-decision and uses canonical vetted question rendering; participant-facing
-clarification wording and confirmed extraction arrive together in Phase 4C.
+decision and uses canonical vetted question rendering. Participant-facing
+clarification rendering remains part of the later session integration.
 
-Phase 4C will add confirmed conversational evidence, stable evidence IDs in the
-durable evidence contract, and fixed/expanding ontology paths. Later phases add
-authored/direct-LLM/hybrid prediction readouts and prompt/order robustness. LLM
-predictions will retain private supporting-evidence IDs and unsupported-
-assumption flags. Repeated calls are sensitivity or Monte Carlo diagnostics,
-not independent human observations. The Phase 2 runner still deliberately
-stops before those implementations or a human-facing UI.
+## Phase 4C Confirmed Fixed-Ontology Evidence
+
+`eval/phase4_evidence.py` implements the first Phase 4C slice without a live
+extractor provider. It keeps four layers separate:
+
+- private raw conversation messages;
+- hash-bound extraction requests and independently confirmable claim
+  proposals, each with source message IDs, extractor provenance and
+  confidence, unsupported-assumption flags, and a literal zero provisional
+  model weight;
+- explicit participant accept, edit, or reject decisions for each proposal;
+  and
+- active typed `preferences.Evidence` records that can update an explicit
+  posterior only after confirmation.
+
+Accepted or edited inferred claims receive durable evidence-event IDs.
+Extractor confidence remains audit metadata rather than silently becoming a
+model weight. If a proposal carries unsupported-assumption flags, an accept or
+edit decision must acknowledge every flag. Rejections create no evidence.
+Corrections append a new confirmed event that supersedes one active event;
+they never mutate or delete the earlier record, so replay before and after the
+correction cutoff is deterministic.
+
+`materialize_all_evidence_conditions` derives structured-only,
+conversation-only, and combined views at the same event cutoff. Corrections
+carry explicit structured or conversation provenance. Combined evidence uses
+the latest correction; each single-source ablation uses the latest event in
+that lineage with matching provenance. A conversational correction therefore
+does not leak its revised value into structured-only: that counterfactual
+retains the prior structured answer.
+
+Accept and edit decisions both materialize as `free_text_extraction` because
+both begin with an extractor proposal. The typed decision kind remains in
+metadata so analysis can distinguish a verbatim participant acceptance from a
+participant-authored edit rather than quietly conflating them.
+
+The legacy direct HTTP route accepts only pairwise/slider evidence in both the
+client-supplied state and the newly submitted observation. Its wire schema
+also pins `confirmed_by_participant` to false. Confirmed inferred/correction
+evidence must enter through a future server-side Phase 4C ledger integration,
+not through a self-asserted client snapshot. The deterministic extractor is a
+scripted boundary test double, not an LLM arm or a selected provider.
+
+Expanding-ontology admission, duplicate detection, shrinkage, merge, and prune
+rules remain the next Phase 4C slice. Later phases add authored/direct-LLM/
+hybrid prediction readouts and prompt/order robustness. LLM predictions will
+retain private supporting-evidence IDs and unsupported-assumption flags.
+Repeated calls are sensitivity or Monte Carlo diagnostics, not independent
+human observations. The Phase 2 runner still deliberately stops before those
+implementations or a human-facing UI.

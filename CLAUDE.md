@@ -163,7 +163,7 @@ below.
 - **Gaussian linear utility model** (`GaussianLinearUtilityModel`, renamed from `ThurstonePairwiseModel` — it isn't actually Thurstone Case V). Gaussian likelihood on continuous strength observations; closed-form Kalman-style posterior update. Fast, interpretable, native uncertainty.
 - **Bradley-Terry + Laplace approximation** (`BradleyTerryLaplaceModel`). Logistic likelihood on signed strength, with `|strength|/10` as per-observation weight. MAP via Newton refit from the full evidence history (order-independent); posterior approximated as Gaussian around the MAP. The canonical classical pairwise-ranking baseline.
 
-**Evidence contract (implemented).** All elicitation modalities normalize into typed `Evidence` (`preferences/types.py`): sources `pairwise | slider | free_text_extraction | correction | override`, a signed value in [-10, 10] over an item pair, and a confidence weight. Only pairwise/slider have likelihoods today; the other sources are declared contract, rejected with 422 at the API until their handlers land. LLM components may *produce* evidence; only deterministic model code may *apply* it. Ballot-level overrides are recorded for audit and never update the posterior; dimension-level corrections become evidence only after user confirmation.
+**Evidence contract (implemented).** All elicitation modalities normalize into typed `Evidence` (`preferences/types.py`): sources `pairwise | slider | free_text_extraction | correction | override`, a signed value in [-10, 10] over an item pair, and a confidence weight. Pairwise/slider are direct evidence; free-text and correction sources share that likelihood only when a durable event ID and typed participant-confirmation flag are present. The legacy API accepts only direct sources in client state and new submissions. LLM components may *propose* evidence; only deterministic model code may apply confirmed materialized evidence. Ballot-level overrides are recorded for audit and never update the posterior.
 
 **Vote preview mapping (decided, not yet built).** Fixed-bank models score ballot options via authored stance vectors (option utility = stance · posterior over value items), keeping all models comparable at the vote layer; the embedding model additionally scores option text natively.
 
@@ -419,10 +419,11 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 
 **Done:**
 - Preferences package: question bank + elicitation engine + pytest suite
-- Typed `Evidence` contract (pairwise/slider implemented; free-text/correction/override declared, 422 until built); legacy `responses`/`thurstone_v1` states upgrade transparently in `preferences/serialization.py`
+- Typed `Evidence` contract with durable event IDs and typed confirmation: pairwise/slider are direct; confirmed free-text/correction share the pairwise likelihood; override never trains; legacy `responses`/`thurstone_v1` states upgrade transparently in `preferences/serialization.py`
 - `GaussianLinearUtilityModel` (renamed from `ThurstonePairwiseModel`, docstrings corrected) + `BradleyTerryLaplaceModel`; model registry with `model_for_version` state routing
 - Fixed-sequence, random, and max-variance acquisition in `preferences/acquisition.py`
 - Phase 4B provider-neutral constrained interviewer in `eval/phase4_interviewer.py`: four typed read-only tools, exact vetted-question/evidence-linked actions, deterministic backend test double, content-addressed private-safe cache, and complete version/hash/seed/evidence-cutoff audit records; no live provider adapter
+- Phase 4C fixed-ontology evidence lifecycle in `eval/phase4_evidence.py`: raw-message separation, hash-bound zero-weight per-claim proposals, explicit participant accept/edit/reject decisions, unsupported-assumption acknowledgement, append-only correction/supersession with typed source provenance, durable evidence IDs, same-cutoff structured/conversation/combined materialization without cross-condition correction leakage, and a deterministic extractor test double; no expanding ontology or live provider adapter
 - Fixed-bank eval harness: 4 authored synthetic personas + seeded Dirichlet-mixture persona generator (`eval/personas.py`), three response models as the misspecification axis (`gaussian_gap` matches the Gaussian likelihood, `logistic_choice` matches BT, `sloppy` matches neither — `eval/response_models.py`), held-out pair splits, log-likelihood/accuracy/Brier/Kendall-τ/calibration curves, models × policies comparison (`python -m eval.run_preference_eval --response-model ...`), grid sweeps for notebooks (`eval/sweeps.py`)
 - API: `/sessions/evidence` endpoint (replaces `/sessions/respond`), model + selection-policy params on session start
 - TS hygiene: Zod-validated JSONB boundaries (`lib/validations/preferences-schemas.ts`); `startPreferenceSession` race fixed via server-generated UUID + single insert
@@ -465,8 +466,8 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
   round remains in the restricted audit trail
 
 **Next, in order:**
-1. Add confirmed conversational evidence with evidence IDs and unsupported-
-   assumption flags, then fixed/expanding ontology variants
+1. Add expanding-ontology admission, duplicate detection, shrinkage, merge,
+   and prune rules on top of the confirmed fixed-ontology evidence boundary
 2. Add `prediction_snapshot.v2` plus a compatible run contract without
    mutating v1, then implement authored semantic mapping, direct LLM control,
    and hybrid probability readouts on common evidence cutoffs

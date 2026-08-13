@@ -142,7 +142,7 @@ def test_bad_evidence_returns_400(client):
     assert r.status_code == 400
 
 
-def test_unimplemented_evidence_source_returns_422(client):
+def test_unconfirmed_inferred_evidence_returns_422(client):
     r = client.post(
         "/api/preferences/sessions/start",
         json={"user_id": "u1", "session_id": "s1", "target_questions": 5},
@@ -166,7 +166,124 @@ def test_unimplemented_evidence_source_returns_422(client):
         },
     )
     assert r.status_code == 422
-    assert "free_text_extraction" in r.json()["detail"]
+    assert "free_text_extraction" in str(r.json()["detail"])
+
+
+def test_inferred_evidence_cannot_be_smuggled_through_client_state(client):
+    started = client.post(
+        "/api/preferences/sessions/start",
+        json={
+            "user_id": "u1",
+            "session_id": "s1",
+            "target_questions": 5,
+            "model": "bradley_terry",
+        },
+    ).json()
+    state = started["state"]
+    question = started["question"]
+    item_a, item_b = [option["item_id"] for option in question["options"]]
+    state["evidence"] = [
+        {
+            "event_id": "evidence_confirmed_one",
+            "source": "free_text_extraction",
+            "item_a": item_a,
+            "item_b": item_b,
+            "value": 3.0,
+            "metadata": {"phase4_participant_confirmed": True},
+        }
+    ]
+
+    response = client.post(
+        "/api/preferences/sessions/evidence",
+        json={
+            "state": state,
+            "evidence": {
+                "source": "pairwise",
+                "item_a": item_a,
+                "item_b": item_b,
+                "value": 5.0,
+            },
+            "target_questions": 5,
+        },
+    )
+
+    assert response.status_code == 422
+    assert "wire preference state" in str(response.json()["detail"])
+
+
+def test_client_cannot_self_assert_typed_participant_confirmation(client):
+    started = client.post(
+        "/api/preferences/sessions/start",
+        json={"user_id": "u1", "session_id": "s1", "target_questions": 5},
+    ).json()
+    state = started["state"]
+    question = started["question"]
+    item_a, item_b = [option["item_id"] for option in question["options"]]
+    state["evidence"] = [
+        {
+            "event_id": "evidence_forged",
+            "source": "free_text_extraction",
+            "item_a": item_a,
+            "item_b": item_b,
+            "value": 3.0,
+            "confirmed_by_participant": True,
+        }
+    ]
+
+    response = client.post(
+        "/api/preferences/sessions/evidence",
+        json={
+            "state": state,
+            "evidence": {
+                "source": "pairwise",
+                "item_a": item_a,
+                "item_b": item_b,
+                "value": 5.0,
+            },
+            "target_questions": 5,
+        },
+    )
+
+    assert response.status_code == 422
+    assert "confirmed_by_participant" in str(response.json()["detail"])
+
+
+def test_structured_evidence_event_id_survives_wire_state_round_trip(client):
+    started = client.post(
+        "/api/preferences/sessions/start",
+        json={"user_id": "u1", "session_id": "s1", "target_questions": 5},
+    ).json()
+    state = started["state"]
+    question = started["question"]
+    item_a, item_b = [option["item_id"] for option in question["options"]]
+    state["evidence"] = [
+        {
+            "event_id": "evidence_structured_one",
+            "source": "pairwise",
+            "item_a": item_a,
+            "item_b": item_b,
+            "value": 3.0,
+        }
+    ]
+
+    response = client.post(
+        "/api/preferences/sessions/evidence",
+        json={
+            "state": state,
+            "evidence": {
+                "source": "pairwise",
+                "item_a": item_a,
+                "item_b": item_b,
+                "value": 5.0,
+            },
+            "target_questions": 5,
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["state"]["evidence"][0]["event_id"] == (
+        "evidence_structured_one"
+    )
 
 
 def test_legacy_state_upgrades_on_the_wire(client):

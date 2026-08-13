@@ -137,8 +137,12 @@ history, and demographic proxies remain excluded throughout.
   structured actions, complete input/tool auditing, content-addressed
   private-safe caching, and deterministic test doubles. This phase is
   implemented without selecting or calling a live provider adapter.
-- **4C — confirmed conversational evidence:** implement proposal,
-  confirmation, correction, provenance, and later ontology-expansion paths.
+- **4C — confirmed conversational evidence (fixed-ontology slice
+  implemented):**
+  fixed-ontology proposal, per-claim confirmation/edit/rejection,
+  append-only correction, provenance, durable IDs, and same-cutoff evidence
+  views are implemented. Ontology-expansion admission, duplicate, merge,
+  shrinkage, and prune rules remain next.
 - **4D — prediction readouts:** add `prediction_snapshot.v2` and a compatible
   versioned run contract for ranking tiers, approval sets, scores, and
   quadratic allocations; preserve `prediction_snapshot.v1` and the frozen

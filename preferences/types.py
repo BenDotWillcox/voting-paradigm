@@ -32,12 +32,12 @@ class QuestionType(str, Enum):
 class EvidenceSource(str, Enum):
     """Where a piece of evidence came from.
 
-    Only PAIRWISE and SLIDER are consumed by models today. The remaining
-    sources are declared as part of the stable contract so the schema does
-    not churn when they land:
+    Pairwise, slider, confirmed free-text extraction, and confirmed
+    corrections share the same typed pairwise likelihood. The remaining
+    source is retained for audit without training:
 
-    - FREE_TEXT_EXTRACTION: structured claims parsed from a free-text answer
-      (requires a per-claim confidence and a user confirmation step).
+    - FREE_TEXT_EXTRACTION: structured claims parsed from a free-text answer;
+      Phase 4C permits this source only after per-claim user confirmation.
     - CORRECTION: a dimension-level user correction ("you are underweighting
       X vs Y"), translated into evidence after confirmation.
     - OVERRIDE: a ballot-level override of an agent's predicted vote. By
@@ -51,9 +51,14 @@ class EvidenceSource(str, Enum):
     OVERRIDE = "override"
 
 
-# Sources that models currently know how to turn into a likelihood.
+# Sources that models know how to turn into the common pairwise likelihood.
 IMPLEMENTED_EVIDENCE_SOURCES = frozenset(
-    {EvidenceSource.PAIRWISE, EvidenceSource.SLIDER}
+    {
+        EvidenceSource.PAIRWISE,
+        EvidenceSource.SLIDER,
+        EvidenceSource.FREE_TEXT_EXTRACTION,
+        EvidenceSource.CORRECTION,
+    }
 )
 
 
@@ -96,11 +101,15 @@ class Evidence:
     maps onto the same scale, so both sources share one likelihood.
 
     `confidence` in (0, 1] scales the observation weight — direct user input
-    is 1.0; extracted claims from free text will carry the extractor's
-    confidence. `prompt_id` links back to the question (or LLM prompt) that
-    produced the evidence; `raw_response` and `extracted_claims` preserve
-    provenance for non-structured sources. Evaluator/seed metadata goes in
-    `metadata` (the owning state records `model_version`).
+    is 1.0. Extractor confidence remains separate audit metadata unless an
+    evaluated weighting policy explicitly changes this. `event_id` is present
+    on durable Phase 4C evidence but optional for legacy and synthetic states.
+    Inferred and correction sources require both that ID and the typed
+    `confirmed_by_participant` flag before a model accepts them.
+    `prompt_id` links back to the question (or LLM prompt) that produced the
+    evidence; `raw_response` and `extracted_claims` preserve provenance for
+    non-structured sources. Evaluator/seed metadata goes in `metadata` (the
+    owning state records `model_version`).
     """
     source: EvidenceSource
     item_a: ItemId
@@ -113,6 +122,8 @@ class Evidence:
     response_time_ms: Optional[int] = None
     timestamp: Optional[str] = None  # ISO 8601 string, set by engine
     metadata: dict = field(default_factory=dict)
+    event_id: Optional[str] = None
+    confirmed_by_participant: bool = False
 
     def preferred_item(self) -> Optional[ItemId]:
         """The preferred item id, or None for stated indifference."""
