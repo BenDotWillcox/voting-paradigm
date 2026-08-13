@@ -123,10 +123,11 @@ Anyone clicking through a demo can rerun a result and get exactly the same outpu
 This is an active, in-progress portfolio project. Demo 1 (voting methods) has a
 complete Python package and a live comparison UI backed by curated scenarios.
 Demo 2 (agent voting) has Gaussian and Bradley-Terry preference models,
-max-variance acquisition, a fixed-bank synthetic harness, and the versioned
-contracts, eight-domain development fixture, deterministic prequential runner,
-primary metrics, and allowlisted artifact boundary for the future standardized
-human-measure evaluation. Its Phase 3 authoring profile now freezes the
+fixed-sequence/random/max-variance acquisition, a fixed-bank synthetic
+harness, and the versioned contracts, eight-domain development fixture,
+deterministic prequential runner, primary metrics, and allowlisted artifact
+boundary for the future standardized human-measure evaluation. Its Phase 3
+authoring profile now freezes the
 fictional jurisdiction, exact 48-slot bank matrix, source and neutrality
 requirements, contextual-sufficiency review, packet-blind Claude review path,
 presentation-order policy, and linked retest target before packet drafting.
@@ -157,9 +158,13 @@ the LLM is a tool-using elicitation orchestrator, an explicit posterior owns
 durable preference state, a direct LLM predictor remains a required control,
 and primary elicitation cannot inspect held-out target packets. Its public
 six-arm comparison profile binds to the Phase 3A bank profile without loading
-restricted content. Later Phase 4 work will implement the interviewer tools,
-confirmed conversational evidence, ballot readouts, and prompt/order
-robustness diagnostics.
+restricted content. Phase 4B adds the non-adaptive fixed-sequence baseline and
+the provider-neutral, target-blind interviewer boundary: typed read-only tools,
+vetted-question/evidence-linked actions, deterministic test doubles, complete
+version/hash/seed/cutoff audit records, and content-addressed caching that does
+not persist raw private conversation. It intentionally includes no live model
+provider. Confirmed conversational evidence, ballot readouts, and prompt/order
+robustness diagnostics remain later Phase 4 work.
 Public aggregate artifacts still require explicit release review.
 Demo 3 (algorithmic districting) currently ships the apportionment slice;
 district polygon generation comes next. The ballot-measure, electorate, and

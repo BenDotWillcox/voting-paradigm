@@ -92,7 +92,9 @@ class TestSubmitEvidence:
 
 
 class TestQuestionSelection:
-    @pytest.mark.parametrize("policy", ["random", "max_variance"])
+    @pytest.mark.parametrize(
+        "policy", ["fixed_sequence", "random", "max_variance"]
+    )
     def test_does_not_repeat_pairs(self, policy):
         engine = make_engine(target=6, policy=policy)  # 4 items => 6 pairs
         state, q = engine.start_session("u1", "s1")
@@ -122,6 +124,29 @@ class TestQuestionSelection:
                 state, q = engine.submit_evidence(state, evidence_for(q, 6.0))
                 seq.append(q.id if q else None)
             sequences.append(seq)
+        assert sequences[0] == sequences[1]
+
+    def test_fixed_sequence_is_independent_of_answers_and_seed(self):
+        sequences = []
+        for run_seed, answer in ((1, 8.0), (2, -8.0)):
+            engine = ElicitationEngine(
+                model=GaussianLinearUtilityModel(),
+                question_bank=small_bank(),
+                config=EngineConfig(
+                    target_questions=4,
+                    seed=run_seed,
+                    selection_policy="fixed_sequence",
+                ),
+            )
+            state, question = engine.start_session("u1", "s1")
+            sequence = [question.id]
+            for _ in range(3):
+                state, question = engine.submit_evidence(
+                    state,
+                    evidence_for(question, answer),
+                )
+                sequence.append(question.id if question else None)
+            sequences.append(sequence)
         assert sequences[0] == sequences[1]
 
 

@@ -6,8 +6,9 @@ preference-model work currently has two separate tracks.
 ## Fixed-Bank Synthetic Track
 
 The existing harness compares Gaussian and Bradley-Terry preference models
-under random and max-variance acquisition policies. Synthetic personas have
-known latent utilities, and held-out pairs never enter acquisition.
+under fixed-sequence, random, and max-variance acquisition policies. Synthetic
+personas have known latent utilities, and held-out pairs never enter
+acquisition.
 
 ```bash
 python -m eval.run_preference_eval
@@ -383,10 +384,46 @@ It displays confidence and permits participant override or abstention.
 Confidence thresholds remain diagnostics; the model cannot improve its score
 by abstaining or deferring.
 
-Later Phase 4 work will add provider-neutral interviewer tools, confirmed
-conversational evidence, authored/direct-LLM/hybrid prediction readouts, and
-prompt/order robustness. LLM predictions will retain private supporting-
-evidence IDs and unsupported-assumption flags. Repeated calls are sensitivity
-or Monte Carlo diagnostics, not independent human observations. The Phase 2
-runner still deliberately stops before those implementations or a human-facing
-UI.
+## Phase 4B Acquisition And Interviewer Boundary
+
+Phase 4B makes the first acquisition comparison executable without choosing or
+calling a live LLM provider. `fixed_sequence` asks the canonical first unseen
+vetted pair and is independent of answers, posterior state, and seed. The
+synthetic comparison includes fixed-sequence, random, and max-variance policies
+by default; the tool-using LLM policy remains a separate interactive evidence
+stream rather than being simulated as a conventional selector.
+
+`eval/phase4_interviewer.py` defines the provider-neutral boundary:
+
+- versioned requests and three structured actions (ask a returned vetted
+  question, clarify linked existing evidence, or pause);
+- typed read-only uncertainty, candidate-score, coverage, and conflict tools;
+- exact question, bank, posterior-state, conversation-history, evidence-cutoff,
+  prompt, backend, model, and seed bindings;
+- complete tool request/result audit records and constrained action validation;
+  and
+- in-memory and content-addressed directory caches. The persistent cache stores
+  only the input hash plus structured output/tool trace, never raw private
+  conversation text. Cache hits re-run the pure local tools and reject any
+  stored result that differs from the current implementation.
+
+The deterministic backend is a test double, not the LLM experimental arm. A
+later live adapter must implement the same `InterviewerBackend` protocol and
+use a private ignored directory such as `eval/private_runs/interviewer_cache/`.
+Although raw conversation is excluded, cached tool traces contain
+participant-derived structure such as observed pairs, conflicts, domain
+coverage, and evidence links. The ignored, access-controlled path protects
+that structure; `JsonDirectoryInterviewerCache` cannot make an arbitrary path
+private.
+No target packet is part of an interviewer request, and the contract pins
+`target_packet_visible` to false. Phase 4B ends at a validated structured
+decision and uses canonical vetted question rendering; participant-facing
+clarification wording and confirmed extraction arrive together in Phase 4C.
+
+Phase 4C will add confirmed conversational evidence, stable evidence IDs in the
+durable evidence contract, and fixed/expanding ontology paths. Later phases add
+authored/direct-LLM/hybrid prediction readouts and prompt/order robustness. LLM
+predictions will retain private supporting-evidence IDs and unsupported-
+assumption flags. Repeated calls are sensitivity or Monte Carlo diagnostics,
+not independent human observations. The Phase 2 runner still deliberately
+stops before those implementations or a human-facing UI.

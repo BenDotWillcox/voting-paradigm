@@ -18,7 +18,7 @@ import json
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Literal, Self, TypeVar
+from typing import Literal, Self
 
 from pydantic import field_validator, model_validator
 
@@ -30,26 +30,9 @@ from .contracts import (
     PositiveVersion,
     Sha256Digest,
     StableId,
+    require_complete_enum_set,
 )
 from .fixture_io import content_sha256
-
-EnumValue = TypeVar("EnumValue", bound=Enum)
-
-
-def _require_complete_enum_set(
-    label: str,
-    values: list[EnumValue],
-    enum_type: type[EnumValue],
-    *,
-    set_name: str = "v1",
-) -> None:
-    expected = set(enum_type)
-    if set(values) != expected:
-        raise ValueError(
-            f"{label} must contain the complete {set_name} set"
-        )
-    if len(values) != len(expected):
-        raise ValueError(f"{label} cannot contain duplicates")
 
 
 class ElicitationPolicy(str, Enum):
@@ -200,13 +183,13 @@ class InterviewerV1Policy(ContractModel):
 
     @model_validator(mode="after")
     def require_complete_v1_surface(self) -> Self:
-        _require_complete_enum_set(
+        require_complete_enum_set(
             "allowed_actions",
             self.allowed_actions,
             InterviewerAction,
             set_name="Phase 4A v1",
         )
-        _require_complete_enum_set(
+        require_complete_enum_set(
             "allowed_tools",
             self.allowed_tools,
             InterviewerTool,
@@ -237,7 +220,7 @@ class TargetIsolationPolicy(ContractModel):
     def require_complete_exclusion_set(
         cls, value: list[ModelExcludedInput]
     ) -> list[ModelExcludedInput]:
-        _require_complete_enum_set(
+        require_complete_enum_set(
             "excluded_model_inputs",
             value,
             ModelExcludedInput,
@@ -396,32 +379,32 @@ class ComparisonPolicy(ContractModel):
 
     @model_validator(mode="after")
     def validate_frozen_comparison_matrix(self) -> Self:
-        _require_complete_enum_set(
+        require_complete_enum_set(
             "acquisition_policies",
             self.acquisition_policies,
             ElicitationPolicy,
         )
-        _require_complete_enum_set(
+        require_complete_enum_set(
             "required_evidence_conditions",
             self.required_evidence_conditions,
             EvidenceCondition,
         )
-        _require_complete_enum_set(
+        require_complete_enum_set(
             "required_ablations",
             self.required_ablations,
             RequiredAblation,
         )
-        _require_complete_enum_set(
+        require_complete_enum_set(
             "replayable_on_same_evidence_stream",
             self.replayable_on_same_evidence_stream,
             ReplayableComparisonAxis,
         )
-        _require_complete_enum_set(
+        require_complete_enum_set(
             "acquisition_claim_sources",
             self.acquisition_claim_sources,
             AcquisitionClaimSource,
         )
-        _require_complete_enum_set(
+        require_complete_enum_set(
             "evaluation_only_benchmarks",
             self.evaluation_only_benchmarks,
             EvaluationOnlyBenchmark,
@@ -478,7 +461,7 @@ class ActionPolicy(ContractModel):
     def require_every_supported_ballot_type(
         cls, value: list[BallotType]
     ) -> list[BallotType]:
-        _require_complete_enum_set(
+        require_complete_enum_set(
             "supported_ballot_types",
             value,
             BallotType,

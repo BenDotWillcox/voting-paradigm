@@ -5,6 +5,7 @@ import random
 import pytest
 
 from preferences.acquisition import (
+    FixedSequencePairSelector,
     MaxVariancePairSelector,
     RandomPairSelector,
     create_selector,
@@ -68,6 +69,57 @@ class TestRandomSelector:
         assert p1 == p2
 
 
+class TestFixedSequenceSelector:
+    def test_returns_canonical_first_unseen_pair(self):
+        bank = small_bank()
+        model = GaussianLinearUtilityModel()
+        state = model.initialize("u", "s", bank.item_ids())
+        selector = FixedSequencePairSelector()
+
+        assert selector.select_pair(
+            state,
+            model,
+            bank,
+            set(),
+            random.Random(99),
+        ) == ("a", "b")
+        assert selector.select_pair(
+            state,
+            model,
+            bank,
+            {frozenset(("a", "b"))},
+            random.Random(0),
+        ) == ("a", "c")
+
+    def test_ignores_posterior_and_rng(self):
+        bank = small_bank()
+        model = GaussianLinearUtilityModel()
+        prior = model.initialize("u", "s", bank.item_ids())
+        posterior = model.update(prior, pairwise("a", "b", 10.0))
+        selector = FixedSequencePairSelector()
+
+        prior_pair = selector.select_pair(
+            prior, model, bank, set(), random.Random(1)
+        )
+        posterior_pair = selector.select_pair(
+            posterior, model, bank, set(), random.Random(2)
+        )
+        assert prior_pair == posterior_pair == ("a", "b")
+
+    def test_exhaustion_returns_none(self):
+        bank = small_bank()
+        model = GaussianLinearUtilityModel()
+        state = model.initialize("u", "s", bank.item_ids())
+        all_pairs = {
+            frozenset((x, y))
+            for i, x in enumerate(bank.item_ids())
+            for y in bank.item_ids()[i + 1 :]
+        }
+        assert FixedSequencePairSelector().select_pair(
+            state, model, bank, all_pairs, random.Random(0)
+        ) is None
+
+
 class TestMaxVarianceSelector:
     def test_picks_highest_variance_pair(self):
         """After observing (a, b), that pair's gap variance drops, so the
@@ -111,6 +163,9 @@ class TestMaxVarianceSelector:
 
 class TestRegistry:
     def test_create_by_name(self):
+        assert isinstance(
+            create_selector("fixed_sequence"), FixedSequencePairSelector
+        )
         assert isinstance(create_selector("random"), RandomPairSelector)
         assert isinstance(create_selector("max_variance"), MaxVariancePairSelector)
 

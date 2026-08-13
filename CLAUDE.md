@@ -256,7 +256,7 @@ Phase 4A-4E sequence are in `eval/PHASE4_PROTOCOL.md`.
 
 Question selection evolves in three stages, each a shippable step:
 
-1. **Max-variance pair selection** (implemented, default policy — `preferences/acquisition.py`). Pick the pair `(a, b)` with highest posterior std of `u_a − u_b`; deterministic lexicographic tie-break. The `random` policy remains as the eval baseline.
+1. **Pair selection** (implemented — `preferences/acquisition.py`). `fixed_sequence` is the non-adaptive questionnaire control; `random` is the seeded baseline; max variance is the default active policy and picks the pair `(a, b)` with highest posterior std of `u_a − u_b` with a deterministic lexicographic tie-break.
 2. **Expected information gain / BALD** (follow-up). Pick the pair whose expected posterior update most reduces total entropy. Tractable under Gaussian/Laplace posteriors.
 3. **LLM-generated items targeted at high-variance directions** (dynamic-items mode). Acquisition function picks a *direction* in embedding space with high posterior variance of `w`; LLM generates a new civic-value item whose embedding aligns with that direction; user answers; posterior tightens.
 
@@ -421,7 +421,8 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 - Preferences package: question bank + elicitation engine + pytest suite
 - Typed `Evidence` contract (pairwise/slider implemented; free-text/correction/override declared, 422 until built); legacy `responses`/`thurstone_v1` states upgrade transparently in `preferences/serialization.py`
 - `GaussianLinearUtilityModel` (renamed from `ThurstonePairwiseModel`, docstrings corrected) + `BradleyTerryLaplaceModel`; model registry with `model_for_version` state routing
-- Max-variance acquisition (default) + random baseline in `preferences/acquisition.py`
+- Fixed-sequence, random, and max-variance acquisition in `preferences/acquisition.py`
+- Phase 4B provider-neutral constrained interviewer in `eval/phase4_interviewer.py`: four typed read-only tools, exact vetted-question/evidence-linked actions, deterministic backend test double, content-addressed private-safe cache, and complete version/hash/seed/evidence-cutoff audit records; no live provider adapter
 - Fixed-bank eval harness: 4 authored synthetic personas + seeded Dirichlet-mixture persona generator (`eval/personas.py`), three response models as the misspecification axis (`gaussian_gap` matches the Gaussian likelihood, `logistic_choice` matches BT, `sloppy` matches neither — `eval/response_models.py`), held-out pair splits, log-likelihood/accuracy/Brier/Kendall-τ/calibration curves, models × policies comparison (`python -m eval.run_preference_eval --response-model ...`), grid sweeps for notebooks (`eval/sweeps.py`)
 - API: `/sessions/evidence` endpoint (replaces `/sessions/respond`), model + selection-policy params on session start
 - TS hygiene: Zod-validated JSONB boundaries (`lib/validations/preferences-schemas.ts`); `startPreferenceSession` race fixed via server-generated UUID + single insert
@@ -464,22 +465,19 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
   round remains in the restricted audit trail
 
 **Next, in order:**
-1. Implement the Phase 4B provider-neutral interviewer tool surface, the
-   missing deterministic fixed-sequence selector, and deterministic test
-   doubles under the Phase 4A contract
-2. Add confirmed conversational evidence with evidence IDs and unsupported-
+1. Add confirmed conversational evidence with evidence IDs and unsupported-
    assumption flags, then fixed/expanding ontology variants
-3. Add `prediction_snapshot.v2` plus a compatible run contract without
+2. Add `prediction_snapshot.v2` plus a compatible run contract without
    mutating v1, then implement authored semantic mapping, direct LLM control,
    and hybrid probability readouts on common evidence cutoffs
-4. Add prompt, option-order/label, and stochastic robustness diagnostics;
+3. Add prompt, option-order/label, and stochastic robustness diagnostics;
    freeze inputs, models, prompts, seeds, weights, and metrics before Ben's
    held-out case study
-5. Build separate blind evaluation and future-facing showcase modes
-6. Schedule and execute the six blinded waves and 7-14 day retests only after
+4. Build separate blind evaluation and future-facing showcase modes
+5. Schedule and execute the six blinded waves and 7-14 day retests only after
    the remaining model/evaluation freeze is complete
-7. *(Deferred)* LLM-generated vote rationales
-8. *(Deferred)* LLM-generated personas
+6. *(Deferred)* LLM-generated vote rationales
+7. *(Deferred)* LLM-generated personas
 
 ### Demo 3: Algorithmic districting
 

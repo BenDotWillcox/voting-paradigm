@@ -17,7 +17,7 @@ from __future__ import annotations
 import math
 from datetime import date, datetime
 from enum import Enum
-from typing import Annotated, Literal, Self
+from typing import Annotated, Literal, Self, TypeVar
 
 from pydantic import (
     BaseModel,
@@ -50,6 +50,7 @@ Sha256Digest = Annotated[
     str,
     StringConstraints(pattern=r"^[0-9a-f]{64}$"),
 ]
+EnumValue = TypeVar("EnumValue", bound=Enum)
 
 REQUIRED_JURISDICTION_FACT_KEYS = frozenset(
     {
@@ -71,6 +72,22 @@ class ContractModel(BaseModel):
         str_strip_whitespace=True,
         validate_assignment=True,
     )
+
+
+def require_complete_enum_set(
+    label: str,
+    values: list[EnumValue],
+    enum_type: type[EnumValue],
+    *,
+    set_name: str = "v1",
+) -> None:
+    """Require every enum member exactly once without constraining order."""
+
+    expected = set(enum_type)
+    if set(values) != expected:
+        raise ValueError(f"{label} must contain the complete {set_name} set")
+    if len(values) != len(expected):
+        raise ValueError(f"{label} cannot contain duplicates")
 
 
 class BallotType(str, Enum):

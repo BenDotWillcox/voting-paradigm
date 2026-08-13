@@ -65,7 +65,11 @@ class EvalConfig:
     convergence_tau: float = 0.7
     n_calibration_bins: int = 10
     model_names: tuple[str, ...] = ("gaussian_linear", "bradley_terry")
-    policy_names: tuple[str, ...] = ("random", "max_variance")
+    policy_names: tuple[str, ...] = (
+        "fixed_sequence",
+        "random",
+        "max_variance",
+    )
 
 
 @dataclass
