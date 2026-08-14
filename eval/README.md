@@ -463,10 +463,59 @@ evidence must enter through a future server-side Phase 4C ledger integration,
 not through a self-asserted client snapshot. The deterministic extractor is a
 scripted boundary test double, not an LLM arm or a selected provider.
 
-Expanding-ontology admission, duplicate detection, shrinkage, merge, and prune
-rules remain the next Phase 4C slice. Later phases add authored/direct-LLM/
-hybrid prediction readouts and prompt/order robustness. LLM predictions will
-retain private supporting-evidence IDs and unsupported-assumption flags.
-Repeated calls are sensitivity or Monte Carlo diagnostics, not independent
-human observations. The Phase 2 runner still deliberately stops before those
+## Phase 4C Participant-Governed Ontology Expansion
+
+`eval/phase4_ontology.py` layers an append-only expanding-ontology ledger over
+the confirmed evidence boundary without changing the fixed-ontology contract.
+Each ledger is bound to one evidence condition, so conversational dimensions
+cannot leak into the structured-only ablation. Structured-only retains the
+seed ontology because it has no raw conversation input; conversation-only and
+combined expansion use only their condition-eligible evidence lineages.
+An LLM may propose a missing value dimension, possible duplicates, and exact
+support links, but the proposal carries a literal zero provisional weight. It
+cannot alter the ontology until the participant independently admits it, maps
+it to a reviewed existing dimension, or rejects it. Unsupported assumptions
+and every proposed duplicate candidate must be acknowledged on a non-rejection
+decision.
+
+Each private proposal context binds the exact conversation prefix, active
+confirmed evidence claims, active ontology definitions, extractor
+configuration, policy, seed, and parent snapshot. It uses a stable evidence-
+ledger identity hash rather than the full mutable ledger hash; exact per-prefix
+hashes prevent tampering while allowing later evidence to append without
+retroactively rewriting an earlier context. Target packets remain unavailable.
+The deterministic backend is a provider-neutral test double, not a selected
+LLM provider.
+
+Duplicate defense has two layers. NFKC/casefold/whitespace-normalized exact
+semantic duplicates are detected deterministically and cannot be admitted as
+new dimensions. The proposer may also flag less-exact candidates for explicit
+participant review; a map decision can target only one of those reviewed
+candidates. Seed dimensions remain active and cannot be merged or pruned.
+
+A participant admission and an independent evidence lineage contribute
+separately weighted terms to a support score, so a genuinely new value can
+enter from participant language even before the fixed ontology can encode it
+without asserting that admission and observation are the same unit. The score
+controls deterministic shrinkage up to the policy's full-weight threshold.
+Corrections retain their original lineage and therefore cannot inflate support
+by being counted as independent observations. Participant-
+confirmed support, merge, and prune events are replayed at any event cutoff.
+Merges preserve the superseded dimensions and union evidence provenance;
+prunes preserve history and are permitted only for non-seed dimensions below
+the versioned support-score and inactivity thresholds. Retired dimensions keep
+their provenance but expose no shrinkage weight; model consumers use
+`active_dimension_states`.
+
+The policy values are versioned inputs, not yet the frozen experimental
+hyperparameters. All raw messages, evidence-bearing contexts, proposals, and
+ledgers remain private artifacts under the ignored run boundary. Phase 4D will
+add a new prediction/run contract and consume these snapshots in the authored,
+direct-LLM, and hybrid readouts. It will not mutate the frozen v1 evaluation
+run or Phase 3 bundle contracts.
+
+Later phases also add prompt/order robustness. LLM predictions will retain
+private supporting-evidence IDs and unsupported-assumption flags. Repeated
+calls are sensitivity or Monte Carlo diagnostics, not independent human
+observations. The Phase 2 runner still deliberately stops before those
 implementations or a human-facing UI.

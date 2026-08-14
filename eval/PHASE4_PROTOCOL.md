@@ -137,12 +137,17 @@ history, and demographic proxies remain excluded throughout.
   structured actions, complete input/tool auditing, content-addressed
   private-safe caching, and deterministic test doubles. This phase is
   implemented without selecting or calling a live provider adapter.
-- **4C — confirmed conversational evidence (fixed-ontology slice
-  implemented):**
+- **4C — confirmed conversational evidence and ontology lifecycle
+  (implemented):**
   fixed-ontology proposal, per-claim confirmation/edit/rejection,
   append-only correction, provenance, durable IDs, and same-cutoff evidence
-  views are implemented. Ontology-expansion admission, duplicate, merge,
-  shrinkage, and prune rules remain next.
+  views are implemented. The expanding-ontology slice adds zero-weight
+  proposals, condition-specific replay without conversational leakage into
+  structured-only, exact and reviewed duplicate defenses, explicit
+  participant admit/map/reject decisions, correction-stable support
+  shrinkage, and participant-confirmed support, merge, and prune events. Seed
+  dimensions cannot be merged or pruned. Policy parameters remain versioned
+  inputs until the final experiment freeze; no live provider is selected.
 - **4D — prediction readouts:** add `prediction_snapshot.v2` and a compatible
   versioned run contract for ranking tiers, approval sets, scores, and
   quadratic allocations; preserve `prediction_snapshot.v1` and the frozen
