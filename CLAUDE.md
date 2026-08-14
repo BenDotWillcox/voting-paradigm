@@ -423,7 +423,8 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 - `GaussianLinearUtilityModel` (renamed from `ThurstonePairwiseModel`, docstrings corrected) + `BradleyTerryLaplaceModel`; model registry with `model_for_version` state routing
 - Fixed-sequence, random, and max-variance acquisition in `preferences/acquisition.py`
 - Phase 4B provider-neutral constrained interviewer in `eval/phase4_interviewer.py`: four typed read-only tools, exact vetted-question/evidence-linked actions, deterministic backend test double, content-addressed private-safe cache, and complete version/hash/seed/evidence-cutoff audit records; no live provider adapter
-- Phase 4C fixed-ontology evidence lifecycle in `eval/phase4_evidence.py`: raw-message separation, hash-bound zero-weight per-claim proposals, explicit participant accept/edit/reject decisions, unsupported-assumption acknowledgement, append-only correction/supersession with typed source provenance, durable evidence IDs, same-cutoff structured/conversation/combined materialization without cross-condition correction leakage, and a deterministic extractor test double; no expanding ontology or live provider adapter
+- Phase 4C fixed-ontology evidence lifecycle in `eval/phase4_evidence.py`: raw-message separation, hash-bound zero-weight per-claim proposals, explicit participant accept/edit/reject decisions, unsupported-assumption acknowledgement, append-only correction/supersession with typed source provenance, durable evidence IDs, same-cutoff structured/conversation/combined materialization without cross-condition correction leakage, and a deterministic extractor test double
+- Phase 4C expanding-ontology lifecycle in `eval/phase4_ontology.py`: evidence-condition-bound private contexts, zero-weight proposals, exact and reviewed duplicate defenses, explicit participant admit/map/reject decisions, separately weighted admission/evidence support with correction-stable lineages, inactive-safe shrinkage, immutable seed dimensions, append-only support/merge/prune events, deterministic cutoff replay, and a provider-neutral test double; policy hyperparameters remain unfrozen and no live provider adapter is selected
 - Fixed-bank eval harness: 4 authored synthetic personas + seeded Dirichlet-mixture persona generator (`eval/personas.py`), three response models as the misspecification axis (`gaussian_gap` matches the Gaussian likelihood, `logistic_choice` matches BT, `sloppy` matches neither — `eval/response_models.py`), held-out pair splits, log-likelihood/accuracy/Brier/Kendall-τ/calibration curves, models × policies comparison (`python -m eval.run_preference_eval --response-model ...`), grid sweeps for notebooks (`eval/sweeps.py`)
 - API: `/sessions/evidence` endpoint (replaces `/sessions/respond`), model + selection-policy params on session start
 - TS hygiene: Zod-validated JSONB boundaries (`lib/validations/preferences-schemas.ts`); `startPreferenceSession` race fixed via server-generated UUID + single insert
@@ -466,19 +467,17 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
   round remains in the restricted audit trail
 
 **Next, in order:**
-1. Add expanding-ontology admission, duplicate detection, shrinkage, merge,
-   and prune rules on top of the confirmed fixed-ontology evidence boundary
-2. Add `prediction_snapshot.v2` plus a compatible run contract without
+1. Add `prediction_snapshot.v2` plus a compatible run contract without
    mutating v1, then implement authored semantic mapping, direct LLM control,
    and hybrid probability readouts on common evidence cutoffs
-3. Add prompt, option-order/label, and stochastic robustness diagnostics;
+2. Add prompt, option-order/label, and stochastic robustness diagnostics;
    freeze inputs, models, prompts, seeds, weights, and metrics before Ben's
    held-out case study
-4. Build separate blind evaluation and future-facing showcase modes
-5. Schedule and execute the six blinded waves and 7-14 day retests only after
+3. Build separate blind evaluation and future-facing showcase modes
+4. Schedule and execute the six blinded waves and 7-14 day retests only after
    the remaining model/evaluation freeze is complete
-6. *(Deferred)* LLM-generated vote rationales
-7. *(Deferred)* LLM-generated personas
+5. *(Deferred)* LLM-generated vote rationales
+6. *(Deferred)* LLM-generated personas
 
 ### Demo 3: Algorithmic districting
 

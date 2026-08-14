@@ -163,15 +163,23 @@ the provider-neutral, target-blind interviewer boundary: typed read-only tools,
 vetted-question/evidence-linked actions, deterministic test doubles, complete
 version/hash/seed/cutoff audit records, and content-addressed caching that does
 not persist raw private conversation. It intentionally includes no live model
-provider. The first Phase 4C slice adds the fixed-ontology evidence lifecycle:
+provider. Phase 4C adds the fixed-ontology evidence lifecycle:
 private raw messages, hash-bound zero-weight proposals, independent
 participant accept/edit/reject decisions, append-only corrections, durable
 evidence IDs, and replayable structured/conversation/combined views at
 identical cutoffs. Typed confirmation and correction provenance prevent
 client-state bypasses and cross-condition correction leakage. It uses a
-deterministic extractor test double; expanding
-ontology, ballot readouts, prompt/order robustness diagnostics, and a live
-provider remain later Phase 4 work.
+deterministic extractor test double. The second Phase 4C slice adds a separate
+participant-governed expanding-ontology ledger: missing-dimension proposals
+remain zero-weight, exact and possible duplicates are reviewed, participant
+decisions alone admit or map dimensions, correction-stable support controls
+shrinkage, evidence-condition binding prevents conversational leakage into
+structured-only replay, and confirmed merge/prune events preserve the full
+history. Seed dimensions cannot be merged or pruned. Its provider boundary is
+still a test double and its policy thresholds are not yet the final experiment
+freeze.
+Ballot readouts, prompt/order robustness diagnostics, and a live provider
+remain later Phase 4 work.
 Public aggregate artifacts still require explicit release review.
 Demo 3 (algorithmic districting) currently ships the apportionment slice;
 district polygon generation comes next. The ballot-measure, electorate, and
