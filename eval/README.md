@@ -509,10 +509,55 @@ their provenance but expose no shrinkage weight; model consumers use
 
 The policy values are versioned inputs, not yet the frozen experimental
 hyperparameters. All raw messages, evidence-bearing contexts, proposals, and
-ledgers remain private artifacts under the ignored run boundary. Phase 4D will
-add a new prediction/run contract and consume these snapshots in the authored,
-direct-LLM, and hybrid readouts. It will not mutate the frozen v1 evaluation
-run or Phase 3 bundle contracts.
+ledgers remain private artifacts under the ignored run boundary.
+
+## Phase 4D Versioned Prediction Boundary
+
+`eval/phase4_prediction.py` adds `prediction_snapshot.v2` and
+`evaluation_run.v2` as separate models; `eval/contracts.py` and its v1 records
+remain unchanged. A v2 run embeds the private Phase 4C evidence ledger and any
+condition-specific expansion ledgers, while continuing to reuse the frozen
+measure-presentation and participant-response records. `as_v1_execution_run`
+projects only that presentation/response surface so the Phase 3 wave, option-
+order, retest-independence, and timing validators remain reusable without
+routing v2 predictions through a v1 schema.
+
+Each model configuration names one frozen Phase 4A arm and exact versioned
+artifacts for the preference model, semantic mapper, readout, provider model,
+and prompt that the arm actually uses. The snapshot binds that configuration,
+the exact packet hash, the stable evidence-ledger identity, one materialized
+evidence condition and cutoff, the exact eligible evidence and conversation
+prefix, and posterior/ontology hashes for explicit-state arms. The reproducibly
+derived `model_input_sha256` hashes the exact model-consumable packet,
+evidence/conversation view, active state/ontology, component stack, and seed
+without copying raw transcript content into a second field. Full ontology
+history and configuration identity remain separately bound audit provenance.
+The target response is literally unavailable at the input boundary, and the
+run validator rejects evidence or messages created after target exposure as
+well as snapshots frozen at or after the target response.
+
+All arms emit a normalized probability for every option, a display-order-
+deterministic top option, confidence equal to that top probability, and a
+separate complete ballot action. Single-choice selects the top option; ranked
+predictions cover every option; approval includes the top option; score and
+quadratic payloads cover every option and keep the top option maximal; and
+quadratic allocations also obey sign and credit-budget rules. This makes
+confidence/calibration comparable without pretending that a rich ballot is a
+single categorical choice. LLM and hybrid predictions retain private cited
+evidence IDs and unsupported-assumption flags.
+
+At a common target checkpoint, every present model arm must use the same event
+cutoff. Arms in the same evidence condition must bind the same exact evidence
+and conversation view. The active ontology receives its own feature-universe
+hash separate from the full history hash; if fixed and expanding hybrid arms
+use one identical component stack, evidence view, posterior state, active
+feature universe, and model input, their probability and ballot outputs must
+agree. This is the contract-level hook for the fixed/expanding sanity check.
+
+This slice intentionally contains no authored option-to-preference mapping and
+no executable direct-LLM or hybrid provider call. Those implementations come
+next and must build the already-versioned inputs rather than weakening this
+boundary.
 
 Later phases also add prompt/order robustness. LLM predictions will retain
 private supporting-evidence IDs and unsupported-assumption flags. Repeated
