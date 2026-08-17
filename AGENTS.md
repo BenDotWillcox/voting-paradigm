@@ -402,25 +402,31 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
   review for the 48-measure bank, with eight participant-safe review summaries
 - Phase 3C retest registry approved at all 12 exact hashes, with the final
   reviewer-provenance ledger, six-wave plan, and execution bundle frozen
+- Phase 4A public architecture and six-arm comparison protocol frozen
+- Phase 4B provider-neutral interviewer tools, constrained actions, exact
+  caching/audit bindings, fixed-sequence baseline, and deterministic test
+  doubles
+- Phase 4C confirmed conversational evidence plus participant-governed fixed
+  and expanding ontology lifecycles
+- Phase 4D v2 prediction/run contract slice: exact input and component
+  bindings, normalized option probabilities separated from complete rich-
+  ballot actions, common-cutoff validation, and compatibility with the v1
+  presentation/response execution surface
 
 **Next, in order:**
-1. Implement the Phase 4B provider-neutral interviewer tool surface, the
-   missing deterministic fixed-sequence selector, and deterministic test
-   doubles under the Phase 4A contract
-2. Add confirmed conversational evidence, then fixed/expanding ontology
-   variants without allowing unconfirmed LLM output to move the posterior
-3. Add `prediction_snapshot.v2` plus a compatible run contract without
-   mutating v1, then implement authored semantic mapping, direct LLM control,
-   and hybrid probability readouts on common evidence cutoffs
-4. Add prompt, option-order/label, and stochastic robustness diagnostics;
+1. Implement authored semantic mapping and Gaussian/Bradley-Terry readouts on
+   the Phase 4D v2 contract
+2. Implement provider-neutral direct-LLM and fixed/expanding hybrid readouts
+   with deterministic test doubles
+3. Add prompt, option-order/label, and stochastic robustness diagnostics;
    freeze inputs, models, prompts, seeds, weights, and metrics before Ben's
    held-out case study
-5. Build separate blind evaluation and future-facing showcase modes
-6. Schedule and execute the six blinded waves and 7-14 day retests. Run
+4. Build separate blind evaluation and future-facing showcase modes
+5. Schedule and execute the six blinded waves and 7-14 day retests. Run
    validation enforces wave order, presentation seeds, retest independence,
    and timing.
-7. *(Deferred)* LLM-generated vote rationales
-8. *(Deferred)* LLM-generated personas
+6. *(Deferred)* LLM-generated vote rationales
+7. *(Deferred)* LLM-generated personas
 
 ### Demo 3: Algorithmic districting
 
