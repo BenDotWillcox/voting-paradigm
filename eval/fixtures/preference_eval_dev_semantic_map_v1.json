@@ -1,0 +1,364 @@
+{
+  "schema_version": "phase4_authored_semantic_map.v1",
+  "mapper_id": "preference_eval_dev_authored_semantic_map",
+  "mapper_version": 1,
+  "development_only": true,
+  "fixture_id": "preference_eval_dev_v1",
+  "fixture_version": 1,
+  "fixture_sha256": "a75cefc87a8aa983b84bae5af232007a6b08bb450a8bfcef18e3a3faa0d1d1b7",
+  "ontology": {
+    "ontology_id": "preference_seed_items",
+    "ontology_version": 1,
+    "item_ids": [
+      "ballot_privacy",
+      "careful_deliberation",
+      "collective_goods",
+      "community_cohesion",
+      "direct_democracy",
+      "economic_development",
+      "economic_freedom",
+      "economic_security",
+      "environmental_protection",
+      "equal_outcomes",
+      "expert_technocracy",
+      "global_cooperation",
+      "individual_rights",
+      "innovation_speed",
+      "institutional_reform",
+      "institutional_trust",
+      "local_control",
+      "market_efficiency",
+      "meritocracy",
+      "national_sovereignty",
+      "national_standards",
+      "open_borders",
+      "operational_secrecy",
+      "personal_privacy",
+      "precautionary_principle",
+      "progressive_change",
+      "property_rights",
+      "public_accountability",
+      "public_safety",
+      "rapid_action",
+      "regulated_fairness",
+      "rehabilitation",
+      "self_reliance",
+      "strict_accountability",
+      "tradition",
+      "transparency"
+    ],
+    "item_ids_sha256": "a6f23f8b377e2a80087676edbc55797a0fc47b805d0b2dcc875a2fa346c5dd8c"
+  },
+  "author_system": "codex",
+  "authored_at": "2026-08-17T12:00:00Z",
+  "mappings": [
+    {
+      "measure_id": "dev_fiscal_reserve",
+      "measure_version": 1,
+      "packet_version": 1,
+      "packet_sha256": "126fb13b8d40c02b18405cd0ec5680e4b9e2377b86f8e3fd7e6e400212d8894f",
+      "option_stances": [
+        {
+          "option_id": "increase_reserve",
+          "dimension_weights": {
+            "precautionary_principle": 0.8,
+            "careful_deliberation": 0.4,
+            "economic_security": -0.6,
+            "collective_goods": -0.4
+          }
+        },
+        {
+          "option_id": "retain_program_funding",
+          "dimension_weights": {
+            "precautionary_principle": -0.8,
+            "careful_deliberation": -0.4,
+            "economic_security": 0.6,
+            "collective_goods": 0.4
+          }
+        }
+      ]
+    },
+    {
+      "measure_id": "dev_health_mobile_clinics",
+      "measure_version": 1,
+      "packet_version": 1,
+      "packet_sha256": "896ad504361d6f7907c23d050d417010bbf0c744eabd03e67cee7a97d068eefb",
+      "option_stances": [
+        {
+          "option_id": "fund_mobile_clinics",
+          "dimension_weights": {
+            "institutional_reform": 0.7,
+            "equal_outcomes": 0.7,
+            "national_standards": 0.4,
+            "local_control": -0.5,
+            "institutional_trust": -0.6
+          }
+        },
+        {
+          "option_id": "maintain_current_grants",
+          "dimension_weights": {
+            "institutional_reform": -0.7,
+            "equal_outcomes": -0.7,
+            "national_standards": -0.4,
+            "local_control": 0.5,
+            "institutional_trust": 0.6
+          }
+        }
+      ]
+    },
+    {
+      "measure_id": "dev_education_calendar",
+      "measure_version": 1,
+      "packet_version": 1,
+      "packet_sha256": "b5e20c124ed0e3a028cb3a03262f387beb78622322bbdc0c336072c370c314dc",
+      "option_stances": [
+        {
+          "option_id": "traditional_calendar",
+          "dimension_weights": {
+            "tradition": 0.8,
+            "progressive_change": -0.4,
+            "local_control": -0.4,
+            "national_standards": 0.1,
+            "institutional_trust": 0.5
+          }
+        },
+        {
+          "option_id": "balanced_calendar",
+          "dimension_weights": {
+            "tradition": -0.4,
+            "progressive_change": 0.8,
+            "local_control": -0.4,
+            "national_standards": 0.5,
+            "institutional_trust": -0.25
+          }
+        },
+        {
+          "option_id": "local_choice",
+          "dimension_weights": {
+            "tradition": -0.4,
+            "progressive_change": -0.4,
+            "local_control": 0.8,
+            "national_standards": -0.6,
+            "institutional_trust": -0.25
+          }
+        }
+      ]
+    },
+    {
+      "measure_id": "dev_housing_zoning_tools",
+      "measure_version": 1,
+      "packet_version": 1,
+      "packet_sha256": "164657b06d48e6554ca355fccdf4df091c84fd7ed5efff9fdb5a5c86c540570b",
+      "option_stances": [
+        {
+          "option_id": "accessory_units",
+          "dimension_weights": {
+            "local_control": -0.25,
+            "national_standards": 0.1,
+            "property_rights": 0.4,
+            "regulated_fairness": -0.1,
+            "economic_development": 0.2
+          }
+        },
+        {
+          "option_id": "transit_density",
+          "dimension_weights": {
+            "local_control": -0.25,
+            "national_standards": 0.3,
+            "property_rights": -0.1,
+            "regulated_fairness": 0.2,
+            "environmental_protection": 0.7,
+            "economic_development": 0.5
+          }
+        },
+        {
+          "option_id": "vacancy_fee",
+          "dimension_weights": {
+            "local_control": -0.25,
+            "national_standards": 0.3,
+            "property_rights": -0.7,
+            "regulated_fairness": 0.7,
+            "economic_development": -0.3
+          }
+        },
+        {
+          "option_id": "retain_local_rules",
+          "dimension_weights": {
+            "local_control": 0.75,
+            "national_standards": -0.7,
+            "property_rights": 0.4,
+            "regulated_fairness": -0.8,
+            "environmental_protection": -0.7,
+            "economic_development": -0.4
+          }
+        }
+      ]
+    },
+    {
+      "measure_id": "dev_transport_investment",
+      "measure_version": 1,
+      "packet_version": 1,
+      "packet_sha256": "9a6ac8633702003ae2e892a425d7100629848ac607e9c3eac973940efc2a116c",
+      "option_stances": [
+        {
+          "option_id": "road_repairs",
+          "dimension_weights": {
+            "collective_goods": -0.4,
+            "environmental_protection": -0.5,
+            "equal_outcomes": -0.4,
+            "economic_development": 0.7,
+            "public_safety": 0.3
+          }
+        },
+        {
+          "option_id": "bus_frequency",
+          "dimension_weights": {
+            "collective_goods": 0.6,
+            "environmental_protection": 0.3,
+            "equal_outcomes": 0.2,
+            "economic_development": 0.1,
+            "public_safety": -0.2
+          }
+        },
+        {
+          "option_id": "rural_connections",
+          "dimension_weights": {
+            "collective_goods": 0.4,
+            "environmental_protection": -0.2,
+            "equal_outcomes": 0.7,
+            "economic_development": 0.2,
+            "public_safety": -0.2
+          }
+        },
+        {
+          "option_id": "safe_streets",
+          "dimension_weights": {
+            "collective_goods": -0.6,
+            "environmental_protection": 0.4,
+            "equal_outcomes": -0.5,
+            "economic_development": -1.0,
+            "public_safety": 0.1
+          }
+        }
+      ]
+    },
+    {
+      "measure_id": "dev_energy_building_standard",
+      "measure_version": 1,
+      "packet_version": 1,
+      "packet_sha256": "ab67c5ac312928d074504e5e5e3cb2805059584bfa7137325a5226b37c656437",
+      "option_stances": [
+        {
+          "option_id": "adopt_standard",
+          "dimension_weights": {
+            "environmental_protection": 1.0,
+            "precautionary_principle": 0.7,
+            "national_standards": 0.5,
+            "economic_freedom": -0.5,
+            "innovation_speed": -0.6
+          }
+        },
+        {
+          "option_id": "retain_incentives",
+          "dimension_weights": {
+            "environmental_protection": -1.0,
+            "precautionary_principle": -0.7,
+            "national_standards": -0.5,
+            "economic_freedom": 0.5,
+            "innovation_speed": 0.6
+          }
+        }
+      ]
+    },
+    {
+      "measure_id": "dev_justice_oversight",
+      "measure_version": 1,
+      "packet_version": 1,
+      "packet_sha256": "1e50c9b06d545d177c520a46a2cc5523fe204201400f28b477a3abcf6fe577db",
+      "option_stances": [
+        {
+          "option_id": "create_independent_board",
+          "dimension_weights": {
+            "transparency": 1.0,
+            "public_accountability": 0.9,
+            "institutional_reform": 0.7,
+            "individual_rights": 0.4,
+            "institutional_trust": -0.7,
+            "operational_secrecy": -0.5
+          }
+        },
+        {
+          "option_id": "retain_internal_review",
+          "dimension_weights": {
+            "transparency": -1.0,
+            "public_accountability": -0.9,
+            "institutional_reform": -0.7,
+            "individual_rights": -0.4,
+            "institutional_trust": 0.7,
+            "operational_secrecy": 0.5
+          }
+        }
+      ]
+    },
+    {
+      "measure_id": "dev_governance_digital_budget",
+      "measure_version": 1,
+      "packet_version": 1,
+      "packet_sha256": "6ed856060a935b0d04f27d27519519a7f3b73681e70d4b60bb8f21afd220f75c",
+      "option_stances": [
+        {
+          "option_id": "service_portal",
+          "dimension_weights": {
+            "innovation_speed": 0.75,
+            "personal_privacy": -0.25,
+            "transparency": -0.25,
+            "equal_outcomes": -0.25,
+            "national_standards": 0.5,
+            "careful_deliberation": -0.2,
+            "public_accountability": -0.3,
+            "community_cohesion": -0.2
+          }
+        },
+        {
+          "option_id": "privacy_security",
+          "dimension_weights": {
+            "innovation_speed": -0.25,
+            "personal_privacy": 0.75,
+            "transparency": -0.25,
+            "equal_outcomes": -0.25,
+            "national_standards": 0.1,
+            "careful_deliberation": 0.6,
+            "public_accountability": -0.2,
+            "community_cohesion": -0.2
+          }
+        },
+        {
+          "option_id": "open_data",
+          "dimension_weights": {
+            "innovation_speed": -0.25,
+            "personal_privacy": -0.25,
+            "transparency": 0.75,
+            "equal_outcomes": -0.25,
+            "national_standards": -0.3,
+            "careful_deliberation": -0.2,
+            "public_accountability": 0.8,
+            "community_cohesion": -0.2
+          }
+        },
+        {
+          "option_id": "offline_access",
+          "dimension_weights": {
+            "innovation_speed": -0.25,
+            "personal_privacy": -0.25,
+            "transparency": -0.25,
+            "equal_outcomes": 0.75,
+            "national_standards": -0.3,
+            "careful_deliberation": -0.2,
+            "public_accountability": -0.3,
+            "community_cohesion": 0.6
+          }
+        }
+      ]
+    }
+  ]
+}

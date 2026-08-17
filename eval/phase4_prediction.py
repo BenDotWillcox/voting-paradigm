@@ -4,8 +4,9 @@ The Phase 1-3 ``PredictionSnapshot`` and ``EvaluationRun`` contracts remain
 frozen at v1.  This module adds a separate v2 boundary for the Phase 4 model
 comparison: every arm binds the same held-out packet and evidence cutoff,
 emits a normalized option distribution, and also emits one complete ballot-
-type-specific prediction.  The contract contains no provider calls and no
-semantic-mapping implementation.
+type-specific prediction.  The contract contains no provider calls; executable
+classical and future provider readouts live behind this boundary in separate
+modules.
 """
 
 from __future__ import annotations
@@ -59,6 +60,7 @@ from .phase4_protocol import (
 
 NonNegativeSequence = Annotated[int, Field(ge=0)]
 ScoreValue = Annotated[int, Field(ge=0, le=10)]
+TOP_OPTION_ABS_TOLERANCE = 1e-12
 
 
 def _require_aware(value: datetime, label: str) -> datetime:
@@ -374,7 +376,7 @@ class PredictionSnapshotV2(ContractModel):
             self.option_probabilities[self.top_option_id],
             top_probability,
             rel_tol=0.0,
-            abs_tol=1e-12,
+            abs_tol=TOP_OPTION_ABS_TOLERANCE,
         ):
             raise ValueError("top_option_id must identify a maximum probability")
         if not math.isclose(
@@ -616,7 +618,7 @@ def _expected_top_option_id(
             probabilities[option.option_id],
             top_probability,
             rel_tol=0.0,
-            abs_tol=1e-12,
+            abs_tol=TOP_OPTION_ABS_TOLERANCE,
         )
     )
 

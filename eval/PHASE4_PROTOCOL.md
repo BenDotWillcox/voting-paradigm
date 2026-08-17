@@ -148,15 +148,18 @@ history, and demographic proxies remain excluded throughout.
   shrinkage, and participant-confirmed support, merge, and prune events. Seed
   dimensions cannot be merged or pruned. Policy parameters remain versioned
   inputs until the final experiment freeze; no live provider is selected.
-- **4D — prediction readouts (contract slice implemented):** separate
+- **4D — prediction readouts (contracts and classical baselines implemented):** separate
   `prediction_snapshot.v2` and `evaluation_run.v2` contracts now bind exact
   packets, eligible evidence and conversation prefixes, posterior/ontology
   state, component artifacts, and pre-answer chronology while preserving the
   v1 records and Phase 3C bundle hashes. Normalized option probabilities are
   separate from complete ranking, approval, score, and quadratic actions.
-  Same-checkpoint comparisons enforce common cutoffs and evidence views. The
-  authored semantic mapper and executable direct-LLM/hybrid readouts remain
-  the next Phase 4D slices.
+  Same-checkpoint comparisons enforce common cutoffs and evidence views. A
+  fixture/packet/ontology-bound authored stance map now drives both Gaussian
+  and Bradley-Terry posteriors through one uncertainty-aware probability
+  readout and common rich-ballot policy. The public development map validates
+  end to end; the restricted final-bank map still requires blinded review.
+  Executable direct-LLM and hybrid readouts remain the next Phase 4D slice.
 - **4E — robustness and final freeze:** test prompt paraphrases, option order
   and labels, stochastic sensitivity, and unsupported assumptions before the
   held-out case study.

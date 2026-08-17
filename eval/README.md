@@ -554,10 +554,55 @@ use one identical component stack, evidence view, posterior state, active
 feature universe, and model input, their probability and ballot outputs must
 agree. This is the contract-level hook for the fixed/expanding sanity check.
 
-This slice intentionally contains no authored option-to-preference mapping and
-no executable direct-LLM or hybrid provider call. Those implementations come
-next and must build the already-versioned inputs rather than weakening this
-boundary.
+### Authored classical readouts
+
+`eval/phase4_semantic.py` makes the option-to-value bridge a separate reviewed
+artifact rather than hiding it in either preference model. Each sparse stance
+map binds the exact fixture, packet, option order, and fixed ontology. Weights
+are relative across the options in one contest: every used dimension is
+option-centered, so a negative value can mean "less aligned than the other
+options" rather than opposition in isolation. Runtime normalization fixes the
+largest pairwise stance-vector distance at one, preventing an author from
+changing confidence by uniformly rescaling a map.
+
+The public, non-held-out development artifact is
+`eval/fixtures/preference_eval_dev_semantic_map_v1.json`. Validate it with:
+
+```bash
+python -m eval.validate_phase4_semantic_map \
+  eval/fixtures/preference_eval_dev_semantic_map_v1.json \
+  eval/fixtures/preference_eval_dev_v1.json
+```
+
+The command emits only aggregate counts and hashes. The future 48-measure map
+must stay inside the ignored restricted tree and receive participant-
+independent content review before use; the development map is infrastructure
+evidence, not a held-out result.
+
+`eval/phase4_classical_readout.py` replays the Gaussian linear or Bradley-
+Terry posterior from the exact structured-only evidence cutoff. Both models
+then use one common uncertainty-aware readout. For each option pair, the
+normalized stance map yields a posterior mean difference and variance. The
+standard logistic-normal correction converts that pair into an approximate
+log odds; complete-graph averaging couples those pairwise values into one
+multiclass softmax. Zero posterior means therefore remain exactly uniform,
+while higher posterior uncertainty flattens confidence. Settledness stays
+separate: it is the minimum posterior probability that the predicted top
+option clears each opponent by the versioned utility margin.
+
+The common ballot-action subpolicy is reusable by later LLM and hybrid arms.
+It keeps contract-level `1e-12` top ties in frozen display order, preserves
+configurably grouped ranking ties, approves
+options at or above uniform probability, maps uniform score ballots to five,
+and produces budget-valid integer quadratic allocations. Model, mapper,
+readout, posterior-state, and input hashes are all recomputed by the artifact-
+aware validator; a caller cannot make a forged state hash self-consistent and
+silently pass. Readout temperature, settledness margin, and other versioned
+policy values remain development inputs until the Phase 4E freeze.
+
+No executable direct-LLM or hybrid provider call exists yet. Those readouts
+come next and must build the already-versioned inputs and reuse the common
+ballot-action policy rather than weakening this boundary.
 
 Later phases also add prompt/order robustness. LLM predictions will retain
 private supporting-evidence IDs and unsupported-assumption flags. Repeated
