@@ -178,16 +178,19 @@ structured-only replay, and confirmed merge/prune events preserve the full
 history. Seed dimensions cannot be merged or pruned. Its provider boundary is
 still a test double and its policy thresholds are not yet the final experiment
 freeze.
-The first Phase 4D slice adds separate `prediction_snapshot.v2` and
+Phase 4D adds separate `prediction_snapshot.v2` and
 `evaluation_run.v2` contracts without changing their frozen v1 counterparts.
 Every prediction binds the exact packet, eligible evidence and conversation
 prefix, posterior and ontology state where applicable, component artifacts,
 and pre-answer cutoff. A normalized option distribution remains separate from
 the complete single-choice, ranking, approval, score, or quadratic action.
 Same-checkpoint comparisons must use one cutoff, and identical fixed/expanding
-active inputs on the same stack cannot silently diverge. Authored semantic
-mapping, executable LLM/hybrid readouts, prompt/order robustness diagnostics,
-and a live provider remain later Phase 4 work.
+active inputs on the same stack cannot silently diverge. The two classical
+baselines now replay their posteriors through a fixture-bound authored stance
+map, one uncertainty-aware probability coupling, and one deterministic rich-
+ballot policy; a public development map exercises all five ballot formats.
+The final restricted map, executable LLM/hybrid readouts, prompt/order
+robustness diagnostics, and a live provider remain later Phase 4 work.
 Public aggregate artifacts still require explicit release review.
 Demo 3 (algorithmic districting) currently ships the apportionment slice;
 district polygon generation comes next. The ballot-measure, electorate, and

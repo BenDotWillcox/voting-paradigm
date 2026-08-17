@@ -412,12 +412,15 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
   bindings, normalized option probabilities separated from complete rich-
   ballot actions, common-cutoff validation, and compatibility with the v1
   presentation/response execution surface
+- Phase 4D classical readout slice: exact fixture/packet/ontology-bound
+  authored stance maps, Gaussian and Bradley-Terry posterior replay, common
+  uncertainty-aware probability coupling, deterministic five-format ballot
+  actions, and a validated public development map
 
 **Next, in order:**
-1. Implement authored semantic mapping and Gaussian/Bradley-Terry readouts on
-   the Phase 4D v2 contract
-2. Implement provider-neutral direct-LLM and fixed/expanding hybrid readouts
+1. Implement provider-neutral direct-LLM and fixed/expanding hybrid readouts
    with deterministic test doubles
+2. Author and independently review the restricted 48-measure semantic map
 3. Add prompt, option-order/label, and stochastic robustness diagnostics;
    freeze inputs, models, prompts, seeds, weights, and metrics before Ben's
    held-out case study
