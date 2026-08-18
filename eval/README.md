@@ -579,6 +579,82 @@ must stay inside the ignored restricted tree and receive participant-
 independent content review before use; the development map is infrastructure
 evidence, not a held-out result.
 
+The final-bank map is governed by the public precommitment at
+`eval/fixtures/preference_eval_semantic_authoring_profile_v1.json`. Validate
+that profile before opening any restricted packet:
+
+```bash
+python -m eval.validate_phase4_semantic_profile \
+  eval/fixtures/preference_eval_semantic_authoring_profile_v1.json \
+  eval/fixtures/preference_eval_bank_profile_v1.json \
+  eval/fixtures/preference_eval_phase4_protocol_v1.json
+```
+
+The profile allows only the exact participant-facing packet and frozen
+ontology definitions. Participant responses, preference evidence, posterior
+state, political identity, partisan history, demographics, and outside policy
+facts are forbidden. An author records each dimension with coarse option
+positions `-1`, `0`, or `1`, marks it `primary` or `secondary`, cites an exact
+participant-facing packet path for every option position, and writes a
+restricted rationale. The builder derives centering and weights
+deterministically (`primary=1`, `secondary=0.5` before runtime normalization),
+which prevents arbitrary decimal tuning.
+
+Keep the rationale bundle and derived map under `eval/restricted_bank/`. Build
+the map with aggregate-only stdout:
+
+```bash
+python -m eval.build_phase4_semantic_map \
+  eval/restricted_bank/semantic_map/authoring_bundle.json \
+  eval/fixtures/preference_eval_semantic_authoring_profile_v1.json \
+  eval/fixtures/preference_eval_bank_profile_v1.json \
+  eval/fixtures/preference_eval_phase4_protocol_v1.json \
+  eval/restricted_bank/final/preference_eval_final_v1.json \
+  --output eval/restricted_bank/semantic_map/semantic_map.json
+```
+
+The builder resolves the output path before writing and refuses to place a
+non-development map anywhere outside the repository's designated
+`eval/restricted_bank/` root. This is a hard boundary: an accidental tracked
+output would permanently reveal the held-out mapping through Git history.
+
+Independent review uses the locked prompt at
+`eval/prompts/phase4_semantic_review_v1.md`. It directly checks exact binding,
+packet-only grounding, ontology fidelity, direction, primary/secondary
+magnitude, option symmetry, sparsity, and political-cue exclusion for every
+measure. A rejected round remains a restricted draft and cannot emit an
+approval summary. After every exact mapping is approved, validate the log and
+generate the only participant-visible artifact with:
+
+```bash
+python -m eval.validate_phase4_semantic_review \
+  eval/restricted_bank/reviews/semantic_map_review.json \
+  eval/restricted_bank/semantic_map/semantic_map.json \
+  eval/restricted_bank/semantic_map/authoring_bundle.json \
+  eval/fixtures/preference_eval_semantic_authoring_profile_v1.json \
+  eval/fixtures/preference_eval_bank_profile_v1.json \
+  eval/fixtures/preference_eval_phase4_protocol_v1.json \
+  eval/restricted_bank/final/preference_eval_final_v1.json \
+  --summary-output eval/review_summaries/semantic_map_summary.json
+```
+
+Only that validator-generated safe summary and approved artifact hashes may
+enter Git history while the participant remains blinded. The exact map,
+rationales, detailed findings, and rejected rounds stay ignored and receive
+one access-controlled backup. Claude is the frozen independent AI reviewer
+for the personal case study; a separate human content review remains required
+before any external pilot.
+
+The safe summary also derives a `phase4_reviewed_semantic_mapper.v1`
+attestation. Every non-development `Phase4EvaluationRun` that includes a
+mapped classical or hybrid arm must carry that exact mapper, authoring-profile,
+review-log, and safe-summary provenance. Run validation requires the approved
+mapper hash on every mapped arm and requires the approval count to match the
+fixture. Public development runs may continue to exercise an unreviewed
+development map, but an unreviewed held-out map cannot enter a valid run. The
+attestation is evaluation provenance and deliberately does not alter the model
+input hash.
+
 `eval/phase4_classical_readout.py` replays the Gaussian linear or Bradley-
 Terry posterior from the exact structured-only evidence cutoff. Both models
 then use one common uncertainty-aware readout. For each option pair, the

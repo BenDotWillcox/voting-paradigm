@@ -420,6 +420,11 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
   LLM and fixed/expanding hybrid requests, recomputed posterior projections,
   active admitted-dimension inputs, deterministic test doubles, private cache
   boundaries, and exact snapshot rebuild validation
+- Phase 4 semantic-map review precommitment: packet-and-ontology-only inputs,
+  coarse ordinal positions and primary/secondary importance, deterministic
+  centered weights, restricted path-bound rationales, a locked independent-
+  review prompt, final-map output confinement, exact approvals, run-level
+  approved-mapper provenance, and participant-safe aggregate summaries
 
 **Next, in order:**
 1. Author and independently review the restricted 48-measure semantic map

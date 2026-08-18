@@ -193,8 +193,11 @@ Provider-neutral direct-LLM and fixed/expanding hybrid readouts now consume
 the same evidence cutoffs through content-addressed requests and private
 caches. Hybrids receive recomputed option-level posterior summaries, while the
 expanding arm additionally receives only active participant-admitted
-dimensions. The final restricted map, prompt/order robustness diagnostics,
-and a live provider remain later Phase 4 work.
+dimensions. A public semantic-map authoring profile now freezes coarse,
+packet-grounded mapping judgments, restricted-only final-map writes,
+independent blinded review, and run-level approval provenance before the
+restricted map is used. The final reviewed map, prompt/order robustness
+diagnostics, and a live provider remain later Phase 4 work.
 Public aggregate artifacts still require explicit release review.
 Demo 3 (algorithmic districting) currently ships the apportionment slice;
 district polygon generation comes next. The ballot-measure, electorate, and

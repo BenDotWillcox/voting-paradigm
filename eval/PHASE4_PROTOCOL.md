@@ -162,8 +162,12 @@ history, and demographic proxies remain excluded throughout.
   now bind exact evidence-condition inputs, recompute their posterior context,
   cache structured outputs by full request, and reuse the same ballot policy.
   The deterministic backend is only a boundary test double; the restricted
-  final-bank map still requires blinded review, and no live provider or final
-  prompt is selected before Phase 4E.
+  final-bank map still requires blinded review. Its public authoring profile
+  freezes packet-and-ontology-only inputs, coarse ordinal positions, derived
+  centering, independent review, participant-safe output, restricted-only map
+  writes, and a run-level approved-mapper attestation before any exact held-out
+  mapping is used. No live provider or final prediction prompt is selected
+  before Phase 4E.
 - **4E — robustness and final freeze:** test prompt paraphrases, option order
   and labels, stochastic sensitivity, and unsupported assumptions before the
   held-out case study.
@@ -177,6 +181,15 @@ restricted 48-measure fixture:
 python -m eval.validate_phase4_protocol \
   eval/fixtures/preference_eval_phase4_protocol_v1.json \
   eval/fixtures/preference_eval_bank_profile_v1.json
+```
+
+Validate the separate semantic-map authoring precommitment with:
+
+```bash
+python -m eval.validate_phase4_semantic_profile \
+  eval/fixtures/preference_eval_semantic_authoring_profile_v1.json \
+  eval/fixtures/preference_eval_bank_profile_v1.json \
+  eval/fixtures/preference_eval_phase4_protocol_v1.json
 ```
 
 The command prints content hashes and aggregate architecture counts. Phase 4A
