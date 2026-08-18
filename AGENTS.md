@@ -416,20 +416,22 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
   authored stance maps, Gaussian and Bradley-Terry posterior replay, common
   uncertainty-aware probability coupling, deterministic five-format ballot
   actions, and a validated public development map
+- Phase 4D provider readout slice: content-addressed provider-neutral direct-
+  LLM and fixed/expanding hybrid requests, recomputed posterior projections,
+  active admitted-dimension inputs, deterministic test doubles, private cache
+  boundaries, and exact snapshot rebuild validation
 
 **Next, in order:**
-1. Implement provider-neutral direct-LLM and fixed/expanding hybrid readouts
-   with deterministic test doubles
-2. Author and independently review the restricted 48-measure semantic map
-3. Add prompt, option-order/label, and stochastic robustness diagnostics;
+1. Author and independently review the restricted 48-measure semantic map
+2. Add prompt, option-order/label, and stochastic robustness diagnostics;
    freeze inputs, models, prompts, seeds, weights, and metrics before Ben's
    held-out case study
-4. Build separate blind evaluation and future-facing showcase modes
-5. Schedule and execute the six blinded waves and 7-14 day retests. Run
+3. Build separate blind evaluation and future-facing showcase modes
+4. Schedule and execute the six blinded waves and 7-14 day retests. Run
    validation enforces wave order, presentation seeds, retest independence,
    and timing.
-6. *(Deferred)* LLM-generated vote rationales
-7. *(Deferred)* LLM-generated personas
+5. *(Deferred)* LLM-generated vote rationales
+6. *(Deferred)* LLM-generated personas
 
 ### Demo 3: Algorithmic districting
 

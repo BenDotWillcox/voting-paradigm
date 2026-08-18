@@ -427,6 +427,7 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 - Phase 4C expanding-ontology lifecycle in `eval/phase4_ontology.py`: evidence-condition-bound private contexts, zero-weight proposals, exact and reviewed duplicate defenses, explicit participant admit/map/reject decisions, separately weighted admission/evidence support with correction-stable lineages, inactive-safe shrinkage, immutable seed dimensions, append-only support/merge/prune events, deterministic cutoff replay, and a provider-neutral test double; policy hyperparameters remain unfrozen and no live provider adapter is selected
 - Phase 4D versioned prediction boundary in `eval/phase4_prediction.py`: separate `prediction_snapshot.v2` and `evaluation_run.v2` records, exact component/packet/evidence/conversation/posterior/ontology bindings, normalized option probabilities plus complete ballot-type actions, private evidence citations and assumption flags, pre-answer target isolation, common-cutoff comparison checks, and a v1 execution projection
 - Phase 4D classical readouts in `eval/phase4_semantic.py` and `eval/phase4_classical_readout.py`: fixture/packet/fixed-ontology-bound relative stance maps, scale-invariant authored mapping, exact Gaussian/Bradley-Terry evidence replay, common pairwise logistic-normal probability coupling, separate posterior settledness, a reusable deterministic five-format ballot policy, artifact-aware snapshot rebuild validation, and an aggregate-only validator for the public development map; final policy values and the restricted 48-measure map are not frozen
+- Phase 4D provider readouts in `eval/phase4_llm_readout.py`: provider-neutral direct-LLM control and fixed/expanding hybrid requests, exact evidence-condition surfaces, recomputed option-level posterior projections, participant-admitted active expansion inputs, immutable private response caches, a deterministic test backend, common five-format actions, and exact cached snapshot rebuild validation; no live provider, benchmark model, or final prompt is selected
 - Fixed-bank eval harness: 4 authored synthetic personas + seeded Dirichlet-mixture persona generator (`eval/personas.py`), three response models as the misspecification axis (`gaussian_gap` matches the Gaussian likelihood, `logistic_choice` matches BT, `sloppy` matches neither — `eval/response_models.py`), held-out pair splits, log-likelihood/accuracy/Brier/Kendall-τ/calibration curves, models × policies comparison (`python -m eval.run_preference_eval --response-model ...`), grid sweeps for notebooks (`eval/sweeps.py`)
 - API: `/sessions/evidence` endpoint (replaces `/sessions/respond`), model + selection-policy params on session start
 - TS hygiene: Zod-validated JSONB boundaries (`lib/validations/preferences-schemas.ts`); `startPreferenceSession` race fixed via server-generated UUID + single insert
@@ -469,11 +470,9 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
   round remains in the restricted audit trail
 
 **Next, in order:**
-1. Implement provider-neutral direct-LLM and hybrid readouts with deterministic
-   test doubles on the same evidence cutoffs
-2. Author the restricted 48-measure semantic map under the existing blinded
+1. Author the restricted 48-measure semantic map under the existing blinded
    content-review discipline
-3. Add prompt, option-order/label, and stochastic robustness diagnostics;
+2. Add prompt, option-order/label, and stochastic robustness diagnostics;
    freeze inputs, models, prompts, seeds, weights, and metrics before Ben's
    held-out case study
 4. Build separate blind evaluation and future-facing showcase modes

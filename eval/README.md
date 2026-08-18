@@ -600,9 +600,46 @@ aware validator; a caller cannot make a forged state hash self-consistent and
 silently pass. Readout temperature, settledness margin, and other versioned
 policy values remain development inputs until the Phase 4E freeze.
 
-No executable direct-LLM or hybrid provider call exists yet. Those readouts
-come next and must build the already-versioned inputs and reuse the common
-ballot-action policy rather than weakening this boundary.
+### Provider-neutral LLM and hybrid readouts
+
+`eval/phase4_llm_readout.py` implements the final Phase 4D readout boundary.
+The direct-LLM control receives the exact neutral measure plus only the
+structured, conversation, or combined evidence surface named by its model
+configuration. The request contains no participant response and cannot name a
+posterior or semantic mapper. Hybrid requests add a freshly replayed explicit
+posterior projected into the target option space through the exact authored
+semantic map, including per-option moments and every frozen-order pairwise
+margin and probability; caller-supplied posterior hashes are never trusted.
+
+The expanding hybrid uses the same fixed posterior projection and adds only
+active, participant-admitted non-seed dimension states. With no active
+expansions its model input hash is intentionally identical to the fixed hybrid,
+so the fixed/expanding equivalence gate remains live. Once an admitted
+dimension becomes active, its semantic definition, support state, and
+shrinkage weight enter the active-ontology hash. Merged and pruned history does
+not enter the provider input.
+
+Provider model, prompt, readout policy, target packet, evidence, conversation,
+posterior, active ontology, and seed are all exact hash-bound inputs. Each LLM
+snapshot separately records the full private provider-request hash. Structured
+responses must cover every option, cite only eligible evidence, and identify
+unsupported assumptions by affected option. A content-addressed cache stores
+responses but not private request text; filesystem caches must still live in
+an ignored, access-controlled directory because responses may contain private
+audit diagnostics. Every response becomes a ballot through the same common
+five-format action policy used by the classical baselines.
+
+`DeterministicLLMReadoutBackend` exercises this contract and cache without
+pretending to be an experimental model. A live adapter, final provider/model,
+prompt, and policy values are Phase 4E freeze decisions, not defaults hidden in
+the infrastructure.
+
+`confidence` is comparable across every arm because it always equals the top
+option probability and is the quantity used for risk/coverage analysis.
+`settled_probability` is deliberately family-specific: classical arms report
+a posterior minimum pairwise-margin probability, while LLM arms report a
+versioned provider self-assessment. Do not pool or threshold settledness across
+those model families.
 
 Later phases also add prompt/order robustness. LLM predictions will retain
 private supporting-evidence IDs and unsupported-assumption flags. Repeated
