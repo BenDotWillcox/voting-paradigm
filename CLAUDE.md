@@ -428,6 +428,7 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 - Phase 4D versioned prediction boundary in `eval/phase4_prediction.py`: separate `prediction_snapshot.v2` and `evaluation_run.v2` records, exact component/packet/evidence/conversation/posterior/ontology bindings, normalized option probabilities plus complete ballot-type actions, private evidence citations and assumption flags, pre-answer target isolation, common-cutoff comparison checks, and a v1 execution projection
 - Phase 4D classical readouts in `eval/phase4_semantic.py` and `eval/phase4_classical_readout.py`: fixture/packet/fixed-ontology-bound relative stance maps, scale-invariant authored mapping, exact Gaussian/Bradley-Terry evidence replay, common pairwise logistic-normal probability coupling, separate posterior settledness, a reusable deterministic five-format ballot policy, artifact-aware snapshot rebuild validation, and an aggregate-only validator for the public development map; final policy values and the restricted 48-measure map are not frozen
 - Phase 4D provider readouts in `eval/phase4_llm_readout.py`: provider-neutral direct-LLM control and fixed/expanding hybrid requests, exact evidence-condition surfaces, recomputed option-level posterior projections, participant-admitted active expansion inputs, immutable private response caches, a deterministic test backend, common five-format actions, and exact cached snapshot rebuild validation; no live provider, benchmark model, or final prompt is selected
+- Phase 4 semantic-map authoring and review in `eval/phase4_semantic_review.py`: a public profile binds the exact bank profile, Phase 4 protocol, and 36 ontology definitions; restricted rationales use packet paths plus coarse ordinal positions and primary/secondary importance; runtime weights are deterministically derived and centered; the builder confines non-development output to `eval/restricted_bank/`; a hash-locked Claude prompt, exact mapping approvals, aggregate-safe CLIs, a nonrevealing summary, and a required held-out-run mapper attestation preserve Ben's mapping blindness; a separate human review remains required before an external pilot
 - Fixed-bank eval harness: 4 authored synthetic personas + seeded Dirichlet-mixture persona generator (`eval/personas.py`), three response models as the misspecification axis (`gaussian_gap` matches the Gaussian likelihood, `logistic_choice` matches BT, `sloppy` matches neither — `eval/response_models.py`), held-out pair splits, log-likelihood/accuracy/Brier/Kendall-τ/calibration curves, models × policies comparison (`python -m eval.run_preference_eval --response-model ...`), grid sweeps for notebooks (`eval/sweeps.py`)
 - API: `/sessions/evidence` endpoint (replaces `/sessions/respond`), model + selection-policy params on session start
 - TS hygiene: Zod-validated JSONB boundaries (`lib/validations/preferences-schemas.ts`); `startPreferenceSession` race fixed via server-generated UUID + single insert
@@ -475,11 +476,11 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 2. Add prompt, option-order/label, and stochastic robustness diagnostics;
    freeze inputs, models, prompts, seeds, weights, and metrics before Ben's
    held-out case study
-4. Build separate blind evaluation and future-facing showcase modes
-5. Schedule and execute the six blinded waves and 7-14 day retests only after
+3. Build separate blind evaluation and future-facing showcase modes
+4. Schedule and execute the six blinded waves and 7-14 day retests only after
    the remaining model/evaluation freeze is complete
-6. *(Deferred)* LLM-generated vote rationales
-7. *(Deferred)* LLM-generated personas
+5. *(Deferred)* LLM-generated vote rationales
+6. *(Deferred)* LLM-generated personas
 
 ### Demo 3: Algorithmic districting
 

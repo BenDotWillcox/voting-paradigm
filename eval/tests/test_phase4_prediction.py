@@ -52,6 +52,7 @@ from eval.phase4_prediction import (
     PredictionUnsupportedAssumption,
     QuadraticPrediction,
     RankedPrediction,
+    ReviewedSemanticMapperReference,
     ScorePrediction,
     SingleChoicePrediction,
     as_v1_execution_run,
@@ -80,6 +81,29 @@ def artifact(name: str) -> ComponentArtifactReference:
         artifact_id=name,
         artifact_version="development-v1",
         artifact_sha256=content_sha256({"artifact": name}),
+    )
+
+
+def reviewed_mapper(
+    semantic_mapper: ComponentArtifactReference,
+    *,
+    approved_measure_count: int,
+) -> ReviewedSemanticMapperReference:
+    return ReviewedSemanticMapperReference(
+        semantic_mapper=semantic_mapper,
+        authoring_profile_id="semantic_authoring_profile",
+        authoring_profile_version=1,
+        authoring_profile_sha256="1" * 64,
+        review_log_id="semantic_review_log",
+        review_log_version=1,
+        review_log_sha256="2" * 64,
+        review_summary_id="semantic_review_summary",
+        review_summary_sha256="3" * 64,
+        reviewer_type="ai",
+        reviewer_system="claude",
+        reviewer_model_version="claude-review-test",
+        review_prompt_sha256="4" * 64,
+        approved_measure_count=approved_measure_count,
     )
 
 
@@ -473,6 +497,50 @@ def test_conforming_v2_run_round_trips_and_validates():
     assert restored.prediction_snapshots[0].record_version == (
         "prediction_snapshot.v2"
     )
+
+
+def test_held_out_run_requires_exact_reviewed_semantic_mapper() -> None:
+    config = configuration(
+        "gaussian_linear_fixed",
+        EvidenceCondition.STRUCTURED_ONLY,
+    )
+    assert config.semantic_mapper is not None
+    final_fixture = FIXTURE.model_copy(update={"development_only": False})
+    unapproved = run(configs=[config]).model_copy(
+        update={"fixture_sha256": content_sha256(final_fixture)}
+    )
+
+    with pytest.raises(ValueError, match="requires an approved semantic mapper"):
+        validate_phase4_evaluation_run(unapproved, final_fixture, PROTOCOL)
+
+    approval = reviewed_mapper(
+        config.semantic_mapper,
+        approved_measure_count=len(final_fixture.measures),
+    )
+    approved = unapproved.model_copy(
+        update={"reviewed_semantic_mapper": approval}
+    )
+    validate_phase4_evaluation_run(approved, final_fixture, PROTOCOL)
+
+    mismatched = approved.model_copy(
+        update={
+            "reviewed_semantic_mapper": approval.model_copy(
+                update={"semantic_mapper": artifact("different_mapper")}
+            )
+        }
+    )
+    with pytest.raises(ValueError, match="does not match every mapped arm"):
+        validate_phase4_evaluation_run(mismatched, final_fixture, PROTOCOL)
+
+    wrong_count = approved.model_copy(
+        update={
+            "reviewed_semantic_mapper": approval.model_copy(
+                update={"approved_measure_count": 1}
+            )
+        }
+    )
+    with pytest.raises(ValueError, match="count does not match"):
+        validate_phase4_evaluation_run(wrong_count, final_fixture, PROTOCOL)
 
 
 @pytest.mark.parametrize(

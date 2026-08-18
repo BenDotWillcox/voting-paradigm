@@ -18,6 +18,7 @@ from typing import Annotated, Literal, Self, TypeAlias
 from pydantic import Field, field_validator, model_validator
 from preferences.types import Evidence
 
+from .bank_profile import ReviewActorType
 from .contracts import (
     BallotType,
     ContractModel,
@@ -235,6 +236,41 @@ class ComponentArtifactReference(ContractModel):
     artifact_id: StableId
     artifact_version: NonEmptyText
     artifact_sha256: Sha256Digest
+
+
+class ReviewedSemanticMapperReference(ContractModel):
+    """Aggregate-safe approval provenance for one exact semantic mapper."""
+
+    record_version: Literal["phase4_reviewed_semantic_mapper.v1"] = (
+        "phase4_reviewed_semantic_mapper.v1"
+    )
+    semantic_mapper: ComponentArtifactReference
+    authoring_profile_id: StableId
+    authoring_profile_version: PositiveVersion
+    authoring_profile_sha256: Sha256Digest
+    review_log_id: StableId
+    review_log_version: PositiveVersion
+    review_log_sha256: Sha256Digest
+    review_summary_id: StableId
+    review_summary_sha256: Sha256Digest
+    reviewer_type: ReviewActorType
+    reviewer_system: NonEmptyText
+    reviewer_model_version: str | None = Field(default=None, min_length=1)
+    review_prompt_sha256: Sha256Digest | None = None
+    approved_measure_count: int = Field(ge=1)
+    all_mappings_approved: Literal[True] = True
+
+    @model_validator(mode="after")
+    def ai_approval_requires_model_and_prompt(self) -> Self:
+        if self.reviewer_type is ReviewActorType.AI and (
+            self.reviewer_model_version is None
+            or self.review_prompt_sha256 is None
+        ):
+            raise ValueError(
+                "AI semantic-mapper approval requires model and prompt "
+                "provenance"
+            )
+        return self
 
 
 class Phase4ModelConfiguration(ContractModel):
@@ -489,6 +525,7 @@ class Phase4EvaluationRun(ContractModel):
     session_id: StableId
     created_at: datetime
     evidence_ledger: FixedOntologyEvidenceLedger
+    reviewed_semantic_mapper: ReviewedSemanticMapperReference | None = None
     expanding_ontology_ledgers: list[ExpandingOntologyLedger] = Field(
         default_factory=list
     )
@@ -1136,6 +1173,8 @@ def validate_phase4_evaluation_run(
     ):
         raise ValueError("Phase 4 run does not bind the exact protocol")
 
+    _validate_reviewed_semantic_mapper(run, fixture)
+
     projection = as_v1_execution_run(run)
     validate_run_against_fixture(
         projection,
@@ -1185,6 +1224,43 @@ def validate_phase4_evaluation_run(
         )
     _validate_common_cutoffs(run)
     _validate_fixed_expanding_sanity(run)
+
+
+def _validate_reviewed_semantic_mapper(
+    run: Phase4EvaluationRun,
+    fixture: EvaluationFixture,
+) -> None:
+    """Require exact approval provenance before a held-out mapper is used."""
+
+    semantic_mappers = [
+        configuration.semantic_mapper
+        for configuration in run.model_configurations
+        if configuration.semantic_mapper is not None
+    ]
+    approval = run.reviewed_semantic_mapper
+    if not semantic_mappers:
+        if approval is not None:
+            raise ValueError(
+                "run cannot approve a semantic mapper that no arm uses"
+            )
+        return
+    if approval is None:
+        if fixture.development_only:
+            return
+        raise ValueError(
+            "held-out run requires an approved semantic mapper reference"
+        )
+    if any(
+        semantic_mapper != approval.semantic_mapper
+        for semantic_mapper in semantic_mappers
+    ):
+        raise ValueError(
+            "semantic mapper approval does not match every mapped arm"
+        )
+    if approval.approved_measure_count != len(fixture.measures):
+        raise ValueError(
+            "semantic mapper approval count does not match the fixture"
+        )
 
 
 def assert_v1_record_versions_unchanged() -> None:

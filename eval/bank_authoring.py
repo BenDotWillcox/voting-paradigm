@@ -220,7 +220,9 @@ def _canonical_array_index(token: str) -> bool:
     )
 
 
-def _participant_text_pointer(pointer: str) -> bool:
+def is_participant_text_pointer(pointer: str) -> bool:
+    """Return whether a JSON pointer names an exact participant-facing field."""
+
     tokens = [
         _json_pointer_token(token)
         for token in pointer.removeprefix("/").split("/")
@@ -260,7 +262,9 @@ def _participant_text_pointer(pointer: str) -> bool:
     return False
 
 
-def _resolve_json_pointer(document: JsonValue, pointer: str) -> JsonValue:
+def resolve_json_pointer(document: JsonValue, pointer: str) -> JsonValue:
+    """Resolve one canonical JSON pointer without accepting implicit coercions."""
+
     current = document
     for raw_token in pointer.removeprefix("/").split("/"):
         token = _json_pointer_token(raw_token)
@@ -379,7 +383,7 @@ def validate_measure_source_evidence(
     traced_source_ids: set[str] = set()
     traced_assumption_ids: set[str] = set()
     for trace in evidence.content_traces:
-        if not _participant_text_pointer(trace.content_path):
+        if not is_participant_text_pointer(trace.content_path):
             raise ValueError(
                 f"content trace {trace.trace_id} must point to an exact "
                 "participant-facing text field"
@@ -409,7 +413,7 @@ def validate_measure_source_evidence(
                     f"content trace {trace.trace_id} references unknown "
                     f"jurisdiction facts: {sorted(unknown_fact_keys)}"
                 )
-        traced_value = _resolve_json_pointer(
+        traced_value = resolve_json_pointer(
             measure_document,
             trace.content_path,
         )
