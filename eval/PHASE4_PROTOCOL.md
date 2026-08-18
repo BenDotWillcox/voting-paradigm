@@ -148,7 +148,7 @@ history, and demographic proxies remain excluded throughout.
   shrinkage, and participant-confirmed support, merge, and prune events. Seed
   dimensions cannot be merged or pruned. Policy parameters remain versioned
   inputs until the final experiment freeze; no live provider is selected.
-- **4D — prediction readouts (contracts and classical baselines implemented):** separate
+- **4D — prediction readouts (implementation complete):** separate
   `prediction_snapshot.v2` and `evaluation_run.v2` contracts now bind exact
   packets, eligible evidence and conversation prefixes, posterior/ontology
   state, component artifacts, and pre-answer chronology while preserving the
@@ -158,8 +158,12 @@ history, and demographic proxies remain excluded throughout.
   fixture/packet/ontology-bound authored stance map now drives both Gaussian
   and Bradley-Terry posteriors through one uncertainty-aware probability
   readout and common rich-ballot policy. The public development map validates
-  end to end; the restricted final-bank map still requires blinded review.
-  Executable direct-LLM and hybrid readouts remain the next Phase 4D slice.
+  end to end. Provider-neutral direct-LLM and fixed/expanding hybrid readouts
+  now bind exact evidence-condition inputs, recompute their posterior context,
+  cache structured outputs by full request, and reuse the same ballot policy.
+  The deterministic backend is only a boundary test double; the restricted
+  final-bank map still requires blinded review, and no live provider or final
+  prompt is selected before Phase 4E.
 - **4E — robustness and final freeze:** test prompt paraphrases, option order
   and labels, stochastic sensitivity, and unsupported assumptions before the
   held-out case study.

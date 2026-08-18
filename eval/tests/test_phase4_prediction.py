@@ -400,6 +400,16 @@ def snapshot(
         confidence=0.6,
         settled_probability=0.75,
         ballot_prediction=ballot_prediction(measure),
+        provider_request_sha256=(
+            content_sha256(
+                {
+                    "configuration_id": config.configuration_id,
+                    "cutoff": cutoff,
+                }
+            )
+            if config.provider_model is not None
+            else None
+        ),
         supporting_evidence_event_ids=support_ids,
         created_at=created_at or at(11),
     )
@@ -816,6 +826,20 @@ def test_llm_predictions_cite_evidence_and_keep_private_assumption_flags():
         evidence=evidence,
         config=config,
     )
+    unbound_request = prediction.model_copy(
+        update={"provider_request_sha256": None}
+    )
+    with pytest.raises(ValueError, match="exact provider request"):
+        validate_phase4_evaluation_run(
+            run(
+                evidence=evidence,
+                configs=[config],
+                presentations=[target],
+                snapshots=[unbound_request],
+            ),
+            FIXTURE,
+            PROTOCOL,
+        )
     uncited = prediction.model_copy(update={"supporting_evidence_event_ids": []})
     with pytest.raises(ValueError, match="must cite"):
         validate_phase4_evaluation_run(
@@ -870,6 +894,26 @@ def test_non_llm_prediction_cannot_emit_llm_assumption_flags():
                 configs=[config],
                 presentations=[target],
                 snapshots=[prediction],
+            ),
+            FIXTURE,
+            PROTOCOL,
+        )
+
+    provider_bound = snapshot(
+        measure=measure,
+        target=target,
+        evidence=evidence,
+        config=config,
+    ).model_copy(
+        update={"provider_request_sha256": content_sha256("not an LLM")}
+    )
+    with pytest.raises(ValueError, match="non-LLM prediction"):
+        validate_phase4_evaluation_run(
+            run(
+                evidence=evidence,
+                configs=[config],
+                presentations=[target],
+                snapshots=[provider_bound],
             ),
             FIXTURE,
             PROTOCOL,

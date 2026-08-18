@@ -189,8 +189,12 @@ active inputs on the same stack cannot silently diverge. The two classical
 baselines now replay their posteriors through a fixture-bound authored stance
 map, one uncertainty-aware probability coupling, and one deterministic rich-
 ballot policy; a public development map exercises all five ballot formats.
-The final restricted map, executable LLM/hybrid readouts, prompt/order
-robustness diagnostics, and a live provider remain later Phase 4 work.
+Provider-neutral direct-LLM and fixed/expanding hybrid readouts now consume
+the same evidence cutoffs through content-addressed requests and private
+caches. Hybrids receive recomputed option-level posterior summaries, while the
+expanding arm additionally receives only active participant-admitted
+dimensions. The final restricted map, prompt/order robustness diagnostics,
+and a live provider remain later Phase 4 work.
 Public aggregate artifacts still require explicit release review.
 Demo 3 (algorithmic districting) currently ships the apportionment slice;
 district polygon generation comes next. The ballot-measure, electorate, and

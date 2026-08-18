@@ -54,6 +54,7 @@ from .phase4_prediction import (
     ScorePrediction,
     SingleChoicePrediction,
     TOP_OPTION_ABS_TOLERANCE,
+    active_ontology_input_sha256,
     materialized_evidence_sha256,
     prediction_model_input_sha256,
     validate_prediction_v2_for_measure,
@@ -251,7 +252,7 @@ def validate_classical_configuration(
         raise ValueError("classical baseline cannot bind an LLM provider or prompt")
 
 
-def _normalized_stance_matrix(
+def normalized_stance_matrix(
     mapping: AuthoredMeasureSemanticMapping,
     dimension_ids: list[str],
 ) -> np.ndarray:
@@ -275,7 +276,7 @@ def _normalized_stance_matrix(
     return matrix / scale
 
 
-def _validate_preference_state(
+def validate_preference_state(
     state: PreferenceState,
     expected_item_ids: list[str],
     expected_model_version: str,
@@ -299,7 +300,7 @@ def _readout_values(
     policy: ClassicalReadoutPolicy,
 ) -> tuple[dict[str, float], str, float]:
     dimension_ids = list(state.item_ids)
-    stance_matrix = _normalized_stance_matrix(mapping, dimension_ids)
+    stance_matrix = normalized_stance_matrix(mapping, dimension_ids)
     posterior_mean = np.asarray(state.mu, dtype=float)
     posterior_covariance = flat_to_sigma(state.sigma_flat, len(dimension_ids))
     option_means = stance_matrix @ posterior_mean
@@ -425,6 +426,28 @@ def _quadratic_allocations(
     return best
 
 
+def top_option_id_from_probabilities(
+    measure: MeasureVersion,
+    probabilities: dict[str, float],
+) -> str:
+    """Resolve a contract-level top option in frozen display order."""
+
+    option_ids = [option.option_id for option in measure.options]
+    if set(probabilities) != set(option_ids):
+        raise ValueError("action probabilities must cover every option exactly")
+    top_probability = max(probabilities.values())
+    return next(
+        option_id
+        for option_id in option_ids
+        if math.isclose(
+            probabilities[option_id],
+            top_probability,
+            rel_tol=0.0,
+            abs_tol=TOP_OPTION_ABS_TOLERANCE,
+        )
+    )
+
+
 def ballot_prediction_from_probabilities(
     measure: MeasureVersion,
     probabilities: dict[str, float],
@@ -445,16 +468,9 @@ def ballot_prediction_from_probabilities(
         abs_tol=1e-9,
     ):
         raise ValueError("action probabilities must be a normalized distribution")
-    top_probability = max(probabilities.values())
-    top_option_id = next(
-        option_id
-        for option_id in option_ids
-        if math.isclose(
-            probabilities[option_id],
-            top_probability,
-            rel_tol=0.0,
-            abs_tol=TOP_OPTION_ABS_TOLERANCE,
-        )
+    top_option_id = top_option_id_from_probabilities(
+        measure,
+        probabilities,
     )
 
     if measure.ballot_type is BallotType.SINGLE_CHOICE:
@@ -574,7 +590,7 @@ def build_classical_prediction_snapshot(
         cutoff_sequence=evidence_cutoff_sequence,
         user_id=evidence_ledger.session_id,
     )
-    _validate_preference_state(
+    validate_preference_state(
         state,
         evidence_ledger.ontology.item_ids,
         model_artifact.model_version,
@@ -615,8 +631,8 @@ def build_classical_prediction_snapshot(
         conversation_messages_sha256=content_sha256([]),
         preference_state_sha256=preference_state_sha256(state),
         ontology_snapshot_sha256=content_sha256(evidence_ledger.ontology),
-        active_ontology_sha256=content_sha256(
-            sorted(evidence_ledger.ontology.item_ids)
+        active_ontology_sha256=active_ontology_input_sha256(
+            evidence_ledger.ontology.item_ids
         ),
         model_input_sha256="0" * 64,
     )

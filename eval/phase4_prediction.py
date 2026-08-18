@@ -4,9 +4,8 @@ The Phase 1-3 ``PredictionSnapshot`` and ``EvaluationRun`` contracts remain
 frozen at v1.  This module adds a separate v2 boundary for the Phase 4 model
 comparison: every arm binds the same held-out packet and evidence cutoff,
 emits a normalized option distribution, and also emits one complete ballot-
-type-specific prediction.  The contract contains no provider calls; executable
-classical and future provider readouts live behind this boundary in separate
-modules.
+type-specific prediction. Provider calls remain outside the contract in the
+separate classical and LLM readout modules.
 """
 
 from __future__ import annotations
@@ -45,6 +44,8 @@ from .phase4_evidence import (
 )
 from .phase4_interviewer import preference_evidence_sha256
 from .phase4_ontology import (
+    ExpandingDimensionStatus,
+    ExpandingOntologyDimensionState,
     ExpandingOntologyLedger,
     active_dimension_states,
     evidence_ledger_identity_sha256,
@@ -93,10 +94,97 @@ def _materialized_evidence_time(evidence: Evidence) -> datetime:
     return datetime.fromisoformat(evidence.timestamp.replace("Z", "+00:00"))
 
 
-def _active_ontology_ids_sha256(dimension_ids: list[str]) -> str:
-    """Hash the active model feature universe, independent of retired history."""
+def active_ontology_input_sha256(
+    fixed_item_ids: list[str],
+    expanded_dimensions: list[ExpandingOntologyDimensionState] | None = None,
+) -> str:
+    """Hash only the active ontology surface consumed by a prediction model.
 
-    return content_sha256(sorted(dimension_ids))
+    An expanding arm with no active non-seed dimensions intentionally hashes
+    identically to the fixed ontology. Once participant-admitted dimensions
+    become active, their complete active states enter the hash; retired
+    history remains audit provenance rather than model input.
+    """
+
+    active_expansions = expanded_dimensions or []
+    if any(item.is_seed for item in active_expansions):
+        raise ValueError("expanded ontology input cannot repeat seed dimensions")
+    if any(
+        item.status is not ExpandingDimensionStatus.ACTIVE
+        for item in active_expansions
+    ):
+        raise ValueError("expanded ontology input must contain active dimensions")
+    dimension_ids = [item.dimension.dimension_id for item in active_expansions]
+    if len(dimension_ids) != len(set(dimension_ids)):
+        raise ValueError("expanded ontology input dimension ids must be unique")
+    if set(dimension_ids) & set(fixed_item_ids):
+        raise ValueError("expanded ontology input cannot shadow a fixed dimension")
+    if not active_expansions:
+        return content_sha256(sorted(fixed_item_ids))
+    return content_sha256(
+        {
+            "fixed_item_ids": sorted(fixed_item_ids),
+            "expanded_dimensions": [
+                item.model_dump(mode="json")
+                for item in sorted(
+                    active_expansions,
+                    key=lambda value: value.dimension.dimension_id,
+                )
+            ],
+        }
+    )
+
+
+def prediction_model_input_components_sha256(
+    *,
+    target_measure_id: str,
+    target_measure_version: int,
+    target_packet_version: int,
+    target_packet_sha256: str,
+    evidence_condition: EvidenceCondition | None,
+    evidence_cutoff_sequence: int,
+    eligible_evidence_sha256: str,
+    conversation_messages_sha256: str,
+    preference_state_sha256: str | None,
+    active_ontology_sha256: str | None,
+    preference_model: ComponentArtifactReference | None,
+    semantic_mapper: ComponentArtifactReference | None,
+    prediction_readout: ComponentArtifactReference,
+    provider_model: ComponentArtifactReference | None,
+    prompt: ComponentArtifactReference | None,
+    seed: int,
+) -> str:
+    """Hash the provider-independent, model-consumable prediction surface."""
+
+    def artifact_payload(
+        artifact: ComponentArtifactReference | None,
+    ) -> dict[str, str] | None:
+        return artifact.model_dump(mode="json") if artifact is not None else None
+
+    return content_sha256(
+        {
+            "target_measure_id": target_measure_id,
+            "target_measure_version": target_measure_version,
+            "target_packet_version": target_packet_version,
+            "target_packet_sha256": target_packet_sha256,
+            "evidence_condition": (
+                evidence_condition.value
+                if evidence_condition is not None
+                else None
+            ),
+            "evidence_cutoff_sequence": evidence_cutoff_sequence,
+            "eligible_evidence_sha256": eligible_evidence_sha256,
+            "conversation_messages_sha256": conversation_messages_sha256,
+            "preference_state_sha256": preference_state_sha256,
+            "active_ontology_sha256": active_ontology_sha256,
+            "preference_model": artifact_payload(preference_model),
+            "semantic_mapper": artifact_payload(semantic_mapper),
+            "prediction_readout": artifact_payload(prediction_readout),
+            "provider_model": artifact_payload(provider_model),
+            "prompt": artifact_payload(prompt),
+            "seed": seed,
+        }
+    )
 
 
 def prediction_model_input_sha256(
@@ -111,40 +199,23 @@ def prediction_model_input_sha256(
     active inputs produce the same reproducible input hash.
     """
 
-    def artifact_payload(
-        artifact: ComponentArtifactReference | None,
-    ) -> dict[str, str] | None:
-        return artifact.model_dump(mode="json") if artifact is not None else None
-
-    return content_sha256(
-        {
-            "target_measure_id": binding.target_measure_id,
-            "target_measure_version": binding.target_measure_version,
-            "target_packet_version": binding.target_packet_version,
-            "target_packet_sha256": binding.target_packet_sha256,
-            "evidence_condition": (
-                binding.evidence_condition.value
-                if binding.evidence_condition is not None
-                else None
-            ),
-            "evidence_cutoff_sequence": binding.evidence_cutoff_sequence,
-            "eligible_evidence_sha256": binding.eligible_evidence_sha256,
-            "conversation_messages_sha256": (
-                binding.conversation_messages_sha256
-            ),
-            "preference_state_sha256": binding.preference_state_sha256,
-            "active_ontology_sha256": binding.active_ontology_sha256,
-            "preference_model": artifact_payload(
-                configuration.preference_model
-            ),
-            "semantic_mapper": artifact_payload(configuration.semantic_mapper),
-            "prediction_readout": artifact_payload(
-                configuration.prediction_readout
-            ),
-            "provider_model": artifact_payload(configuration.provider_model),
-            "prompt": artifact_payload(configuration.prompt),
-            "seed": configuration.seed,
-        }
+    return prediction_model_input_components_sha256(
+        target_measure_id=binding.target_measure_id,
+        target_measure_version=binding.target_measure_version,
+        target_packet_version=binding.target_packet_version,
+        target_packet_sha256=binding.target_packet_sha256,
+        evidence_condition=binding.evidence_condition,
+        evidence_cutoff_sequence=binding.evidence_cutoff_sequence,
+        eligible_evidence_sha256=binding.eligible_evidence_sha256,
+        conversation_messages_sha256=binding.conversation_messages_sha256,
+        preference_state_sha256=binding.preference_state_sha256,
+        active_ontology_sha256=binding.active_ontology_sha256,
+        preference_model=configuration.preference_model,
+        semantic_mapper=configuration.semantic_mapper,
+        prediction_readout=configuration.prediction_readout,
+        provider_model=configuration.provider_model,
+        prompt=configuration.prompt,
+        seed=configuration.seed,
     )
 
 
@@ -341,6 +412,7 @@ class PredictionSnapshotV2(ContractModel):
     confidence: Probability
     settled_probability: Probability
     ballot_prediction: BallotPrediction
+    provider_request_sha256: Sha256Digest | None = None
     supporting_evidence_event_ids: list[StableId] = Field(default_factory=list)
     unsupported_assumptions: list[PredictionUnsupportedAssumption] = Field(
         default_factory=list
@@ -814,15 +886,17 @@ def _validate_snapshot_inputs(
                 cutoff_sequence=binding.evidence_cutoff_sequence,
             )
             expected_ontology_hash = content_sha256(ontology)
-            expected_active_hash = _active_ontology_ids_sha256(
+            expected_active_hash = active_ontology_input_sha256(
+                run.evidence_ledger.ontology.item_ids,
                 [
-                    item.dimension.dimension_id
+                    item
                     for item in active_dimension_states(ontology)
-                ]
+                    if not item.is_seed
+                ],
             )
         else:
             expected_ontology_hash = content_sha256(run.evidence_ledger.ontology)
-            expected_active_hash = _active_ontology_ids_sha256(
+            expected_active_hash = active_ontology_input_sha256(
                 run.evidence_ledger.ontology.item_ids
             )
         if binding.ontology_snapshot_sha256 != expected_ontology_hash:
@@ -843,6 +917,10 @@ def _validate_snapshot_inputs(
         PredictionReadout.DIRECT_LLM,
         PredictionReadout.LLM_PLUS_EXPLICIT_POSTERIOR,
     }
+    if uses_llm and snapshot.provider_request_sha256 is None:
+        raise ValueError("LLM prediction must bind its exact provider request")
+    if not uses_llm and snapshot.provider_request_sha256 is not None:
+        raise ValueError("non-LLM prediction cannot bind a provider request")
     if snapshot.unsupported_assumptions and not uses_llm:
         raise ValueError("non-LLM prediction cannot emit LLM assumption flags")
     if (
