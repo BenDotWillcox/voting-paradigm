@@ -717,8 +717,95 @@ a posterior minimum pairwise-margin probability, while LLM arms report a
 versioned provider self-assessment. Do not pool or threshold settledness across
 those model families.
 
-Later phases also add prompt/order robustness. LLM predictions will retain
-private supporting-evidence IDs and unsupported-assumption flags. Repeated
-calls are sensitivity or Monte Carlo diagnostics, not independent human
-observations. The Phase 2 runner still deliberately stops before those
-implementations or a human-facing UI.
+The Phase 4E profile below freezes prompt/order robustness requirements. LLM
+predictions retain private supporting-evidence IDs and unsupported-assumption
+flags. Repeated calls are sensitivity or Monte Carlo diagnostics, not
+independent human observations. The Phase 2 runner still deliberately stops
+before live-provider execution or a human-facing UI.
+
+## Phase 4E Qualification And Robustness Precommitment
+
+`eval/phase4_robustness.py` freezes the public rules used to qualify a live
+model without selecting one in code. The primary experiment requires an
+open-weight model, allows hosted inference, and does not require local
+inference. Exactly three candidates are compared on public development data;
+one qualified model must then serve the interviewer, evidence extractor,
+ontology proposer, direct readout, and hybrid readout roles. Exact upstream
+and serving revisions, weight and license hashes, provider terms, and required
+tool/structured-output capabilities are recorded. Closed-weight models have no
+automatic fallback. A model upgrade creates a new candidate artifact and
+results remain attributable to the exact revision, so later upgrades can be
+compared without changing orchestration code.
+
+The participant boundary is pseudonymous, not anonymous: provider requests use
+opaque IDs and exclude direct identifiers, political identity, and demographic
+proxies. Contact/consent records stay separate. A local scan must redact a
+flagged identifier or record that the participant confirmed it was a false
+positive before transmitting the text, and provider terms must prohibit
+training on requests. Public results remain aggregate-only.
+
+The personal-study API budget is a hard USD 20, represented as integer
+microusd: USD 4 for qualification, USD 13 for the held-out study, and USD 3 for
+retries. Every attempted provider call requires an authorization that fits the
+remaining segment and total caps. Authorizations are hash-bound to subsequent
+usage records, and their maximum costs consume the cap as soon as they are
+issued. A completed call replaces its reservation with actual billed cost;
+outstanding calls continue to reserve their maximum, so concurrent requests
+cannot jointly oversubscribe the budget without permanently discarding unused
+room. Cache hits cost zero and retries use only the reserve with an exact
+original-call link. The profile does not authorize spending by itself and this
+slice makes no provider calls.
+
+The adapter must close every authorization with either a usage row or an
+explicit zero-cost failure/cancellation record. Until that lifecycle record is
+implemented, an abandoned authorization intentionally remains reserved and an
+attempt without a recorded call cannot enter the retry reserve. The adapter
+also needs incremental running totals for live authorization; the full ledger
+validator remains the end-of-run audit rather than the per-call hot path.
+
+The primary estimator is one provider call. Three repeats, two locked prompt
+paraphrases, one alternate option order, and one neutral option-label mapping
+are staged shadow diagnostics rather than a factorial ensemble. Order and label
+changes require exact top-choice equivariance; prompt and stochastic changes
+measure sensitivity. All invalid outputs, flips, probability deltas,
+Jensen-Shannon divergence in bits, and unsupported-assumption deltas are
+recorded. Every prediction, comparison, and aggregate binds the exact public
+profile and open-weight candidate revision; each shadow also binds its exact
+prompt/order/label/stochastic artifact and applicable probe coordinates.
+Deterministic order and label builders and participant-safe aggregate contracts
+make those comparisons replayable. Top-option ties use the same `1e-12`
+display-order rule as the Phase 4D prediction contract.
+
+Order and label probes require their deterministic construction seed.
+Stochastic probes always bind a repeat index and bind a sampling seed only when
+the candidate backend honestly exposes one; seeded sampling is not a hidden
+capability requirement.
+
+Version 1 treats order/label invalid outputs and top-choice flips as hard
+failures while recording their probability movement. Probability-delta and
+divergence thresholds are calibrated on public development data in the final
+freeze; adding those threshold fields changes the profile version and hash.
+Invalid canonical calls are candidate-qualification failures rather than
+shadow-comparison rows, so aggregate `invalid_output_rate` covers shadow
+variants only.
+
+The primary outcomes are prequential log loss and high-confidence delegated
+error on the fixed public confidence grid. Accuracy, Brier score, calibration,
+acquisition/model/ontology/readout deltas, retest consistency, generalization,
+learning curves, rich-ballot fidelity, assumptions, robustness, cost, and
+latency are secondary. The personal case study is descriptive; it cannot
+support a population-superiority claim, and held-out responses cannot select a
+model, prompt, or threshold.
+
+Validate the exact public profile with:
+
+```bash
+python -m eval.validate_phase4_robustness \
+  eval/fixtures/preference_eval_phase4_robustness_v1.json \
+  eval/fixtures/preference_eval_phase4_protocol_v1.json \
+  eval/review_summaries/semantic_map_summary.json
+```
+
+The next 4E slice implements provider adapters and produces auditable
+candidate-qualification artifacts on public development data. It must not use
+the restricted participant responses or spend from the held-out study segment.

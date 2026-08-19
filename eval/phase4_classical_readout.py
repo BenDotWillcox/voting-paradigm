@@ -55,6 +55,7 @@ from .phase4_prediction import (
     SingleChoicePrediction,
     TOP_OPTION_ABS_TOLERANCE,
     active_ontology_input_sha256,
+    expected_top_option_id,
     materialized_evidence_sha256,
     prediction_model_input_sha256,
     validate_prediction_v2_for_measure,
@@ -332,18 +333,8 @@ def _readout_values(
         option_id: float(probability_values[index])
         for index, option_id in enumerate(option_ids)
     }
-    top_probability = float(np.max(probability_values))
-    top_index = next(
-        index
-        for index in range(len(option_ids))
-        if math.isclose(
-            float(probability_values[index]),
-            top_probability,
-            rel_tol=0.0,
-            abs_tol=TOP_OPTION_ABS_TOLERANCE,
-        )
-    )
-    top_option_id = option_ids[top_index]
+    top_option_id = expected_top_option_id(option_ids, probabilities)
+    top_index = option_ids.index(top_option_id)
 
     pairwise_settled: list[float] = []
     for other_index in range(len(option_ids)):
@@ -432,19 +423,9 @@ def top_option_id_from_probabilities(
 ) -> str:
     """Resolve a contract-level top option in frozen display order."""
 
-    option_ids = [option.option_id for option in measure.options]
-    if set(probabilities) != set(option_ids):
-        raise ValueError("action probabilities must cover every option exactly")
-    top_probability = max(probabilities.values())
-    return next(
-        option_id
-        for option_id in option_ids
-        if math.isclose(
-            probabilities[option_id],
-            top_probability,
-            rel_tol=0.0,
-            abs_tol=TOP_OPTION_ABS_TOLERANCE,
-        )
+    return expected_top_option_id(
+        [option.option_id for option in measure.options],
+        probabilities,
     )
 
 

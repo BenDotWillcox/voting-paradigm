@@ -1,0 +1,162 @@
+{
+  "schema_version": "preference_eval_phase4_robustness.v1",
+  "profile_id": "preference_eval_phase4_robustness_v1",
+  "profile_version": 1,
+  "created_at": "2026-08-19T12:00:00Z",
+  "phase4_protocol_id": "preference_eval_phase4_protocol_v1",
+  "phase4_protocol_version": 1,
+  "phase4_protocol_sha256": "8cffc63e0393bfee2e465fd26acc9b0c4058db7fe4c178639419f5eebb5c3b08",
+  "semantic_review_summary_id": "semantic_map_review_v2_summary",
+  "semantic_review_summary_sha256": "170a622753008bc44f064e8303b1e1717c994a289e0972979ee4f40be86d8013",
+  "model_policy": {
+    "record_version": "phase4_open_weight_model_policy.v1",
+    "open_weight_required": true,
+    "closed_weight_models_allowed": false,
+    "hosted_inference_allowed": true,
+    "local_inference_required": false,
+    "development_candidate_count": 3,
+    "same_model_required_across_llm_roles": true,
+    "exact_upstream_revision_required": true,
+    "weights_manifest_hash_required": true,
+    "license_provenance_required": true,
+    "provider_serving_revision_required": true,
+    "provider_terms_hash_required": true,
+    "model_specific_orchestration_branches_forbidden": true,
+    "model_upgrade_requires_new_candidate_artifact": true,
+    "results_report_exact_candidate_revision": true,
+    "required_roles": [
+      "interviewer",
+      "evidence_extractor",
+      "ontology_proposer",
+      "direct_readout",
+      "hybrid_readout"
+    ],
+    "required_capabilities": [
+      "tool_calling",
+      "strict_structured_output"
+    ]
+  },
+  "privacy_policy": {
+    "record_version": "phase4_participant_privacy_policy.v1",
+    "opaque_participant_id_required": true,
+    "direct_identifiers_forbidden": true,
+    "contact_and_consent_stored_separately": true,
+    "political_identity_forbidden": true,
+    "demographic_proxies_forbidden": true,
+    "local_identifier_scan_before_transmission": true,
+    "flagged_identifier_requires_redaction_or_false_positive_confirmation": true,
+    "provider_training_on_requests_allowed": false,
+    "provider_retention_terms_must_be_recorded": true,
+    "public_outputs_are_aggregate_only": true,
+    "pseudonymization_not_anonymity_guarantee": true
+  },
+  "interaction_policy": {
+    "record_version": "phase4_participant_interaction_policy.v1",
+    "prediction_frozen_before_answer": true,
+    "sincere_answer_recorded_before_prediction_reveal": true,
+    "prediction_and_confidence_revealed_after_answer": true,
+    "override_intent_reported_separately": true,
+    "participant_paced_elicitation": true,
+    "fixed_question_limit_is_primary_endpoint": false,
+    "pause_and_resume_allowed": true,
+    "learning_curve_uses_confirmed_evidence_prefix": true,
+    "turns_and_active_time_are_secondary_effort_units": true,
+    "unresolved_confirmations_block_prediction_checkpoint": true,
+    "resource_caps_pause_instead_of_truncate": true,
+    "target_specific_questions_after_exposure_allowed": false
+  },
+  "budget_policy": {
+    "record_version": "phase4_provider_budget_policy.v1",
+    "currency": "USD",
+    "hard_total_microusd": 20000000,
+    "segment_caps_microusd": {
+      "qualification": 4000000,
+      "held_out_study": 13000000,
+      "retry_reserve": 3000000
+    },
+    "price_card_binding_required": true,
+    "projected_max_cost_required_before_call": true,
+    "calls_over_segment_or_total_cap_rejected": true,
+    "cache_hits_have_zero_provider_cost": true,
+    "retries_use_retry_reserve": true,
+    "billed_usage_recorded_per_call": true
+  },
+  "robustness_policy": {
+    "record_version": "phase4_robustness_policy.v1",
+    "primary_estimator": "single_call",
+    "primary_call_count": 1,
+    "diagnostic_repeat_count": 3,
+    "ensemble_is_development_candidate_only": true,
+    "canonical_prompt_count": 1,
+    "prompt_paraphrase_count": 2,
+    "alternate_option_order_count": 1,
+    "alternate_option_label_count": 1,
+    "full_cross_product_required": false,
+    "perturbations_are_shadow_diagnostics": true,
+    "shadow_results_cannot_change_primary_prediction": true,
+    "repeated_calls_are_not_independent_human_observations": true,
+    "strict_transform_top_choice_flips_allowed": 0,
+    "invalid_outputs_allowed": 0,
+    "probability_thresholds_calibrated_on_public_development_only": true,
+    "thresholds_freeze_before_held_out_responses": true,
+    "perturbation_expectations": {
+      "prompt_paraphrase": "sensitivity_diagnostic",
+      "option_order": "strict_equivariance",
+      "option_label": "strict_equivariance",
+      "stochastic_repeat": "sensitivity_diagnostic"
+    },
+    "required_metrics": [
+      "invalid_output_rate",
+      "top_choice_flip_rate",
+      "max_absolute_probability_delta",
+      "jensen_shannon_divergence",
+      "unsupported_assumption_delta"
+    ]
+  },
+  "qualification_policy": {
+    "record_version": "phase4_qualification_policy.v1",
+    "public_development_fixture_only": true,
+    "restricted_participant_responses_visible": false,
+    "candidate_count": 3,
+    "one_primary_model_selected": true,
+    "same_selected_model_used_for_every_llm_role": true,
+    "invalid_outputs_are_hard_failure": true,
+    "option_order_or_label_flip_is_hard_failure": true,
+    "no_closed_weight_fallback": true,
+    "selection_criteria_in_priority_order": [
+      "schema_and_tool_compliance",
+      "strict_transform_equivariance",
+      "prompt_and_stochastic_robustness",
+      "development_prediction_quality",
+      "projected_cost",
+      "latency"
+    ]
+  },
+  "metric_policy": {
+    "record_version": "phase4_metric_policy.v1",
+    "primary_outcomes": [
+      "prequential_log_loss",
+      "high_confidence_delegated_error"
+    ],
+    "delegated_risk_thresholds": [0.65, 0.75, 0.85, 0.95],
+    "secondary_metrics": [
+      "multiclass_brier",
+      "top_choice_accuracy",
+      "calibration",
+      "fixed_vs_expanding_ontology",
+      "direct_vs_hybrid_readout",
+      "test_retest_consistency",
+      "generalization_tier_gap",
+      "confirmed_evidence_learning_curve",
+      "rich_ballot_fidelity",
+      "unsupported_assumption_rate",
+      "robustness_sensitivity",
+      "api_cost_and_latency"
+    ],
+    "participant_case_study_is_descriptive": true,
+    "population_superiority_claim_allowed": false,
+    "acquisition_causal_claim_requires_synthetic_or_randomized_data": true,
+    "held_out_responses_cannot_select_model_prompt_or_threshold": true,
+    "settled_probability_not_comparable_across_model_families": true
+  }
+}
