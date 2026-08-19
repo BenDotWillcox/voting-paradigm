@@ -1,0 +1,49 @@
+{
+  "all_mappings_approved": true,
+  "authoring_bundle_sha256": "97ef88dfcd716031b4e456daadf025c6807373baa0f5ee1db5af0b6d5ba07733",
+  "authoring_profile_id": "preference_eval_semantic_authoring_profile_v1",
+  "authoring_profile_sha256": "baec5e626b41c46e0363e3966af9be02683056b371173c76c57b13db3fbd2dd3",
+  "authoring_profile_version": 1,
+  "dimension_assignment_count": 119,
+  "exact_packets_weights_rationales_and_findings_omitted": true,
+  "findings_by_category": {
+    "canonical_binding": 0,
+    "dimension_semantic_fidelity": 12,
+    "directional_accuracy": 3,
+    "option_symmetry": 2,
+    "packet_only_grounding": 1,
+    "political_cue_exclusion": 0,
+    "relative_magnitude": 1,
+    "sparsity_and_omission": 2
+  },
+  "findings_by_disposition": {
+    "accepted_limitation": 2,
+    "defended": 2,
+    "resolved": 17
+  },
+  "findings_by_severity": {
+    "blocking": 13,
+    "major": 4,
+    "minor": 2,
+    "note": 2
+  },
+  "findings_count": 21,
+  "fixture_id": "preference_eval_final_v1",
+  "fixture_sha256": "69e822094d7434f4a80cd766e4990947a8fedca512a6778426c657cb82ea7b26",
+  "fixture_version": 1,
+  "mapper_id": "preference_eval_semantic_map_v2",
+  "mapper_sha256": "855c14307eeb8e2f2ef33280e3564e6e687d26ce24443d9a0be2115690c57b85",
+  "mapper_version": 2,
+  "review_log_id": "semantic_map_review_v2",
+  "review_log_sha256": "4d87ec70f43e0c4a8966272576758d53ffa989b685c1a68a291a9fd46b0ae0b7",
+  "review_log_version": 2,
+  "review_prompt_sha256": "08c71f8ab8359c6c749741239c7a3615d3c7c5816b4ad9b6fd532783bede172f",
+  "reviewed_measure_count": 48,
+  "reviewed_option_count": 115,
+  "reviewer_model_version": "claude-opus-5",
+  "reviewer_system": "claude",
+  "reviewer_type": "ai",
+  "schema_version": "phase4_nonrevealing_semantic_review_summary.v1",
+  "summary_id": "semantic_map_review_v2_summary",
+  "used_dimension_count": 23
+}
