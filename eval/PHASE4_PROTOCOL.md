@@ -162,15 +162,24 @@ history, and demographic proxies remain excluded throughout.
   now bind exact evidence-condition inputs, recompute their posterior context,
   cache structured outputs by full request, and reuse the same ballot policy.
   The deterministic backend is only a boundary test double; the restricted
-  final-bank map still requires blinded review. Its public authoring profile
-  freezes packet-and-ontology-only inputs, coarse ordinal positions, derived
-  centering, independent review, participant-safe output, restricted-only map
-  writes, and a run-level approved-mapper attestation before any exact held-out
-  mapping is used. No live provider or final prediction prompt is selected
-  before Phase 4E.
-- **4E — robustness and final freeze:** test prompt paraphrases, option order
-  and labels, stochastic sensitivity, and unsupported assumptions before the
-  held-out case study.
+  final-bank map has now passed the locked blinded review. Its public authoring
+  profile freezes packet-and-ontology-only inputs, coarse ordinal positions,
+  derived centering, independent review, participant-safe output,
+  restricted-only map writes, and a run-level approved-mapper attestation
+  before any exact held-out mapping is used. No live provider or final
+  prediction prompt is selected before Phase 4E.
+- **4E — qualification, robustness, and final freeze (precommitment
+  implemented):** the public robustness profile requires three open-weight
+  development candidates and one selected model across every LLM role. Hosted
+  inference is allowed; local inference is not required; closed-weight models
+  have no automatic fallback. The profile freezes pseudonymous-data rules, the
+  answer-before-reveal interaction order, a hard USD 20 provider budget, a
+  single-call primary estimator, three-call shadow repeats, prompt/order/label
+  probes, outcomes, and claim limits. Robustness records bind the exact profile,
+  candidate revision, and probe artifact; outstanding call authorizations
+  reserve budget before any provider request. Candidate evaluation still
+  occurs only on public development data. No candidate has yet qualified and
+  no live call is part of this precommitment slice.
 
 ## Validation
 
@@ -192,7 +201,24 @@ python -m eval.validate_phase4_semantic_profile \
   eval/fixtures/preference_eval_phase4_protocol_v1.json
 ```
 
-The command prints content hashes and aggregate architecture counts. Phase 4A
-does not choose an LLM provider, prompt, model version, evidence weights,
-semantic mapper, or final robustness estimator; those must be implemented and
-frozen before any held-out response is viewed.
+Validate the Phase 4E robustness and qualification precommitment with:
+
+```bash
+python -m eval.validate_phase4_robustness \
+  eval/fixtures/preference_eval_phase4_robustness_v1.json \
+  eval/fixtures/preference_eval_phase4_protocol_v1.json \
+  eval/review_summaries/semantic_map_summary.json
+```
+
+The command binds 4E to the exact Phase 4 protocol and the approved,
+participant-safe semantic-map summary. It prints hashes and aggregate policy
+counts only. The profile does not contain packet text, participant evidence,
+model responses, or a selected provider.
+
+The Phase 4A command prints content hashes and aggregate architecture counts.
+Phase 4A does not choose an LLM provider, prompt, model version, evidence
+weights, semantic mapper, or robustness estimator. The reviewed semantic map
+and public Phase 4E precommitment now close two of those boundaries; the live
+candidate, provider deployment, prompts, seeds, policy values, and qualified
+thresholds still must be selected on public development data and frozen before
+any held-out response is viewed.

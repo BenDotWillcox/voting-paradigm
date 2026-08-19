@@ -196,8 +196,12 @@ expanding arm additionally receives only active participant-admitted
 dimensions. A public semantic-map authoring profile now freezes coarse,
 packet-grounded mapping judgments, restricted-only final-map writes,
 independent blinded review, and run-level approval provenance before the
-restricted map is used. The final reviewed map, prompt/order robustness
-diagnostics, and a live provider remain later Phase 4 work.
+restricted map is used. The final semantic map has passed that review. Phase 4E
+now adds a public, provider-neutral precommitment for three open-weight
+candidates, one shared model across LLM roles, pseudonymous provider inputs, a
+hard USD 20 API budget, answer-before-reveal sequencing, staged prompt and
+stochastic diagnostics, deterministic order/label probes, and frozen outcomes
+and claim limits. It does not yet select or call a live provider.
 Public aggregate artifacts still require explicit release review.
 Demo 3 (algorithmic districting) currently ships the apportionment slice;
 district polygon generation comes next. The ballot-measure, electorate, and

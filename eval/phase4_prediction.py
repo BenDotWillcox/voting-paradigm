@@ -715,16 +715,22 @@ def _measure_lookup(
     return measures
 
 
-def _expected_top_option_id(
+def expected_top_option_id(
+    option_ids: list[str],
     probabilities: dict[str, float],
-    measure: MeasureVersion,
 ) -> str:
+    """Return the first displayed option within the contract tie tolerance."""
+
+    if not option_ids:
+        raise ValueError("top-option selection requires at least one option")
+    if set(option_ids) != set(probabilities):
+        raise ValueError("top-option probabilities do not match the option ids")
     top_probability = max(probabilities.values())
     return next(
-        option.option_id
-        for option in measure.options
+        option_id
+        for option_id in option_ids
         if math.isclose(
-            probabilities[option.option_id],
+            probabilities[option_id],
             top_probability,
             rel_tol=0.0,
             abs_tol=TOP_OPTION_ABS_TOLERANCE,
@@ -751,7 +757,10 @@ def validate_prediction_v2_for_measure(
     option_ids = {option.option_id for option in measure.options}
     if set(snapshot.option_probabilities) != option_ids:
         raise ValueError("option probabilities must cover every option exactly")
-    expected_top = _expected_top_option_id(snapshot.option_probabilities, measure)
+    expected_top = expected_top_option_id(
+        [option.option_id for option in measure.options],
+        snapshot.option_probabilities,
+    )
     if snapshot.top_option_id != expected_top:
         raise ValueError(
             "top_option_id must use measure display order for probability ties"
