@@ -169,11 +169,7 @@ def variant_binding(
         variant_sha256=content_sha256(f"variant:{variant_id}"),
         seed=(
             None
-            if kind
-            in {
-                RobustnessPerturbationKind.PROMPT_PARAPHRASE,
-                RobustnessPerturbationKind.STOCHASTIC_REPEAT,
-            }
+            if kind is RobustnessPerturbationKind.PROMPT_PARAPHRASE
             else 42
         ),
         repeat_index=(
@@ -505,17 +501,39 @@ def test_option_order_and_label_perturbations_are_deterministic_bijections():
     }.isdisjoint(colliding_ids)
 
 
-def test_stochastic_repeat_binds_index_without_claiming_provider_seed():
+def test_stochastic_repeat_binds_request_seed_and_bounded_unique_index():
     binding = variant_binding(
         RobustnessPerturbationKind.STOCHASTIC_REPEAT
     )
-    assert binding.seed is None
+    assert binding.seed == 42
     assert binding.repeat_index == 1
 
     payload = binding.model_dump(mode="json")
     payload["repeat_index"] = None
-    with pytest.raises(ValidationError, match="must bind its repeat index"):
+    with pytest.raises(ValidationError, match="request seed and repeat index"):
         RobustnessVariantBinding.model_validate(payload)
+
+    payload = binding.model_dump(mode="json")
+    payload["repeat_index"] = 4
+    with pytest.raises(ValidationError, match="less than or equal to 3"):
+        RobustnessVariantBinding.model_validate(payload)
+
+    canonical = prediction("canonical_repeat", {"one": 0.5, "two": 0.5})
+    repeated = prediction(
+        "repeated",
+        {"one": 0.5, "two": 0.5},
+        variant_kind=RobustnessPerturbationKind.STOCHASTIC_REPEAT,
+    )
+    comparison = compare_robustness_predictions(
+        canonical,
+        repeated,
+        comparison_id="repeat_one",
+    )
+    duplicate = comparison.model_copy(
+        update={"comparison_id": "repeat_duplicate"}
+    )
+    with pytest.raises(ValueError, match="distinct indices"):
+        aggregate_robustness_comparisons([comparison, duplicate])
 
 
 def test_robustness_comparison_and_aggregate_reconcile():

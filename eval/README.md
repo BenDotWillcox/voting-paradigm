@@ -756,12 +756,16 @@ room. Cache hits cost zero and retries use only the reserve with an exact
 original-call link. The profile does not authorize spending by itself and this
 slice makes no provider calls.
 
-The adapter must close every authorization with either a usage row or an
-explicit zero-cost failure/cancellation record. Until that lifecycle record is
-implemented, an abandoned authorization intentionally remains reserved and an
-attempt without a recorded call cannot enter the retry reserve. The adapter
-also needs incremental running totals for live authorization; the full ledger
-validator remains the end-of-run audit rather than the per-call hot path.
+The adapter closes every authorization with a usage row and terminal record.
+A zero-cost cancellation additionally requires a hash-bound attestation that
+the request was never sent or that the provider confirmed it was voided. An
+aborted transport therefore remains reserved until that evidence exists.
+Provider-reported token counts that exceed the local upper bound are recorded
+at their true price under a distinct hard-failure outcome; any amount above the
+authorization is explicit rather than discarded. Such an overrun prevents
+further authorization once a cap is exhausted and makes the end-of-run cap
+audit fail if actual spend crossed it. Incremental running totals serve the
+live path, while the full ledger validator remains the end-of-run audit.
 
 The primary estimator is one provider call. Three repeats, two locked prompt
 paraphrases, one alternate option order, and one neutral option-label mapping
@@ -777,9 +781,11 @@ make those comparisons replayable. Top-option ties use the same `1e-12`
 display-order rule as the Phase 4D prediction contract.
 
 Order and label probes require their deterministic construction seed.
-Stochastic probes always bind a repeat index and bind a sampling seed only when
-the candidate backend honestly exposes one; seeded sampling is not a hidden
-capability requirement.
+Stochastic probes bind the Phase 4D request seed and a unique repeat index in
+`1..3`. The provider execution record separately says whether that seed was
+sent and whether the provider confirmed honoring it; seeded sampling is not a
+hidden candidate capability and an unconfirmed seed is never presented as a
+determinism guarantee.
 
 Version 1 treats order/label invalid outputs and top-choice flips as hard
 failures while recording their probability movement. Probability-delta and
@@ -806,6 +812,74 @@ python -m eval.validate_phase4_robustness \
   eval/review_summaries/semantic_map_summary.json
 ```
 
-The next 4E slice implements provider adapters and produces auditable
-candidate-qualification artifacts on public development data. It must not use
-the restricted participant responses or spend from the held-out study segment.
+`eval/phase4_provider.py` supplies the shared runtime adapter beneath all five
+LLM roles. A private request carries the exact prompt, JSON input, response
+schema, and interviewer tool definitions, while its durable binding contains
+only hashes and public execution coordinates. The same executor accepts an
+injected provider transport for every role; it contains no candidate-specific
+or model-specific orchestration branch. The committed transport is a
+deterministic no-network test double. A concrete hosted or self-hosted
+transport is selected only with the three candidate artifacts.
+
+The runtime prices an aggregate token upper bound against an exact price card,
+reserves the maximum before transmission, and updates cached committed totals
+in constant time. Success, invalid output, provider error, transport error,
+transport-contract error, token-bound overrun, cache hit, and attested
+cancellation have explicit terminal records. A never-sent transport failure
+does not incur a fixed request fee; a sent or unknown failure does. A
+cancellation releases its reservation only with structured no-charge evidence,
+while every provider-observed response retains its token usage and true price.
+The runtime can resume once from a progressive ledger/journal pair and
+reconstruct its running totals before the next request. The full historical
+ledger validator remains the end-of-session audit oracle, so the live path
+avoids the cubic session behavior that repeated full replay would cause.
+Authorization times must strictly follow every earlier runtime event, and
+finalization times cannot move backward. Concrete transports should therefore
+use locally observed receipt times for these audit fields rather than raw
+provider-server timestamps; the runtime rejects clock skew before it can make
+the incremental budget proof disagree with timestamp replay.
+
+Provider inputs use either a public-development attestation or a pseudonymous
+participant attestation. Participant input requires an opaque participant id,
+a hash-bound local identifier scan, zero unresolved findings, and an exact
+count showing every hit was redacted or participant-confirmed as a false
+positive. This is a pseudonymization control, not an anonymity guarantee.
+
+`eval/phase4_qualification.py` defines the auditable qualification bundle.
+Exactly three candidate and price-card artifacts are evaluated on one exact
+public fixture;
+every LLM role must be exercised, interviewer tool results must replay, all
+structured outputs must validate, and order/label probes must have zero
+invalid outputs or top-choice flips. Failed hard gates remove a candidate
+before ranking. Remaining candidates use the frozen priority order with
+sequential practical-equivalence bands: within 0.001 Jensen-Shannon divergence
+proceeds to development log loss, within 0.01 log loss proceeds to projected
+held-out cost, within USD 0.10 proceeds to p95 latency, and within 100 ms uses
+candidate id only as a deterministic final tie-break. This lets a negligible
+float difference in one criterion avoid silencing every later criterion while
+preserving the declared priority. Sensitivity is the equal-weight mean of the
+prompt-class and stochastic-class mean Jensen-Shannon divergences. Every cost
+projection binds
+one shared workload plus the exact candidate tokenizer and price card, so a
+candidate cannot win by silently projecting fewer calls. A projected study
+that exceeds the USD 13 held-out segment cannot qualify. The bundle binds the
+complete provider ledger and execution journal, embeds content-free per-call
+contract assessments and robustness aggregates, and rebuilds every candidate
+result from those exact sources during validation. It requires zero held-out
+spend and emits only aggregate diagnostics.
+
+Validate a completed qualification with:
+
+```bash
+python -m eval.validate_phase4_qualification \
+  eval/restricted_bank/phase4/qualification.json \
+  eval/fixtures/preference_eval_phase4_robustness_v1.json \
+  eval/restricted_bank/phase4/provider_usage_ledger.json \
+  eval/restricted_bank/phase4/provider_execution_journal.json
+```
+
+The remaining operational step is to choose and provenance exactly three
+open-weight candidates plus their concrete transports and price cards, author
+the shared role prompts/codecs, then execute this public-development
+qualification within the USD 4 segment. It must not use restricted participant
+responses or spend from the held-out study segment.

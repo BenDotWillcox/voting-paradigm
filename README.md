@@ -201,7 +201,10 @@ now adds a public, provider-neutral precommitment for three open-weight
 candidates, one shared model across LLM roles, pseudonymous provider inputs, a
 hard USD 20 API budget, answer-before-reveal sequencing, staged prompt and
 stochastic diagnostics, deterministic order/label probes, and frozen outcomes
-and claim limits. It does not yet select or call a live provider.
+and claim limits. A shared runtime now binds private structured requests to
+content-free audits, exact price-card reservations, true-spend overrun records,
+attested zero-cost closures, and deterministic tolerance-banded three-candidate
+qualification. It still does not select or call a live provider.
 Public aggregate artifacts still require explicit release review.
 Demo 3 (algorithmic districting) currently ships the apportionment slice;
 district polygon generation comes next. The ballot-measure, electorate, and

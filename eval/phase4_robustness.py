@@ -36,6 +36,7 @@ from .phase4_semantic_review import NonrevealingSemanticMapReviewSummary
 
 Microusd = Annotated[int, Field(ge=0)]
 PositiveCount = Annotated[int, Field(ge=1)]
+DiagnosticRepeatIndex = Annotated[int, Field(ge=1, le=3)]
 NonNegativeCount = Annotated[int, Field(ge=0)]
 NonNegativeFiniteFloat = Annotated[
     float,
@@ -326,8 +327,8 @@ class ProviderCallAuthorization(ContractModel):
 class ProviderCallUsage(ContractModel):
     """Content-free usage and billing record for one attempted provider call."""
 
-    record_version: Literal["phase4_provider_call_usage.v1"] = (
-        "phase4_provider_call_usage.v1"
+    record_version: Literal["phase4_provider_call_usage.v2"] = (
+        "phase4_provider_call_usage.v2"
     )
     call_id: StableId
     segment: BudgetSegment
@@ -335,6 +336,7 @@ class ProviderCallUsage(ContractModel):
     request_sha256: Sha256Digest
     authorization_sha256: Sha256Digest
     billed_cost_microusd: Microusd
+    authorization_overrun_microusd: Microusd = 0
     input_tokens: NonNegativeCount
     output_tokens: NonNegativeCount
     cache_hit: bool
@@ -368,8 +370,8 @@ class ProviderCallUsage(ContractModel):
 class ProviderUsageLedger(ContractModel):
     """Append-only aggregate-safe provider usage for one exact profile."""
 
-    schema_version: Literal["phase4_provider_usage_ledger.v1"] = (
-        "phase4_provider_usage_ledger.v1"
+    schema_version: Literal["phase4_provider_usage_ledger.v2"] = (
+        "phase4_provider_usage_ledger.v2"
     )
     ledger_id: StableId
     robustness_profile_id: StableId
@@ -410,10 +412,15 @@ class ProviderUsageLedger(ContractModel):
                 authorization.retry_of_call_id,
             ):
                 raise ValueError("provider usage does not match its authorization")
-            if item.billed_cost_microusd > (
-                authorization.authorized_max_cost_microusd
-            ):
-                raise ValueError("provider billed cost exceeds its authorization")
+            expected_overrun = max(
+                0,
+                item.billed_cost_microusd
+                - authorization.authorized_max_cost_microusd,
+            )
+            if item.authorization_overrun_microusd != expected_overrun:
+                raise ValueError(
+                    "provider authorization overrun does not reconcile"
+                )
             if item.created_at < authorization.created_at:
                 raise ValueError("provider usage cannot predate its authorization")
             if item.retry_of_call_id is not None:
@@ -652,7 +659,7 @@ class RobustnessVariantBinding(ContractModel):
     perturbation_kind: RobustnessPerturbationKind
     variant_sha256: Sha256Digest
     seed: Annotated[int, Field(ge=0)] | None = None
-    repeat_index: PositiveCount | None = None
+    repeat_index: DiagnosticRepeatIndex | None = None
 
     @model_validator(mode="after")
     def validate_probe_coordinates(self) -> Self:
@@ -666,9 +673,9 @@ class RobustnessVariantBinding(ContractModel):
             self.perturbation_kind
             is RobustnessPerturbationKind.STOCHASTIC_REPEAT
         ):
-            if self.repeat_index is None:
+            if self.repeat_index is None or self.seed is None:
                 raise ValueError(
-                    "stochastic-repeat variant must bind its repeat index"
+                    "stochastic-repeat variant must bind request seed and repeat index"
                 )
         elif self.repeat_index is not None:
             raise ValueError(
@@ -1274,6 +1281,15 @@ def aggregate_robustness_comparisons(
         raise ValueError(
             "robustness aggregate requires one exact evaluation binding"
         )
+    kind = next(iter(kinds))
+    if kind is RobustnessPerturbationKind.STOCHASTIC_REPEAT:
+        repeat_indices = [
+            item.variant_binding.repeat_index for item in comparisons
+        ]
+        if len(repeat_indices) != len(set(repeat_indices)):
+            raise ValueError(
+                "stochastic robustness repeats must use distinct indices"
+            )
     evaluation_binding = comparisons[0].evaluation_binding
     comparison_sha256s = [content_sha256(item) for item in comparisons]
     valid = [item for item in comparisons if item.variant_output_valid]
@@ -1335,6 +1351,22 @@ def validate_robustness_aggregate_against_policy(
     expected = policy.perturbation_expectations[aggregate.perturbation_kind]
     if aggregate.expectation is not expected:
         raise ValueError("robustness aggregate expectation does not match policy")
+    expected_count = {
+        RobustnessPerturbationKind.PROMPT_PARAPHRASE: (
+            policy.prompt_paraphrase_count
+        ),
+        RobustnessPerturbationKind.OPTION_ORDER: (
+            policy.alternate_option_order_count
+        ),
+        RobustnessPerturbationKind.OPTION_LABEL: (
+            policy.alternate_option_label_count
+        ),
+        RobustnessPerturbationKind.STOCHASTIC_REPEAT: (
+            policy.diagnostic_repeat_count
+        ),
+    }[aggregate.perturbation_kind]
+    if aggregate.comparison_count != expected_count:
+        raise ValueError("robustness aggregate count does not match policy")
     if aggregate.invalid_output_count > policy.invalid_outputs_allowed:
         raise ValueError("robustness aggregate exceeds invalid-output allowance")
     if (
