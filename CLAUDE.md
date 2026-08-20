@@ -431,6 +431,7 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 - Phase 4 semantic-map authoring and review in `eval/phase4_semantic_review.py`: a public profile binds the exact bank profile, Phase 4 protocol, and 36 ontology definitions; restricted rationales use packet paths plus coarse ordinal positions and primary/secondary importance; runtime weights are deterministically derived and centered; the builder confines non-development output to `eval/restricted_bank/`; a hash-locked Claude prompt, exact mapping approvals, aggregate-safe CLIs, a nonrevealing summary, and a required held-out-run mapper attestation preserve Ben's mapping blindness; a separate human review remains required before an external pilot
 - Phase 4E qualification and robustness precommitment in `eval/phase4_robustness.py`: three open-weight public-development candidates, one selected model across all LLM roles, hosted-or-self-hosted deployment provenance, pseudonymous request boundaries, participant answer before prediction reveal, an exact USD 4/13/3 qualification/study/retry budget with hash-bound authorization reservations, exact profile/candidate/probe bindings on robustness records, a single-call primary estimator, staged prompt/order/label/stochastic diagnostics, aggregate sensitivity records, frozen outcomes, and descriptive-case-study claim limits
 - Phase 4E provider and qualification runtime in `eval/phase4_provider.py` and `eval/phase4_qualification.py`: one model-agnostic structured executor for all five LLM roles, private-payload/content-free-audit separation, public or locally scanned pseudonymous input attestations, exact price-card projections, O(1) live reservations plus full end-of-run ledger replay, true-spend token-overrun records, attested zero-cost closure, request-seed versus provider-honor provenance, and deterministic hard-gated selection with frozen practical-equivalence bands; only the scripted no-network transport exists and no candidate/model has yet qualified
+- Phase 4E Together no-spend suite in `eval/phase4_together.py`: exact GPT-OSS 120B, Nemotron 3 Ultra 550B A55B, and GLM-5.2 upstream revisions; captured serverless catalog, privacy/capability terms, quantization and price cards; shared five-role prompt/schema/tool contracts; a credential-free OpenAI-compatible request codec; explicit serverless build/weight and GLM BF16-to-FP4 limitations; and non-authorizing 456-call qualification plus 912-call held-out feasibility envelopes that make no network request and require exact tokenizer projection plus a predeclared headroom gate before spend
 - Fixed-bank eval harness: 4 authored synthetic personas + seeded Dirichlet-mixture persona generator (`eval/personas.py`), three response models as the misspecification axis (`gaussian_gap` matches the Gaussian likelihood, `logistic_choice` matches BT, `sloppy` matches neither — `eval/response_models.py`), held-out pair splits, log-likelihood/accuracy/Brier/Kendall-τ/calibration curves, models × policies comparison (`python -m eval.run_preference_eval --response-model ...`), grid sweeps for notebooks (`eval/sweeps.py`)
 - API: `/sessions/evidence` endpoint (replaces `/sessions/respond`), model + selection-policy params on session start
 - TS hygiene: Zod-validated JSONB boundaries (`lib/validations/preferences-schemas.ts`); `startPreferenceSession` race fixed via server-generated UUID + single insert
@@ -473,17 +474,21 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
   round remains in the restricted audit trail
 
 **Next, in order:**
-1. Choose and provenance exactly three open-weight candidates, concrete
-   provider transports, price cards, and shared role prompts/codecs; then run
-   the public-development qualification within the USD 4 cap
-2. Freeze the selected model/deployment, prompts, seeds, remaining policy
+1. Verify Together organization privacy toggles, configure a project-scoped
+   key outside the repository, finish the injected live HTTP client/tool loop,
+   revalidate every public source, measure exact candidate-tokenizer workloads,
+   freeze a minimum headroom gate, and run the account/model capability
+   preflight without held-out data
+2. After separate spend approval, run the public-development qualification
+   within the USD 4 cap
+3. Freeze the selected model/deployment, prompts, seeds, remaining policy
    values, and calibrated robustness thresholds before Ben's held-out case
    study
-3. Build separate blind evaluation and future-facing showcase modes
-4. Schedule and execute the six blinded waves and 7-14 day retests only after
+4. Build separate blind evaluation and future-facing showcase modes
+5. Schedule and execute the six blinded waves and 7-14 day retests only after
    the remaining model/evaluation freeze is complete
-5. *(Deferred)* LLM-generated vote rationales
-6. *(Deferred)* LLM-generated personas
+6. *(Deferred)* LLM-generated vote rationales
+7. *(Deferred)* LLM-generated personas
 
 ### Demo 3: Algorithmic districting
 

@@ -185,7 +185,17 @@ history, and demographic proxies remain excluded throughout.
   can release budget. It records request-seed support separately from the seed
   itself and validates deterministic three-candidate selection with frozen
   practical-equivalence bands between ordered criteria. Its injected test
-  transport makes no network request. No candidate has yet qualified and no
+  transport makes no network request. The no-spend Together suite now binds
+  GPT-OSS 120B, Nemotron 3 Ultra 550B A55B, and GLM-5.2 at exact upstream
+  revisions; one captured serverless catalog, terms snapshot, price card,
+  shared role prompt/schema/tool surface, request codec, and conservative
+  qualification/held-out workload envelopes. It makes zero network calls and
+  records zero spend. Together does not expose a cryptographic serverless
+  serving-weight attestation, so the captured catalog hash is recorded as the
+  serving revision and that limitation remains explicit. The round-number
+  workload is a non-authorizing feasibility plan: exact per-candidate tokenizer
+  counts over rendered, wave-aware requests and a predeclared headroom gate
+  remain mandatory before any paid call. No candidate has yet qualified and no
   provider call has occurred.
 
 ## Validation
@@ -228,13 +238,16 @@ the exact three candidate and price-card artifacts, provider usage ledger,
 content-free execution journal, development fixture, hard-gate results, and
 deterministically selected candidate. The bundle also binds the exact
 sequential selection tolerances, so negligible sensitivity differences cannot
-silence quality, cost, and latency. Candidate-specific provider transports and
-prompts are not frozen until that run is assembled.
+silence quality, cost, and latency. The tracked Together suite freezes the
+three candidate artifacts, prices, and candidate-independent prompts/codecs
+before that run. The injected live HTTP client/tool loop, account privacy
+check, external-source revalidation, exact tokenizer projection, headroom gate,
+and paid capability probes still must be completed before qualification.
 
 The Phase 4A command prints content hashes and aggregate architecture counts.
 Phase 4A does not choose an LLM provider, prompt, model version, evidence
 weights, semantic mapper, or robustness estimator. The reviewed semantic map
-and public Phase 4E precommitment now close two of those boundaries; the live
-candidate, provider deployment, prompts, seeds, policy values, and qualified
-thresholds still must be selected on public development data and frozen before
-any held-out response is viewed.
+and public Phase 4E precommitment now close two of those boundaries; the
+qualified candidate, live deployment attestation, seeds, remaining policy
+values, and calibrated thresholds still must be selected on public development
+data and frozen before any held-out response is viewed.

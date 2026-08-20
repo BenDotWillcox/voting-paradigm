@@ -821,6 +821,45 @@ or model-specific orchestration branch. The committed transport is a
 deterministic no-network test double. A concrete hosted or self-hosted
 transport is selected only with the three candidate artifacts.
 
+`eval/phase4_together.py` now freezes the no-spend portion of that selection.
+The tracked `preference_eval_phase4_together_v1.json` suite binds Together's
+20 August 2026 serverless catalog and privacy/capability documentation, exact
+upstream Hugging Face revisions, revision-bound weight-manifest identities,
+license provenance, advertised serving model strings and quantization, exact
+price cards, and one candidate-independent prompt/schema/tool contract for all
+five roles. The suite is honest about the hosted boundary: Together does not
+publish a cryptographic serving-weight attestation, so the recorded serving
+revision is the exact captured catalog hash rather than a claim of bit-level
+identity with the upstream checkpoint. Qualification results must retain that
+limitation.
+
+Together was chosen over self-hosting because the USD 20 total budget cannot
+cover the sustained accelerator rental needed for the 120B and 550B candidates.
+Self-hosting would provide stronger weight attestation, but it would make this
+personal study infeasible and prevent a same-provider comparison. The hosted
+tradeoff is explicit and reversible in a future candidate artifact.
+
+There are two narrower provenance limits. All three serving revisions use the
+same catalog-snapshot hash; that proves which advertised rows and prices were
+captured, not which internal model build Together deployed, and it cannot
+detect a silent redeployment. GPT-OSS and Nemotron retain the upstream/serving
+quantization family, while GLM changes from a BF16 upstream checkpoint to
+Together's advertised FP4 build. Any GLM result therefore describes that
+Together FP4 deployment, not the upstream revision by itself. The external
+model rows, revisions, prices, capabilities, and the unusually specific
+512300-token Nemotron context value must be re-read from their public sources
+during live preflight; the tracked hashes detect local drift but cannot prove
+that a transcription was correct.
+
+The Together codec renders an already hash-bound private provider envelope to
+the documented OpenAI-compatible chat shape with JSON Schema, the request
+seed only when the binding says it was sent, and interviewer functions. The
+schema appears both in the system message and `response_format` deliberately,
+following Together's structured-output guidance; exact token counting must
+include both copies. The codec contains no credential, HTTP client, or
+network call. A live account privacy check and paid capability probes remain
+mandatory before qualification; validation alone can never spend money.
+
 The runtime prices an aggregate token upper bound against an exact price card,
 reserves the maximum before transmission, and updates cached committed totals
 in constant time. Success, invalid output, provider error, transport error,
@@ -859,9 +898,17 @@ candidate id only as a deterministic final tie-break. This lets a negligible
 float difference in one criterion avoid silencing every later criterion while
 preserving the declared priority. Sensitivity is the equal-weight mean of the
 prompt-class and stochastic-class mean Jensen-Shannon divergences. Every cost
-projection binds
-one shared workload plus the exact candidate tokenizer and price card, so a
-candidate cannot win by silently projecting fewer calls. A projected study
+projection binds one shared workload plus an exact token-counter/envelope
+artifact and price card, so a candidate cannot win by silently projecting
+fewer calls. The Together v1 no-spend projection uses the same conservative
+role bounds for every candidate, but it is a feasibility plan rather than a
+live authorization artifact. The exact rendered development and held-out
+requests must be counted with every candidate's exact tokenizer, including
+the accumulated late-wave evidence and duplicated schema, before any provider
+call. A minimum projected-headroom rule must then be predeclared as a hard
+qualification gate; until both steps are complete the validator reports
+`live_authorization_ready: false`. Provider-reported token usage remains the
+billing truth after a call. A projected study
 that exceeds the USD 13 held-out segment cannot qualify. The bundle binds the
 complete provider ledger and execution journal, embeds content-free per-call
 contract assessments and robustness aggregates, and rebuilds every candidate
@@ -878,8 +925,27 @@ python -m eval.validate_phase4_qualification \
   eval/restricted_bank/phase4/provider_execution_journal.json
 ```
 
-The remaining operational step is to choose and provenance exactly three
-open-weight candidates plus their concrete transports and price cards, author
-the shared role prompts/codecs, then execute this public-development
-qualification within the USD 4 segment. It must not use restricted participant
-responses or spend from the held-out study segment.
+The Together suite closes the candidate, price, shared-contract,
+request-codec, and budget-feasibility parts: 456 qualification calls project
+to USD 3.4228; a 912-call held-out envelope projects to USD 1.4328, USD 6.7968,
+or USD 12.3072 depending on which candidate wins. Next, verify the organization
+privacy toggles, configure a project-scoped key outside the repository,
+implement the injected live HTTP client/tool loop, and run the account/model
+capability preflight. No request may be sent until Ben separately authorizes
+qualification spend. Qualification must not use restricted participant
+responses or the held-out study segment.
+
+The 64 calls for each readout role are eight development measures times one
+canonical call plus seven staged prompt/order/label/stochastic calls, producing
+one complete robustness set per measure and arm. The interviewer, extractor,
+and ontology proposer receive eight development calls each. Those calls test
+their schema/tool compliance and replay gates only; qualification does not
+claim to compare conversational-role quality across candidates.
+
+Validate the frozen no-spend suite without credentials or network access:
+
+```bash
+python -m eval.validate_phase4_together \
+  eval/fixtures/preference_eval_phase4_together_v1.json \
+  eval/fixtures/preference_eval_phase4_robustness_v1.json
+```
