@@ -168,8 +168,8 @@ history, and demographic proxies remain excluded throughout.
   restricted-only map writes, and a run-level approved-mapper attestation
   before any exact held-out mapping is used. No live provider or final
   prediction prompt is selected before Phase 4E.
-- **4E — qualification, robustness, and final freeze (precommitment
-  implemented):** the public robustness profile requires three open-weight
+- **4E — qualification, robustness, and final freeze (precommitment and
+  runtime boundary implemented):** the public robustness profile requires three open-weight
   development candidates and one selected model across every LLM role. Hosted
   inference is allowed; local inference is not required; closed-weight models
   have no automatic fallback. The profile freezes pseudonymous-data rules, the
@@ -178,8 +178,15 @@ history, and demographic proxies remain excluded throughout.
   probes, outcomes, and claim limits. Robustness records bind the exact profile,
   candidate revision, and probe artifact; outstanding call authorizations
   reserve budget before any provider request. Candidate evaluation still
-  occurs only on public development data. No candidate has yet qualified and
-  no live call is part of this precommitment slice.
+  occurs only on public development data. A shared provider runtime now binds
+  private structured inputs to content-free request records, uses exact price
+  cards and incremental pre-call reservations, records true spend when a token
+  estimate is exceeded, and requires no-charge evidence before a cancellation
+  can release budget. It records request-seed support separately from the seed
+  itself and validates deterministic three-candidate selection with frozen
+  practical-equivalence bands between ordered criteria. Its injected test
+  transport makes no network request. No candidate has yet qualified and no
+  provider call has occurred.
 
 ## Validation
 
@@ -214,6 +221,15 @@ The command binds 4E to the exact Phase 4 protocol and the approved,
 participant-safe semantic-map summary. It prints hashes and aggregate policy
 counts only. The profile does not contain packet text, participant evidence,
 model responses, or a selected provider.
+
+A completed public-development qualification is separately validated with
+`python -m eval.validate_phase4_qualification`. The qualification bundle binds
+the exact three candidate and price-card artifacts, provider usage ledger,
+content-free execution journal, development fixture, hard-gate results, and
+deterministically selected candidate. The bundle also binds the exact
+sequential selection tolerances, so negligible sensitivity differences cannot
+silence quality, cost, and latency. Candidate-specific provider transports and
+prompts are not frozen until that run is assembled.
 
 The Phase 4A command prints content hashes and aggregate architecture counts.
 Phase 4A does not choose an LLM provider, prompt, model version, evidence
