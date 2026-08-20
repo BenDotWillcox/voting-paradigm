@@ -205,6 +205,13 @@ and claim limits. A shared runtime now binds private structured requests to
 content-free audits, exact price-card reservations, true-spend overrun records,
 attested zero-cost closures, and deterministic tolerance-banded three-candidate
 qualification. It still does not select or call a live provider.
+The tracked Together no-spend suite now freezes the three approved open-weight
+serverless candidates, exact public provenance and prices, shared role
+contracts, a credential-free request codec, and budget-feasible qualification
+and held-out planning envelopes. It makes no network request and spends
+nothing; exact candidate-tokenizer measurement, a predeclared budget-headroom
+gate, live account/privacy preflight, and public-development qualification
+remain next.
 Public aggregate artifacts still require explicit release review.
 Demo 3 (algorithmic districting) currently ships the apportionment slice;
 district polygon generation comes next. The ballot-measure, electorate, and
