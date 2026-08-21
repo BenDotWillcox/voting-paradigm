@@ -194,9 +194,22 @@ history, and demographic proxies remain excluded throughout.
   serving-weight attestation, so the captured catalog hash is recorded as the
   serving revision and that limitation remains explicit. The round-number
   workload is a non-authorizing feasibility plan: exact per-candidate tokenizer
-  counts over rendered, wave-aware requests and a predeclared headroom gate
-  remain mandatory before any paid call. No candidate has yet qualified and no
-  provider call has occurred.
+  counts over rendered qualification requests, wave-aware held-out calibration,
+  exact counting immediately before every future request, and a predeclared
+  headroom gate remain mandatory before any paid call. A request that no longer
+  fits its frozen envelope pauses without transmission. The live boundary now
+  requires a manual account-privacy attestation and public-source receipt for a
+  one-shot authenticated `/models` check; the paid HTTP/tool-loop transport
+  cannot be constructed without a separate authorization object binding its
+  tokenizer and headroom artifacts. Advertised context windows remain in
+  candidate provenance while the receipt separately records live deployment
+  ceilings, surfaces their aggregate divergence, and requires every live
+  ceiling to fit the largest frozen request envelope. Live authorizations are
+  segment-scoped: initial capability and qualification calls use the USD 4
+  qualification segment, while retries require a fresh authorization for the
+  USD 3 retry reserve and retain exact ledger lineage. Held-out authorization
+  remains outside this qualification slice. No candidate has yet qualified
+  and no paid provider call has occurred.
 
 ## Validation
 
@@ -241,8 +254,10 @@ sequential selection tolerances, so negligible sensitivity differences cannot
 silence quality, cost, and latency. The tracked Together suite freezes the
 three candidate artifacts, prices, and candidate-independent prompts/codecs
 before that run. The injected live HTTP client/tool loop, account privacy
-check, external-source revalidation, exact tokenizer projection, headroom gate,
-and paid capability probes still must be completed before qualification.
+check, external-source revalidation, tokenizer-readiness receipt, headroom gate,
+and paid capability probes still must be completed before qualification. The
+catalog preflight makes authenticated network GETs but invokes no model and has
+an exact zero-provider-spend authorization.
 
 The Phase 4A command prints content hashes and aggregate architecture counts.
 Phase 4A does not choose an LLM provider, prompt, model version, evidence

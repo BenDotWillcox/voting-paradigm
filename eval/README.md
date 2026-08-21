@@ -860,6 +860,24 @@ include both copies. The codec contains no credential, HTTP client, or
 network call. A live account privacy check and paid capability probes remain
 mandatory before qualification; validation alone can never spend money.
 
+`eval/phase4_together_live.py` makes those readiness statements enforceable.
+The shared provider runtime calls each transport's authorization gate before
+creating a budget reservation. The Together paid transport requires the exact
+suite/profile, a manually confirmed account-privacy artifact, an authenticated
+catalog receipt, a tokenizer-readiness receipt, a frozen headroom policy, and
+an active user authorization. Qualification additionally requires the completed
+capability matrix. The transport exact-counts its rendered payload immediately
+before each send, runs a bounded interviewer tool loop, aggregates provider
+usage across follow-ups, and leaves an authorization outstanding when delivery
+may have occurred but usage cannot be audited.
+
+Future held-out prompts cannot honestly be rendered exactly before the
+participant creates their evidence. The frozen rule is therefore: count all
+renderable qualification requests exactly, use an explicitly wave-aware
+held-out calibration for the budget decision, exact-count each future request
+before transmission, and pause rather than truncate or send if it exceeds the
+authorized envelope.
+
 The runtime prices an aggregate token upper bound against an exact price card,
 reserves the maximum before transmission, and updates cached committed totals
 in constant time. Success, invalid output, provider error, transport error,
@@ -877,6 +895,13 @@ finalization times cannot move backward. Concrete transports should therefore
 use locally observed receipt times for these audit fields rather than raw
 provider-server timestamps; the runtime rejects clock skew before it can make
 the incremental budget proof disagree with timestamp replay.
+
+Together live authorizations are segment-scoped. Capability and qualification
+calls use the USD 4 qualification segment. A retry of a closed failed call
+requires a fresh live authorization for the USD 3 retry reserve and preserves
+`retry_of_call_id` lineage through the shared ledger. The live authorization
+contract still excludes the held-out-study segment; that separate participant
+boundary is not part of this qualification slice.
 
 Provider inputs use either a public-development attestation or a pseudonymous
 participant attestation. Participant input requires an opaque participant id,
@@ -902,13 +927,14 @@ projection binds one shared workload plus an exact token-counter/envelope
 artifact and price card, so a candidate cannot win by silently projecting
 fewer calls. The Together v1 no-spend projection uses the same conservative
 role bounds for every candidate, but it is a feasibility plan rather than a
-live authorization artifact. The exact rendered development and held-out
-requests must be counted with every candidate's exact tokenizer, including
-the accumulated late-wave evidence and duplicated schema, before any provider
-call. A minimum projected-headroom rule must then be predeclared as a hard
-qualification gate; until both steps are complete the validator reports
-`live_authorization_ready: false`. Provider-reported token usage remains the
-billing truth after a call. A projected study
+live authorization artifact. Renderable development requests must be counted
+with every candidate's exact tokenizer; held-out budgeting uses a wave-aware
+calibration because future participant evidence does not exist yet. Both must
+include the duplicated schema and tool-loop allowance. A minimum headroom rule
+is then predeclared, and every future payload is exact-counted before send;
+over-envelope requests pause without transmission. Until those steps are
+complete the validator reports `live_authorization_ready: false`.
+Provider-reported token usage remains the billing truth after a call. A projected study
 that exceeds the USD 13 held-out segment cannot qualify. The bundle binds the
 complete provider ledger and execution journal, embeds content-free per-call
 contract assessments and robustness aggregates, and rebuilds every candidate
@@ -926,12 +952,13 @@ python -m eval.validate_phase4_qualification \
 ```
 
 The Together suite closes the candidate, price, shared-contract,
-request-codec, and budget-feasibility parts: 456 qualification calls project
+request-codec, live authorization boundary, and budget-feasibility parts: 456 qualification calls project
 to USD 3.4228; a 912-call held-out envelope projects to USD 1.4328, USD 6.7968,
 or USD 12.3072 depending on which candidate wins. Next, verify the organization
-privacy toggles, configure a project-scoped key outside the repository,
-implement the injected live HTTP client/tool loop, and run the account/model
-capability preflight. No request may be sent until Ben separately authorizes
+privacy toggles, configure a project-scoped key outside the repository, and run
+the zero-inference catalog preflight. Then build the real tokenizer-readiness
+and headroom artifacts before the paid account/model capability preflight. No
+paid request may be sent until Ben separately authorizes
 qualification spend. Qualification must not use restricted participant
 responses or the held-out study segment.
 
@@ -949,3 +976,45 @@ python -m eval.validate_phase4_together \
   eval/fixtures/preference_eval_phase4_together_v1.json \
   eval/fixtures/preference_eval_phase4_robustness_v1.json
 ```
+
+For the first authenticated but zero-inference preflight, create the ignored
+repository-root `.env.local` manually with exactly one secret line:
+
+```text
+TOGETHER_API_KEY=<project-scoped key>
+```
+
+Never pass the key as a CLI argument or paste it into a review/chat. Confirm in
+Together's Privacy & Security settings that training data sharing remains off,
+acknowledge the documented default nonstorage and temporary-caching terms, then
+run:
+
+```bash
+python -m eval.preflight_phase4_together \
+  eval/fixtures/preference_eval_phase4_together_v1.json \
+  eval/private_runs/phase4/together_catalog_preflight.json \
+  --api-key-file .env.local \
+  --confirm-project-scoped-key \
+  --confirm-training-sharing-disabled \
+  --confirm-default-nonstorage \
+  --acknowledge-temporary-caching \
+  --execute-zero-spend
+```
+
+The command re-fetches every public source and makes one authenticated
+`GET /v1/models`. It requires exact candidate identities and prices, records
+both the public catalog's advertised context window and the live endpoint's
+context ceiling, and requires the live ceiling to fit the largest predeclared
+request envelope. Together's live endpoint can report an implementation
+ceiling that differs from the rounded or provider-advertised public catalog
+value, so those two fields are deliberately not treated as interchangeable.
+The aggregate CLI output reports both the mismatch count and the maximum
+relative difference in parts per million; this is a deployment diagnostic, not
+an arbitrary rejection threshold. The safety gate uses the live ceiling and
+the exact study workload. Candidate hashes continue to bind the advertised
+catalog value as provenance, while the separately hash-bound live receipt
+records deployment capacity; neither hash claims that the advertised value is
+the live deployment's internal ceiling.
+The command makes no inference request, reports zero provider spend, stores no
+API-key value or hash, and refuses to write outside `eval/private_runs/`. It
+does not authorize capability probes or qualification.
