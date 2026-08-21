@@ -10,6 +10,7 @@ can ask the shared provider runtime to reserve budget.
 from __future__ import annotations
 
 import hashlib
+import importlib.metadata
 import json
 from collections import Counter, defaultdict
 from copy import deepcopy
@@ -93,6 +94,17 @@ CONVERSATIONAL_ROLES = {
     LLMRole.ONTOLOGY_PROPOSER,
 }
 READOUT_ROLES = {LLMRole.DIRECT_READOUT, LLMRole.HYBRID_READOUT}
+TOKENIZER_FILE_PATTERNS = (
+    "tokenizer.json",
+    "tokenizer_config.json",
+    "special_tokens_map.json",
+    "chat_template.jinja",
+    "tokenizer.model",
+    "spiece.model",
+    "vocab.json",
+    "merges.txt",
+    "added_tokens.json",
+)
 
 
 class ExactTokenCounter(Protocol):
@@ -562,6 +574,16 @@ class _RequestTemplate:
     robustness_variant: RobustnessVariantBinding | None
 
 
+@dataclass(frozen=True)
+class RebuiltQualificationCall:
+    """Private request rebuilt from one content-free qualification entry."""
+
+    entry: QualificationCallPlanEntry
+    request: PrivateStructuredProviderRequest
+    response_adapter: TypeAdapter[object]
+    price_card: ProviderPriceCard
+
+
 def _canonical_json(value: JsonValue) -> str:
     return json.dumps(
         value,
@@ -1000,6 +1022,7 @@ def _planning_request(
     template: _RequestTemplate,
     *,
     call_id: str,
+    created_at: datetime = READINESS_CREATED_AT,
 ) -> PrivateStructuredProviderRequest:
     schema = response_schema_for_role(template.role)
     attestation = build_public_development_attestation(
@@ -1028,7 +1051,7 @@ def _planning_request(
         temperature=0.0,
         input_token_upper_bound=template.input_token_upper_bound,
         output_token_upper_bound=template.output_token_upper_bound,
-        created_at=READINESS_CREATED_AT,
+        created_at=created_at,
         tool_definitions=template.tool_definitions,
     )
 
@@ -1088,6 +1111,90 @@ def _variants_for_role(role: LLMRole) -> tuple[QualificationVariant, ...]:
     if role in READOUT_ROLES:
         return tuple(QualificationVariant(item) for item in QUALIFICATION_VARIANT_IDS)
     return (QualificationVariant.CANONICAL,)
+
+
+def rebuild_qualification_call(
+    suite: Phase4TogetherSuite,
+    profile: Phase4ERobustnessProfile,
+    fixture: EvaluationFixture,
+    session: PrequentialSessionScript,
+    semantic_map: AuthoredSemanticMapBundle,
+    entry: QualificationCallPlanEntry,
+    *,
+    created_at: datetime,
+) -> RebuiltQualificationCall:
+    """Rebuild one exact private request and verify its public plan binding."""
+
+    candidates = {
+        item.candidate.candidate_id: item for item in suite.candidates
+    }
+    container = candidates.get(entry.coordinate.candidate_id)
+    if container is None:
+        raise ValueError("qualification entry candidate is unknown")
+    measure_indices = {
+        measure.measure_id: index for index, measure in enumerate(fixture.measures)
+    }
+    measure_index = measure_indices.get(entry.coordinate.measure_id)
+    if measure_index is None:
+        raise ValueError("qualification entry measure is unknown")
+    measure = fixture.measures[measure_index]
+    if measure.version != entry.coordinate.measure_version:
+        raise ValueError("qualification entry measure version differs")
+    role_contracts = {item.role: item for item in suite.shared_role_contracts}
+    role_contract = role_contracts[entry.coordinate.role]
+    template = _request_template(
+        suite,
+        fixture,
+        session,
+        semantic_map,
+        candidate=container.candidate,
+        price_card=container.price_card,
+        role_contract=role_contract,
+        measure_index=measure_index,
+        variant=entry.coordinate.variant_id,
+        held_out_wave_index=None,
+        held_out_calibration_kind=None,
+    )
+    request = _planning_request(
+        profile,
+        template,
+        call_id=entry.coordinate.call_id,
+        created_at=created_at,
+    )
+    payload_hashes = [
+        content_sha256(payload)
+        for payload in _projected_provider_payloads(suite, request)
+    ]
+    expected = (
+        content_sha256(container.candidate),
+        content_sha256(container.price_card),
+        content_sha256(role_contract),
+        template.robustness_variant,
+        provider_request_content_sha256(request.binding),
+        content_sha256(payload_hashes),
+        len(payload_hashes),
+        template.input_token_upper_bound,
+        template.output_token_upper_bound,
+    )
+    actual = (
+        entry.candidate_sha256,
+        entry.price_card_sha256,
+        entry.role_contract_sha256,
+        entry.robustness_variant,
+        entry.request_template_sha256,
+        entry.rendered_payload_sha256,
+        entry.provider_round_count,
+        entry.input_token_upper_bound,
+        entry.output_token_upper_bound,
+    )
+    if actual != expected:
+        raise ValueError("rebuilt qualification request differs from plan")
+    return RebuiltQualificationCall(
+        entry=entry.model_copy(deep=True),
+        request=request,
+        response_adapter=template.response_adapter,
+        price_card=container.price_card.model_copy(deep=True),
+    )
 
 
 def build_qualification_request_manifest(
@@ -1424,6 +1531,47 @@ def load_exact_tokenizer_from_snapshot(
         artifact=artifact,
         backend=Tokenizer.from_file(str(tokenizer_json)),
     )
+
+
+def load_exact_tokenizers(
+    suite: Phase4TogetherSuite,
+    cache_root: Path,
+    *,
+    allow_download: bool,
+) -> dict[str, ExactTokenCounter]:
+    """Load revision-pinned tokenizer assets without downloading weights."""
+
+    try:
+        from huggingface_hub import snapshot_download
+    except ImportError as error:  # pragma: no cover - exercised by CLI setup
+        raise RuntimeError(
+            "huggingface-hub is required for tokenizer readiness"
+        ) from error
+    library_version = importlib.metadata.version("tokenizers")
+    counters: dict[str, ExactTokenCounter] = {}
+    for container in sorted(
+        suite.candidates,
+        key=lambda item: item.candidate.candidate_id,
+    ):
+        candidate = container.candidate
+        local_dir = (
+            cache_root
+            / candidate.candidate_id
+            / candidate.upstream_model_revision
+        )
+        snapshot = snapshot_download(
+            repo_id=candidate.upstream_model_id,
+            revision=candidate.upstream_model_revision,
+            allow_patterns=list(TOKENIZER_FILE_PATTERNS),
+            local_dir=local_dir,
+            local_files_only=not allow_download,
+        )
+        counters[candidate.candidate_id] = load_exact_tokenizer_from_snapshot(
+            candidate,
+            Path(snapshot),
+            tokenizer_library_version=library_version,
+        )
+    return counters
 
 
 def build_readiness_bundle(

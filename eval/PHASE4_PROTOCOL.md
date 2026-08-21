@@ -221,8 +221,18 @@ history, and demographic proxies remain excluded throughout.
   segment-scoped: initial capability and qualification calls use the USD 4
   qualification segment, while retries require a fresh authorization for the
   USD 3 retry reserve and retain exact ledger lineage. Held-out authorization
-  remains outside this qualification slice. No candidate has yet qualified
-  and no paid provider call has occurred.
+  remains outside this qualification slice. A tracked capability plan now
+  binds the exact first 15 qualification entries: one canonical public-
+  development request for every candidate and role. It is itself a zero-spend
+  artifact. Paid execution additionally requires a private, expiring manual
+  approval for exactly 15 calls and a USD 0.15 pre-call reservation ceiling.
+  The runner rebuilds every private request from the readiness inputs, stops
+  on the first non-success, checkpoints an exact prefix, and issues a receipt
+  only after all 15 structured contracts pass and all three interviewer probes
+  complete a real typed-tool round. Closed failures are terminal for that
+  attempt; ambiguous sent requests retain their reservation for manual
+  reconciliation. No candidate has yet qualified and no paid provider call
+  has occurred.
 
 ## Validation
 
@@ -270,9 +280,25 @@ before that run. The live HTTP client/tool loop and no-spend readiness gate are
 implemented. The account, source, and catalog receipts must be reissued against
 the corrected v2 suite before constructing a paid authorization; the prior
 ignored receipt binds v1. Paid capability probes still must be completed before
-qualification. The
-catalog preflight makes authenticated network GETs but invokes no model and has
-an exact zero-provider-spend authorization.
+qualification. The catalog preflight makes authenticated network GETs but
+invokes no model and has an exact zero-provider-spend authorization.
+
+Validate the tracked zero-spend capability plan with:
+
+```bash
+python -m eval.validate_phase4_capability \
+  eval/fixtures/preference_eval_phase4_together_capability_v1.json \
+  eval/fixtures/preference_eval_phase4_together_v2.json \
+  eval/fixtures/preference_eval_phase4_robustness_v1.json \
+  eval/fixtures/preference_eval_phase4_together_readiness_v2.json \
+  eval/fixtures/preference_eval_dev_v1.json \
+  eval/fixtures/preference_eval_dev_session_v1.json \
+  eval/fixtures/preference_eval_dev_semantic_map_v1.json
+```
+
+This validator makes no network request, accepts no credential, and reports
+only aggregate counts, hashes, and cost bounds. Authorization and execution
+remain separate private commands and require a new explicit spend decision.
 
 The Phase 4A command prints content hashes and aggregate architecture counts.
 Phase 4A does not choose an LLM provider, prompt, model version, evidence

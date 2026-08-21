@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import importlib.metadata
 import json
 import sys
 from collections.abc import Sequence
@@ -14,12 +13,11 @@ from pydantic import ValidationError
 from .authoring_cli import safe_authoring_error
 from .fixture_io import load_fixture
 from .phase4_readiness import (
-    ExactTokenCounter,
     build_held_out_calibration_manifest,
     build_qualification_request_manifest,
     build_qualification_resume_cursor,
     build_readiness_bundle,
-    load_exact_tokenizer_from_snapshot,
+    load_exact_tokenizers,
     readiness_summary,
 )
 from .phase4_robustness import load_phase4_robustness_profile
@@ -30,17 +28,6 @@ from .prequential import load_session_script
 
 QUALIFICATION_MINIMUM_HEADROOM_MICROUSD = 400_000
 HELD_OUT_MINIMUM_HEADROOM_MICROUSD = 500_000
-TOKENIZER_FILE_PATTERNS = [
-    "tokenizer.json",
-    "tokenizer_config.json",
-    "special_tokens_map.json",
-    "chat_template.jinja",
-    "tokenizer.model",
-    "spiece.model",
-    "vocab.json",
-    "merges.txt",
-    "added_tokens.json",
-]
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -73,45 +60,6 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _load_tokenizers(
-    suite,
-    cache_root: Path,
-    *,
-    allow_download: bool,
-) -> dict[str, ExactTokenCounter]:
-    try:
-        from huggingface_hub import snapshot_download
-    except ImportError as error:
-        raise RuntimeError(
-            "huggingface-hub is required for tokenizer readiness"
-        ) from error
-    library_version = importlib.metadata.version("tokenizers")
-    counters: dict[str, ExactTokenCounter] = {}
-    for container in sorted(
-        suite.candidates,
-        key=lambda item: item.candidate.candidate_id,
-    ):
-        candidate = container.candidate
-        local_dir = (
-            cache_root
-            / candidate.candidate_id
-            / candidate.upstream_model_revision
-        )
-        snapshot = snapshot_download(
-            repo_id=candidate.upstream_model_id,
-            revision=candidate.upstream_model_revision,
-            allow_patterns=TOKENIZER_FILE_PATTERNS,
-            local_dir=local_dir,
-            local_files_only=not allow_download,
-        )
-        counters[candidate.candidate_id] = load_exact_tokenizer_from_snapshot(
-            candidate,
-            Path(snapshot),
-            tokenizer_library_version=library_version,
-        )
-    return counters
-
-
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
@@ -122,7 +70,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         semantic_map = load_authored_semantic_map(
             args.development_semantic_map
         )
-        counters = _load_tokenizers(
+        counters = load_exact_tokenizers(
             suite,
             args.tokenizer_cache,
             allow_download=args.download_tokenizers,
