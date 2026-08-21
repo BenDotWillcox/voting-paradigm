@@ -822,7 +822,7 @@ deterministic no-network test double. A concrete hosted or self-hosted
 transport is selected only with the three candidate artifacts.
 
 `eval/phase4_together.py` now freezes the no-spend portion of that selection.
-The tracked `preference_eval_phase4_together_v1.json` suite binds Together's
+The tracked `preference_eval_phase4_together_v2.json` suite binds Together's
 20 August 2026 serverless catalog and privacy/capability documentation, exact
 upstream Hugging Face revisions, revision-bound weight-manifest identities,
 license provenance, advertised serving model strings and quantization, exact
@@ -832,6 +832,18 @@ publish a cryptographic serving-weight attestation, so the recorded serving
 revision is the exact captured catalog hash rather than a claim of bit-level
 identity with the upstream checkpoint. Qualification results must retain that
 limitation.
+
+The original v1 suite remains tracked as a hash-pinned audit artifact and is
+accepted by the validator's audit-only v1 path. The operative v2
+suite raises the interviewer logical-call envelope from 5,000 to 15,000 input
+tokens and from 500 to 1,000 output tokens, raises extractor/proposer input
+envelopes from 4,000 to 6,000, and sets held-out direct/hybrid readout input
+envelopes to 7,000/8,000. Exact calibration showed that the v1 bounds could not
+carry all accumulated evidence, the interviewer's required tool-call follow-up,
+or the post-wave-six retest inputs. The v2
+transport permits exactly one tool round followed by the final response and
+counts both HTTP payloads. No candidate, prompt, price, privacy rule, or budget
+segment changed.
 
 Together was chosen over self-hosting because the USD 20 total budget cannot
 cover the sustained accelerator rental needed for the 120B and 550B candidates.
@@ -925,13 +937,16 @@ preserving the declared priority. Sensitivity is the equal-weight mean of the
 prompt-class and stochastic-class mean Jensen-Shannon divergences. Every cost
 projection binds one shared workload plus an exact token-counter/envelope
 artifact and price card, so a candidate cannot win by silently projecting
-fewer calls. The Together v1 no-spend projection uses the same conservative
-role bounds for every candidate, but it is a feasibility plan rather than a
-live authorization artifact. Renderable development requests must be counted
+fewer calls. The Together no-spend projection uses the same conservative role
+bounds for every candidate, but its sum-of-all-envelopes total is a stress
+diagnostic rather than a live authorization artifact. Renderable development requests must be counted
 with every candidate's exact tokenizer; held-out budgeting uses a wave-aware
 calibration because future participant evidence does not exist yet. Both must
 include the duplicated schema and tool-loop allowance. A minimum headroom rule
-is then predeclared, and every future payload is exact-counted before send;
+is then predeclared. The binding sequential proof adds the largest single-call
+envelope reservation to exact projected spend under each segment cap; the
+execution plan must remain sequential for that proof to apply. Every future
+payload is exact-counted before send;
 over-envelope requests pause without transmission. Until those steps are
 complete the validator reports `live_authorization_ready: false`.
 Provider-reported token usage remains the billing truth after a call. A projected study
@@ -952,15 +967,21 @@ python -m eval.validate_phase4_qualification \
 ```
 
 The Together suite closes the candidate, price, shared-contract,
-request-codec, live authorization boundary, and budget-feasibility parts: 456 qualification calls project
-to USD 3.4228; a 912-call held-out envelope projects to USD 1.4328, USD 6.7968,
-or USD 12.3072 depending on which candidate wins. Next, verify the organization
-privacy toggles, configure a project-scoped key outside the repository, and run
-the zero-inference catalog preflight. Then build the real tokenizer-readiness
-and headroom artifacts before the paid account/model capability preflight. No
-paid request may be sent until Ben separately authorizes
-qualification spend. Qualification must not use restricted participant
-responses or the held-out study segment.
+request-codec, live authorization boundary, and initial budget-feasibility
+parts. The v2 conservative envelopes project 456 qualification calls at
+USD 3.5604. For the 1,104-call held-out workload their non-authorizing
+sum-of-all-envelopes diagnostics are USD 16.7520, USD 1.9368, or USD 9.0720
+for GLM, GPT-OSS, and Nemotron. The exact no-spend readiness pass supplies the
+authorization inputs: all 456 public-development calls are rendered and
+counted with each revision-pinned upstream tokenizer, and a public synthetic
+calibration counts six initial waves plus 12 post-wave-six retests. The latter
+add 96 direct and 96 hybrid readout calls per candidate, for 1,104 future calls
+per candidate. Because calls execute sequentially, authorization gates exact
+projected spend plus the largest one-call envelope reservation rather than the
+counterfactual sum of reserving all calls simultaneously.
+No paid request may be sent until Ben separately authorizes qualification
+spend. Qualification must not use restricted participant responses or the
+held-out-study segment.
 
 The 64 calls for each readout role are eight development measures times one
 canonical call plus seven staged prompt/order/label/stochastic calls, producing
@@ -973,7 +994,7 @@ Validate the frozen no-spend suite without credentials or network access:
 
 ```bash
 python -m eval.validate_phase4_together \
-  eval/fixtures/preference_eval_phase4_together_v1.json \
+  eval/fixtures/preference_eval_phase4_together_v2.json \
   eval/fixtures/preference_eval_phase4_robustness_v1.json
 ```
 
@@ -991,7 +1012,7 @@ run:
 
 ```bash
 python -m eval.preflight_phase4_together \
-  eval/fixtures/preference_eval_phase4_together_v1.json \
+  eval/fixtures/preference_eval_phase4_together_v2.json \
   eval/private_runs/phase4/together_catalog_preflight.json \
   --api-key-file .env.local \
   --confirm-project-scoped-key \
@@ -1018,3 +1039,69 @@ the live deployment's internal ceiling.
 The command makes no inference request, reports zero provider spend, stores no
 API-key value or hash, and refuses to write outside `eval/private_runs/`. It
 does not authorize capability probes or qualification.
+
+The earlier ignored catalog receipt binds the preserved v1 suite and cannot
+authorize v2. Re-run this zero-inference command after v2 merges; the exact hash
+binding intentionally prevents carrying the old receipt across the envelope
+revision.
+
+Build the separate no-key, no-inference tokenizer-readiness artifact with:
+
+```bash
+python -m eval.prepare_phase4_together_readiness \
+  eval/fixtures/preference_eval_phase4_together_v2.json \
+  eval/fixtures/preference_eval_phase4_robustness_v1.json \
+  eval/fixtures/preference_eval_dev_v1.json \
+  eval/fixtures/preference_eval_dev_session_v1.json \
+  eval/fixtures/preference_eval_dev_semantic_map_v1.json \
+  eval/fixtures/preference_eval_phase4_together_readiness_v2.json \
+  --tokenizer-cache .cache/eval-tokenizers/phase4e \
+  --download-tokenizers
+```
+
+The command downloads only revision-pinned tokenizer assets, never model
+weights. It constructs a deterministic 456-call public-development plan with
+exact payload hashes, creates a resumable prefix cursor, and calibrates six
+future waves plus 12 post-wave-six retests using only public synthetic evidence
+growth and original-response records. Every accumulated evidence record remains
+materialized in every later wave, matching the unbounded production request
+contract; the calibration validator requires input-token totals and per-request
+maxima to increase strictly through every applicable presentation for every
+candidate and role. Every real future request is counted immediately before
+transmission and pauses if it exceeds the frozen role envelope. The headroom
+freeze requires at least USD 0.40 in the USD 4 qualification segment and USD
+0.50 in the USD 13 held-out segment after adding the largest single-call
+reservation to exact projected spend.
+
+The resulting tracked artifact projects qualification costs of USD 1.329742,
+USD 0.162044, and USD 0.871734 for GLM, GPT-OSS, and Nemotron respectively.
+Its 1,104-call-per-candidate held-out calibration projects USD 11.331324, USD
+1.356093, and USD 7.146712. The corresponding sequential reservation headroom
+is USD 1.611080 for qualification and USD 1.643276, USD 11.641057, and USD
+5.840688 for the three held-out candidates. Interviewer totals include the
+initial request and one synthetic
+tool-result follow-up, with a 500-token output allowance for each provider
+round. These are deterministic local projections, not provider billing
+claims: Together does not attest that its serving tokenizer is byte-identical
+to the upstream tokenizer. Provider-reported usage remains billing truth.
+
+Validate the artifact without a tokenizer download or network access:
+
+```bash
+python -m eval.validate_phase4_readiness \
+  eval/fixtures/preference_eval_phase4_together_readiness_v2.json \
+  eval/fixtures/preference_eval_phase4_together_v2.json \
+  eval/fixtures/preference_eval_phase4_robustness_v1.json \
+  eval/fixtures/preference_eval_dev_v1.json \
+  eval/fixtures/preference_eval_dev_session_v1.json \
+  eval/fixtures/preference_eval_dev_semantic_map_v1.json
+```
+
+The validator emits aggregate counts, hashes, costs, and headroom only. The
+readiness bundle hash is
+`fa9f73a86c29ae53cc524f31dab301ca1cd60cd4cc271443450ccf4e93a98fe3`.
+It records zero inference calls and zero provider spend. The next external
+action is the separately authorized 15-call capability preflight. Those calls
+are the exact first 15 entries of the qualification plan, so success resumes at
+call 16 rather than paying to repeat them. Public-development qualification
+continues only if all capability checks pass.

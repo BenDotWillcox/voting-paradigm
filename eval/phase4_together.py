@@ -65,7 +65,9 @@ TOGETHER_PARAMETERS_URL = (
 TOGETHER_STRUCTURED_OUTPUTS_URL = (
     "https://docs.together.ai/docs/inference/chat/structured-outputs"
 )
+TOGETHER_INTERVIEWER_PROVIDER_ROUND_LIMIT = 2
 CAPTURED_AT = datetime(2026, 8, 20, 12, 0, tzinfo=timezone.utc)
+SUITE_CREATED_AT = datetime(2026, 8, 21, 18, 0, tzinfo=timezone.utc)
 
 
 class TogetherQuantization(str, Enum):
@@ -314,6 +316,18 @@ class TogetherWorkloadPlan(ContractModel):
 
     @model_validator(mode="after")
     def require_declared_call_math(self) -> Self:
+        if (
+            self.workload_id,
+            self.workload_version,
+        ) == ("phase4_together_workload_v1", 1):
+            held_out_readout_count = 384
+        elif (
+            self.workload_id,
+            self.workload_version,
+        ) == ("phase4_together_workload_v2", 2):
+            held_out_readout_count = 480
+        else:
+            raise ValueError("Together workload version is unsupported")
         qualification = {
             item.role: item.request_count
             for item in self.qualification_per_candidate.role_usage
@@ -334,10 +348,10 @@ class TogetherWorkloadPlan(ContractModel):
             LLMRole.INTERVIEWER: 48,
             LLMRole.EVIDENCE_EXTRACTOR: 48,
             LLMRole.ONTOLOGY_PROPOSER: 48,
-            LLMRole.DIRECT_READOUT: 384,
-            LLMRole.HYBRID_READOUT: 384,
+            LLMRole.DIRECT_READOUT: held_out_readout_count,
+            LLMRole.HYBRID_READOUT: held_out_readout_count,
         }:
-            raise ValueError("held-out workload does not match v1 design")
+            raise ValueError("held-out workload does not match frozen design")
         return self
 
 
@@ -436,8 +450,8 @@ class Phase4TogetherSuite(ContractModel):
 
 
 class TogetherNoSpendReport(ContractModel):
-    record_version: Literal["phase4_together_no_spend_report.v1"] = (
-        "phase4_together_no_spend_report.v1"
+    record_version: Literal["phase4_together_no_spend_report.v2"] = (
+        "phase4_together_no_spend_report.v2"
     )
     suite_sha256: Sha256Digest
     candidate_count: Literal[3] = 3
@@ -445,13 +459,15 @@ class TogetherNoSpendReport(ContractModel):
     qualification_request_count: PositiveCount
     qualification_projected_cost_microusd: Microusd
     qualification_cap_microusd: Literal[4_000_000] = 4_000_000
-    qualification_projected_headroom_microusd: Microusd
+    qualification_projected_headroom_microusd: int
     held_out_request_count: PositiveCount
     held_out_projected_cost_microusd_by_candidate: dict[StableId, Microusd]
-    held_out_projected_headroom_microusd_by_candidate: dict[StableId, Microusd]
+    held_out_projected_headroom_microusd_by_candidate: dict[StableId, int]
     held_out_cap_microusd: Literal[13_000_000] = 13_000_000
-    all_candidates_fit_qualification_cap: Literal[True] = True
-    all_candidates_fit_held_out_cap: Literal[True] = True
+    all_candidates_fit_qualification_cap: bool
+    all_candidates_fit_held_out_cap: bool
+    all_calls_at_envelope_totals_are_non_authorizing: Literal[True] = True
+    sequential_reservation_gate_required_for_authorization: Literal[True] = True
     exact_candidate_tokenizer_projection_complete: Literal[False] = False
     projected_headroom_gate_frozen: Literal[False] = False
     live_authorization_ready: Literal[False] = False
@@ -549,6 +565,13 @@ def build_together_chat_payload(
         > candidate.context_window_tokens
     ):
         raise ValueError("Together request exceeds candidate context window")
+    max_tokens = request.binding.output_token_upper_bound
+    if request.binding.tool_calling_enabled:
+        if max_tokens % TOGETHER_INTERVIEWER_PROVIDER_ROUND_LIMIT:
+            raise ValueError(
+                "Together interviewer output bound must divide by rounds"
+            )
+        max_tokens //= TOGETHER_INTERVIEWER_PROVIDER_ROUND_LIMIT
     prompt_text = _canonical_json(request.prompt_payload)
     schema_text = _canonical_json(request.response_json_schema)
     system_content = (
@@ -569,7 +592,7 @@ def build_together_chat_payload(
             },
         },
         "temperature": request.binding.temperature,
-        "max_tokens": request.binding.output_token_upper_bound,
+        "max_tokens": max_tokens,
         "n": 1,
         "stream": False,
     }
@@ -609,6 +632,11 @@ def validate_request_against_role_envelope(
         raise ValueError("Together request exceeds role input-token envelope")
     if request.binding.output_token_upper_bound > usage.output_tokens_per_request:
         raise ValueError("Together request exceeds role output-token envelope")
+    if request.binding.tool_calling_enabled and (
+        request.binding.output_token_upper_bound
+        % TOGETHER_INTERVIEWER_PROVIDER_ROUND_LIMIT
+    ):
+        raise ValueError("Together interviewer output bound must divide by rounds")
 
 
 def build_no_spend_report(
@@ -662,17 +690,9 @@ def build_no_spend_report(
     qualification_cap = profile.budget_policy.segment_caps_microusd[
         BudgetSegment.QUALIFICATION
     ]
-    if qualification_cost > qualification_cap:
-        raise ValueError("Together qualification projection exceeds hard cap")
     held_out_cap = profile.budget_policy.segment_caps_microusd[
         BudgetSegment.HELD_OUT_STUDY
     ]
-    for candidate_id, cost in held_out_costs.items():
-        if cost > held_out_cap:
-            raise ValueError(
-                f"Together held-out projection for {candidate_id} exceeds "
-                "hard cap"
-            )
     return TogetherNoSpendReport(
         suite_sha256=content_sha256(suite),
         qualification_request_count=sum(
@@ -691,6 +711,12 @@ def build_no_spend_report(
             candidate_id: held_out_cap - cost
             for candidate_id, cost in held_out_costs.items()
         },
+        all_candidates_fit_qualification_cap=(
+            qualification_cost <= qualification_cap
+        ),
+        all_candidates_fit_held_out_cap=all(
+            cost <= held_out_cap for cost in held_out_costs.values()
+        ),
     )
 
 
@@ -916,13 +942,14 @@ def _role_usage(
     *,
     conversational_count: int,
     readout_count: int,
+    held_out: bool,
 ) -> list[ProjectedRoleUsage]:
     token_bounds = {
-        LLMRole.DIRECT_READOUT: (6_000, 1_000),
-        LLMRole.EVIDENCE_EXTRACTOR: (4_000, 1_000),
-        LLMRole.HYBRID_READOUT: (8_000, 1_000),
-        LLMRole.INTERVIEWER: (5_000, 500),
-        LLMRole.ONTOLOGY_PROPOSER: (4_000, 1_000),
+        LLMRole.DIRECT_READOUT: (7_000 if held_out else 6_000, 1_000),
+        LLMRole.EVIDENCE_EXTRACTOR: (6_000, 1_000),
+        LLMRole.HYBRID_READOUT: (8_000 if held_out else 7_000, 1_000),
+        LLMRole.INTERVIEWER: (15_000, 1_000),
+        LLMRole.ONTOLOGY_PROPOSER: (6_000, 1_000),
     }
     return [
         ProjectedRoleUsage(
@@ -941,17 +968,25 @@ def _role_usage(
 
 def _workload_plan() -> TogetherWorkloadPlan:
     return TogetherWorkloadPlan(
-        workload_id="phase4_together_workload_v1",
-        workload_version=1,
+        workload_id="phase4_together_workload_v2",
+        workload_version=2,
         qualification_per_candidate=ConservativeTokenEnvelope(
-            counter_id="phase4_together_qualification_envelope_v1",
-            counter_version=1,
-            role_usage=_role_usage(conversational_count=8, readout_count=64),
+            counter_id="phase4_together_qualification_envelope_v2",
+            counter_version=2,
+            role_usage=_role_usage(
+                conversational_count=8,
+                readout_count=64,
+                held_out=False,
+            ),
         ),
         held_out_selected_candidate=ConservativeTokenEnvelope(
-            counter_id="phase4_together_held_out_envelope_v1",
-            counter_version=1,
-            role_usage=_role_usage(conversational_count=48, readout_count=384),
+            counter_id="phase4_together_held_out_envelope_v2",
+            counter_version=2,
+            role_usage=_role_usage(
+                conversational_count=48,
+                readout_count=480,
+                held_out=True,
+            ),
         ),
     )
 
@@ -959,7 +994,7 @@ def _workload_plan() -> TogetherWorkloadPlan:
 def build_default_together_suite(
     profile: Phase4ERobustnessProfile,
 ) -> Phase4TogetherSuite:
-    """Build the exact tracked v1 suite without reading credentials or network."""
+    """Build the exact tracked v2 suite without reading credentials or network."""
 
     catalog = _catalog_snapshot()
     terms = _terms_snapshot()
@@ -1014,9 +1049,9 @@ def build_default_together_suite(
         ),
     ]
     suite = Phase4TogetherSuite(
-        suite_id="preference_eval_phase4_together_v1",
-        suite_version=1,
-        created_at=CAPTURED_AT,
+        suite_id="preference_eval_phase4_together_v2",
+        suite_version=2,
+        created_at=SUITE_CREATED_AT,
         robustness_profile_id=profile.profile_id,
         robustness_profile_version=profile.profile_version,
         robustness_profile_sha256=content_sha256(profile),

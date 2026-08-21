@@ -56,7 +56,7 @@ ROOT = Path(__file__).resolve().parents[2]
 PROFILE_PATH = (
     ROOT / "eval/fixtures/preference_eval_phase4_robustness_v1.json"
 )
-SUITE_PATH = ROOT / "eval/fixtures/preference_eval_phase4_together_v1.json"
+SUITE_PATH = ROOT / "eval/fixtures/preference_eval_phase4_together_v2.json"
 NOW = datetime(2026, 8, 21, 15, 0, tzinfo=timezone.utc)
 
 
@@ -183,13 +183,17 @@ def catalog_bundle(loaded: Phase4TogetherSuite) -> TogetherCatalogPreflightBundl
 def token_readiness(
     loaded: Phase4TogetherSuite,
 ) -> TogetherTokenReadinessReceipt:
+    qualification_usage = (
+        loaded.workload.qualification_per_candidate.role_usage
+    )
+    held_out_usage = loaded.workload.held_out_selected_candidate.role_usage
     qualification_count = sum(
         item.request_count
-        for item in loaded.workload.qualification_per_candidate.role_usage
+        for item in qualification_usage
     )
     held_out_count = sum(
         item.request_count
-        for item in loaded.workload.held_out_selected_candidate.role_usage
+        for item in held_out_usage
     )
     return TogetherTokenReadinessReceipt(
         receipt_id="together_exact_projection_test",
@@ -227,6 +231,23 @@ def token_readiness(
                         output_tokens=5,
                     )
                 ),
+                qualification_max_single_call_authorization_microusd=max(
+                    price_provider_tokens(
+                        artifact.price_card,
+                        input_tokens=item.input_tokens_per_request,
+                        output_tokens=item.output_tokens_per_request,
+                    )
+                    for item in qualification_usage
+                ),
+                qualification_all_calls_at_envelope_cost_microusd=sum(
+                    item.request_count
+                    * price_provider_tokens(
+                        artifact.price_card,
+                        input_tokens=item.input_tokens_per_request,
+                        output_tokens=item.output_tokens_per_request,
+                    )
+                    for item in qualification_usage
+                ),
                 held_out_calibration_manifest_sha256=content_sha256(
                     [artifact.candidate.candidate_id, "held_out"]
                 ),
@@ -240,6 +261,23 @@ def token_readiness(
                         input_tokens=20,
                         output_tokens=10,
                     )
+                ),
+                held_out_max_single_call_authorization_microusd=max(
+                    price_provider_tokens(
+                        artifact.price_card,
+                        input_tokens=item.input_tokens_per_request,
+                        output_tokens=item.output_tokens_per_request,
+                    )
+                    for item in held_out_usage
+                ),
+                held_out_all_calls_at_envelope_cost_microusd=sum(
+                    item.request_count
+                    * price_provider_tokens(
+                        artifact.price_card,
+                        input_tokens=item.input_tokens_per_request,
+                        output_tokens=item.output_tokens_per_request,
+                    )
+                    for item in held_out_usage
                 ),
             )
             for artifact in loaded.candidates
@@ -370,6 +408,7 @@ def transport(
     input_token_count: int = 10,
     budget_segment: BudgetSegment = BudgetSegment.QUALIFICATION,
     clock_time: datetime | None = None,
+    max_tool_rounds: int = 1,
 ) -> TogetherHTTPTransport:
     readiness = token_readiness(loaded)
 
@@ -408,6 +447,7 @@ def transport(
         token_counter=FixedTokenCounter(),
         tool_executor=tool_executor,
         now=NOW + timedelta(minutes=1),
+        max_tool_rounds=max_tool_rounds,
         clock=lambda: clock_time or NOW + timedelta(minutes=2),
     )
 
@@ -569,7 +609,7 @@ def test_catalog_preflight_records_distinct_live_context_window() -> None:
     )
     assert check.advertised_context_window_tokens == 512_000
     assert check.live_context_window_tokens == 1_048_575
-    assert check.required_context_window_tokens == 9_000
+    assert check.required_context_window_tokens == 16_000
     mismatch_count, maximum_difference_ppm = _context_window_diagnostics(
         receipt
     )
@@ -811,6 +851,20 @@ def test_live_transport_executes_bounded_interviewer_tool_loop() -> None:
     assert result.tool_call_count == 1
     assert result.tool_call_failure_count == 0
     assert calls == 2
+
+
+def test_live_transport_rejects_a_tool_round_limit_not_in_readiness() -> None:
+    loaded = suite()
+
+    with pytest.raises(
+        ValueError,
+        match="max tool rounds differ from readiness",
+    ):
+        transport(
+            loaded,
+            lambda request: httpx.Response(500),
+            max_tool_rounds=2,
+        )
 
 
 def test_ambiguous_sent_response_preserves_outstanding_authorization() -> None:

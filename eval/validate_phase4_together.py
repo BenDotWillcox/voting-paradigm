@@ -2,7 +2,7 @@
 
 Usage:
     python -m eval.validate_phase4_together \
-        eval/fixtures/preference_eval_phase4_together_v1.json \
+        eval/fixtures/preference_eval_phase4_together_v2.json \
         eval/fixtures/preference_eval_phase4_robustness_v1.json
 """
 
@@ -23,6 +23,12 @@ from .phase4_together import (
     build_default_together_suite,
     build_no_spend_report,
     load_together_suite,
+    validate_together_suite,
+)
+
+
+LEGACY_V1_SUITE_SHA256 = (
+    "cb7793244ec640fa336a839d198b8f8e5650cfd20a7a2b9f51a3affc15afa11c"
 )
 
 
@@ -43,9 +49,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         suite = load_together_suite(args.suite)
         profile = load_phase4_robustness_profile(args.robustness_profile)
-        expected = build_default_together_suite(profile)
-        if content_sha256(suite) != content_sha256(expected):
-            raise ValueError("Together suite differs from frozen v1 builder")
+        suite_sha256 = content_sha256(suite)
+        if suite.suite_version == 1:
+            if suite_sha256 != LEGACY_V1_SUITE_SHA256:
+                raise ValueError("Together legacy v1 audit hash differs")
+            validate_together_suite(suite, profile)
+        elif suite.suite_version == 2:
+            expected = build_default_together_suite(profile)
+            if suite_sha256 != content_sha256(expected):
+                raise ValueError("Together suite differs from frozen v2 builder")
+        else:
+            raise ValueError("Together suite version is unsupported")
         report = build_no_spend_report(suite, profile)
         print(
             json.dumps(
