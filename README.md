@@ -217,8 +217,14 @@ tokenizers, exactly counts and hash-binds the 456-call qualification plan,
 calibrates six held-out waves plus 12 retests without restricted packet content
 or participant responses, gates exact projected spend plus the largest
 single-call reservation under the hard caps, and records zero inference calls
-and zero provider spend. Paid capability probes and qualification remain
-separately authorized next steps; no candidate has yet been selected.
+and zero provider spend. A second tracked zero-spend artifact now binds the
+exact first 15 qualification calls: one public-development probe for each of
+the three candidate-by-five-role combinations. The paid runner cannot start
+without a short-lived private approval for exactly those calls and a USD 0.15
+pre-call reservation ceiling; it checkpoints every closed call and emits a
+capability receipt only when all structured contracts pass and each
+interviewer probe actually uses a typed tool. No capability call has been run,
+no provider spend has occurred, and no candidate has yet been selected.
 Public aggregate artifacts still require explicit release review.
 Demo 3 (algorithmic districting) currently ships the apportionment slice;
 district polygon generation comes next. The ballot-measure, electorate, and

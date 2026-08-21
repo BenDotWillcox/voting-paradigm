@@ -1105,3 +1105,93 @@ action is the separately authorized 15-call capability preflight. Those calls
 are the exact first 15 entries of the qualification plan, so success resumes at
 call 16 rather than paying to repeat them. Public-development qualification
 continues only if all capability checks pass.
+
+Build or validate the tracked zero-spend capability plan with:
+
+```bash
+python -m eval.prepare_phase4_together_capability \
+  eval/fixtures/preference_eval_phase4_together_v2.json \
+  eval/fixtures/preference_eval_phase4_robustness_v1.json \
+  eval/fixtures/preference_eval_phase4_together_readiness_v2.json \
+  eval/fixtures/preference_eval_dev_v1.json \
+  eval/fixtures/preference_eval_dev_session_v1.json \
+  eval/fixtures/preference_eval_dev_semantic_map_v1.json \
+  eval/fixtures/preference_eval_phase4_together_capability_v1.json
+
+python -m eval.validate_phase4_capability \
+  eval/fixtures/preference_eval_phase4_together_capability_v1.json \
+  eval/fixtures/preference_eval_phase4_together_v2.json \
+  eval/fixtures/preference_eval_phase4_robustness_v1.json \
+  eval/fixtures/preference_eval_phase4_together_readiness_v2.json \
+  eval/fixtures/preference_eval_dev_v1.json \
+  eval/fixtures/preference_eval_dev_session_v1.json \
+  eval/fixtures/preference_eval_dev_semantic_map_v1.json
+```
+
+The plan hash is
+`0b64351c2fb914a0e9d7e21628a291fedddd9647c619ed71c6a532537f9c850f`.
+It binds one canonical request for every combination of three candidates and
+five LLM roles. The 15 calls project to 76,505 microusd; their complete local
+authorization envelopes sum to 129,000 microusd. The plan itself records zero
+calls and zero spend.
+
+Paid execution is a separate two-command boundary. First reissue the ignored
+catalog bundle against the v2 suite. Then create a short-lived private approval
+under `eval/private_runs/`:
+
+```bash
+python -m eval.authorize_phase4_together_capability \
+  eval/fixtures/preference_eval_phase4_together_capability_v1.json \
+  eval/fixtures/preference_eval_phase4_together_v2.json \
+  eval/fixtures/preference_eval_phase4_robustness_v1.json \
+  eval/fixtures/preference_eval_phase4_together_readiness_v2.json \
+  eval/fixtures/preference_eval_dev_v1.json \
+  eval/fixtures/preference_eval_dev_session_v1.json \
+  eval/fixtures/preference_eval_dev_semantic_map_v1.json \
+  eval/private_runs/together/catalog_v2.json \
+  eval/private_runs/together/capability_authorization.json \
+  --approve-call-count 15 \
+  --approve-max-spend-microusd 150000 \
+  --confirm-public-development-only \
+  --confirm-no-participant-content
+```
+
+That command performs no network request and spends nothing. The eventual paid
+runner additionally requires `--execute-paid-capability` and an exact repeated
+150,000-microusd confirmation. It loads credentials only from the local
+`TOGETHER_API_KEY` environment variable or an explicitly named ignored local
+file, never from a command-line value. Every request is counted again before
+send; the capability runner refuses a next reservation that would cross the
+manual ceiling even though the underlying provider runtime remains bound to
+the frozen USD 4 qualification segment.
+
+After a separate explicit spend approval, the paid command is:
+
+```bash
+python -m eval.run_phase4_together_capability \
+  eval/fixtures/preference_eval_phase4_together_capability_v1.json \
+  eval/fixtures/preference_eval_phase4_together_v2.json \
+  eval/fixtures/preference_eval_phase4_robustness_v1.json \
+  eval/fixtures/preference_eval_phase4_together_readiness_v2.json \
+  eval/fixtures/preference_eval_dev_v1.json \
+  eval/fixtures/preference_eval_dev_session_v1.json \
+  eval/fixtures/preference_eval_dev_semantic_map_v1.json \
+  eval/private_runs/together/catalog_v2.json \
+  eval/private_runs/together/capability_authorization.json \
+  eval/private_runs/together/capability_state.json \
+  --api-key-file .env.local \
+  --execute-paid-capability \
+  --confirm-max-spend-microusd 150000
+```
+
+Do not run that command during plan review. It is the first command in this
+section that can invoke inference and spend provider credit.
+
+The runner checkpoints its private ledger, journal, and parsed outputs after
+every closed call. It can resume only an all-success exact prefix while the
+same short-lived approval remains active. A provider or validation failure is
+a terminal capability result for that attempt, and a sent request with
+ambiguous delivery remains outstanding until manually reconciled. A valid
+receipt requires all 15 role contracts plus a successful typed-tool call from
+each of the three interviewer probes. No paid capability command has been run
+and no provider spend is recorded by the tracked artifacts.
