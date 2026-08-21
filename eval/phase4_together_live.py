@@ -61,6 +61,7 @@ from .phase4_provider import (
     ProviderDataScope,
     ProviderSeedStatus,
     ProviderTransportResult,
+    price_provider_tokens,
 )
 from .phase4_robustness import (
     BudgetSegment,
@@ -68,6 +69,7 @@ from .phase4_robustness import (
     Phase4ERobustnessProfile,
 )
 from .phase4_together import (
+    TOGETHER_INTERVIEWER_PROVIDER_ROUND_LIMIT,
     TOGETHER_CATALOG_URL,
     TOGETHER_PRIVACY_URL,
     Phase4TogetherSuite,
@@ -81,7 +83,7 @@ PositiveFiniteFloat = Annotated[float, Field(gt=0.0, allow_inf_nan=False)]
 
 TOGETHER_API_KEY_ENV = "TOGETHER_API_KEY"
 DEFAULT_HTTP_TIMEOUT_SECONDS = 120.0
-DEFAULT_MAX_TOOL_ROUNDS = 8
+DEFAULT_MAX_TOOL_ROUNDS = TOGETHER_INTERVIEWER_PROVIDER_ROUND_LIMIT - 1
 
 
 def _require_aware(value: datetime, label: str) -> None:
@@ -287,11 +289,15 @@ class TogetherCandidateTokenProjection(ContractModel):
     qualification_input_token_count: NonNegativeCount
     qualification_output_token_upper_bound_count: NonNegativeCount
     qualification_projected_cost_microusd: Microusd
+    qualification_max_single_call_authorization_microusd: Microusd
+    qualification_all_calls_at_envelope_cost_microusd: Microusd
     held_out_calibration_manifest_sha256: Sha256Digest
     held_out_calibration_request_count: PositiveCount
     held_out_input_token_count: NonNegativeCount
     held_out_output_token_upper_bound_count: NonNegativeCount
     held_out_projected_cost_microusd: Microusd
+    held_out_max_single_call_authorization_microusd: Microusd
+    held_out_all_calls_at_envelope_cost_microusd: Microusd
 
 
 class TogetherTokenReadinessReceipt(ContractModel):
@@ -314,6 +320,7 @@ class TogetherTokenReadinessReceipt(ContractModel):
     future_held_out_request_exact_count_required: Literal[True] = True
     over_envelope_action: Literal["pause_without_send"] = "pause_without_send"
     prompt_and_response_format_schema_copies_counted: Literal[2] = 2
+    interviewer_provider_round_limit: Literal[2] = 2
     tool_loop_followup_allowance_counted: Literal[True] = True
 
     @field_validator("created_at")
@@ -342,6 +349,11 @@ class TogetherHeadroomPolicy(ContractModel):
     created_at: datetime
     qualification_minimum_headroom_microusd: PositiveCount
     held_out_minimum_headroom_microusd: PositiveCount
+    qualification_cap_microusd: Literal[4_000_000] = 4_000_000
+    held_out_cap_microusd: Literal[13_000_000] = 13_000_000
+    accounting_method: Literal[
+        "projected_spend_plus_largest_single_call_reservation"
+    ] = "projected_spend_plus_largest_single_call_reservation"
     frozen_before_capability_calls: Literal[True] = True
     applies_to_token_readiness_receipt: Literal[True] = True
 
@@ -1041,9 +1053,15 @@ def validate_token_readiness_and_headroom(
         for item in suite.workload.held_out_selected_candidate.role_usage
     )
     qualification_cost = 0
+    qualification_max_reservation = 0
     held_out_cap = profile.budget_policy.segment_caps_microusd[
         BudgetSegment.HELD_OUT_STUDY
     ]
+    if (
+        headroom.qualification_cap_microusd != qualification_cap
+        or headroom.held_out_cap_microusd != held_out_cap
+    ):
+        raise ValueError("Together headroom policy caps differ from profile")
     for candidate_id, item in projections.items():
         candidate = artifacts[candidate_id].candidate
         if item.candidate_sha256 != content_sha256(candidate):
@@ -1054,6 +1072,29 @@ def validate_token_readiness_and_headroom(
         ):
             raise ValueError("Together token-readiness request counts differ")
         price_card = artifacts[candidate_id].price_card
+        qualification_single_call = max(
+            price_provider_tokens(
+                price_card,
+                input_tokens=usage.input_tokens_per_request,
+                output_tokens=usage.output_tokens_per_request,
+            )
+            for usage in suite.workload.qualification_per_candidate.role_usage
+        )
+        held_out_single_call = max(
+            price_provider_tokens(
+                price_card,
+                input_tokens=usage.input_tokens_per_request,
+                output_tokens=usage.output_tokens_per_request,
+            )
+            for usage in suite.workload.held_out_selected_candidate.role_usage
+        )
+        if (
+            item.qualification_max_single_call_authorization_microusd
+            != qualification_single_call
+            or item.held_out_max_single_call_authorization_microusd
+            != held_out_single_call
+        ):
+            raise ValueError("Together maximum reservation does not reconcile")
         qualification_bounds = _projection_cost_bounds(
             price_card.input_microusd_per_million_tokens,
             price_card.output_microusd_per_million_tokens,
@@ -1081,16 +1122,22 @@ def validate_token_readiness_and_headroom(
         ):
             raise ValueError("Together token-readiness cost does not reconcile")
         qualification_cost += item.qualification_projected_cost_microusd
+        qualification_max_reservation = max(
+            qualification_max_reservation,
+            qualification_single_call,
+        )
         if (
-            held_out_cap - item.held_out_projected_cost_microusd
+            held_out_cap
+            - item.held_out_projected_cost_microusd
+            - held_out_single_call
             < headroom.held_out_minimum_headroom_microusd
         ):
-            raise ValueError("Together held-out calibration lacks headroom")
+            raise ValueError("Together held-out sequential plan lacks headroom")
     if (
-        qualification_cap - qualification_cost
+        qualification_cap - qualification_cost - qualification_max_reservation
         < headroom.qualification_minimum_headroom_microusd
     ):
-        raise ValueError("Together qualification projection lacks headroom")
+        raise ValueError("Together qualification sequential plan lacks headroom")
 
 
 def _projection_cost_bounds(
@@ -1243,8 +1290,8 @@ class TogetherHTTPTransport:
         )
         if not api_key.get_secret_value():
             raise ValueError("Together API key is empty")
-        if max_tool_rounds < 1:
-            raise ValueError("Together max tool rounds must be positive")
+        if max_tool_rounds != DEFAULT_MAX_TOOL_ROUNDS:
+            raise ValueError("Together max tool rounds differ from readiness")
         self._suite = suite.model_copy(deep=True)
         self._authorization = authorization.model_copy(deep=True)
         self._api_key = api_key

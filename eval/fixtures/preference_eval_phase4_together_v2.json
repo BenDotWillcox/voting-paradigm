@@ -1,0 +1,425 @@
+{
+  "schema_version": "preference_eval_phase4_together.v1",
+  "suite_id": "preference_eval_phase4_together_v2",
+  "suite_version": 2,
+  "created_at": "2026-08-21T18:00:00Z",
+  "robustness_profile_id": "preference_eval_phase4_robustness_v1",
+  "robustness_profile_version": 1,
+  "robustness_profile_sha256": "bd8393916581aac16f365f1d642dc0b0ca3f160ff9896360f69b32060eb02691",
+  "provider_id": "together_serverless",
+  "api_base_url": "https://api.together.ai/v1",
+  "chat_completions_path": "/chat/completions",
+  "catalog": {
+    "record_version": "phase4_together_catalog_snapshot.v1",
+    "snapshot_id": "together_serverless_catalog_2026_08_20",
+    "snapshot_version": 1,
+    "source_url": "https://docs.together.ai/docs/serverless/models",
+    "captured_at": "2026-08-20T12:00:00Z",
+    "entries": [
+      {
+        "record_version": "phase4_together_catalog_entry.v1",
+        "organization": "NVIDIA",
+        "model_name": "Nemotron 3 Ultra 550B A55B",
+        "api_model_string": "nvidia/nemotron-3-ultra-550b-a55b",
+        "context_window_tokens": 512300,
+        "input_microusd_per_million_tokens": 600000,
+        "output_microusd_per_million_tokens": 3600000,
+        "quantization": "NVFP4",
+        "function_calling_supported": true,
+        "structured_outputs_supported": true
+      },
+      {
+        "record_version": "phase4_together_catalog_entry.v1",
+        "organization": "OpenAI",
+        "model_name": "GPT-OSS 120B",
+        "api_model_string": "openai/gpt-oss-120b",
+        "context_window_tokens": 128000,
+        "input_microusd_per_million_tokens": 150000,
+        "output_microusd_per_million_tokens": 600000,
+        "quantization": "MXFP4",
+        "function_calling_supported": true,
+        "structured_outputs_supported": true
+      },
+      {
+        "record_version": "phase4_together_catalog_entry.v1",
+        "organization": "Z.ai",
+        "model_name": "GLM-5.2",
+        "api_model_string": "zai-org/GLM-5.2",
+        "context_window_tokens": 512000,
+        "input_microusd_per_million_tokens": 1400000,
+        "output_microusd_per_million_tokens": 4400000,
+        "quantization": "FP4",
+        "function_calling_supported": true,
+        "structured_outputs_supported": true
+      }
+    ]
+  },
+  "provider_terms": {
+    "record_version": "phase4_together_terms_snapshot.v1",
+    "snapshot_id": "together_public_terms_2026_08_20",
+    "snapshot_version": 1,
+    "privacy_source_url": "https://docs.together.ai/docs/privacy-and-security",
+    "parameters_source_url": "https://docs.together.ai/docs/inference/chat/parameters",
+    "structured_outputs_source_url": "https://docs.together.ai/docs/inference/chat/structured-outputs",
+    "captured_at": "2026-08-20T12:00:00Z",
+    "zero_data_retention_default_claimed": true,
+    "provider_training_requires_opt_in": true,
+    "passthrough_inference_forbidden_for_study": true,
+    "per_token_serverless_billing_claimed": true,
+    "request_seed_documented": true,
+    "json_schema_response_format_documented": true,
+    "function_tools_documented": true
+  },
+  "candidates": [
+    {
+      "record_version": "phase4_together_candidate_artifact.v1",
+      "weight_manifest": {
+        "record_version": "phase4_open_weight_manifest.v1",
+        "manifest_id": "together_glm_5_2_weights",
+        "manifest_version": 1,
+        "upstream_model_id": "zai-org/GLM-5.2",
+        "upstream_model_revision": "48cf76872d0f20ab526a663f7e540817afc9b9ef",
+        "revision_tree_url": "https://huggingface.co/zai-org/GLM-5.2/tree/48cf76872d0f20ab526a663f7e540817afc9b9ef",
+        "checkpoint_format": "safetensors",
+        "upstream_checkpoint_quantization": "BF16 source checkpoint",
+        "provider_serving_quantization": "FP4",
+        "remote_weight_bytes_downloaded": false
+      },
+      "license_provenance": {
+        "record_version": "phase4_model_license_provenance.v1",
+        "provenance_id": "together_glm_5_2_license",
+        "provenance_version": 1,
+        "upstream_model_id": "zai-org/GLM-5.2",
+        "upstream_model_revision": "48cf76872d0f20ab526a663f7e540817afc9b9ef",
+        "license_id": "MIT",
+        "license_source_url": "https://huggingface.co/zai-org/GLM-5.2/blob/48cf76872d0f20ab526a663f7e540817afc9b9ef/LICENSE",
+        "captured_at": "2026-08-20T12:00:00Z"
+      },
+      "candidate": {
+        "record_version": "phase4_open_weight_model_candidate.v1",
+        "candidate_id": "together_glm_5_2",
+        "artifact_id": "together_glm_5_2_artifact",
+        "artifact_version": 1,
+        "upstream_model_id": "zai-org/GLM-5.2",
+        "upstream_model_revision": "48cf76872d0f20ab526a663f7e540817afc9b9ef",
+        "weights_manifest_sha256": "27d0d4ec5a8f0a3a37dd105284afe1938d7493e530b9795e87043eeeb7466263",
+        "license_id": "MIT",
+        "license_sha256": "0ff13836bef0233dcaa91d964a18fc4a43264fb4c6f8eea65d8bf5ae8bc820f7",
+        "deployment_mode": "hosted_api",
+        "backend_id": "together_chat_completions",
+        "backend_version": 1,
+        "serving_model_id": "zai-org/GLM-5.2",
+        "serving_model_revision": "catalog_sha256:501c221e19e859dfc6c5622bc04608002bb977f20cc1c9a730b24b31f63bb1b0",
+        "provider_terms_sha256": "ce275d67c5fe9be08fc33221e66c04163f7757f06a798a4de1275a6c938a0546",
+        "provider_trains_on_requests": false,
+        "quantization": "FP4",
+        "context_window_tokens": 512000,
+        "capabilities": [
+          "tool_calling",
+          "strict_structured_output"
+        ]
+      },
+      "price_card": {
+        "record_version": "phase4_provider_price_card.v1",
+        "price_card_id": "together_glm_5_2_price_2026_08_20",
+        "price_card_version": 1,
+        "model_candidate_id": "together_glm_5_2",
+        "model_candidate_artifact_version": 1,
+        "model_candidate_sha256": "23614a4ee7de21e65d120686f5a4e9d6099ad3ed4bdd1c692fffc42ba31ecc87",
+        "currency": "USD",
+        "input_microusd_per_million_tokens": 1400000,
+        "output_microusd_per_million_tokens": 4400000,
+        "fixed_request_cost_microusd": 0,
+        "provider_pricing_terms_sha256": "501c221e19e859dfc6c5622bc04608002bb977f20cc1c9a730b24b31f63bb1b0",
+        "effective_at": "2026-08-20T12:00:00Z"
+      }
+    },
+    {
+      "record_version": "phase4_together_candidate_artifact.v1",
+      "weight_manifest": {
+        "record_version": "phase4_open_weight_manifest.v1",
+        "manifest_id": "together_gpt_oss_120b_weights",
+        "manifest_version": 1,
+        "upstream_model_id": "openai/gpt-oss-120b",
+        "upstream_model_revision": "b5c939de8f754692c1647ca79fbf85e8c1e70f8a",
+        "revision_tree_url": "https://huggingface.co/openai/gpt-oss-120b/tree/b5c939de8f754692c1647ca79fbf85e8c1e70f8a",
+        "checkpoint_format": "safetensors",
+        "upstream_checkpoint_quantization": "MXFP4",
+        "provider_serving_quantization": "MXFP4",
+        "remote_weight_bytes_downloaded": false
+      },
+      "license_provenance": {
+        "record_version": "phase4_model_license_provenance.v1",
+        "provenance_id": "together_gpt_oss_120b_license",
+        "provenance_version": 1,
+        "upstream_model_id": "openai/gpt-oss-120b",
+        "upstream_model_revision": "b5c939de8f754692c1647ca79fbf85e8c1e70f8a",
+        "license_id": "Apache-2.0",
+        "license_source_url": "https://huggingface.co/openai/gpt-oss-120b/blob/b5c939de8f754692c1647ca79fbf85e8c1e70f8a/LICENSE",
+        "captured_at": "2026-08-20T12:00:00Z"
+      },
+      "candidate": {
+        "record_version": "phase4_open_weight_model_candidate.v1",
+        "candidate_id": "together_gpt_oss_120b",
+        "artifact_id": "together_gpt_oss_120b_artifact",
+        "artifact_version": 1,
+        "upstream_model_id": "openai/gpt-oss-120b",
+        "upstream_model_revision": "b5c939de8f754692c1647ca79fbf85e8c1e70f8a",
+        "weights_manifest_sha256": "b7be18d3e670b67f553627cee4b21fe692c88f833032c95eb92b0c847c00169f",
+        "license_id": "Apache-2.0",
+        "license_sha256": "1b4cde80d956b7be580d7e7ec40e511819c931dc027c8df306a51dd34052ec93",
+        "deployment_mode": "hosted_api",
+        "backend_id": "together_chat_completions",
+        "backend_version": 1,
+        "serving_model_id": "openai/gpt-oss-120b",
+        "serving_model_revision": "catalog_sha256:501c221e19e859dfc6c5622bc04608002bb977f20cc1c9a730b24b31f63bb1b0",
+        "provider_terms_sha256": "ce275d67c5fe9be08fc33221e66c04163f7757f06a798a4de1275a6c938a0546",
+        "provider_trains_on_requests": false,
+        "quantization": "MXFP4",
+        "context_window_tokens": 128000,
+        "capabilities": [
+          "tool_calling",
+          "strict_structured_output"
+        ]
+      },
+      "price_card": {
+        "record_version": "phase4_provider_price_card.v1",
+        "price_card_id": "together_gpt_oss_120b_price_2026_08_20",
+        "price_card_version": 1,
+        "model_candidate_id": "together_gpt_oss_120b",
+        "model_candidate_artifact_version": 1,
+        "model_candidate_sha256": "6491775c24267a1ae420f9f060734d5aefc138bb1caec57f0ca2be48495377d3",
+        "currency": "USD",
+        "input_microusd_per_million_tokens": 150000,
+        "output_microusd_per_million_tokens": 600000,
+        "fixed_request_cost_microusd": 0,
+        "provider_pricing_terms_sha256": "501c221e19e859dfc6c5622bc04608002bb977f20cc1c9a730b24b31f63bb1b0",
+        "effective_at": "2026-08-20T12:00:00Z"
+      }
+    },
+    {
+      "record_version": "phase4_together_candidate_artifact.v1",
+      "weight_manifest": {
+        "record_version": "phase4_open_weight_manifest.v1",
+        "manifest_id": "together_nemotron_3_ultra_550b_a55b_weights",
+        "manifest_version": 1,
+        "upstream_model_id": "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-NVFP4",
+        "upstream_model_revision": "183968f87ae4cedce3039313cac1fd43d112c578",
+        "revision_tree_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-NVFP4/tree/183968f87ae4cedce3039313cac1fd43d112c578",
+        "checkpoint_format": "safetensors",
+        "upstream_checkpoint_quantization": "NVFP4",
+        "provider_serving_quantization": "NVFP4",
+        "remote_weight_bytes_downloaded": false
+      },
+      "license_provenance": {
+        "record_version": "phase4_model_license_provenance.v1",
+        "provenance_id": "together_nemotron_3_ultra_550b_a55b_license",
+        "provenance_version": 1,
+        "upstream_model_id": "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-NVFP4",
+        "upstream_model_revision": "183968f87ae4cedce3039313cac1fd43d112c578",
+        "license_id": "OpenMDW-1.1",
+        "license_source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-NVFP4/blob/183968f87ae4cedce3039313cac1fd43d112c578/README.md",
+        "captured_at": "2026-08-20T12:00:00Z"
+      },
+      "candidate": {
+        "record_version": "phase4_open_weight_model_candidate.v1",
+        "candidate_id": "together_nemotron_3_ultra_550b_a55b",
+        "artifact_id": "together_nemotron_3_ultra_550b_a55b_artifact",
+        "artifact_version": 1,
+        "upstream_model_id": "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-NVFP4",
+        "upstream_model_revision": "183968f87ae4cedce3039313cac1fd43d112c578",
+        "weights_manifest_sha256": "c1963abcf09a1affc37688749a87816b9c6f5cb74d4adbed9f46d7bd6351c007",
+        "license_id": "OpenMDW-1.1",
+        "license_sha256": "7a26d30400d239a640a694b21a61097a43cf1b32f23a5be53de1b50a5565dd2a",
+        "deployment_mode": "hosted_api",
+        "backend_id": "together_chat_completions",
+        "backend_version": 1,
+        "serving_model_id": "nvidia/nemotron-3-ultra-550b-a55b",
+        "serving_model_revision": "catalog_sha256:501c221e19e859dfc6c5622bc04608002bb977f20cc1c9a730b24b31f63bb1b0",
+        "provider_terms_sha256": "ce275d67c5fe9be08fc33221e66c04163f7757f06a798a4de1275a6c938a0546",
+        "provider_trains_on_requests": false,
+        "quantization": "NVFP4",
+        "context_window_tokens": 512300,
+        "capabilities": [
+          "tool_calling",
+          "strict_structured_output"
+        ]
+      },
+      "price_card": {
+        "record_version": "phase4_provider_price_card.v1",
+        "price_card_id": "together_nemotron_3_ultra_550b_a55b_price_2026_08_20",
+        "price_card_version": 1,
+        "model_candidate_id": "together_nemotron_3_ultra_550b_a55b",
+        "model_candidate_artifact_version": 1,
+        "model_candidate_sha256": "1e3df23b1f77aacbcb523a03144fd3df4d624739e0559782c9b72d277bb0d6f5",
+        "currency": "USD",
+        "input_microusd_per_million_tokens": 600000,
+        "output_microusd_per_million_tokens": 3600000,
+        "fixed_request_cost_microusd": 0,
+        "provider_pricing_terms_sha256": "501c221e19e859dfc6c5622bc04608002bb977f20cc1c9a730b24b31f63bb1b0",
+        "effective_at": "2026-08-20T12:00:00Z"
+      }
+    }
+  ],
+  "shared_role_contracts": [
+    {
+      "record_version": "phase4_shared_role_contract.v1",
+      "role": "direct_readout",
+      "prompt_id": "phase4_direct_readout_together_v1",
+      "prompt_version": 1,
+      "prompt_text": "Predict the participant's ballot choice from only the neutral target packet and condition-eligible evidence. Do not use the participant's answer. Return normalized option probabilities, settled probability, eligible supporting-evidence ids, and unsupported assumptions.",
+      "prompt_sha256": "f7e8b204cf226083389fd7ba5854ec71f80e964e7ae805b0edc4b38f523f9f27",
+      "response_schema_id": "phase4_llm_readout_response_v1",
+      "response_schema_version": 1,
+      "response_schema_sha256": "1143300e13f3c5cdd0159dbc615039021c09ac4e15836eb68a85b0925efad07d",
+      "tool_definitions_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "interviewer_tools_enabled": false
+    },
+    {
+      "record_version": "phase4_shared_role_contract.v1",
+      "role": "evidence_extractor",
+      "prompt_id": "phase4_evidence_extractor_together_v1",
+      "prompt_version": 1,
+      "prompt_text": "Extract only preference claims explicitly supported by the supplied participant messages. Preserve source-message lineage, flag every unsupported assumption, and return only structured zero-weight proposals for participant confirmation.",
+      "prompt_sha256": "f127f68d024ac42a68108b29c4de4116c5064da1dda1922eed6d50cd69424c82",
+      "response_schema_id": "phase4_evidence_proposal_drafts_v1",
+      "response_schema_version": 1,
+      "response_schema_sha256": "44f9aa5acc9737f4ad3ff289f96169edcfaff551dc5eef0b98346a08dfc8ac4a",
+      "tool_definitions_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "interviewer_tools_enabled": false
+    },
+    {
+      "record_version": "phase4_shared_role_contract.v1",
+      "role": "hybrid_readout",
+      "prompt_id": "phase4_hybrid_readout_together_v1",
+      "prompt_version": 1,
+      "prompt_text": "Predict the participant's ballot choice from only the neutral target packet, condition-eligible evidence, and supplied explicit posterior. Do not use the participant's answer. Return normalized option probabilities, settled probability, eligible supporting-evidence ids, and unsupported assumptions.",
+      "prompt_sha256": "7a316c98eb8e21a57d3a01f23601e7bf458fb30f71f346920705fa12d80bffd5",
+      "response_schema_id": "phase4_llm_readout_response_v1",
+      "response_schema_version": 1,
+      "response_schema_sha256": "1143300e13f3c5cdd0159dbc615039021c09ac4e15836eb68a85b0925efad07d",
+      "tool_definitions_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "interviewer_tools_enabled": false
+    },
+    {
+      "record_version": "phase4_shared_role_contract.v1",
+      "role": "interviewer",
+      "prompt_id": "phase4_interviewer_together_v1",
+      "prompt_version": 1,
+      "prompt_text": "Choose only an allowed preference-interview action. Use the provided read-only tools when needed, never invent a question, never update preference state, and never inspect a target packet. Return only the required structured decision.",
+      "prompt_sha256": "67f8889b94fc854472af0074aa8a924520713fafa718f02dfcc8e23cb0d12f01",
+      "response_schema_id": "phase4_interviewer_decision_and_tool_contracts_v1",
+      "response_schema_version": 1,
+      "response_schema_sha256": "f43e1d227b57e58feee908ce55453e9277894829698c765d889534f919c86be0",
+      "tool_definitions_sha256": "7d332713937a7f69ec608dff661330d7b6755219e0018b3b3887c1669e39c7c8",
+      "interviewer_tools_enabled": true
+    },
+    {
+      "record_version": "phase4_shared_role_contract.v1",
+      "role": "ontology_proposer",
+      "prompt_id": "phase4_ontology_proposer_together_v1",
+      "prompt_version": 1,
+      "prompt_text": "Propose a new value dimension only when confirmed participant evidence cannot be represented by the active ontology. Identify possible duplicates, preserve exact evidence lineage, assign no model weight, and return only structured proposals.",
+      "prompt_sha256": "443cd95701660b2295121040bab4cba80be441d07cd55c21bfbb404ddea37924",
+      "response_schema_id": "phase4_ontology_dimension_proposal_drafts_v1",
+      "response_schema_version": 1,
+      "response_schema_sha256": "e92a0925e4aaf0c7e3132ccc6a936233c7d0c8007d8dba263e71dc03a3cdb898",
+      "tool_definitions_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "interviewer_tools_enabled": false
+    }
+  ],
+  "workload": {
+    "record_version": "phase4_together_workload_plan.v1",
+    "workload_id": "phase4_together_workload_v2",
+    "workload_version": 2,
+    "development_measure_count": 8,
+    "held_out_measure_count": 48,
+    "staged_prediction_calls_per_measure_and_role": 8,
+    "qualification_per_candidate": {
+      "record_version": "phase4_conservative_token_envelope.v1",
+      "counter_id": "phase4_together_qualification_envelope_v2",
+      "counter_version": 2,
+      "method": "role_bound_requires_exact_candidate_tokenizer",
+      "role_usage": [
+        {
+          "role": "direct_readout",
+          "request_count": 64,
+          "input_tokens_per_request": 6000,
+          "output_tokens_per_request": 1000
+        },
+        {
+          "role": "evidence_extractor",
+          "request_count": 8,
+          "input_tokens_per_request": 6000,
+          "output_tokens_per_request": 1000
+        },
+        {
+          "role": "hybrid_readout",
+          "request_count": 64,
+          "input_tokens_per_request": 7000,
+          "output_tokens_per_request": 1000
+        },
+        {
+          "role": "interviewer",
+          "request_count": 8,
+          "input_tokens_per_request": 15000,
+          "output_tokens_per_request": 1000
+        },
+        {
+          "role": "ontology_proposer",
+          "request_count": 8,
+          "input_tokens_per_request": 6000,
+          "output_tokens_per_request": 1000
+        }
+      ]
+    },
+    "held_out_selected_candidate": {
+      "record_version": "phase4_conservative_token_envelope.v1",
+      "counter_id": "phase4_together_held_out_envelope_v2",
+      "counter_version": 2,
+      "method": "role_bound_requires_exact_candidate_tokenizer",
+      "role_usage": [
+        {
+          "role": "direct_readout",
+          "request_count": 480,
+          "input_tokens_per_request": 7000,
+          "output_tokens_per_request": 1000
+        },
+        {
+          "role": "evidence_extractor",
+          "request_count": 48,
+          "input_tokens_per_request": 6000,
+          "output_tokens_per_request": 1000
+        },
+        {
+          "role": "hybrid_readout",
+          "request_count": 480,
+          "input_tokens_per_request": 8000,
+          "output_tokens_per_request": 1000
+        },
+        {
+          "role": "interviewer",
+          "request_count": 48,
+          "input_tokens_per_request": 15000,
+          "output_tokens_per_request": 1000
+        },
+        {
+          "role": "ontology_proposer",
+          "request_count": 48,
+          "input_tokens_per_request": 6000,
+          "output_tokens_per_request": 1000
+        }
+      ]
+    }
+  },
+  "api_key_stored_in_artifact": false,
+  "network_calls_permitted_during_validation": false,
+  "candidate_specific_prompt_branches": false,
+  "serverless_weight_identity_limit_acknowledged": true,
+  "workload_is_non_authorizing_feasibility_plan": true,
+  "exact_candidate_tokenizer_projection_required_before_provider_call": true,
+  "projected_headroom_gate_required_before_qualification": true,
+  "public_source_reverification_required_before_qualification": true,
+  "live_account_privacy_preflight_required": true,
+  "live_capability_probe_required_before_qualification": true
+}

@@ -201,22 +201,24 @@ now adds a public, provider-neutral precommitment for three open-weight
 candidates, one shared model across LLM roles, pseudonymous provider inputs, a
 hard USD 20 API budget, answer-before-reveal sequencing, staged prompt and
 stochastic diagnostics, deterministic order/label probes, and frozen outcomes
-and claim limits. A shared runtime now binds private structured requests to
+and claim limits. A shared runtime binds private structured requests to
 content-free audits, exact price-card reservations, true-spend overrun records,
 attested zero-cost closures, and deterministic tolerance-banded three-candidate
-qualification. It still does not select or call a live provider.
-The tracked Together no-spend suite now freezes the three approved open-weight
-serverless candidates, exact public provenance and prices, shared role
-contracts, a credential-free request codec, and budget-feasible qualification
-and held-out planning envelopes. It makes no network request and spends
-nothing; exact candidate-tokenizer measurement, a predeclared budget-headroom
-gate, live account/privacy preflight, and public-development qualification
-remain next.
-The live-boundary implementation now requires a hash-bound manual account
-check and one-shot zero-inference catalog preflight before any paid transport
-can be constructed. Credentials are runtime-only; a paid transport additionally
-requires tokenizer-readiness, headroom, and explicit user-authorization
-artifacts that have not yet been issued.
+qualification.
+
+The tracked Together suite freezes the three approved open-weight serverless
+candidates, exact public provenance and prices, shared role contracts, a
+credential-free request codec, and conservative qualification and held-out
+planning envelopes. The live boundary requires a hash-bound manual account
+check, one-shot zero-inference catalog preflight, tokenizer readiness, headroom,
+and explicit user authorization before paid transport construction. The
+separate tracked readiness artifact revision-binds all three upstream
+tokenizers, exactly counts and hash-binds the 456-call qualification plan,
+calibrates six held-out waves plus 12 retests without restricted packet content
+or participant responses, gates exact projected spend plus the largest
+single-call reservation under the hard caps, and records zero inference calls
+and zero provider spend. Paid capability probes and qualification remain
+separately authorized next steps; no candidate has yet been selected.
 Public aggregate artifacts still require explicit release review.
 Demo 3 (algorithmic districting) currently ships the apportionment slice;
 district polygon generation comes next. The ballot-measure, electorate, and

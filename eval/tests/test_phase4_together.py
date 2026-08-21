@@ -28,7 +28,10 @@ ROOT = Path(__file__).resolve().parents[2]
 PROFILE_PATH = (
     ROOT / "eval/fixtures/preference_eval_phase4_robustness_v1.json"
 )
-SUITE_PATH = ROOT / "eval/fixtures/preference_eval_phase4_together_v1.json"
+SUITE_PATH = ROOT / "eval/fixtures/preference_eval_phase4_together_v2.json"
+LEGACY_SUITE_PATH = (
+    ROOT / "eval/fixtures/preference_eval_phase4_together_v1.json"
+)
 NOW = datetime(2026, 8, 20, 13, 0, tzinfo=timezone.utc)
 
 
@@ -53,6 +56,7 @@ def prepared_request(
     role: LLMRole = LLMRole.DIRECT_READOUT,
     input_payload: object | None = None,
     input_token_upper_bound: int = 6_000,
+    output_token_upper_bound: int | None = None,
     provider_seed_parameter_sent: bool = True,
 ):
     robustness_profile = profile()
@@ -98,7 +102,11 @@ def prepared_request(
         provider_seed_parameter_sent=provider_seed_parameter_sent,
         temperature=0.0,
         input_token_upper_bound=input_token_upper_bound,
-        output_token_upper_bound=500,
+        output_token_upper_bound=(
+            output_token_upper_bound
+            if output_token_upper_bound is not None
+            else (1_000 if role is LLMRole.INTERVIEWER else 500)
+        ),
         created_at=NOW,
         tool_definitions=tools,
     )
@@ -112,6 +120,15 @@ def test_tracked_suite_matches_deterministic_builder() -> None:
     assert content_sha256(loaded) == content_sha256(expected)
     assert len(loaded.candidates) == 3
     assert len(loaded.shared_role_contracts) == 5
+
+
+def test_v1_suite_is_preserved_as_an_exact_audit_artifact() -> None:
+    legacy = load_together_suite(LEGACY_SUITE_PATH)
+
+    assert legacy.suite_version == 1
+    assert content_sha256(legacy) == (
+        "cb7793244ec640fa336a839d198b8f8e5650cfd20a7a2b9f51a3affc15afa11c"
+    )
 
 
 def test_candidate_ids_revisions_and_prices_are_frozen() -> None:
@@ -142,23 +159,26 @@ def test_candidate_ids_revisions_and_prices_are_frozen() -> None:
     ]
 
 
-def test_no_spend_projection_fits_both_budget_segments() -> None:
+def test_no_spend_report_labels_envelope_totals_as_non_authorizing() -> None:
     report = build_no_spend_report(suite(), profile())
 
     assert report.qualification_request_count == 456
-    assert report.qualification_projected_cost_microusd == 3_422_800
-    assert report.qualification_projected_headroom_microusd == 577_200
-    assert report.held_out_request_count == 912
+    assert report.qualification_projected_cost_microusd == 3_560_400
+    assert report.qualification_projected_headroom_microusd == 439_600
+    assert report.held_out_request_count == 1_104
     assert report.held_out_projected_cost_microusd_by_candidate == {
-        "together_glm_5_2": 12_307_200,
-        "together_gpt_oss_120b": 1_432_800,
-        "together_nemotron_3_ultra_550b_a55b": 6_796_800,
+        "together_glm_5_2": 16_752_000,
+        "together_gpt_oss_120b": 1_936_800,
+        "together_nemotron_3_ultra_550b_a55b": 9_072_000,
     }
     assert report.held_out_projected_headroom_microusd_by_candidate == {
-        "together_glm_5_2": 692_800,
-        "together_gpt_oss_120b": 11_567_200,
-        "together_nemotron_3_ultra_550b_a55b": 6_203_200,
+        "together_glm_5_2": -3_752_000,
+        "together_gpt_oss_120b": 11_063_200,
+        "together_nemotron_3_ultra_550b_a55b": 3_928_000,
     }
+    assert report.all_candidates_fit_qualification_cap is True
+    assert report.all_candidates_fit_held_out_cap is False
+    assert report.all_calls_at_envelope_totals_are_non_authorizing is True
     assert report.exact_candidate_tokenizer_projection_complete is False
     assert report.projected_headroom_gate_frozen is False
     assert report.live_authorization_ready is False
@@ -200,6 +220,21 @@ def test_interviewer_codec_uses_standard_function_shape() -> None:
             },
         }
     ]
+    assert payload["max_tokens"] == 500
+
+
+def test_interviewer_codec_rejects_an_indivisible_round_budget() -> None:
+    with pytest.raises(
+        ValueError,
+        match="output bound must divide by rounds",
+    ):
+        build_together_chat_payload(
+            suite(),
+            prepared_request(
+                role=LLMRole.INTERVIEWER,
+                output_token_upper_bound=999,
+            ),
+        )
 
 
 def test_codec_omits_seed_when_binding_says_it_was_not_sent() -> None:
@@ -235,18 +270,22 @@ def test_suite_rejects_price_drift() -> None:
         Phase4TogetherSuite.model_validate(payload)
 
 
-def test_held_out_cap_error_names_public_candidate() -> None:
+def test_no_spend_report_exposes_an_even_larger_envelope_shortfall() -> None:
     high_cost_suite = suite()
     for usage in (
         high_cost_suite.workload.held_out_selected_candidate.role_usage
     ):
         usage.input_tokens_per_request *= 10
 
-    with pytest.raises(
-        ValueError,
-        match="together_glm_5_2 exceeds hard cap",
-    ):
-        build_no_spend_report(high_cost_suite, profile())
+    report = build_no_spend_report(high_cost_suite, profile())
+
+    assert report.all_candidates_fit_held_out_cap is False
+    assert (
+        report.held_out_projected_headroom_microusd_by_candidate[
+            "together_glm_5_2"
+        ]
+        < -100_000_000
+    )
 
 
 def test_validate_cli_is_aggregate_and_zero_spend(capsys) -> None:
@@ -260,3 +299,15 @@ def test_validate_cli_is_aggregate_and_zero_spend(capsys) -> None:
     assert payload["network_call_count"] == 0
     assert payload["spend_microusd"] == 0
     assert "prompt_text" not in captured.out
+
+
+def test_validate_cli_accepts_the_exact_legacy_v1_audit_artifact(capsys) -> None:
+    exit_code = validate_main([str(LEGACY_SUITE_PATH), str(PROFILE_PATH)])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert captured.err == ""
+    payload = json.loads(captured.out)
+    assert payload["suite_sha256"] == (
+        "cb7793244ec640fa336a839d198b8f8e5650cfd20a7a2b9f51a3affc15afa11c"
+    )

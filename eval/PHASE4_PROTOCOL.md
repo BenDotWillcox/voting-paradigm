@@ -190,14 +190,27 @@ history, and demographic proxies remain excluded throughout.
   revisions; one captured serverless catalog, terms snapshot, price card,
   shared role prompt/schema/tool surface, request codec, and conservative
   qualification/held-out workload envelopes. It makes zero network calls and
-  records zero spend. Together does not expose a cryptographic serverless
+  records zero spend. The separate readiness artifact now binds the exact
+  revision-pinned upstream tokenizer files, all 456 rendered qualification
+  request hashes and local counts, a deterministic resume order, and a public
+  synthetic calibration of six initial waves plus 12 post-wave-six retests.
+  The retests add 192 readout calls, for 1,104 held-out calls per candidate. It
+  includes the initial and one tool-result follow-up payload for each
+  interviewer call, while the live transport rejects a different round limit.
+  It freezes USD 0.40 qualification and USD 0.50 held-out minimum headroom under
+  a sequential proof that combines exact projected spend with the largest
+  single-call envelope reservation, while retaining the sum of every envelope
+  as a non-authorizing stress diagnostic. It records zero inference calls and
+  zero spend. Together does not expose a
+  cryptographic serverless
   serving-weight attestation, so the captured catalog hash is recorded as the
   serving revision and that limitation remains explicit. The round-number
-  workload is a non-authorizing feasibility plan: exact per-candidate tokenizer
-  counts over rendered qualification requests, wave-aware held-out calibration,
-  exact counting immediately before every future request, and a predeclared
-  headroom gate remain mandatory before any paid call. A request that no longer
-  fits its frozen envelope pauses without transmission. The live boundary now
+  workload remains a non-authorizing feasibility plan, while the new readiness
+  bundle closes the exact local-tokenizer projection and headroom gates. It
+  does not claim provider-billing token equivalence because Together does not
+  attest its internal serving tokenizer. Exact counting immediately before
+  every future request remains mandatory, and a request that no longer fits
+  its frozen envelope pauses without transmission. The live boundary now
   requires a manual account-privacy attestation and public-source receipt for a
   one-shot authenticated `/models` check; the paid HTTP/tool-loop transport
   cannot be constructed without a separate authorization object binding its
@@ -253,9 +266,11 @@ deterministically selected candidate. The bundle also binds the exact
 sequential selection tolerances, so negligible sensitivity differences cannot
 silence quality, cost, and latency. The tracked Together suite freezes the
 three candidate artifacts, prices, and candidate-independent prompts/codecs
-before that run. The injected live HTTP client/tool loop, account privacy
-check, external-source revalidation, tokenizer-readiness receipt, headroom gate,
-and paid capability probes still must be completed before qualification. The
+before that run. The live HTTP client/tool loop and no-spend readiness gate are
+implemented. The account, source, and catalog receipts must be reissued against
+the corrected v2 suite before constructing a paid authorization; the prior
+ignored receipt binds v1. Paid capability probes still must be completed before
+qualification. The
 catalog preflight makes authenticated network GETs but invokes no model and has
 an exact zero-provider-spend authorization.
 
