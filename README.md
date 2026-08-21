@@ -212,6 +212,11 @@ and held-out planning envelopes. It makes no network request and spends
 nothing; exact candidate-tokenizer measurement, a predeclared budget-headroom
 gate, live account/privacy preflight, and public-development qualification
 remain next.
+The live-boundary implementation now requires a hash-bound manual account
+check and one-shot zero-inference catalog preflight before any paid transport
+can be constructed. Credentials are runtime-only; a paid transport additionally
+requires tokenizer-readiness, headroom, and explicit user-authorization
+artifacts that have not yet been issued.
 Public aggregate artifacts still require explicit release review.
 Demo 3 (algorithmic districting) currently ships the apportionment slice;
 district polygon generation comes next. The ballot-measure, electorate, and

@@ -377,6 +377,14 @@ class ProviderTransportResult(ContractModel):
 class ProviderTransport(Protocol):
     """Provider-specific network behavior behind the shared Phase 4 boundary."""
 
+    def validate_execution(
+        self,
+        request: PrivateStructuredProviderRequest,
+        *,
+        segment: BudgetSegment,
+    ) -> None:
+        """Fail closed before the shared runtime creates a reservation."""
+
     def invoke(
         self,
         request: PrivateStructuredProviderRequest,
@@ -389,6 +397,14 @@ class ScriptedProviderTransport:
     def __init__(self, results: list[ProviderTransportResult]) -> None:
         self._results = [result.model_copy(deep=True) for result in results]
         self.requests: list[PrivateStructuredProviderRequest] = []
+
+    def validate_execution(
+        self,
+        request: PrivateStructuredProviderRequest,
+        *,
+        segment: BudgetSegment,
+    ) -> None:
+        del request, segment
 
     def invoke(
         self,
@@ -1126,6 +1142,7 @@ class ProviderBudgetRuntime:
 
         if request.binding.price_card_sha256 != content_sha256(price_card):
             raise ValueError("provider request does not bind supplied price card")
+        transport.validate_execution(request, segment=segment)
         authorization = self._authorize(
             request,
             price_card,
