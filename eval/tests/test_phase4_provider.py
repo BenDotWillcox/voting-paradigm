@@ -557,6 +557,20 @@ def test_invalid_structured_output_is_billed_and_terminal():
 
     assert execution.output is None
     assert execution.finalization.outcome is ProviderCallOutcome.INVALID_OUTPUT
+    assert execution.validation_diagnostic is not None
+    assert execution.validation_diagnostic.error_count == 3
+    assert {tuple(item.path) for item in execution.validation_diagnostic.issues} == {
+        (),
+        ("choice",),
+        ("confidence",),
+    }
+    assert execution.validation_diagnostic.finalization_sha256 == content_sha256(
+        execution.finalization
+    )
+    diagnostic_json = execution.validation_diagnostic.model_dump_json()
+    assert "unexpected" not in diagnostic_json
+    assert "shape" not in diagnostic_json
+    assert "Field required" not in diagnostic_json
     assert runtime.ledger_snapshot().calls[0].billed_cost_microusd > 0
     runtime.audit([model], [pricing])
 
@@ -593,6 +607,11 @@ def test_non_json_structured_output_is_billed_and_terminal():
 
     assert execution.output is None
     assert execution.finalization.outcome is ProviderCallOutcome.INVALID_OUTPUT
+    assert execution.validation_diagnostic is not None
+    assert execution.validation_diagnostic.issues[0].path == []
+    assert execution.validation_diagnostic.issues[0].error_type == (
+        "post_validation_serialization_error"
+    )
     assert runtime.ledger_snapshot().calls[0].billed_cost_microusd > 0
     runtime.audit([model], [pricing])
 

@@ -7,6 +7,13 @@ import pytest
 
 from eval.fixture_io import content_sha256
 from eval.phase4_capability import TogetherCapabilityPlan
+from eval.phase4_capability_adjudication import (
+    build_adjudicated_candidate_authorization,
+    build_capability_adjudication_policy,
+    load_capability_adjudication_policy,
+    validate_adjudicated_candidate_authorization,
+    validate_capability_adjudication_policy,
+)
 from eval.phase4_capability_continuation import (
     CapabilityAttemptFailureKind,
     TogetherCapabilityContinuationPlan,
@@ -57,6 +64,11 @@ CORRECTED_READINESS_PATH = (
     Path(__file__).parents[1]
     / "fixtures"
     / "preference_eval_phase4_together_readiness_v3.json"
+)
+ADJUDICATION_POLICY_PATH = (
+    Path(__file__).parents[1]
+    / "fixtures"
+    / "preference_eval_phase4_together_capability_adjudication_v1.json"
 )
 
 
@@ -136,6 +148,58 @@ def candidate_authorization(continuation, candidate_id):
     )
 
 
+class InvalidOntologyCapabilityTransport(DeterministicCapabilityTransport):
+    def _output(self, request):
+        if request.binding.role is LLMRole.ONTOLOGY_PROPOSER:
+            return {"planted_sensitive_value": "must_not_be_retained"}
+        return super()._output(request)
+
+
+def provisional_schema_failure(
+    diagnostic_sink=None,
+    *,
+    expected_error="did not succeed",
+):
+    continuation = continuation_plan()
+    plan = continuation.candidate_plans[0]
+    authorization = candidate_authorization(continuation, plan.candidate_id)
+    historical_suite, profile, historical_readiness, fixture, session, semantic_map = (
+        public_inputs()
+    )
+    suite, _, readiness, _, _, _ = corrected_inputs()
+    clock = TickClock(NOW)
+    checkpoints = []
+    diagnostics = []
+    sink = diagnostics.append if diagnostic_sink is None else diagnostic_sink
+
+    with pytest.raises(ValueError, match=expected_error):
+        execute_candidate_capability_preflight(
+            continuation,
+            capability_plan(),
+            corrected_plan(),
+            failed_source_attempts(),
+            historical_suite,
+            historical_readiness,
+            plan,
+            authorization,
+            suite,
+            profile,
+            readiness,
+            fixture,
+            session,
+            semantic_map,
+            catalog_bundle(suite),
+            InvalidOntologyCapabilityTransport(clock),
+            state_id="provisional_schema_failure_state",
+            ledger_id="provisional_schema_failure_ledger",
+            journal_id="provisional_schema_failure_journal",
+            clock=clock,
+            checkpoint=checkpoints.append,
+            validation_diagnostic_sink=sink,
+        )
+    return continuation, authorization, checkpoints[-1], diagnostics
+
+
 def test_tracked_continuation_is_hash_pinned_and_content_free():
     continuation = TogetherCapabilityContinuationPlan.model_validate_json(
         CONTINUATION_PATH.read_text(encoding="utf-8")
@@ -147,6 +211,20 @@ def test_tracked_continuation_is_hash_pinned_and_content_free():
     assert continuation.prior_provider_spend_microusd == 13_143
     assert continuation.cumulative_worst_case_spend_microusd == 142_143
     assert continuation.provider_spend_microusd_by_plan_creation == 0
+
+
+def test_tracked_adjudication_policy_is_hash_pinned_and_zero_spend():
+    policy = load_capability_adjudication_policy(ADJUDICATION_POLICY_PATH)
+
+    assert content_sha256(policy) == (
+        "939134d659d35a93aafb6a6fd11fec8fda25326681a93434ef918247f50ac581"
+    )
+    assert policy.provisional_state_sha256 == (
+        "5dc62a9aded1215d3050809f6964fd0398231115167f28ab92eafd239b6b8213"
+    )
+    assert policy.provisional_candidate_rejection_final is False
+    assert policy.provider_inference_calls_executed_by_policy_creation == 0
+    assert policy.provider_spend_microusd_by_policy_creation == 0
 
 
 def test_continuation_preserves_failure_and_partitions_remaining_candidates():
@@ -255,6 +333,78 @@ def test_all_candidate_schema_failure_disposition_is_predeclared():
     assert continuation.all_candidate_round2_schema_failure_disposition == (
         "shared_provider_schema_incompatibility_requires_versioned_schema_revision"
     )
+
+
+def test_invalid_candidate_output_emits_only_content_free_diagnostics():
+    _, _, state, diagnostics = provisional_schema_failure()
+
+    assert state.receipt is None
+    assert len(diagnostics) == 1
+    diagnostic = diagnostics[0]
+    assert diagnostic.role is LLMRole.ONTOLOGY_PROPOSER
+    assert diagnostic.error_count == 1
+    assert diagnostic.issues[0].path == []
+    serialized = diagnostic.model_dump_json()
+    assert "planted_sensitive_value" not in serialized
+    assert "must_not_be_retained" not in serialized
+
+
+def test_diagnostic_write_failure_keeps_the_paid_state_checkpoint():
+    def fail_diagnostic_write(_diagnostic):
+        raise ValueError("diagnostic write failed")
+
+    _, _, state, diagnostics = provisional_schema_failure(
+        fail_diagnostic_write,
+        expected_error="diagnostic write failed",
+    )
+
+    assert diagnostics == []
+    assert len(state.provider_ledger.calls) == len(LLMRole)
+    assert state.provider_journal.finalizations[-1].outcome.value == (
+        "invalid_output"
+    )
+
+
+def test_adjudication_policy_keeps_failure_provisional_until_comparison():
+    continuation, authorization, state, _ = provisional_schema_failure()
+    suite, profile, _, _, _, _ = corrected_inputs()
+    policy = build_capability_adjudication_policy(
+        continuation,
+        corrected_plan(),
+        suite,
+        profile,
+        authorization,
+        state,
+        policy_id="capability_adjudication_test",
+        policy_version=1,
+        created_at=NOW + timedelta(minutes=5),
+    )
+
+    validate_capability_adjudication_policy(
+        policy,
+        continuation,
+        corrected_plan(),
+        suite,
+        profile,
+        authorization,
+        state,
+    )
+    assert policy.provisional_candidate_rejection_final is False
+    assert policy.uniform_failure_required_candidate_count == 3
+    assert set(policy.remaining_candidate_ids) == (
+        set(policy.all_candidate_ids) - {policy.provisional_candidate_id}
+    )
+    assert policy.uniform_failure_disposition == (
+        "shared_harness_review_before_candidate_rejection"
+    )
+    comparison_id = policy.remaining_candidate_ids[0]
+    wrapper = build_adjudicated_candidate_authorization(
+        policy,
+        candidate_authorization(continuation, comparison_id),
+    )
+    validate_adjudicated_candidate_authorization(wrapper, policy)
+    assert wrapper.adjudication_policy_sha256 == content_sha256(policy)
+    assert wrapper.provisional_state_sha256 == content_sha256(state)
 
 
 def test_successful_candidate_attempt_builds_one_complete_receipt():
@@ -434,7 +584,7 @@ def test_paid_candidate_cli_reads_nothing_without_execution_confirmation(
     missing = "missing.json"
     result = run_main(
         [
-            *([missing] * 13),
+            *([missing] * 16),
             "missing_candidate",
             missing,
             "--attempt",

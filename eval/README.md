@@ -1173,6 +1173,50 @@ qualification bundle records every tested candidate; hard-gate failures remain
 disqualified results, and selection proceeds only among eligible candidates
 without post-hoc replacement.
 
+The first corrected v3 candidate check completed all five GLM calls for 14,121
+microusd. Direct readout, extraction, hybrid readout, and the corrected
+two-phase interviewer passed; the ontology proposer returned an invalid strict
+structured output. Because that invalid response was intentionally discarded,
+the result remains a provisional candidate failure until the other two
+candidates exercise the exact same role schema. The ignored state is bound at
+`5dc62a9aded1215d3050809f6964fd0398231115167f28ab92eafd239b6b8213`.
+
+The tracked zero-spend adjudication policy
+`preference_eval_phase4_together_capability_adjudication_v1.json`, hash
+`939134d659d35a93aafb6a6fd11fec8fda25326681a93434ef918247f50ac581`,
+freezes that provisional status before either comparison candidate runs. If
+all three candidates fail the same role and exact response schema, the result
+requires shared-harness review before any candidate rejection. A nonuniform
+pattern receives candidate-specific review using content-free diagnostics.
+Future invalid-output paths write an ignored sidecar containing only the error
+count, Pydantic error types, and schema-relative field paths. Input values,
+error messages, and error context are structurally omitted; the sidecar binds
+the exact finalization and response-schema hashes without changing the provider
+journal or preserved state hashes.
+
+Rebuild or validate that policy from the preserved private GLM authorization
+and state without making a provider call:
+
+```bash
+python -m eval.prepare_phase4_together_capability_adjudication \
+  eval/fixtures/preference_eval_phase4_together_capability_continuation_v2.json \
+  eval/fixtures/preference_eval_phase4_together_capability_v2.json \
+  eval/fixtures/preference_eval_phase4_together_v3.json \
+  eval/fixtures/preference_eval_phase4_robustness_v1.json \
+  eval/private_runs/phase4/together_glm_5_2_candidate_capability_authorization_v3.json \
+  eval/private_runs/phase4/together_glm_5_2_candidate_capability_state_v3.json \
+  eval/fixtures/preference_eval_phase4_together_capability_adjudication_v1.json
+
+python -m eval.validate_phase4_capability_adjudication \
+  eval/fixtures/preference_eval_phase4_together_capability_adjudication_v1.json \
+  eval/fixtures/preference_eval_phase4_together_capability_continuation_v2.json \
+  eval/fixtures/preference_eval_phase4_together_capability_v2.json \
+  eval/fixtures/preference_eval_phase4_together_v3.json \
+  eval/fixtures/preference_eval_phase4_robustness_v1.json \
+  eval/private_runs/phase4/together_glm_5_2_candidate_capability_authorization_v3.json \
+  eval/private_runs/phase4/together_glm_5_2_candidate_capability_state_v3.json
+```
+
 The continuation also predeclares the shared-failure interpretation for the
 corrected interviewer protocol. If all three candidates successfully complete
 the required tool phase and then fail strict validation in the separate final
@@ -1225,11 +1269,22 @@ python -m eval.validate_phase4_capability_continuation \
 The candidate authorizer and runner are
 `python -m eval.authorize_phase4_together_candidate_capability` and
 `python -m eval.run_phase4_together_candidate_capability`. Both require the
-continuation, historical and corrected plans, both suite/readiness versions,
-and the two ignored attempt pairs. Authorization
+continuation, adjudication policy, historical and corrected plans, both
+suite/readiness versions, the two ignored historical attempt pairs, and the
+ignored provisional GLM authorization/state pair. Authorization
 requires an exact five-call confirmation and the selected plan's exact maximum
 spend; execution separately requires
 `--execute-paid-candidate-capability` and repeats that exact amount. The
 runner loads the API key only after every tracked/private binding, candidate
-eligibility rule, and manual amount has passed. Do not run any paid candidate
-until this protocol correction is reviewed and merged.
+eligibility rule, adjudication rule, and manual amount has passed. Any future
+invalid output first checkpoints the billed-call audit state and then must
+persist its content-free diagnostic before returning the terminal failure. Do
+not run GPT-OSS or Nemotron until this diagnostic boundary and adjudication
+policy are reviewed and merged.
+
+Future candidate authorizations use
+`preference_eval_phase4_adjudicated_candidate_authorization.v1`, a private
+wrapper around the existing five-call authorization. It binds the exact
+adjudication-policy and provisional-state hashes, and the resulting execution
+state binds the wrapper hash rather than an unadjudicated authorization. The
+historical GLM authorization and state remain on their original contracts.

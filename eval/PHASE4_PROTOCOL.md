@@ -325,6 +325,22 @@ nonuniform failures remain subject to the ordinary capability gate. The
 required zero-spend aggregator will enforce this rule against the three exact
 receipts.
 
+The first corrected GLM run subsequently passed the two-phase interviewer and
+three other roles, then failed strict validation for the ontology proposer. Its
+exact ignored state is retained as a provisional candidate failure rather than
+a final rejection. A separate tracked zero-spend adjudication policy binds that
+state and extends the predeclared discipline: three failures on the same role
+and exact response schema require shared-harness review, while a nonuniform
+pattern receives candidate-specific review. Before either remaining candidate
+runs, the provider boundary must checkpoint the billed-call audit state and
+then capture invalid-output error counts, error types, and schema-relative
+paths in an ignored sidecar. It omits values, messages, and context and leaves
+all existing journal/state hashes unchanged.
+Future private authorizations wrap the original five-call authorization with
+the exact adjudication-policy and provisional-state hashes; the future
+execution state binds that wrapper while the preserved GLM state remains
+byte-identical.
+
 The Phase 4A command prints content hashes and aggregate architecture counts.
 Phase 4A does not choose an LLM provider, prompt, model version, evidence
 weights, semantic mapper, or robustness estimator. The reviewed semantic map

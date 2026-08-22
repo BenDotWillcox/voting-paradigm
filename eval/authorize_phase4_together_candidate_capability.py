@@ -20,8 +20,15 @@ from .fixture_io import content_sha256, load_fixture
 from .phase4_capability import (
     TogetherCapabilityPlan,
 )
+from .phase4_capability_adjudication import (
+    build_adjudicated_candidate_authorization,
+    load_capability_adjudication_policy,
+    validate_capability_adjudication_policy,
+)
 from .phase4_capability_continuation import (
     CANDIDATE_CAPABILITY_CALL_COUNT,
+    TogetherCandidateCapabilityAuthorizationBundle,
+    TogetherCandidateCapabilityExecutionState,
     TogetherCapabilityContinuationPlan,
     build_candidate_capability_authorization_bundle,
     candidate_plan_for,
@@ -55,6 +62,7 @@ def build_parser() -> argparse.ArgumentParser:
         )
     )
     parser.add_argument("continuation", type=Path)
+    parser.add_argument("adjudication_policy", type=Path)
     parser.add_argument("historical_plan", type=Path)
     parser.add_argument("corrected_plan", type=Path)
     parser.add_argument("historical_suite", type=Path)
@@ -66,6 +74,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("development_session", type=Path)
     parser.add_argument("development_semantic_map", type=Path)
     parser.add_argument("catalog_preflight_bundle", type=Path)
+    parser.add_argument("provisional_authorization", type=Path)
+    parser.add_argument("provisional_state", type=Path)
     parser.add_argument("candidate_id")
     parser.add_argument("output", type=Path)
     parser.add_argument(
@@ -90,6 +100,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         continuation = TogetherCapabilityContinuationPlan.model_validate_json(
             args.continuation.read_text(encoding="utf-8")
         )
+        adjudication_policy = load_capability_adjudication_policy(
+            args.adjudication_policy
+        )
         historical_plan = TogetherCapabilityPlan.model_validate_json(
             args.historical_plan.read_text(encoding="utf-8")
         )
@@ -112,6 +125,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         semantic_map = load_authored_semantic_map(
             args.development_semantic_map
         )
+        provisional_authorization = (
+            TogetherCandidateCapabilityAuthorizationBundle.model_validate_json(
+                args.provisional_authorization.read_text(encoding="utf-8")
+            )
+        )
+        provisional_state = (
+            TogetherCandidateCapabilityExecutionState.model_validate_json(
+                args.provisional_state.read_text(encoding="utf-8")
+            )
+        )
         validate_capability_continuation_plan(
             continuation,
             historical_plan,
@@ -126,6 +149,17 @@ def main(argv: Sequence[str] | None = None) -> int:
             session,
             semantic_map,
         )
+        validate_capability_adjudication_policy(
+            adjudication_policy,
+            continuation,
+            corrected_plan,
+            suite,
+            profile,
+            provisional_authorization,
+            provisional_state,
+        )
+        if args.candidate_id not in adjudication_policy.remaining_candidate_ids:
+            raise ValueError("candidate is outside adjudication continuation")
         candidate_plan = candidate_plan_for(continuation, args.candidate_id)
         if (
             args.approve_call_count != CANDIDATE_CAPABILITY_CALL_COUNT
@@ -141,7 +175,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         now = datetime.now(timezone.utc)
         timestamp = now.strftime("%Y%m%d_%H%M%S")
-        bundle = build_candidate_capability_authorization_bundle(
+        candidate_bundle = build_candidate_capability_authorization_bundle(
             continuation,
             candidate_plan,
             suite,
@@ -152,6 +186,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             approval_id=f"candidate_capability_approval_{timestamp}",
             approved_at=now,
             expires_at=now + timedelta(minutes=args.valid_minutes),
+        )
+        bundle = build_adjudicated_candidate_authorization(
+            adjudication_policy,
+            candidate_bundle,
         )
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(
