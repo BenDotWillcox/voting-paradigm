@@ -221,18 +221,17 @@ history, and demographic proxies remain excluded throughout.
   segment-scoped: initial capability and qualification calls use the USD 4
   qualification segment, while retries require a fresh authorization for the
   USD 3 retry reserve and retain exact ledger lineage. Held-out authorization
-  remains outside this qualification slice. A tracked capability plan now
-  binds the exact first 15 qualification entries: one canonical public-
-  development request for every candidate and role. It is itself a zero-spend
-  artifact. Paid execution additionally requires a private, expiring manual
-  approval for exactly 15 calls and a USD 0.15 pre-call reservation ceiling.
-  The runner rebuilds every private request from the readiness inputs, stops
-  on the first non-success, checkpoints an exact prefix, and issues a receipt
-  only after all 15 structured contracts pass and all three interviewer probes
-  complete a real typed-tool round. Closed failures are terminal for that
-  attempt; ambiguous sent requests retain their reservation for manual
-  reconciliation. No candidate has yet qualified and no paid provider call
-  has occurred.
+  remains outside this qualification slice. A tracked capability plan binds
+  the exact first 15 qualification entries: one canonical public-development
+  request for every candidate and role. Corrected execution partitions that
+  matrix into independent five-call candidate plans, each with a private,
+  expiring approval and its exact reservation ceiling. A runner rebuilds every
+  request from readiness inputs, stops on the candidate's first non-success,
+  and issues a receipt only after all five role contracts pass and the
+  interviewer completes a real typed-tool round. Closed candidate failures are
+  terminal; ambiguous sent requests retain their reservation for manual
+  reconciliation. Two v2 public-development attempts spent 13,143 microusd;
+  no candidate has yet qualified, and no v3 paid call has occurred.
 
 ## Validation
 
@@ -277,20 +276,28 @@ sequential selection tolerances, so negligible sensitivity differences cannot
 silence quality, cost, and latency. The tracked Together suite freezes the
 three candidate artifacts, prices, and candidate-independent prompts/codecs
 before that run. The live HTTP client/tool loop and no-spend readiness gate are
-implemented. The account, source, and catalog receipts must be reissued against
-the corrected v2 suite before constructing a paid authorization; the prior
-ignored receipt binds v1. Paid capability probes still must be completed before
-qualification. The catalog preflight makes authenticated network GETs but
+implemented. The account, source, and catalog receipt must be reissued against
+the corrected v3 suite before constructing a paid authorization. The original
+all-candidate capability gate stopped twice within the first candidate: once
+on a transient provider error and once on an interviewer invalid-output
+result. Direct review found that v2 combined tools, automatic tool choice, and
+strict final-output formatting in the same round, so the second result is
+harness-inconclusive, not a GLM rejection. V3 requires a tool-only first phase
+and a separate strict decision phase. The tracked candidate-isolated
+continuation binds both private attempts and derives separate five-role checks
+for all three candidates, but it cannot authorize qualification. A later
+reviewed, zero-spend aggregation must bind the independent receipts into the
+full capability matrix. The catalog preflight makes authenticated network GETs but
 invokes no model and has an exact zero-provider-spend authorization.
 
 Validate the tracked zero-spend capability plan with:
 
 ```bash
 python -m eval.validate_phase4_capability \
-  eval/fixtures/preference_eval_phase4_together_capability_v1.json \
-  eval/fixtures/preference_eval_phase4_together_v2.json \
+  eval/fixtures/preference_eval_phase4_together_capability_v2.json \
+  eval/fixtures/preference_eval_phase4_together_v3.json \
   eval/fixtures/preference_eval_phase4_robustness_v1.json \
-  eval/fixtures/preference_eval_phase4_together_readiness_v2.json \
+  eval/fixtures/preference_eval_phase4_together_readiness_v3.json \
   eval/fixtures/preference_eval_dev_v1.json \
   eval/fixtures/preference_eval_dev_session_v1.json \
   eval/fixtures/preference_eval_dev_semantic_map_v1.json
@@ -299,6 +306,24 @@ python -m eval.validate_phase4_capability \
 This validator makes no network request, accepts no credential, and reports
 only aggregate counts, hashes, and cost bounds. Authorization and execution
 remain separate private commands and require a new explicit spend decision.
+
+Validate the post-failure continuation with
+`python -m eval.validate_phase4_capability_continuation`. It binds the exact
+private authorization/state pairs for both original attempts, records one
+transient provider failure and one harness-inconclusive result, and derives
+independent five-call plans for all three candidates from the corrected plan.
+The historical 15-call plan and three-candidate qualification contract remain
+auditable and are not reinterpreted.
+
+The continuation predeclares one cross-candidate disposition before any v3
+call is made. If all three interviewers complete the required tool phase and
+then fail the separate final phase on strict validation of the shared root-
+union schema, the result is a shared provider/schema incompatibility. The
+schema and protocol must be revised and all three candidates retested; the
+uniform pattern cannot disqualify all three models. Candidate-specific or
+nonuniform failures remain subject to the ordinary capability gate. The
+required zero-spend aggregator will enforce this rule against the three exact
+receipts.
 
 The Phase 4A command prints content hashes and aggregate architecture counts.
 Phase 4A does not choose an LLM provider, prompt, model version, evidence

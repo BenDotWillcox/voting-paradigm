@@ -56,7 +56,7 @@ ROOT = Path(__file__).resolve().parents[2]
 PROFILE_PATH = (
     ROOT / "eval/fixtures/preference_eval_phase4_robustness_v1.json"
 )
-SUITE_PATH = ROOT / "eval/fixtures/preference_eval_phase4_together_v2.json"
+SUITE_PATH = ROOT / "eval/fixtures/preference_eval_phase4_together_v3.json"
 NOW = datetime(2026, 8, 21, 15, 0, tzinfo=timezone.utc)
 
 
@@ -805,6 +805,8 @@ def test_live_transport_executes_bounded_interviewer_tool_loop() -> None:
         calls += 1
         sent = json.loads(http_request.content)
         if calls == 1:
+            assert "response_format" not in sent
+            assert sent["tool_choice"] == "required"
             return httpx.Response(
                 200,
                 json=chat_response(
@@ -829,6 +831,9 @@ def test_live_transport_executes_bounded_interviewer_tool_loop() -> None:
             "name": "read_evidence_coverage",
             "content": '{"evidence_count":3}',
         }
+        assert "tools" not in sent
+        assert "tool_choice" not in sent
+        assert sent["response_format"]["type"] == "json_schema"
         return httpx.Response(
             200,
             json=chat_response(
@@ -851,6 +856,27 @@ def test_live_transport_executes_bounded_interviewer_tool_loop() -> None:
     assert result.tool_call_count == 1
     assert result.tool_call_failure_count == 0
     assert calls == 2
+
+
+def test_v3_interviewer_fails_when_required_tool_call_is_missing() -> None:
+    loaded = suite()
+    request = prepared_request(loaded, role=LLMRole.INTERVIEWER)
+
+    result = transport(
+        loaded,
+        lambda request: httpx.Response(
+            200,
+            json=chat_response(
+                content='{"choice":"pause","confidence":0.6}',
+                prompt_tokens=5,
+                completion_tokens=3,
+            ),
+        ),
+    ).invoke(request)
+
+    assert result.outcome is ProviderCallOutcome.TRANSPORT_ERROR
+    assert result.failure_code == "together_required_tool_call_missing"
+    assert result.tool_call_count == 0
 
 
 def test_live_transport_rejects_a_tool_round_limit_not_in_readiness() -> None:

@@ -66,6 +66,7 @@ TOGETHER_STRUCTURED_OUTPUTS_URL = (
     "https://docs.together.ai/docs/inference/chat/structured-outputs"
 )
 TOGETHER_INTERVIEWER_PROVIDER_ROUND_LIMIT = 2
+TOGETHER_TWO_PHASE_INTERVIEWER_SUITE_VERSION = 3
 CAPTURED_AT = datetime(2026, 8, 20, 12, 0, tzinfo=timezone.utc)
 SUITE_CREATED_AT = datetime(2026, 8, 21, 18, 0, tzinfo=timezone.utc)
 
@@ -574,28 +575,40 @@ def build_together_chat_payload(
         max_tokens //= TOGETHER_INTERVIEWER_PROVIDER_ROUND_LIMIT
     prompt_text = _canonical_json(request.prompt_payload)
     schema_text = _canonical_json(request.response_json_schema)
-    system_content = (
-        f"{prompt_text}\nRespond only with JSON matching this schema: "
-        f"{schema_text}"
+    two_phase_interviewer = (
+        request.binding.tool_calling_enabled
+        and suite.suite_version >= TOGETHER_TWO_PHASE_INTERVIEWER_SUITE_VERSION
     )
+    if two_phase_interviewer:
+        system_content = (
+            f"{prompt_text}\nCall at least one provided read-only tool before "
+            "making the final decision. Do not emit the final decision in "
+            "this tool-selection round."
+        )
+    else:
+        system_content = (
+            f"{prompt_text}\nRespond only with JSON matching this schema: "
+            f"{schema_text}"
+        )
     payload: dict[str, JsonValue] = {
         "model": candidate.serving_model_id,
         "messages": [
             {"role": "system", "content": system_content},
             {"role": "user", "content": _canonical_json(request.input_payload)},
         ],
-        "response_format": {
-            "type": "json_schema",
-            "json_schema": {
-                "name": request.binding.response_schema_id,
-                "schema": request.response_json_schema,
-            },
-        },
         "temperature": request.binding.temperature,
         "max_tokens": max_tokens,
         "n": 1,
         "stream": False,
     }
+    if not two_phase_interviewer:
+        payload["response_format"] = {
+            "type": "json_schema",
+            "json_schema": {
+                "name": request.binding.response_schema_id,
+                "schema": request.response_json_schema,
+            },
+        }
     if request.binding.provider_seed_parameter_sent:
         payload["seed"] = request.binding.request_seed
     if request.tool_definitions:
@@ -610,8 +623,50 @@ def build_together_chat_payload(
             }
             for tool in request.tool_definitions
         ]
-        payload["tool_choice"] = "auto"
+        payload["tool_choice"] = (
+            "required" if two_phase_interviewer else "auto"
+        )
     return payload
+
+
+def build_together_interviewer_final_payload(
+    suite: Phase4TogetherSuite,
+    request: PrivateStructuredProviderRequest,
+    payload: dict[str, JsonValue],
+) -> dict[str, JsonValue]:
+    """Switch a v3 interviewer call from required tool use to typed output."""
+
+    if (
+        suite.suite_version < TOGETHER_TWO_PHASE_INTERVIEWER_SUITE_VERSION
+        or not request.binding.tool_calling_enabled
+    ):
+        raise ValueError("Together final interviewer phase requires v3 tools")
+    messages = TypeAdapter(list[dict[str, JsonValue]]).validate_python(
+        payload.get("messages")
+    )
+    if len(messages) < 4 or messages[-1].get("role") != "tool":
+        raise ValueError("Together final interviewer phase requires tool output")
+    final = dict(payload)
+    final["messages"] = [dict(item) for item in messages]
+    prompt_text = _canonical_json(request.prompt_payload)
+    schema_text = _canonical_json(request.response_json_schema)
+    final["messages"][0] = {
+        "role": "system",
+        "content": (
+            f"{prompt_text}\nUse the completed tool result and respond only "
+            f"with JSON matching this schema: {schema_text}"
+        ),
+    }
+    final.pop("tools", None)
+    final.pop("tool_choice", None)
+    final["response_format"] = {
+        "type": "json_schema",
+        "json_schema": {
+            "name": request.binding.response_schema_id,
+            "schema": request.response_json_schema,
+        },
+    }
+    return final
 
 
 def validate_request_against_role_envelope(
@@ -878,10 +933,11 @@ def _candidate_artifact(
 def _role_contracts() -> list[SharedRoleContract]:
     definitions: dict[LLMRole, tuple[str, str]] = {
         LLMRole.INTERVIEWER: (
-            "Choose only an allowed preference-interview action. Use the "
-            "provided read-only tools when needed, never invent a question, "
+            "Choose only an allowed preference-interview action. First use "
+            "at least one provided read-only tool, never invent a question, "
             "never update preference state, and never inspect a target packet. "
-            "Return only the required structured decision.",
+            "After observing the tool result, return only the required "
+            "structured decision.",
             "phase4_interviewer_decision_and_tool_contracts_v1",
         ),
         LLMRole.EVIDENCE_EXTRACTOR: (
@@ -920,8 +976,12 @@ def _role_contracts() -> list[SharedRoleContract]:
         contracts.append(
             SharedRoleContract(
                 role=role,
-                prompt_id=f"phase4_{role.value}_together_v1",
-                prompt_version=1,
+                prompt_id=(
+                    "phase4_interviewer_together_v2"
+                    if role is LLMRole.INTERVIEWER
+                    else f"phase4_{role.value}_together_v1"
+                ),
+                prompt_version=(2 if role is LLMRole.INTERVIEWER else 1),
                 prompt_text=prompt,
                 prompt_sha256=content_sha256(prompt),
                 response_schema_id=response_contract_id,
@@ -994,7 +1054,7 @@ def _workload_plan() -> TogetherWorkloadPlan:
 def build_default_together_suite(
     profile: Phase4ERobustnessProfile,
 ) -> Phase4TogetherSuite:
-    """Build the exact tracked v2 suite without reading credentials or network."""
+    """Build the exact tracked v3 suite without reading credentials or network."""
 
     catalog = _catalog_snapshot()
     terms = _terms_snapshot()
@@ -1049,8 +1109,8 @@ def build_default_together_suite(
         ),
     ]
     suite = Phase4TogetherSuite(
-        suite_id="preference_eval_phase4_together_v2",
-        suite_version=2,
+        suite_id="preference_eval_phase4_together_v3",
+        suite_version=3,
         created_at=SUITE_CREATED_AT,
         robustness_profile_id=profile.profile_id,
         robustness_profile_version=profile.profile_version,

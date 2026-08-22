@@ -2,7 +2,7 @@
 
 Usage:
     python -m eval.validate_phase4_together \
-        eval/fixtures/preference_eval_phase4_together_v2.json \
+        eval/fixtures/preference_eval_phase4_together_v3.json \
         eval/fixtures/preference_eval_phase4_robustness_v1.json
 """
 
@@ -30,6 +30,9 @@ from .phase4_together import (
 LEGACY_V1_SUITE_SHA256 = (
     "cb7793244ec640fa336a839d198b8f8e5650cfd20a7a2b9f51a3affc15afa11c"
 )
+LEGACY_V2_SUITE_SHA256 = (
+    "dce672dada8a80cb87f57235ca4b9b44da5c13d44e597b89a63e29d01f67a2a5"
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -55,9 +58,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                 raise ValueError("Together legacy v1 audit hash differs")
             validate_together_suite(suite, profile)
         elif suite.suite_version == 2:
+            if suite_sha256 != LEGACY_V2_SUITE_SHA256:
+                raise ValueError("Together legacy v2 audit hash differs")
+            validate_together_suite(suite, profile)
+        elif suite.suite_version == 3:
             expected = build_default_together_suite(profile)
             if suite_sha256 != content_sha256(expected):
-                raise ValueError("Together suite differs from frozen v2 builder")
+                raise ValueError("Together suite differs from frozen v3 builder")
         else:
             raise ValueError("Together suite version is unsupported")
         report = build_no_spend_report(suite, profile)

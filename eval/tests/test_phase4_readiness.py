@@ -30,9 +30,9 @@ from eval.validate_phase4_readiness import main as validate_main
 
 FIXTURES = Path(__file__).parents[1] / "fixtures"
 READINESS_PATH = (
-    FIXTURES / "preference_eval_phase4_together_readiness_v2.json"
+    FIXTURES / "preference_eval_phase4_together_readiness_v3.json"
 )
-SUITE_PATH = FIXTURES / "preference_eval_phase4_together_v2.json"
+SUITE_PATH = FIXTURES / "preference_eval_phase4_together_v3.json"
 PROFILE_PATH = FIXTURES / "preference_eval_phase4_robustness_v1.json"
 DEV_FIXTURE_PATH = FIXTURES / "preference_eval_dev_v1.json"
 DEV_SESSION_PATH = FIXTURES / "preference_eval_dev_session_v1.json"
@@ -86,9 +86,9 @@ def test_tracked_readiness_bundle_validates_and_records_zero_spend():
     assert bundle.provider_spend_microusd == 0
     assert bundle.together_api_key_required is False
     assert summary["held_out_projected_cost_microusd_by_candidate"] == {
-        "together_glm_5_2": 11_331_324,
-        "together_gpt_oss_120b": 1_356_093,
-        "together_nemotron_3_ultra_550b_a55b": 7_146_712,
+        "together_glm_5_2": 11_167_563,
+        "together_gpt_oss_120b": 1_338_386,
+        "together_nemotron_3_ultra_550b_a55b": 7_068_320,
     }
     assert summary[
         "held_out_all_calls_at_envelope_cost_microusd_by_candidate"
@@ -100,9 +100,9 @@ def test_tracked_readiness_bundle_validates_and_records_zero_spend():
     assert summary[
         "held_out_sequential_reservation_headroom_microusd_by_candidate"
     ] == {
-        "together_glm_5_2": 1_643_276,
-        "together_gpt_oss_120b": 11_641_057,
-        "together_nemotron_3_ultra_550b_a55b": 5_840_688,
+        "together_glm_5_2": 1_807_037,
+        "together_gpt_oss_120b": 11_658_764,
+        "together_nemotron_3_ultra_550b_a55b": 5_919_080,
     }
 
 

@@ -19,6 +19,7 @@ from eval.phase4_together import (
     build_default_together_suite,
     build_no_spend_report,
     build_together_chat_payload,
+    build_together_interviewer_final_payload,
     load_together_suite,
     validate_request_against_role_envelope,
 )
@@ -28,7 +29,10 @@ ROOT = Path(__file__).resolve().parents[2]
 PROFILE_PATH = (
     ROOT / "eval/fixtures/preference_eval_phase4_robustness_v1.json"
 )
-SUITE_PATH = ROOT / "eval/fixtures/preference_eval_phase4_together_v2.json"
+SUITE_PATH = ROOT / "eval/fixtures/preference_eval_phase4_together_v3.json"
+LEGACY_V2_SUITE_PATH = (
+    ROOT / "eval/fixtures/preference_eval_phase4_together_v2.json"
+)
 LEGACY_SUITE_PATH = (
     ROOT / "eval/fixtures/preference_eval_phase4_together_v1.json"
 )
@@ -131,6 +135,15 @@ def test_v1_suite_is_preserved_as_an_exact_audit_artifact() -> None:
     )
 
 
+def test_v2_suite_is_preserved_as_an_exact_audit_artifact() -> None:
+    legacy = load_together_suite(LEGACY_V2_SUITE_PATH)
+
+    assert legacy.suite_version == 2
+    assert content_sha256(legacy) == (
+        "dce672dada8a80cb87f57235ca4b9b44da5c13d44e597b89a63e29d01f67a2a5"
+    )
+
+
 def test_candidate_ids_revisions_and_prices_are_frozen() -> None:
     loaded = suite()
 
@@ -209,7 +222,8 @@ def test_interviewer_codec_uses_standard_function_shape() -> None:
         prepared_request(role=LLMRole.INTERVIEWER),
     )
 
-    assert payload["tool_choice"] == "auto"
+    assert payload["tool_choice"] == "required"
+    assert "response_format" not in payload
     assert payload["tools"] == [
         {
             "type": "function",
@@ -221,6 +235,25 @@ def test_interviewer_codec_uses_standard_function_shape() -> None:
         }
     ]
     assert payload["max_tokens"] == 500
+
+    payload["messages"].extend(
+        [
+            {
+                "role": "assistant",
+                "content": None,
+                "tool_calls": [{"id": "one"}],
+            },
+            {"role": "tool", "tool_call_id": "one", "content": "{}"},
+        ]
+    )
+    final = build_together_interviewer_final_payload(
+        suite(),
+        prepared_request(role=LLMRole.INTERVIEWER),
+        payload,
+    )
+    assert "tools" not in final
+    assert "tool_choice" not in final
+    assert final["response_format"]["type"] == "json_schema"
 
 
 def test_interviewer_codec_rejects_an_indivisible_round_budget() -> None:
@@ -310,4 +343,16 @@ def test_validate_cli_accepts_the_exact_legacy_v1_audit_artifact(capsys) -> None
     payload = json.loads(captured.out)
     assert payload["suite_sha256"] == (
         "cb7793244ec640fa336a839d198b8f8e5650cfd20a7a2b9f51a3affc15afa11c"
+    )
+
+
+def test_validate_cli_accepts_the_exact_legacy_v2_audit_artifact(capsys) -> None:
+    exit_code = validate_main([str(LEGACY_V2_SUITE_PATH), str(PROFILE_PATH)])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert captured.err == ""
+    payload = json.loads(captured.out)
+    assert payload["suite_sha256"] == (
+        "dce672dada8a80cb87f57235ca4b9b44da5c13d44e597b89a63e29d01f67a2a5"
     )
