@@ -432,9 +432,10 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 - Phase 4E qualification and robustness precommitment in `eval/phase4_robustness.py`: three open-weight public-development candidates, one selected model across all LLM roles, hosted-or-self-hosted deployment provenance, pseudonymous request boundaries, participant answer before prediction reveal, an exact USD 4/13/3 qualification/study/retry budget with hash-bound authorization reservations, exact profile/candidate/probe bindings on robustness records, a single-call primary estimator, staged prompt/order/label/stochastic diagnostics, aggregate sensitivity records, frozen outcomes, and descriptive-case-study claim limits
 - Phase 4E provider and qualification runtime in `eval/phase4_provider.py` and `eval/phase4_qualification.py`: one model-agnostic structured executor for all five LLM roles, private-payload/content-free-audit separation, public or locally scanned pseudonymous input attestations, exact price-card projections, O(1) live reservations plus full end-of-run ledger replay, true-spend token-overrun records, attested zero-cost closure, request-seed versus provider-honor provenance, and deterministic hard-gated selection with frozen practical-equivalence bands; only the scripted no-network transport exists and no candidate/model has yet qualified
 - Phase 4E Together no-spend suite in `eval/phase4_together.py`: exact GPT-OSS 120B, Nemotron 3 Ultra 550B A55B, and GLM-5.2 upstream revisions; captured serverless catalog, privacy/capability terms, quantization and price cards; shared five-role prompt/schema/tool contracts; a credential-free OpenAI-compatible request codec; explicit serverless build/weight and GLM BF16-to-FP4 limitations; and non-authorizing 456-call qualification plus 1,104-call held-out feasibility envelopes that make no network request and require tokenizer readiness plus a predeclared headroom gate before spend
-- Phase 4E Together live boundary in `eval/phase4_together_live.py`: a manual account-privacy attestation, hash-bound public-source re-fetches, a one-shot authenticated `/models` preflight with zero inference spend, separate advertised/live context provenance plus aggregate divergence diagnostics, runtime-only `SecretStr` credentials, segment-scoped paid-stage authorization objects, exact pre-send tokenizer-count hooks, and a bounded structured-output/tool-call HTTP adapter; explicit HTTP failures close as provider errors, a fresh retry-reserve authorization preserves retry lineage, genuinely ambiguous sent requests preserve their reservation for reconciliation, and no paid authorization or inference call exists yet
-- Phase 4E no-spend readiness in `eval/phase4_readiness.py`: revision-pinned upstream tokenizer file manifests, canonical HTTP-payload counting, all 456 exact public-development request hashes, a strict resumable execution prefix, a public synthetic six-wave-plus-12-retest/1,104-call-per-candidate held-out calibration that retains the full accumulated evidence, counts the interviewer's one tool-result follow-up, and requires strictly increasing applicable presentation totals, a v2 Together suite with corrected role envelopes, fixed USD 0.40/USD 0.50 qualification/held-out headroom under exact-spend-plus-largest-reservation sequential accounting, an adapter for the live transport's per-send exact counter, and an explicit nonclaim of provider-serving-tokenizer equivalence; the tracked readiness artifact records zero inference calls and zero spend
-- Phase 4E capability gate in `eval/phase4_capability.py`: a tracked zero-spend plan binds the exact first 15 qualification calls and complete three-candidate-by-five-role matrix, a separate private and expiring manual approval caps pre-call reservations at USD 0.15, deterministic reconstruction rechecks every readiness hash before send, progressive private state preserves the audit ledger and parsed outputs, and a receipt requires all 15 structured outputs plus one successful typed-tool interaction from every interviewer probe; the runner is implemented but no capability call or provider spend has occurred
+- Phase 4E Together live boundary in `eval/phase4_together_live.py`: a manual account-privacy attestation, hash-bound public-source re-fetches, a one-shot authenticated `/models` preflight with zero inference spend, separate advertised/live context provenance plus aggregate divergence diagnostics, runtime-only `SecretStr` credentials, segment-scoped paid-stage authorization objects, exact pre-send tokenizer-count hooks, and a bounded two-phase interviewer adapter that requires tool use before a separate strict-output round; explicit HTTP failures close as provider errors, a fresh retry-reserve authorization preserves retry lineage, and genuinely ambiguous sent requests preserve their reservation for reconciliation
+- Phase 4E no-spend readiness in `eval/phase4_readiness.py`: revision-pinned upstream tokenizer file manifests, canonical HTTP-payload counting, all 456 exact public-development request hashes, a strict resumable execution prefix, a public synthetic six-wave-plus-12-retest/1,104-call-per-candidate held-out calibration that retains the full accumulated evidence, counts both interviewer phases, and requires strictly increasing applicable presentation totals, a v3 Together suite with corrected role envelopes and interviewer wire protocol, fixed USD 0.40/USD 0.50 qualification/held-out headroom under exact-spend-plus-largest-reservation sequential accounting, an adapter for the live transport's per-send exact counter, and an explicit nonclaim of provider-serving-tokenizer equivalence; the tracked readiness artifact records zero inference calls and zero spend
+- Phase 4E capability gate in `eval/phase4_capability.py`: a tracked zero-spend plan binds the exact first 15 qualification calls and complete three-candidate-by-five-role matrix, a separate private and expiring manual approval caps pre-call reservations at USD 0.15, deterministic reconstruction rechecks every readiness hash before send, progressive private state preserves the audit ledger and parsed outputs, and a receipt requires all 15 structured outputs plus one successful typed-tool interaction from every interviewer probe; two public-development v2 attempts spent 13,143 microusd total, the first ending in a transient 503 and the second now classified as harness-inconclusive because tools and strict final-output formatting shared one provider round
+- Phase 4E candidate-isolated continuation in `eval/phase4_capability_continuation.py`: a tracked zero-spend artifact hash-binds both preserved private attempts plus the corrected v3 suite/readiness and v2 capability plan, retains all three candidates in independent five-role plans with exact 78,000/9,000/42,000-microusd ceilings, requires separate private approvals and states, predeclares a shared provider/schema disposition if all three tool-complete interviewers fail the separate root-union output phase, and explicitly cannot authorize qualification or weaken the frozen three-candidate comparison
 - Fixed-bank eval harness: 4 authored synthetic personas + seeded Dirichlet-mixture persona generator (`eval/personas.py`), three response models as the misspecification axis (`gaussian_gap` matches the Gaussian likelihood, `logistic_choice` matches BT, `sloppy` matches neither — `eval/response_models.py`), held-out pair splits, log-likelihood/accuracy/Brier/Kendall-τ/calibration curves, models × policies comparison (`python -m eval.run_preference_eval --response-model ...`), grid sweeps for notebooks (`eval/sweeps.py`)
 - API: `/sessions/evidence` endpoint (replaces `/sessions/respond`), model + selection-policy params on session start
 - TS hygiene: Zod-validated JSONB boundaries (`lib/validations/preferences-schemas.ts`); `startPreferenceSession` race fixed via server-generated UUID + single insert
@@ -477,22 +478,23 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
   round remains in the restricted audit trail
 
 **Next, in order:**
-1. Reissue the zero-inference account/source/catalog receipt against the
-   corrected v2 Together suite; the existing ignored receipt binds v1
-2. Review the tracked 15-call capability plan and construct its private,
-   time-limited authorization against the v2 catalog and readiness hashes
-3. After separate spend approval, run the public-development capability gate
-   and require all three candidates to pass all five role contracts
-4. Run the public-development qualification
-   within the USD 4 cap
-5. Freeze the selected model/deployment, prompts, seeds, remaining policy
+1. Review and merge the v3 protocol correction and candidate-isolated continuation;
+   do not make another paid call before that review
+2. Reissue the zero-inference catalog receipt against v3
+3. With separate exact approvals, run the five-role capability plan for each
+   candidate; preserve one candidate's failure without blocking the others
+4. Aggregate the independent candidate receipts into the full capability
+   matrix through a reviewed zero-spend artifact
+5. Run the public-development qualification within the USD 4 cap; record all
+   three results and select only among candidates that pass the frozen gates
+6. Freeze the selected model/deployment, prompts, seeds, remaining policy
    values, and calibrated robustness thresholds before Ben's held-out case
    study
-6. Build separate blind evaluation and future-facing showcase modes
-7. Schedule and execute the six blinded waves and 7-14 day retests only after
+7. Build separate blind evaluation and future-facing showcase modes
+8. Schedule and execute the six blinded waves and 7-14 day retests only after
    the remaining model/evaluation freeze is complete
-8. *(Deferred)* LLM-generated vote rationales
-9. *(Deferred)* LLM-generated personas
+9. *(Deferred)* LLM-generated vote rationales
+10. *(Deferred)* LLM-generated personas
 
 ### Demo 3: Algorithmic districting
 

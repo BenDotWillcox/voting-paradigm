@@ -72,8 +72,10 @@ from .phase4_together import (
     TOGETHER_INTERVIEWER_PROVIDER_ROUND_LIMIT,
     TOGETHER_CATALOG_URL,
     TOGETHER_PRIVACY_URL,
+    TOGETHER_TWO_PHASE_INTERVIEWER_SUITE_VERSION,
     Phase4TogetherSuite,
     build_together_chat_payload,
+    build_together_interviewer_final_payload,
 )
 
 NonNegativeCount = Annotated[int, Field(ge=0)]
@@ -1209,9 +1211,11 @@ def validate_live_authorization(
     candidate_ids = sorted(
         item.candidate.candidate_id for item in suite.candidates
     )
-    if authorization.authorized_candidate_ids != candidate_ids:
-        raise ValueError("Together live authorization must cover exact candidates")
     if authorization.stage is TogetherPaidStage.QUALIFICATION:
+        if authorization.authorized_candidate_ids != candidate_ids:
+            raise ValueError(
+                "Together qualification authorization must cover exact candidates"
+            )
         if capability_receipt is None or (
             authorization.capability_preflight_receipt_sha256
             != content_sha256(capability_receipt)
@@ -1239,8 +1243,18 @@ def validate_live_authorization(
             content_sha256(profile),
         ):
             raise ValueError("Together capability receipt bindings differ")
-    elif capability_receipt is not None:
-        raise ValueError("Together capability authorization cannot consume receipt")
+    else:
+        if not authorization.authorized_candidate_ids or not set(
+            authorization.authorized_candidate_ids
+        ) <= set(candidate_ids):
+            raise ValueError(
+                "Together capability authorization candidates must be a "
+                "nonempty suite subset"
+            )
+        if capability_receipt is not None:
+            raise ValueError(
+                "Together capability authorization cannot consume receipt"
+            )
     validate_token_readiness_and_headroom(suite, profile, projection, headroom)
 
 
@@ -1482,6 +1496,29 @@ class TogetherHTTPTransport:
             choice = parsed.choices[0]
             choices_seen.append(choice)
             if not choice.message.tool_calls:
+                if (
+                    request.binding.tool_calling_enabled
+                    and self._suite.suite_version
+                    >= TOGETHER_TWO_PHASE_INTERVIEWER_SUITE_VERSION
+                    and tool_round == 0
+                ):
+                    return ProviderTransportResult(
+                        outcome=ProviderCallOutcome.TRANSPORT_ERROR,
+                        output_payload=None,
+                        input_tokens=total_input,
+                        output_tokens=total_output,
+                        provider_request_id="|".join(request_ids),
+                        provider_request_sent=True,
+                        provider_seed_status=_seed_status(
+                            request,
+                            choices_seen,
+                        ),
+                        tool_call_count=0,
+                        tool_call_failure_count=0,
+                        latency_ms=(time.perf_counter() - started) * 1000,
+                        failure_code="together_required_tool_call_missing",
+                        completed_at=self._clock(),
+                    )
                 output: JsonValue = choice.message.content or ""
                 try:
                     output = json.loads(output)
@@ -1572,5 +1609,15 @@ class TogetherHTTPTransport:
                             sort_keys=True,
                         ),
                     }
+                )
+            if (
+                request.binding.tool_calling_enabled
+                and self._suite.suite_version
+                >= TOGETHER_TWO_PHASE_INTERVIEWER_SUITE_VERSION
+            ):
+                payload = build_together_interviewer_final_payload(
+                    self._suite,
+                    request,
+                    payload,
                 )
         raise AssertionError("Together tool loop did not terminate")

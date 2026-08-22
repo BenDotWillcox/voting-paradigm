@@ -63,6 +63,7 @@ from .phase4_together import (
     Phase4TogetherSuite,
     SharedRoleContract,
     build_together_chat_payload,
+    build_together_interviewer_final_payload,
     response_schema_for_role,
     tool_definitions_for_role,
     validate_request_against_role_envelope,
@@ -1094,6 +1095,12 @@ def _projected_provider_payloads(
         ]
     )
     followup["messages"] = messages
+    if suite.suite_version >= 3:
+        followup = build_together_interviewer_final_payload(
+            suite,
+            request,
+            followup,
+        )
     return [initial, followup]
 
 
@@ -1671,8 +1678,8 @@ def build_readiness_bundle(
             )
         )
     receipt = TogetherTokenReadinessReceipt(
-        receipt_id="phase4_together_token_readiness_v2",
-        receipt_version=2,
+        receipt_id="phase4_together_token_readiness_v3",
+        receipt_version=3,
         together_suite_id=suite.suite_id,
         together_suite_version=suite.suite_version,
         together_suite_sha256=content_sha256(suite),
@@ -1681,8 +1688,8 @@ def build_readiness_bundle(
         candidate_projections=projections,
     )
     headroom = TogetherHeadroomPolicy(
-        policy_id="phase4_together_headroom_v2",
-        policy_version=2,
+        policy_id="phase4_together_headroom_v3",
+        policy_version=3,
         created_at=READINESS_CREATED_AT,
         qualification_minimum_headroom_microusd=(
             qualification_minimum_headroom_microusd
@@ -1692,8 +1699,8 @@ def build_readiness_bundle(
         ),
     )
     bundle = Phase4TogetherReadinessBundle(
-        readiness_id="phase4_together_readiness_v2",
-        readiness_version=2,
+        readiness_id="phase4_together_readiness_v3",
+        readiness_version=3,
         created_at=READINESS_CREATED_AT,
         together_suite_id=suite.suite_id,
         together_suite_version=suite.suite_version,
