@@ -1,0 +1,36 @@
+{
+  "schema_version": "preference_eval_phase4_capability_adjudication.v1",
+  "policy_id": "phase4_together_capability_adjudication_v1",
+  "policy_version": 1,
+  "created_at": "2026-08-22T02:00:00Z",
+  "continuation_plan_sha256": "afa317dc2618001028c855bc4f1656e1ba57358a5eb5a5c92574010e2419d75e",
+  "corrected_capability_plan_sha256": "d5b25ed4bc177509396b137002f916da89a8dd9dcd8b44704a26373cae334d11",
+  "together_suite_sha256": "657ec77bec315bc55b01bae8bbc3c5fb95b1f584a2a49d9979c515621f9cd9fa",
+  "provisional_authorization_sha256": "e4d8f60631d8b07382003e726d4f365bdd5da1b5e531dd8255d671a642a62a2f",
+  "provisional_state_sha256": "5dc62a9aded1215d3050809f6964fd0398231115167f28ab92eafd239b6b8213",
+  "provisional_candidate_id": "together_glm_5_2",
+  "provisional_role": "ontology_proposer",
+  "provisional_outcome": "invalid_output",
+  "provisional_failure_code": "structured_output_invalid",
+  "provisional_response_schema_sha256": "e92a0925e4aaf0c7e3132ccc6a936233c7d0c8007d8dba263e71dc03a3cdb898",
+  "provisional_diagnostic_available": false,
+  "provisional_candidate_rejection_final": false,
+  "all_candidate_ids": [
+    "together_glm_5_2",
+    "together_gpt_oss_120b",
+    "together_nemotron_3_ultra_550b_a55b"
+  ],
+  "remaining_candidate_ids": [
+    "together_gpt_oss_120b",
+    "together_nemotron_3_ultra_550b_a55b"
+  ],
+  "uniform_failure_required_candidate_count": 3,
+  "uniform_failure_requires_same_role": true,
+  "uniform_failure_requires_exact_response_schema": true,
+  "uniform_failure_disposition": "shared_harness_review_before_candidate_rejection",
+  "nonuniform_failure_disposition": "candidate_specific_review_using_content_free_diagnostics",
+  "future_invalid_output_diagnostic_required": true,
+  "diagnostic_record_version": "phase4_provider_structured_output_diagnostic.v1",
+  "provider_inference_calls_executed_by_policy_creation": 0,
+  "provider_spend_microusd_by_policy_creation": 0
+}

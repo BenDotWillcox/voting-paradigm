@@ -41,6 +41,7 @@ from .phase4_provider import (
     ProviderCallOutcome,
     ProviderExecutionJournal,
     ProviderPriceCard,
+    ProviderStructuredOutputDiagnostic,
     ProviderTransport,
     validate_provider_execution_journal,
 )
@@ -1006,7 +1007,12 @@ def validate_candidate_capability_execution_state(
     authorization: TogetherCandidateCapabilityAuthorizationBundle,
     suite: Phase4TogetherSuite,
     profile: Phase4ERobustnessProfile,
+    *,
+    authorization_binding_sha256: Sha256Digest | None = None,
 ) -> None:
+    expected_authorization_sha256 = (
+        authorization_binding_sha256 or content_sha256(authorization)
+    )
     if (
         state.continuation_plan_sha256,
         state.candidate_plan_sha256,
@@ -1014,7 +1020,7 @@ def validate_candidate_capability_execution_state(
     ) != (
         content_sha256(continuation),
         content_sha256(plan),
-        content_sha256(authorization),
+        expected_authorization_sha256,
     ):
         raise ValueError("candidate capability state bindings differ")
     candidates, price_cards = _candidate_parts(suite)
@@ -1092,7 +1098,7 @@ def _execution_state(
     state_id: str,
     continuation: TogetherCapabilityContinuationPlan,
     plan: TogetherCandidateCapabilityPlan,
-    authorization: TogetherCandidateCapabilityAuthorizationBundle,
+    authorization_binding_sha256: Sha256Digest,
     runtime: ProviderBudgetRuntime,
     outputs: list[TogetherCapabilityOutputRecord],
     receipt: TogetherCandidateCapabilityReceipt | None,
@@ -1102,7 +1108,7 @@ def _execution_state(
         state_version=1,
         continuation_plan_sha256=content_sha256(continuation),
         candidate_plan_sha256=content_sha256(plan),
-        authorization_bundle_sha256=content_sha256(authorization),
+        authorization_bundle_sha256=authorization_binding_sha256,
         provider_ledger=runtime.ledger_snapshot(),
         provider_journal=runtime.journal_snapshot(),
         outputs=outputs,
@@ -1135,13 +1141,20 @@ def execute_candidate_capability_preflight(
     journal_id: str,
     clock: Callable[[], datetime],
     prior_state: TogetherCandidateCapabilityExecutionState | None = None,
+    authorization_binding_sha256: Sha256Digest | None = None,
     checkpoint: (
         Callable[[TogetherCandidateCapabilityExecutionState], None] | None
+    ) = None,
+    validation_diagnostic_sink: (
+        Callable[[ProviderStructuredOutputDiagnostic], None] | None
     ) = None,
 ) -> TogetherCandidateCapabilityExecutionState:
     """Execute one exact five-role plan and stop at that candidate's failure."""
 
     started_at = clock()
+    effective_authorization_sha256 = (
+        authorization_binding_sha256 or content_sha256(authorization)
+    )
     validate_capability_continuation_plan(
         continuation,
         historical_plan,
@@ -1189,6 +1202,7 @@ def execute_candidate_capability_preflight(
             authorization,
             suite,
             profile,
+            authorization_binding_sha256=effective_authorization_sha256,
         )
         if prior_state.receipt is not None:
             return prior_state.model_copy(deep=True)
@@ -1216,7 +1230,7 @@ def execute_candidate_capability_preflight(
             state_id=state_id,
             continuation=continuation,
             plan=plan,
-            authorization=authorization,
+            authorization_binding_sha256=effective_authorization_sha256,
             runtime=runtime,
             outputs=outputs,
             receipt=None,
@@ -1228,6 +1242,7 @@ def execute_candidate_capability_preflight(
             authorization,
             suite,
             profile,
+            authorization_binding_sha256=effective_authorization_sha256,
         )
         if checkpoint is not None:
             checkpoint(progressive)
@@ -1278,6 +1293,12 @@ def execute_candidate_capability_preflight(
                 )
             )
         checkpoint_progress()
+        if result.validation_diagnostic is not None:
+            if validation_diagnostic_sink is None:
+                raise ValueError(
+                    "invalid candidate output requires a diagnostic sink"
+                )
+            validation_diagnostic_sink(result.validation_diagnostic)
         if result.finalization.outcome is not ProviderCallOutcome.SUCCESS:
             raise ValueError("candidate capability provider call did not succeed")
         if not _call_passed(call, result.finalization):
@@ -1297,7 +1318,7 @@ def execute_candidate_capability_preflight(
         state_id=state_id,
         continuation=continuation,
         plan=plan,
-        authorization=authorization,
+        authorization_binding_sha256=effective_authorization_sha256,
         runtime=runtime,
         outputs=outputs,
         receipt=receipt,
@@ -1309,6 +1330,7 @@ def execute_candidate_capability_preflight(
         authorization,
         suite,
         profile,
+        authorization_binding_sha256=effective_authorization_sha256,
     )
     if checkpoint is not None:
         checkpoint(complete)

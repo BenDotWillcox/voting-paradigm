@@ -471,6 +471,43 @@ class ProviderCallFinalization(ContractModel):
         return self
 
 
+class ProviderStructuredOutputValidationIssue(ContractModel):
+    """One schema-relative error location with response values removed."""
+
+    path: list[str | int] = Field(default_factory=list)
+    error_type: NonEmptyText
+
+
+class ProviderStructuredOutputDiagnostic(ContractModel):
+    """Private content-free explanation of an invalid structured response."""
+
+    record_version: Literal[
+        "phase4_provider_structured_output_diagnostic.v1"
+    ] = "phase4_provider_structured_output_diagnostic.v1"
+    call_id: StableId
+    role: LLMRole
+    response_schema_sha256: Sha256Digest
+    finalization_sha256: Sha256Digest
+    error_count: PositiveCount
+    issues: list[ProviderStructuredOutputValidationIssue] = Field(min_length=1)
+    input_values_omitted: Literal[True] = True
+    error_messages_omitted: Literal[True] = True
+    error_context_omitted: Literal[True] = True
+    created_at: datetime
+
+    @field_validator("created_at")
+    @classmethod
+    def require_aware_created_at(cls, value: datetime) -> datetime:
+        _require_aware(value, "structured-output diagnostic created_at")
+        return value
+
+    @model_validator(mode="after")
+    def require_error_count(self) -> Self:
+        if self.error_count != len(self.issues):
+            raise ValueError("structured-output diagnostic count differs")
+        return self
+
+
 class ProviderExecutionJournal(ContractModel):
     """Content-free provider request and terminal-outcome lineage."""
 
@@ -518,6 +555,74 @@ class ProviderExecutionResult:
 
     output: object | None
     finalization: ProviderCallFinalization
+    validation_diagnostic: ProviderStructuredOutputDiagnostic | None = None
+
+
+def _response_schema_property_names(schema: JsonValue) -> set[str]:
+    names: set[str] = set()
+
+    def visit(value: JsonValue) -> None:
+        if isinstance(value, list):
+            for item in value:
+                visit(item)
+            return
+        if not isinstance(value, dict):
+            return
+        properties = value.get("properties")
+        if isinstance(properties, dict):
+            names.update(properties)
+        for item in value.values():
+            visit(item)
+
+    visit(schema)
+    return names
+
+
+def _structured_output_diagnostic(
+    request: PrivateStructuredProviderRequest,
+    finalization: ProviderCallFinalization,
+    error: ValidationError | TypeError | ValueError,
+) -> ProviderStructuredOutputDiagnostic:
+    property_names = _response_schema_property_names(
+        request.response_json_schema
+    )
+    if isinstance(error, ValidationError):
+        errors = error.errors(
+            include_url=False,
+            include_context=False,
+            include_input=False,
+        )
+        issues = [
+            ProviderStructuredOutputValidationIssue(
+                path=[
+                    segment
+                    for segment in item["loc"]
+                    if isinstance(segment, int)
+                    or (
+                        isinstance(segment, str)
+                        and segment in property_names
+                    )
+                ],
+                error_type=str(item["type"]),
+            )
+            for item in errors
+        ]
+    else:
+        issues = [
+            ProviderStructuredOutputValidationIssue(
+                path=[],
+                error_type="post_validation_serialization_error",
+            )
+        ]
+    return ProviderStructuredOutputDiagnostic(
+        call_id=request.binding.call_id,
+        role=request.binding.role,
+        response_schema_sha256=request.binding.response_schema_sha256,
+        finalization_sha256=content_sha256(finalization),
+        error_count=len(issues),
+        issues=issues,
+        created_at=finalization.created_at,
+    )
 
 
 def _require_aware(value: datetime, label: str) -> None:
@@ -1256,7 +1361,7 @@ class ProviderBudgetRuntime:
                 transport_result.output_payload
             )
             response_hash = content_sha256(parsed)
-        except (ValidationError, TypeError, ValueError):
+        except (ValidationError, TypeError, ValueError) as error:
             finalization = self._finalize(
                 binding,
                 price_card,
@@ -1275,7 +1380,15 @@ class ProviderBudgetRuntime:
                 failure_code="structured_output_invalid",
                 completed_at=transport_result.completed_at,
             )
-            return ProviderExecutionResult(None, finalization)
+            return ProviderExecutionResult(
+                None,
+                finalization,
+                _structured_output_diagnostic(
+                    request,
+                    finalization,
+                    error,
+                ),
+            )
         finalization = self._finalize(
             binding,
             price_card,

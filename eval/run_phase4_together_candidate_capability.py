@@ -13,10 +13,16 @@ import httpx
 from pydantic import ValidationError
 
 from .authoring_cli import safe_authoring_error
-from .fixture_io import load_fixture
+from .fixture_io import content_sha256, load_fixture
 from .phase4_capability import (
     CapabilityInterviewerTools,
     TogetherCapabilityPlan,
+)
+from .phase4_capability_adjudication import (
+    TogetherAdjudicatedCandidateCapabilityAuthorization,
+    load_capability_adjudication_policy,
+    validate_adjudicated_candidate_authorization,
+    validate_capability_adjudication_policy,
 )
 from .phase4_capability_continuation import (
     TogetherCandidateCapabilityAuthorizationBundle,
@@ -34,6 +40,7 @@ from .phase4_readiness import (
     load_exact_tokenizers,
     load_readiness_bundle,
 )
+from .phase4_provider import ProviderStructuredOutputDiagnostic
 from .phase4_robustness import load_phase4_robustness_profile
 from .phase4_semantic import load_authored_semantic_map
 from .phase4_together import load_together_suite
@@ -70,11 +77,38 @@ def _checkpoint(
     temporary.replace(path)
 
 
+def _diagnostic_path(state_output: Path) -> Path:
+    return state_output.with_name(
+        f"{state_output.stem}_validation_diagnostic.json"
+    )
+
+
+def _write_validation_diagnostic(
+    path: Path,
+    diagnostic: ProviderStructuredOutputDiagnostic,
+) -> None:
+    if path.exists():
+        existing = ProviderStructuredOutputDiagnostic.model_validate_json(
+            path.read_text(encoding="utf-8")
+        )
+        if existing != diagnostic:
+            raise ValueError("candidate validation diagnostic already differs")
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(f"{path.suffix}.tmp")
+    temporary.write_text(
+        f"{diagnostic.model_dump_json(indent=2)}\n",
+        encoding="utf-8",
+    )
+    temporary.replace(path)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Execute one five-call public-development capability plan."
     )
     parser.add_argument("continuation", type=Path)
+    parser.add_argument("adjudication_policy", type=Path)
     parser.add_argument("historical_plan", type=Path)
     parser.add_argument("corrected_plan", type=Path)
     parser.add_argument("historical_suite", type=Path)
@@ -87,6 +121,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("development_semantic_map", type=Path)
     parser.add_argument("catalog_preflight_bundle", type=Path)
     parser.add_argument("authorization_bundle", type=Path)
+    parser.add_argument("provisional_authorization", type=Path)
+    parser.add_argument("provisional_state", type=Path)
     parser.add_argument("candidate_id")
     parser.add_argument("state_output", type=Path)
     parser.add_argument(
@@ -116,8 +152,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         if not args.execute_paid_candidate_capability:
             raise ValueError("paid candidate capability execution is not confirmed")
         state_output = _private_output(args.state_output)
+        diagnostic_output = _private_output(_diagnostic_path(state_output))
         continuation = TogetherCapabilityContinuationPlan.model_validate_json(
             args.continuation.read_text(encoding="utf-8")
+        )
+        adjudication_policy = load_capability_adjudication_policy(
+            args.adjudication_policy
         )
         historical_plan = TogetherCapabilityPlan.model_validate_json(
             args.historical_plan.read_text(encoding="utf-8")
@@ -136,6 +176,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         profile = load_phase4_robustness_profile(args.profile)
         historical_readiness = load_readiness_bundle(args.historical_readiness)
         readiness = load_readiness_bundle(args.corrected_readiness)
+        provisional_authorization = (
+            TogetherCandidateCapabilityAuthorizationBundle.model_validate_json(
+                args.provisional_authorization.read_text(encoding="utf-8")
+            )
+        )
+        provisional_state = (
+            TogetherCandidateCapabilityExecutionState.model_validate_json(
+                args.provisional_state.read_text(encoding="utf-8")
+            )
+        )
         fixture = load_fixture(args.development_fixture)
         session = load_session_script(args.development_session)
         semantic_map = load_authored_semantic_map(
@@ -155,6 +205,17 @@ def main(argv: Sequence[str] | None = None) -> int:
             session,
             semantic_map,
         )
+        validate_capability_adjudication_policy(
+            adjudication_policy,
+            continuation,
+            corrected_plan,
+            suite,
+            profile,
+            provisional_authorization,
+            provisional_state,
+        )
+        if args.candidate_id not in adjudication_policy.remaining_candidate_ids:
+            raise ValueError("candidate is outside adjudication continuation")
         plan = candidate_plan_for(continuation, args.candidate_id)
         if args.confirm_max_spend_microusd != (
             plan.candidate_capability_max_spend_microusd
@@ -163,11 +224,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         catalog = TogetherCatalogPreflightBundle.model_validate_json(
             args.catalog_preflight_bundle.read_text(encoding="utf-8")
         )
-        authorization = (
-            TogetherCandidateCapabilityAuthorizationBundle.model_validate_json(
+        adjudicated_authorization = (
+            TogetherAdjudicatedCandidateCapabilityAuthorization.model_validate_json(
                 args.authorization_bundle.read_text(encoding="utf-8")
             )
         )
+        validate_adjudicated_candidate_authorization(
+            adjudicated_authorization,
+            adjudication_policy,
+        )
+        authorization = adjudicated_authorization.candidate_authorization
         now = datetime.now(timezone.utc)
         validate_candidate_capability_authorization_bundle(
             authorization,
@@ -186,6 +252,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                     state_output.read_text(encoding="utf-8")
                 )
             )
+        elif diagnostic_output.exists():
+            raise ValueError("candidate diagnostic exists without execution state")
         counters = load_exact_tokenizers(
             suite,
             args.tokenizer_cache,
@@ -237,7 +305,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                 journal_id=f"{state_id}_journal",
                 clock=lambda: datetime.now(timezone.utc),
                 prior_state=prior_state,
+                authorization_binding_sha256=content_sha256(
+                    adjudicated_authorization
+                ),
                 checkpoint=lambda value: _checkpoint(state_output, value),
+                validation_diagnostic_sink=lambda value: (
+                    _write_validation_diagnostic(diagnostic_output, value)
+                ),
             )
         print(
             json.dumps(
