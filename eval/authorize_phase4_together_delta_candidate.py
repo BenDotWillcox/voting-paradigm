@@ -19,8 +19,8 @@ from .phase4_capability_recovery import (
     TogetherDeltaCandidateExecutionState,
     build_delta_candidate_authorization_bundle,
     delta_candidate_plan_for,
-    load_capability_delta_plan,
-    load_capability_delta_source_proof,
+    load_executable_capability_delta_plan,
+    load_executable_capability_delta_source_proof,
     validate_capability_delta_execution_inputs,
 )
 from .phase4_readiness import load_readiness_bundle
@@ -85,8 +85,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         output = _private_output(args.output)
-        delta = load_capability_delta_plan(args.delta)
-        source_proof = load_capability_delta_source_proof(args.source_proof)
+        delta = load_executable_capability_delta_plan(args.delta)
+        source_proof = load_executable_capability_delta_source_proof(
+            args.source_proof
+        )
         corrected_plan = TogetherCapabilityPlan.model_validate_json(
             args.corrected_plan.read_text(encoding="utf-8")
         )

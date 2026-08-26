@@ -1,0 +1,19 @@
+{
+  "record_version": "phase4_selector_recovery_source_proof.v2",
+  "proof_id": "phase4_together_selector_recovery_source_proof_v2",
+  "proof_version": 2,
+  "validated_at": "2026-08-26T20:20:00Z",
+  "selector_recovery_delta_sha256": "0a09365d59e01694fbe33a3d4d3b6af335c35a01f0e45ae658467309bd53adb4",
+  "parent_delta_plan_sha256": "25d286a8ceb16373e6868bb62bd81d3cf9b4cb0d2255f4ce02f66b2d4687f8e2",
+  "parent_delta_source_proof_sha256": "58d65a797d832a39ae1c3e2f65cddff893a296e04fa88b07f97ab89a187d5b15",
+  "latest_selector_authorization_sha256": "7a18c3c66dbc51f21a00c11a876a5d071541e5d6ad2133f08ab685d4b4d9e2fe",
+  "latest_selector_state_sha256": "6f3d4ebab8c511b8c34c28eec5a88f7512ab03bb1e942cc8b5449bcab28ba1ef",
+  "latest_selector_diagnostic_sha256": "45a67467be0f3a1e783f415c53ce7779553b5953d8126ee62576a9182af4da28",
+  "source_attempts_sha256": "9c95389ad520ffb7cc9e085631543629f3d662adaf5df8305b2579a54a3e36f7",
+  "carried_forward_successes_sha256": "23ec6f5d0ea36ed93c1a7ed5eaced29a929ee631a42e4c3986ff02aaeb70c2ce",
+  "rerun_calls_sha256": "3ae9ae049e04efe42ad582aeee62f7a004c40fdbbd158d87a08ee42fe924c4a8",
+  "provider_response_semantics_manifest_sha256": "944efa35f60c3a9286f96b201ef21a9b1ff7ecda1a9a6ae96369c491e959523b",
+  "full_private_source_rebuild_passed": true,
+  "parent_audit_artifact_hashes_bound": true,
+  "values_messages_and_context_omitted": true
+}

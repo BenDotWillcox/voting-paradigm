@@ -86,6 +86,11 @@ PositiveFiniteFloat = Annotated[float, Field(gt=0.0, allow_inf_nan=False)]
 TOGETHER_API_KEY_ENV = "TOGETHER_API_KEY"
 DEFAULT_HTTP_TIMEOUT_SECONDS = 120.0
 DEFAULT_MAX_TOOL_ROUNDS = TOGETHER_INTERVIEWER_PROVIDER_ROUND_LIMIT - 1
+INTERVIEWER_TOOL_RESULT_CONTEXT_VERSION = (
+    "phase4_interviewer_tool_result_context.v1"
+)
+INTERVIEWER_TOOL_RESULT_CONTEXT_MINIMUM_SCHEMA_VERSION = 3
+_CANDIDATE_QUESTION_TOOL_NAME = "read_candidate_question_scores"
 
 
 def _require_aware(value: datetime, label: str) -> None:
@@ -1412,6 +1417,12 @@ class TogetherHTTPTransport:
         choices_seen: list[_TogetherChoice] = []
         tool_call_count = 0
         tool_call_failure_count = 0
+        candidate_question_results: list[JsonValue] = []
+        captures_interviewer_context = (
+            request.binding.role is LLMRole.INTERVIEWER
+            and request.binding.response_schema_version
+            >= INTERVIEWER_TOOL_RESULT_CONTEXT_MINIMUM_SCHEMA_VERSION
+        )
         cumulative_local_input_tokens = 0
         allowed_tool_names = {
             str(item["name"]) for item in request.tool_definitions
@@ -1524,18 +1535,44 @@ class TogetherHTTPTransport:
                     output = json.loads(output)
                 except json.JSONDecodeError:
                     pass
+                latency_ms = (time.perf_counter() - started) * 1000
+                completed_at = self._clock()
+                seed_status = _seed_status(request, choices_seen)
+                if not captures_interviewer_context:
+                    return ProviderTransportResult(
+                        outcome=ProviderCallOutcome.SUCCESS,
+                        output_payload=output,
+                        input_tokens=total_input,
+                        output_tokens=total_output,
+                        provider_request_id="|".join(request_ids),
+                        provider_request_sent=True,
+                        provider_seed_status=seed_status,
+                        tool_call_count=tool_call_count,
+                        tool_call_failure_count=tool_call_failure_count,
+                        latency_ms=latency_ms,
+                        completed_at=completed_at,
+                    )
+                response_validation_context: JsonValue = {
+                    "record_version": INTERVIEWER_TOOL_RESULT_CONTEXT_VERSION,
+                    "candidate_question_results": candidate_question_results,
+                }
                 return ProviderTransportResult(
+                    record_version="phase4_provider_transport_result.v2",
+                    response_validation_context=response_validation_context,
+                    response_validation_context_sha256=content_sha256(
+                        response_validation_context
+                    ),
                     outcome=ProviderCallOutcome.SUCCESS,
                     output_payload=output,
                     input_tokens=total_input,
                     output_tokens=total_output,
                     provider_request_id="|".join(request_ids),
                     provider_request_sent=True,
-                    provider_seed_status=_seed_status(request, choices_seen),
+                    provider_seed_status=seed_status,
                     tool_call_count=tool_call_count,
                     tool_call_failure_count=tool_call_failure_count,
-                    latency_ms=(time.perf_counter() - started) * 1000,
-                    completed_at=self._clock(),
+                    latency_ms=latency_ms,
+                    completed_at=completed_at,
                 )
             if tool_round >= self._max_tool_rounds:
                 return ProviderTransportResult(
@@ -1578,6 +1615,12 @@ class TogetherHTTPTransport:
                         tool_call.function.name,
                         arguments,
                     )
+                    if (
+                        captures_interviewer_context
+                        and tool_call.function.name
+                        == _CANDIDATE_QUESTION_TOOL_NAME
+                    ):
+                        candidate_question_results.append(result)
                 except (json.JSONDecodeError, ValidationError, ValueError):
                     tool_call_failure_count += 1
                     return ProviderTransportResult(

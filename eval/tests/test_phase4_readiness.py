@@ -12,22 +12,37 @@ from tokenizers.pre_tokenizers import Whitespace
 
 from eval.fixture_io import content_sha256, load_fixture
 from eval.phase4_readiness import (
+    HELD_OUT_INTERVIEWER_CANDIDATE_WINDOW,
+    QUALIFICATION_INTERVIEWER_CANDIDATE_WINDOW,
+    READINESS_V5_CREATED_AT,
     HeldOutCalibrationKind,
     Phase4TogetherReadinessBundle,
     QualificationVariant,
     TogetherExactTokenCounterSet,
+    _planning_request,
+    _projected_provider_payloads,
+    _request_template,
     _role_input_payload,
+    build_qualification_request_manifest,
     build_qualification_resume_cursor,
     load_exact_tokenizer_from_snapshot,
     load_readiness_bundle,
     qualification_remaining_entries,
     readiness_summary,
+    rebuild_qualification_call,
     validate_readiness_bundle,
+)
+from eval.phase4_provider_semantics import (
+    PROVIDER_RESPONSE_SELECTOR_VALIDATOR_VERSION,
 )
 from eval.phase4_robustness import load_phase4_robustness_profile
 from eval.phase4_robustness import LLMRole
 from eval.phase4_semantic import load_authored_semantic_map
-from eval.phase4_together import load_together_suite
+from eval.phase4_together import (
+    build_default_together_suite,
+    build_together_suite_v4,
+    load_together_suite,
+)
 from eval.prequential import load_session_script
 from eval.validate_phase4_readiness import main as validate_main
 
@@ -35,6 +50,9 @@ from eval.validate_phase4_readiness import main as validate_main
 FIXTURES = Path(__file__).parents[1] / "fixtures"
 READINESS_PATH = (
     FIXTURES / "preference_eval_phase4_together_readiness_v3.json"
+)
+READINESS_V4_PATH = (
+    FIXTURES / "preference_eval_phase4_together_readiness_v4.json"
 )
 SUITE_PATH = FIXTURES / "preference_eval_phase4_together_v3.json"
 PROFILE_PATH = FIXTURES / "preference_eval_phase4_robustness_v1.json"
@@ -63,6 +81,19 @@ def validate(bundle: Phase4TogetherReadinessBundle) -> None:
         session,
         semantic_map,
     )
+
+
+class ConstantTokenCounter:
+    def count(self, text: str) -> int:
+        assert text
+        return 1
+
+
+def _constant_counters(suite):
+    return {
+        item.candidate.candidate_id: ConstantTokenCounter()
+        for item in suite.candidates
+    }
 
 
 def test_tracked_readiness_bundle_validates_and_records_zero_spend():
@@ -108,6 +139,136 @@ def test_tracked_readiness_bundle_validates_and_records_zero_spend():
         "together_gpt_oss_120b": 11_658_764,
         "together_nemotron_3_ultra_550b_a55b": 5_919_080,
     }
+
+
+def test_v4_readiness_and_interviewer_request_remain_exact() -> None:
+    legacy_suite = build_together_suite_v4(
+        load_phase4_robustness_profile(PROFILE_PATH)
+    )
+    bundle = load_readiness_bundle(READINESS_V4_PATH)
+    fixture = load_fixture(DEV_FIXTURE_PATH)
+    session = load_session_script(DEV_SESSION_PATH)
+    semantic_map = load_authored_semantic_map(DEV_MAP_PATH)
+    robustness_profile = load_phase4_robustness_profile(PROFILE_PATH)
+
+    validate_readiness_bundle(
+        bundle,
+        legacy_suite,
+        robustness_profile,
+        fixture,
+        session,
+        semantic_map,
+    )
+    assert content_sha256(bundle) == (
+        "517e955976eaeec708cbedfadb46673038dcfd47e472407573997c4913ab1cd5"
+    )
+    entry = next(
+        item
+        for item in bundle.qualification_manifest.entries
+        if item.coordinate.role is LLMRole.INTERVIEWER
+    )
+    rebuilt = rebuild_qualification_call(
+        legacy_suite,
+        robustness_profile,
+        fixture,
+        session,
+        semantic_map,
+        entry,
+        created_at=bundle.qualification_manifest.created_at,
+    )
+    assert rebuilt.request.binding.response_schema_version == 2
+    assert rebuilt.request.binding.response_validator_version == 1
+
+
+def test_v5_readiness_uses_selector_request_and_candidate_windows() -> None:
+    robustness_profile = load_phase4_robustness_profile(PROFILE_PATH)
+    current_suite = build_default_together_suite(robustness_profile)
+    fixture = load_fixture(DEV_FIXTURE_PATH)
+    session = load_session_script(DEV_SESSION_PATH)
+    semantic_map = load_authored_semantic_map(DEV_MAP_PATH)
+    manifest = build_qualification_request_manifest(
+        current_suite,
+        robustness_profile,
+        fixture,
+        session,
+        semantic_map,
+        _constant_counters(current_suite),
+    )
+
+    assert manifest.plan_version == 4
+    assert manifest.created_at == READINESS_V5_CREATED_AT
+    entry = next(
+        item
+        for item in manifest.entries
+        if item.coordinate.role is LLMRole.INTERVIEWER
+    )
+    rebuilt = rebuild_qualification_call(
+        current_suite,
+        robustness_profile,
+        fixture,
+        session,
+        semantic_map,
+        entry,
+        created_at=manifest.created_at,
+    )
+    assert rebuilt.request.binding.response_schema_version == 3
+    assert rebuilt.request.binding.response_validator_version == (
+        PROVIDER_RESPONSE_SELECTOR_VALIDATOR_VERSION
+    )
+    qualification_payloads = _projected_provider_payloads(
+        current_suite,
+        rebuilt.request,
+    )
+    qualification_messages = qualification_payloads[-1]["messages"]
+    assert isinstance(qualification_messages, list)
+    qualification_result = json.loads(
+        qualification_messages[-1]["content"]
+    )
+    assert len(qualification_result["candidates"]) == (
+        QUALIFICATION_INTERVIEWER_CANDIDATE_WINDOW
+    )
+
+    candidate = current_suite.candidates[0]
+    role_contract = next(
+        item
+        for item in current_suite.shared_role_contracts
+        if item.role is LLMRole.INTERVIEWER
+    )
+    template = _request_template(
+        current_suite,
+        fixture,
+        session,
+        semantic_map,
+        candidate=candidate.candidate,
+        price_card=candidate.price_card,
+        role_contract=role_contract,
+        measure_index=0,
+        variant=QualificationVariant.CANONICAL,
+        held_out_wave_index=6,
+        held_out_calibration_kind=HeldOutCalibrationKind.INITIAL_WAVE,
+    )
+    held_out_request = _planning_request(
+        robustness_profile,
+        template,
+        call_id="public_held_out_interviewer_projection_test",
+        created_at=READINESS_V5_CREATED_AT,
+    )
+    held_out_payloads = _projected_provider_payloads(
+        current_suite,
+        held_out_request,
+    )
+    held_out_messages = held_out_payloads[-1]["messages"]
+    assert isinstance(held_out_messages, list)
+    held_out_result = json.loads(held_out_messages[-1]["content"])
+    assert len(held_out_result["candidates"]) == (
+        HELD_OUT_INTERVIEWER_CANDIDATE_WINDOW
+    )
+    assert len(
+        {
+            content_sha256(item)
+            for item in held_out_result["candidates"]
+        }
+    ) == 1
 
 
 def test_qualification_plan_has_exact_role_and_variant_matrix():

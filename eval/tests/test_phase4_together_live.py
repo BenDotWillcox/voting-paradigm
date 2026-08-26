@@ -7,10 +7,16 @@ from pathlib import Path
 
 import httpx
 import pytest
-from pydantic import SecretStr, TypeAdapter, ValidationError
+from pydantic import JsonValue, SecretStr, TypeAdapter, ValidationError
 
 from eval.contracts import ContractModel
 from eval.fixture_io import content_sha256
+from eval.phase4_capability import CapabilityInterviewerTools
+from eval.phase4_interviewer import (
+    AskVettedQuestionDecision,
+    ReadCandidateQuestionScoresResult,
+    VettedQuestionCandidate,
+)
 from eval.phase4_provider import (
     ProviderBudgetRuntime,
     ProviderCallOutcome,
@@ -18,6 +24,10 @@ from eval.phase4_provider import (
     build_public_development_attestation,
     prepare_provider_request,
     price_provider_tokens,
+)
+from eval.phase4_provider_semantics import (
+    build_public_capability_question,
+    provider_response_adapter_for_role,
 )
 from eval.phase4_robustness import (
     BudgetSegment,
@@ -27,6 +37,7 @@ from eval.phase4_robustness import (
 from eval.phase4_together import (
     Phase4TogetherSuite,
     load_together_suite,
+    tool_definitions_for_role,
 )
 from eval.phase4_together_live import (
     TogetherAccountPrivacyAttestation,
@@ -40,6 +51,7 @@ from eval.phase4_together_live import (
     TogetherHTTPTransport,
     TogetherHeadroomPolicy,
     TogetherLiveAuthorization,
+    TogetherInterviewerToolExecutor,
     TogetherPaidStage,
     TogetherPublicSourceCheck,
     TogetherPublicSourceReverification,
@@ -58,6 +70,7 @@ PROFILE_PATH = (
     ROOT / "eval/fixtures/preference_eval_phase4_robustness_v1.json"
 )
 SUITE_PATH = ROOT / "eval/fixtures/preference_eval_phase4_together_v3.json"
+SUITE_V5_PATH = ROOT / "eval/fixtures/preference_eval_phase4_together_v5.json"
 NOW = datetime(2026, 8, 21, 15, 0, tzinfo=timezone.utc)
 
 
@@ -349,6 +362,8 @@ def prepared_request(
     role: LLMRole = LLMRole.DIRECT_READOUT,
     call_id: str | None = None,
     created_at: datetime | None = None,
+    interviewer_tools: list[dict[str, JsonValue]] | None = None,
+    response_schema_version: int = 1,
 ):
     artifact = loaded.candidates[1]
     role_contract = {
@@ -356,17 +371,23 @@ def prepared_request(
     }[role]
     tools = []
     if role is LLMRole.INTERVIEWER:
-        tools = [
-            {
-                "name": "read_evidence_coverage",
-                "description": "Read aggregate confirmed-evidence coverage.",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {},
-                    "additionalProperties": False,
-                },
-            }
-        ]
+        tools = (
+            interviewer_tools
+            if interviewer_tools is not None
+            else [
+                {
+                    "name": "read_evidence_coverage",
+                    "description": (
+                        "Read aggregate confirmed-evidence coverage."
+                    ),
+                    "input_schema": {
+                        "type": "object",
+                        "properties": {},
+                        "additionalProperties": False,
+                    },
+                }
+            ]
+        )
     prompt_payload = {"system": role_contract.prompt_text}
     input_payload = {"public_case": "case_one"}
     schema = OUTPUT_ADAPTER.json_schema(mode="validation")
@@ -388,7 +409,7 @@ def prepared_request(
         prompt_payload=prompt_payload,
         input_payload=input_payload,
         response_schema_id="demo_output",
-        response_schema_version=1,
+        response_schema_version=response_schema_version,
         response_adapter=OUTPUT_ADAPTER,
         privacy_attestation=attestation,
         request_seed=42,
@@ -397,6 +418,70 @@ def prepared_request(
         input_token_upper_bound=100,
         output_token_upper_bound=20,
         created_at=created_at or NOW + timedelta(minutes=1),
+        tool_definitions=tools,
+    )
+
+
+def prepared_selector_interviewer_request(
+    loaded: Phase4TogetherSuite,
+    question: VettedQuestionCandidate,
+):
+    artifact = loaded.candidates[1]
+    role_contract = next(
+        item
+        for item in loaded.shared_role_contracts
+        if item.role is LLMRole.INTERVIEWER
+    )
+    prompt_payload = {
+        "record_version": "phase4_together_qualification_prompt.v1",
+        "role": LLMRole.INTERVIEWER.value,
+        "instructions": role_contract.prompt_text,
+        "canonical_prompt_id": role_contract.prompt_id,
+        "canonical_prompt_sha256": role_contract.prompt_sha256,
+        "variant_id": "canonical",
+    }
+    input_payload = {
+        "record_version": "phase4_public_selector_integration_input.v1",
+        "target_packet_visible": False,
+        "provider_response_conformance": {
+            "contract_version": 1,
+            "expected_vetted_question": question.model_dump(mode="json"),
+        },
+    }
+    response_contract = provider_response_adapter_for_role(
+        LLMRole.INTERVIEWER,
+        response_schema_version=3,
+        input_payload=input_payload,
+        bind_request_semantics=True,
+    )
+    tools = tool_definitions_for_role(LLMRole.INTERVIEWER)
+    privacy_attestation = build_public_development_attestation(
+        attestation_id="together_interviewer_selector_privacy_test",
+        prompt_payload=prompt_payload,
+        input_payload=input_payload,
+        response_json_schema=response_contract.json_schema(mode="validation"),
+        tool_definitions=tools,
+    )
+    return prepare_provider_request(
+        profile(),
+        artifact.candidate,
+        artifact.price_card,
+        call_id="together_interviewer_selector_call_test",
+        role=LLMRole.INTERVIEWER,
+        prompt_id=role_contract.prompt_id,
+        prompt_version=role_contract.prompt_version,
+        prompt_payload=prompt_payload,
+        input_payload=input_payload,
+        response_schema_id=role_contract.response_schema_id,
+        response_schema_version=role_contract.response_schema_version,
+        response_adapter=response_contract,
+        privacy_attestation=privacy_attestation,
+        request_seed=42,
+        provider_seed_parameter_sent=True,
+        temperature=0.0,
+        input_token_upper_bound=1_000,
+        output_token_upper_bound=100,
+        created_at=NOW + timedelta(minutes=1),
         tool_definitions=tools,
     )
 
@@ -480,6 +565,108 @@ def chat_response(
             "total_tokens": prompt_tokens + completion_tokens,
         },
     }
+
+
+def run_selector_interviewer(
+    *,
+    selected_question_id: str | None = None,
+):
+    loaded = load_together_suite(SUITE_V5_PATH)
+    assert loaded.suite_version == 5
+    item_ids = ["public_selector_item_b", "public_selector_item_a"]
+    question = build_public_capability_question(item_ids)
+    request = prepared_selector_interviewer_request(loaded, question)
+    assert request.binding.response_schema_version == 3
+    assert request.response_validator is not None
+    assert request.response_validator.validator_version == 2
+    calls = 0
+
+    def handler(http_request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        sent = json.loads(http_request.content)
+        if calls == 1:
+            assert sent["tool_choice"] == "required"
+            assert "response_format" not in sent
+            return httpx.Response(
+                200,
+                json=chat_response(
+                    content=None,
+                    prompt_tokens=5,
+                    completion_tokens=2,
+                    tool_calls=[
+                        {
+                            "id": "selector_tool_call",
+                            "type": "function",
+                            "function": {
+                                "name": "read_candidate_question_scores",
+                                "arguments": '{"limit":1}',
+                            },
+                        }
+                    ],
+                ),
+            )
+        assert calls == 2
+        assert sent["messages"][-1]["name"] == (
+            "read_candidate_question_scores"
+        )
+        tool_result = json.loads(sent["messages"][-1]["content"])
+        assert tool_result == ReadCandidateQuestionScoresResult(
+            candidates=[question],
+            model_version="capability_preflight_v1",
+        ).model_dump(mode="json")
+        assert "tools" not in sent
+        assert sent["response_format"]["type"] == "json_schema"
+        return httpx.Response(
+            200,
+            json=chat_response(
+                content=json.dumps(
+                    {
+                        "record_version": (
+                            "phase4_ask_vetted_question_selector.v1"
+                        ),
+                        "action": "ask_vetted_question",
+                        "selected_question_id": (
+                            selected_question_id or question.question_id
+                        ),
+                        "rendering_mode": "canonical_vetted",
+                    },
+                    separators=(",", ":"),
+                    sort_keys=True,
+                ),
+                prompt_tokens=8,
+                completion_tokens=3,
+            ),
+        )
+
+    runtime = ProviderBudgetRuntime(
+        profile(),
+        ledger_id="together_selector_ledger",
+        journal_id="together_selector_journal",
+    )
+    execution = runtime.execute(
+        request,
+        loaded.candidates[1].price_card,
+        None,
+        transport(
+            loaded,
+            handler,
+            tool_executor=TogetherInterviewerToolExecutor(
+                CapabilityInterviewerTools(item_ids)
+            ),
+        ),
+        segment=BudgetSegment.QUALIFICATION,
+    )
+    expected_context = {
+        "record_version": "phase4_interviewer_tool_result_context.v1",
+        "candidate_question_results": [
+            ReadCandidateQuestionScoresResult(
+                candidates=[question],
+                model_version="capability_preflight_v1",
+            ).model_dump(mode="json")
+        ],
+    }
+    return loaded, runtime, execution, question, expected_context, calls
 
 
 def test_local_api_key_loader_never_serializes_secret(tmp_path: Path) -> None:
@@ -856,7 +1043,257 @@ def test_live_transport_executes_bounded_interviewer_tool_loop() -> None:
     assert result.output_tokens == 5
     assert result.tool_call_count == 1
     assert result.tool_call_failure_count == 0
+    assert result.record_version == "phase4_provider_transport_result.v1"
+    assert result.response_validation_context is None
+    assert result.response_validation_context_sha256 is None
     assert calls == 2
+
+
+def test_interviewer_retains_exact_candidate_tool_results_ephemerally() -> None:
+    loaded = suite()
+    candidate_tool = {
+        "name": "read_candidate_question_scores",
+        "description": "Read exact vetted candidate questions.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "limit": {"type": "integer"},
+            },
+            "additionalProperties": False,
+        },
+    }
+    request = prepared_request(
+        loaded,
+        role=LLMRole.INTERVIEWER,
+        interviewer_tools=[candidate_tool],
+        response_schema_version=3,
+    )
+    marker = "exact_candidate_context_must_remain_ephemeral"
+    typed_results = [
+        ReadCandidateQuestionScoresResult(
+            candidates=[],
+            model_version=marker,
+        ),
+        ReadCandidateQuestionScoresResult(
+            candidates=[],
+            model_version=f"{marker}_second",
+        ),
+    ]
+    exact_results: list[JsonValue] = [
+        item.model_dump(mode="json") for item in typed_results
+    ]
+    observed_tool_limits: list[int] = []
+    provider_round = 0
+
+    class InterviewerTools:
+        def read_candidate_question_scores(self, request):
+            observed_tool_limits.append(request.limit)
+            return typed_results[len(observed_tool_limits) - 1]
+
+        def read_posterior_uncertainty(self, request):
+            raise AssertionError(request)
+
+        def read_evidence_coverage(self, request):
+            raise AssertionError(request)
+
+        def read_evidence_conflicts(self, request):
+            raise AssertionError(request)
+
+    def handler(http_request: httpx.Request) -> httpx.Response:
+        nonlocal provider_round
+        provider_round += 1
+        sent = json.loads(http_request.content)
+        if provider_round == 1:
+            return httpx.Response(
+                200,
+                json=chat_response(
+                    content=None,
+                    prompt_tokens=5,
+                    completion_tokens=2,
+                    tool_calls=[
+                        {
+                            "id": "candidate_tool_call_one",
+                            "type": "function",
+                            "function": {
+                                "name": "read_candidate_question_scores",
+                                "arguments": '{"limit":1}',
+                            },
+                        },
+                        {
+                            "id": "candidate_tool_call_two",
+                            "type": "function",
+                            "function": {
+                                "name": "read_candidate_question_scores",
+                                "arguments": '{"limit":2}',
+                            },
+                        },
+                    ],
+                ),
+            )
+        assert sent["messages"][-2]["content"] == json.dumps(
+            exact_results[0],
+            ensure_ascii=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        )
+        assert sent["messages"][-1]["content"] == json.dumps(
+            exact_results[1],
+            ensure_ascii=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        )
+        return httpx.Response(
+            200,
+            json=chat_response(
+                content='{"choice":"pause","confidence":0.6}',
+                prompt_tokens=8,
+                completion_tokens=3,
+            ),
+        )
+
+    result = transport(
+        loaded,
+        handler,
+        tool_executor=TogetherInterviewerToolExecutor(InterviewerTools()),
+    ).invoke(request)
+
+    expected_context = {
+        "record_version": "phase4_interviewer_tool_result_context.v1",
+        "candidate_question_results": exact_results,
+    }
+    assert provider_round == 2
+    assert observed_tool_limits == [1, 2]
+    assert result.outcome is ProviderCallOutcome.SUCCESS
+    assert result.tool_call_count == 2
+    assert result.record_version == "phase4_provider_transport_result.v2"
+    assert result.response_validation_context == expected_context
+    assert result.response_validation_context_sha256 == content_sha256(
+        expected_context
+    )
+    persisted = result.model_dump(mode="json")
+    assert "response_validation_context" not in persisted
+    assert persisted["response_validation_context_sha256"] == content_sha256(
+        expected_context
+    )
+    assert marker not in json.dumps(persisted, sort_keys=True)
+    assert marker not in repr(result)
+
+
+def test_selector_interviewer_hydrates_and_audits_through_live_runtime() -> None:
+    (
+        loaded,
+        runtime,
+        execution,
+        question,
+        expected_context,
+        calls,
+    ) = run_selector_interviewer()
+    expected = AskVettedQuestionDecision(
+        question=question,
+        rendering_mode="canonical_vetted",
+    )
+
+    assert calls == 2
+    assert isinstance(execution.output, AskVettedQuestionDecision)
+    assert execution.output.model_dump_json() == expected.model_dump_json()
+    assert execution.output.model_dump(mode="json") == expected.model_dump(
+        mode="json"
+    )
+    assert execution.finalization.outcome is ProviderCallOutcome.SUCCESS
+    assert execution.finalization.response_sha256 == content_sha256(
+        expected.model_dump(mode="json")
+    )
+    assert execution.finalization.record_version == (
+        "phase4_provider_call_finalization.v2"
+    )
+    assert execution.finalization.response_validation_context_sha256 == (
+        content_sha256(expected_context)
+    )
+    artifact = loaded.candidates[1]
+    runtime.audit([artifact.candidate], [artifact.price_card])
+
+    persisted = json.dumps(
+        {
+            "ledger": runtime.ledger_snapshot().model_dump(mode="json"),
+            "journal": runtime.journal_snapshot().model_dump(mode="json"),
+        },
+        sort_keys=True,
+    )
+    raw_context = json.dumps(expected_context, sort_keys=True)
+    assert raw_context not in persisted
+    assert question.prompt not in persisted
+    assert question.question_id not in persisted
+    assert content_sha256(expected_context) in persisted
+
+
+def test_selector_interviewer_rejects_unreturned_selector_without_leak() -> None:
+    planted_id = "planted_unreturned_question_secret"
+    (
+        loaded,
+        runtime,
+        execution,
+        question,
+        expected_context,
+        calls,
+    ) = run_selector_interviewer(
+        selected_question_id=planted_id,
+    )
+
+    assert calls == 2
+    assert execution.output is None
+    assert execution.finalization.outcome is ProviderCallOutcome.INVALID_OUTPUT
+    assert execution.finalization.response_sha256 is None
+    assert execution.finalization.response_validation_context_sha256 == (
+        content_sha256(expected_context)
+    )
+    assert execution.validation_diagnostic is not None
+    assert execution.validation_diagnostic.error_count == 1
+    assert execution.validation_diagnostic.issues[0].model_dump(mode="json") == {
+        "path": ["selected_question_id"],
+        "error_type": "question_selector_not_returned",
+    }
+    assert runtime.ledger_snapshot().calls[0].billed_cost_microusd > 0
+    artifact = loaded.candidates[1]
+    runtime.audit([artifact.candidate], [artifact.price_card])
+
+    persisted = json.dumps(
+        {
+            "diagnostic": execution.validation_diagnostic.model_dump(
+                mode="json"
+            ),
+            "ledger": runtime.ledger_snapshot().model_dump(mode="json"),
+            "journal": runtime.journal_snapshot().model_dump(mode="json"),
+        },
+        sort_keys=True,
+    )
+    assert planted_id not in persisted
+    assert question.prompt not in persisted
+    assert question.question_id not in persisted
+    assert content_sha256(expected_context) in persisted
+
+
+def test_non_interviewer_transport_result_has_no_validation_context() -> None:
+    loaded = suite()
+    request = prepared_request(loaded)
+
+    result = transport(
+        loaded,
+        lambda request: httpx.Response(
+            200,
+            json=chat_response(
+                content='{"choice":"yes","confidence":0.8}',
+                prompt_tokens=5,
+                completion_tokens=3,
+            ),
+        ),
+    ).invoke(request)
+
+    assert result.record_version == "phase4_provider_transport_result.v1"
+    assert result.response_validation_context is None
+    assert result.response_validation_context_sha256 is None
+    persisted = result.model_dump(mode="json")
+    assert "response_validation_context" not in persisted
+    assert "response_validation_context_sha256" not in persisted
 
 
 def test_v3_interviewer_fails_when_required_tool_call_is_missing() -> None:

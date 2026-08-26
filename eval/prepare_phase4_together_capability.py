@@ -28,6 +28,21 @@ from .prequential import load_session_script
 CAPABILITY_PLAN_V1_CREATED_AT = datetime(2026, 8, 21, 22, 0, tzinfo=UTC)
 CAPABILITY_PLAN_V2_CREATED_AT = datetime(2026, 8, 21, 23, 0, tzinfo=UTC)
 CAPABILITY_PLAN_V3_CREATED_AT = datetime(2026, 8, 22, 5, 10, tzinfo=UTC)
+CAPABILITY_PLAN_V4_CREATED_AT = datetime(2026, 8, 26, 20, 10, tzinfo=UTC)
+
+
+def capability_plan_version_and_time(
+    suite_version: int,
+) -> tuple[int, datetime]:
+    """Return the frozen plan identity for one Together suite generation."""
+
+    if suite_version >= 5:
+        return 4, CAPABILITY_PLAN_V4_CREATED_AT
+    if suite_version >= 4:
+        return 3, CAPABILITY_PLAN_V3_CREATED_AT
+    if suite_version >= 3:
+        return 2, CAPABILITY_PLAN_V2_CREATED_AT
+    return 1, CAPABILITY_PLAN_V1_CREATED_AT
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -57,15 +72,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         semantic_map = load_authored_semantic_map(
             args.development_semantic_map
         )
-        if suite.suite_version >= 4:
-            plan_version = 3
-            created_at = CAPABILITY_PLAN_V3_CREATED_AT
-        elif suite.suite_version >= 3:
-            plan_version = 2
-            created_at = CAPABILITY_PLAN_V2_CREATED_AT
-        else:
-            plan_version = 1
-            created_at = CAPABILITY_PLAN_V1_CREATED_AT
+        plan_version, created_at = capability_plan_version_and_time(
+            suite.suite_version
+        )
         plan = build_capability_plan(
             suite,
             profile,

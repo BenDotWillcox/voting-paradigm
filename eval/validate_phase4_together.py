@@ -23,6 +23,7 @@ from .phase4_together import (
     build_default_together_suite,
     build_no_spend_report,
     build_together_suite_v3,
+    build_together_suite_v4,
     load_together_suite,
     validate_together_suite,
 )
@@ -36,6 +37,9 @@ LEGACY_V2_SUITE_SHA256 = (
 )
 LEGACY_V3_SUITE_SHA256 = (
     "657ec77bec315bc55b01bae8bbc3c5fb95b1f584a2a49d9979c515621f9cd9fa"
+)
+LEGACY_V4_SUITE_SHA256 = (
+    "aea27b51ed24c8e4c11bfe0648a04ff0e29d25faeb519a9afa95e594a3d84283"
 )
 
 
@@ -73,9 +77,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             ):
                 raise ValueError("Together legacy v3 audit hash differs")
         elif suite.suite_version == 4:
+            expected = build_together_suite_v4(profile)
+            if (
+                suite_sha256 != LEGACY_V4_SUITE_SHA256
+                or suite_sha256 != content_sha256(expected)
+            ):
+                raise ValueError("Together legacy v4 audit hash differs")
+        elif suite.suite_version == 5:
             expected = build_default_together_suite(profile)
             if suite_sha256 != content_sha256(expected):
-                raise ValueError("Together suite differs from frozen v4 builder")
+                raise ValueError("Together suite differs from frozen v5 builder")
         else:
             raise ValueError("Together suite version is unsupported")
         report = build_no_spend_report(suite, profile)
