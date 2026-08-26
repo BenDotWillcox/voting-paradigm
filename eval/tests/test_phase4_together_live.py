@@ -14,6 +14,7 @@ from eval.fixture_io import content_sha256
 from eval.phase4_provider import (
     ProviderBudgetRuntime,
     ProviderCallOutcome,
+    ProviderResponseContract,
     build_public_development_attestation,
     prepare_provider_request,
     price_provider_tokens,
@@ -65,7 +66,7 @@ class DemoOutput(ContractModel):
     confidence: float
 
 
-OUTPUT_ADAPTER = TypeAdapter(DemoOutput)
+OUTPUT_ADAPTER = ProviderResponseContract(adapter=TypeAdapter(DemoOutput))
 
 
 def profile():

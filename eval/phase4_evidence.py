@@ -63,6 +63,12 @@ def _require_unique(values: list[str], label: str) -> list[str]:
     return values
 
 
+def _deduplicate_in_order(values: list[str]) -> list[str]:
+    """Remove repeated provider references without changing source chronology."""
+
+    return list(dict.fromkeys(values))
+
+
 class FixedOntologyReference(ContractModel):
     """Exact fixed item universe available to an extractor."""
 
@@ -98,9 +104,19 @@ class FixedOntologyClaim(ContractModel):
     value: SliderValue
 
     @model_validator(mode="after")
-    def require_canonical_pair(self) -> Self:
-        if self.item_a >= self.item_b:
-            raise ValueError("claim items must be distinct and canonical")
+    def canonicalize_pair(self) -> Self:
+        if self.item_a == self.item_b:
+            raise ValueError("claim items must be distinct")
+        if self.item_a > self.item_b:
+            original_item_a = self.item_a
+            original_value = self.value
+            object.__setattr__(self, "item_a", self.item_b)
+            object.__setattr__(self, "item_b", original_item_a)
+            object.__setattr__(
+                self,
+                "value",
+                0.0 if original_value == 0.0 else -original_value,
+            )
         return self
 
 
@@ -111,6 +127,20 @@ class UnsupportedAssumptionFlag(ContractModel):
     flag_id: StableId
     description: NonEmptyText
     requires_participant_attention: Literal[True] = True
+
+
+def canonical_unsupported_assumptions(
+    assumptions: list[UnsupportedAssumptionFlag],
+) -> list[UnsupportedAssumptionFlag]:
+    """Sort audit flags by id and collapse only byte-equivalent repeats."""
+
+    by_id: dict[str, UnsupportedAssumptionFlag] = {}
+    for assumption in assumptions:
+        previous = by_id.get(assumption.flag_id)
+        if previous is not None and previous != assumption:
+            raise ValueError("unsupported assumption flag ids must be unique")
+        by_id[assumption.flag_id] = assumption
+    return [by_id[flag_id] for flag_id in sorted(by_id)]
 
 
 class EvidenceExtractorConfiguration(ContractModel):
@@ -191,12 +221,14 @@ class EvidenceProposalDraft(ContractModel):
 
     @model_validator(mode="after")
     def validate_draft(self) -> Self:
-        if not self.source_message_ids:
+        source_message_ids = _deduplicate_in_order(self.source_message_ids)
+        if not source_message_ids:
             raise ValueError("proposal requires participant source messages")
-        _require_unique(self.source_message_ids, "proposal source message ids")
-        _require_unique(
-            [flag.flag_id for flag in self.unsupported_assumptions],
-            "unsupported assumption flag ids",
+        object.__setattr__(self, "source_message_ids", source_message_ids)
+        object.__setattr__(
+            self,
+            "unsupported_assumptions",
+            canonical_unsupported_assumptions(self.unsupported_assumptions),
         )
         return self
 

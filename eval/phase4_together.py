@@ -27,17 +27,18 @@ from .contracts import (
     require_complete_enum_set,
 )
 from .fixture_io import content_sha256
-from .phase4_evidence import EvidenceProposalDraft
 from .phase4_interviewer import (
-    InterviewerDecision,
     ReadCandidateQuestionScoresRequest,
     ReadEvidenceConflictsRequest,
     ReadEvidenceCoverageRequest,
     ReadPosteriorUncertaintyRequest,
 )
-from .phase4_llm_readout import LLMReadoutResponseDraft
-from .phase4_ontology import OntologyDimensionProposalDraft
 from .phase4_provider import PrivateStructuredProviderRequest, ProviderPriceCard
+from .phase4_provider_semantics import (
+    PROVIDER_RESPONSE_SCHEMA_VERSION,
+    provider_invariant_prompt_suffix,
+    provider_response_schema_for_role,
+)
 from .phase4_qualification import (
     ProjectedRoleUsage,
     ProviderCostProjection,
@@ -68,7 +69,19 @@ TOGETHER_STRUCTURED_OUTPUTS_URL = (
 TOGETHER_INTERVIEWER_PROVIDER_ROUND_LIMIT = 2
 TOGETHER_TWO_PHASE_INTERVIEWER_SUITE_VERSION = 3
 CAPTURED_AT = datetime(2026, 8, 20, 12, 0, tzinfo=timezone.utc)
-SUITE_CREATED_AT = datetime(2026, 8, 21, 18, 0, tzinfo=timezone.utc)
+SUITE_V3_CREATED_AT = datetime(2026, 8, 21, 18, 0, tzinfo=timezone.utc)
+SUITE_V4_CREATED_AT = datetime(2026, 8, 22, 5, 0, tzinfo=timezone.utc)
+
+EVIDENCE_EXTRACTOR_PROMPT_V1 = (
+    "Extract only preference claims explicitly supported by the supplied "
+    "participant messages. Preserve source-message lineage, flag every "
+    "unsupported assumption, and return only structured zero-weight "
+    "proposals for participant confirmation."
+)
+EVIDENCE_EXTRACTOR_PROMPT_V2 = (
+    f"{EVIDENCE_EXTRACTOR_PROMPT_V1} "
+    f"{provider_invariant_prompt_suffix(LLMRole.EVIDENCE_EXTRACTOR)}"
+)
 
 
 class TogetherQuantization(str, Enum):
@@ -259,7 +272,7 @@ class SharedRoleContract(ContractModel):
         if self.interviewer_tools_enabled != (self.role is LLMRole.INTERVIEWER):
             raise ValueError("only the interviewer role may enable tools")
         if self.response_schema_sha256 != content_sha256(
-            response_schema_for_role(self.role)
+            response_schema_for_role(self.role, self.response_schema_version)
         ):
             raise ValueError("shared role response schema hash does not match")
         if self.tool_definitions_sha256 != content_sha256(
@@ -490,19 +503,13 @@ def _canonical_json(value: JsonValue) -> str:
     )
 
 
-def response_schema_for_role(role: LLMRole) -> dict[str, JsonValue]:
-    """Return the exact provider response schema for one frozen role."""
+def response_schema_for_role(
+    role: LLMRole,
+    response_schema_version: int = 1,
+) -> dict[str, JsonValue]:
+    """Return the exact versioned provider response schema for one role."""
 
-    adapters: dict[LLMRole, TypeAdapter] = {
-        LLMRole.INTERVIEWER: TypeAdapter(InterviewerDecision),
-        LLMRole.EVIDENCE_EXTRACTOR: TypeAdapter(list[EvidenceProposalDraft]),
-        LLMRole.ONTOLOGY_PROPOSER: TypeAdapter(
-            list[OntologyDimensionProposalDraft]
-        ),
-        LLMRole.DIRECT_READOUT: TypeAdapter(LLMReadoutResponseDraft),
-        LLMRole.HYBRID_READOUT: TypeAdapter(LLMReadoutResponseDraft),
-    }
-    return adapters[role].json_schema(mode="validation")
+    return provider_response_schema_for_role(role, response_schema_version)
 
 
 def tool_definitions_for_role(
@@ -930,7 +937,7 @@ def _candidate_artifact(
     )
 
 
-def _role_contracts() -> list[SharedRoleContract]:
+def _role_contracts(*, suite_version: int) -> list[SharedRoleContract]:
     definitions: dict[LLMRole, tuple[str, str]] = {
         LLMRole.INTERVIEWER: (
             "Choose only an allowed preference-interview action. First use "
@@ -941,10 +948,11 @@ def _role_contracts() -> list[SharedRoleContract]:
             "phase4_interviewer_decision_and_tool_contracts_v1",
         ),
         LLMRole.EVIDENCE_EXTRACTOR: (
-            "Extract only preference claims explicitly supported by the supplied "
-            "participant messages. Preserve source-message lineage, flag every "
-            "unsupported assumption, and return only structured zero-weight "
-            "proposals for participant confirmation.",
+            (
+                EVIDENCE_EXTRACTOR_PROMPT_V2
+                if suite_version >= 4
+                else EVIDENCE_EXTRACTOR_PROMPT_V1
+            ),
             "phase4_evidence_proposal_drafts_v1",
         ),
         LLMRole.ONTOLOGY_PROPOSER: (
@@ -971,23 +979,52 @@ def _role_contracts() -> list[SharedRoleContract]:
         ),
     }
     contracts: list[SharedRoleContract] = []
+    v2_schema_roles = {
+        LLMRole.INTERVIEWER,
+        LLMRole.EVIDENCE_EXTRACTOR,
+        LLMRole.ONTOLOGY_PROPOSER,
+    }
     for role in sorted(LLMRole, key=lambda item: item.value):
         prompt, response_contract_id = definitions[role]
+        if (
+            suite_version >= 4
+            and role in v2_schema_roles
+            and role is not LLMRole.EVIDENCE_EXTRACTOR
+        ):
+            prompt = f"{prompt} {provider_invariant_prompt_suffix(role)}"
+        schema_version = (
+            PROVIDER_RESPONSE_SCHEMA_VERSION
+            if suite_version >= 4 and role in v2_schema_roles
+            else 1
+        )
+        if schema_version >= 2:
+            response_contract_id = response_contract_id.removesuffix("_v1") + "_v2"
         contracts.append(
             SharedRoleContract(
                 role=role,
                 prompt_id=(
-                    "phase4_interviewer_together_v2"
+                    "phase4_interviewer_together_v3"
+                    if role is LLMRole.INTERVIEWER and suite_version >= 4
+                    else "phase4_interviewer_together_v2"
                     if role is LLMRole.INTERVIEWER
+                    else f"phase4_{role.value}_together_v2"
+                    if suite_version >= 4 and role in v2_schema_roles
                     else f"phase4_{role.value}_together_v1"
                 ),
-                prompt_version=(2 if role is LLMRole.INTERVIEWER else 1),
+                prompt_version=(
+                    3
+                    if role is LLMRole.INTERVIEWER and suite_version >= 4
+                    else 2
+                    if role is LLMRole.INTERVIEWER
+                    or (suite_version >= 4 and role in v2_schema_roles)
+                    else 1
+                ),
                 prompt_text=prompt,
                 prompt_sha256=content_sha256(prompt),
                 response_schema_id=response_contract_id,
-                response_schema_version=1,
+                response_schema_version=schema_version,
                 response_schema_sha256=content_sha256(
-                    response_schema_for_role(role)
+                    response_schema_for_role(role, schema_version)
                 ),
                 tool_definitions_sha256=content_sha256(
                     tool_definitions_for_role(role)
@@ -1051,10 +1088,12 @@ def _workload_plan() -> TogetherWorkloadPlan:
     )
 
 
-def build_default_together_suite(
+def _build_together_suite(
     profile: Phase4ERobustnessProfile,
+    *,
+    suite_version: Literal[3, 4],
 ) -> Phase4TogetherSuite:
-    """Build the exact tracked v3 suite without reading credentials or network."""
+    """Build one exact no-network Together suite version."""
 
     catalog = _catalog_snapshot()
     terms = _terms_snapshot()
@@ -1109,17 +1148,37 @@ def build_default_together_suite(
         ),
     ]
     suite = Phase4TogetherSuite(
-        suite_id="preference_eval_phase4_together_v3",
-        suite_version=3,
-        created_at=SUITE_CREATED_AT,
+        suite_id=f"preference_eval_phase4_together_v{suite_version}",
+        suite_version=suite_version,
+        created_at=(
+            SUITE_V4_CREATED_AT
+            if suite_version == 4
+            else SUITE_V3_CREATED_AT
+        ),
         robustness_profile_id=profile.profile_id,
         robustness_profile_version=profile.profile_version,
         robustness_profile_sha256=content_sha256(profile),
         catalog=catalog,
         provider_terms=terms,
         candidates=candidates,
-        shared_role_contracts=_role_contracts(),
+        shared_role_contracts=_role_contracts(suite_version=suite_version),
         workload=_workload_plan(),
     )
     validate_together_suite(suite, profile)
     return suite
+
+
+def build_together_suite_v3(
+    profile: Phase4ERobustnessProfile,
+) -> Phase4TogetherSuite:
+    """Rebuild the preserved v3 two-phase-interviewer audit artifact."""
+
+    return _build_together_suite(profile, suite_version=3)
+
+
+def build_default_together_suite(
+    profile: Phase4ERobustnessProfile,
+) -> Phase4TogetherSuite:
+    """Build the tracked v4 suite with an explicit pair-order contract."""
+
+    return _build_together_suite(profile, suite_version=4)

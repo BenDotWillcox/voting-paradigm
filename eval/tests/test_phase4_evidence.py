@@ -81,6 +81,73 @@ def claim(
     )
 
 
+def test_fixed_claim_canonicalizes_pair_without_changing_meaning() -> None:
+    canonical = claim(item_a="a", item_b="b", value=6.0)
+    reversed_pair = claim(item_a="b", item_b="a", value=-6.0)
+
+    assert reversed_pair == canonical
+    assert reversed_pair.model_dump(mode="json") == canonical.model_dump(
+        mode="json"
+    )
+
+
+def test_fixed_claim_still_rejects_a_self_pair() -> None:
+    with pytest.raises(ValidationError, match="claim items must be distinct"):
+        claim(item_a="a", item_b="a")
+
+
+def test_evidence_draft_normalizes_nonsemantic_repeats_and_order() -> None:
+    first = UnsupportedAssumptionFlag(
+        flag_id="a_assumption",
+        description="The first assumption.",
+    )
+    second = UnsupportedAssumptionFlag(
+        flag_id="z_assumption",
+        description="The second assumption.",
+    )
+
+    draft = EvidenceProposalDraft(
+        source_message_ids=["message_participant", "message_participant"],
+        claim=claim(),
+        extractor_confidence=0.62,
+        unsupported_assumptions=[second, first, second],
+    )
+
+    assert draft.source_message_ids == ["message_participant"]
+    assert [item.flag_id for item in draft.unsupported_assumptions] == [
+        "a_assumption",
+        "z_assumption",
+    ]
+
+
+def test_evidence_draft_rejects_conflicting_duplicate_assumption_ids() -> None:
+    with pytest.raises(ValidationError, match="assumption flag ids must be unique"):
+        EvidenceProposalDraft(
+            source_message_ids=["message_participant"],
+            claim=claim(),
+            extractor_confidence=0.62,
+            unsupported_assumptions=[
+                UnsupportedAssumptionFlag(
+                    flag_id="scope_assumption",
+                    description="The first interpretation.",
+                ),
+                UnsupportedAssumptionFlag(
+                    flag_id="scope_assumption",
+                    description="A conflicting interpretation.",
+                ),
+            ],
+        )
+
+
+def test_evidence_draft_preserves_nonempty_source_lineage() -> None:
+    with pytest.raises(ValidationError, match="participant source messages"):
+        EvidenceProposalDraft(
+            source_message_ids=[],
+            claim=claim(),
+            extractor_confidence=0.62,
+        )
+
+
 def messages() -> list[ConversationEvidenceMessage]:
     return [
         ConversationEvidenceMessage(

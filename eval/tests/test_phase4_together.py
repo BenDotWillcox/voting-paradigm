@@ -10,16 +10,20 @@ from pydantic import TypeAdapter, ValidationError
 from eval.contracts import ContractModel
 from eval.fixture_io import content_sha256
 from eval.phase4_provider import (
+    ProviderResponseContract,
     build_public_development_attestation,
     prepare_provider_request,
 )
 from eval.phase4_robustness import LLMRole, load_phase4_robustness_profile
 from eval.phase4_together import (
+    EVIDENCE_EXTRACTOR_PROMPT_V1,
+    EVIDENCE_EXTRACTOR_PROMPT_V2,
     Phase4TogetherSuite,
     build_default_together_suite,
     build_no_spend_report,
     build_together_chat_payload,
     build_together_interviewer_final_payload,
+    build_together_suite_v3,
     load_together_suite,
     validate_request_against_role_envelope,
 )
@@ -29,7 +33,10 @@ ROOT = Path(__file__).resolve().parents[2]
 PROFILE_PATH = (
     ROOT / "eval/fixtures/preference_eval_phase4_robustness_v1.json"
 )
-SUITE_PATH = ROOT / "eval/fixtures/preference_eval_phase4_together_v3.json"
+SUITE_PATH = ROOT / "eval/fixtures/preference_eval_phase4_together_v4.json"
+LEGACY_V3_SUITE_PATH = (
+    ROOT / "eval/fixtures/preference_eval_phase4_together_v3.json"
+)
 LEGACY_V2_SUITE_PATH = (
     ROOT / "eval/fixtures/preference_eval_phase4_together_v2.json"
 )
@@ -44,7 +51,7 @@ class DemoOutput(ContractModel):
     confidence: float
 
 
-OUTPUT_ADAPTER = TypeAdapter(DemoOutput)
+OUTPUT_ADAPTER = ProviderResponseContract(adapter=TypeAdapter(DemoOutput))
 
 
 def profile():
@@ -142,6 +149,30 @@ def test_v2_suite_is_preserved_as_an_exact_audit_artifact() -> None:
     assert content_sha256(legacy) == (
         "dce672dada8a80cb87f57235ca4b9b44da5c13d44e597b89a63e29d01f67a2a5"
     )
+
+
+def test_v3_suite_is_preserved_as_an_exact_audit_artifact() -> None:
+    legacy = load_together_suite(LEGACY_V3_SUITE_PATH)
+
+    assert legacy == build_together_suite_v3(profile())
+    assert content_sha256(legacy) == (
+        "657ec77bec315bc55b01bae8bbc3c5fb95b1f584a2a49d9979c515621f9cd9fa"
+    )
+
+
+def test_v4_extractor_contract_exposes_every_runtime_pair_invariant() -> None:
+    role_contracts = {item.role: item for item in suite().shared_role_contracts}
+    extractor = role_contracts[LLMRole.EVIDENCE_EXTRACTOR]
+
+    assert extractor.prompt_id == "phase4_evidence_extractor_together_v2"
+    assert extractor.prompt_version == 2
+    assert extractor.prompt_text == EVIDENCE_EXTRACTOR_PROMPT_V2
+    assert extractor.prompt_text.startswith(EVIDENCE_EXTRACTOR_PROMPT_V1)
+    assert extractor.response_schema_version == 2
+    assert "signed value means preference for item_a over item_b" in (
+        extractor.prompt_text
+    )
+    assert "sign reversed" in extractor.prompt_text
 
 
 def test_candidate_ids_revisions_and_prices_are_frozen() -> None:

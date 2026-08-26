@@ -822,7 +822,7 @@ deterministic no-network test double. A concrete hosted or self-hosted
 transport is selected only with the three candidate artifacts.
 
 `eval/phase4_together.py` now freezes the no-spend portion of that selection.
-The tracked `preference_eval_phase4_together_v3.json` suite binds Together's
+The tracked `preference_eval_phase4_together_v4.json` suite binds Together's
 20 August 2026 serverless catalog and privacy/capability documentation, exact
 upstream Hugging Face revisions, revision-bound weight-manifest identities,
 license provenance, advertised serving model strings and quantization, exact
@@ -833,7 +833,7 @@ revision is the exact captured catalog hash rather than a claim of bit-level
 identity with the upstream checkpoint. Qualification results must retain that
 limitation.
 
-The original v1 and v2 suites remain tracked as hash-pinned audit artifacts.
+The original v1 through v3 suites remain tracked as hash-pinned audit artifacts.
 The v2
 suite raises the interviewer logical-call envelope from 5,000 to 15,000 input
 tokens and from 500 to 1,000 output tokens, raises extractor/proposer input
@@ -846,7 +846,14 @@ rounds. The operative v3 suite corrects that shared protocol: round one
 requires at least one tool call and sends no final-output `response_format`;
 after the tool result, round two removes the tools and requires the strict
 decision schema. Both payloads are counted. No candidate, price, privacy rule,
-or budget segment changed.
+or budget segment changed. The operative v4 suite fixes the broader provider-
+contract class exposed by the extractor failure. A machine-readable manifest
+covers all 26 provider-facing invariants. Nonsemantic list ordering and repeated
+identifiers are normalized on receipt, and reversed fixed-ontology pairs are
+canonicalized with sign inversion. Request-bound semantics cover all five
+roles. The interviewer, evidence-extractor, and ontology-proposer wire contracts
+advance to v2; the direct and hybrid readout contracts remain byte-identical v1
+contracts so successful readout calls can carry forward.
 
 Together was chosen over self-hosting because the USD 20 total budget cannot
 cover the sustained accelerator rental needed for the 120B and 550B candidates.
@@ -874,6 +881,13 @@ interviewer's final phase, the schema appears both in the system message and
 contains no credential, HTTP client, or network call. A live account privacy
 check and paid capability probes remain mandatory before qualification;
 validation alone can never spend money.
+
+Provider request v2 hash-binds the exact semantic-validator artifact. The paid
+runtime resolves that identity through a trusted local registry before parsing,
+so a caller cannot substitute a weaker validator while keeping the same public
+request coordinates. The request-specific adapters enforce the exact public
+question, grounding, ontology-gap, option-set, and citation semantics supplied
+to each role.
 
 `eval/phase4_together_live.py` makes those readiness statements enforceable.
 The shared provider runtime calls each transport's authorization gate before
@@ -997,7 +1011,7 @@ Validate the frozen no-spend suite without credentials or network access:
 
 ```bash
 python -m eval.validate_phase4_together \
-  eval/fixtures/preference_eval_phase4_together_v3.json \
+  eval/fixtures/preference_eval_phase4_together_v4.json \
   eval/fixtures/preference_eval_phase4_robustness_v1.json
 ```
 
@@ -1015,7 +1029,7 @@ run:
 
 ```bash
 python -m eval.preflight_phase4_together \
-  eval/fixtures/preference_eval_phase4_together_v3.json \
+  eval/fixtures/preference_eval_phase4_together_v4.json \
   eval/private_runs/phase4/together_catalog_preflight.json \
   --api-key-file .env.local \
   --confirm-project-scoped-key \
@@ -1044,7 +1058,7 @@ API-key value or hash, and refuses to write outside `eval/private_runs/`. It
 does not authorize capability probes or qualification.
 
 Earlier ignored catalog receipts bind preserved suite versions and cannot
-authorize v3. Re-run this zero-inference command after v3 merges; exact hash
+authorize v4. Re-run this zero-inference command after v4 merges; exact hash
 binding intentionally prevents carrying an old receipt across the protocol
 revision.
 
@@ -1052,12 +1066,12 @@ Build the separate no-key, no-inference tokenizer-readiness artifact with:
 
 ```bash
 python -m eval.prepare_phase4_together_readiness \
-  eval/fixtures/preference_eval_phase4_together_v3.json \
+  eval/fixtures/preference_eval_phase4_together_v4.json \
   eval/fixtures/preference_eval_phase4_robustness_v1.json \
   eval/fixtures/preference_eval_dev_v1.json \
   eval/fixtures/preference_eval_dev_session_v1.json \
   eval/fixtures/preference_eval_dev_semantic_map_v1.json \
-  eval/fixtures/preference_eval_phase4_together_readiness_v3.json \
+  eval/fixtures/preference_eval_phase4_together_readiness_v4.json \
   --tokenizer-cache .cache/eval-tokenizers/phase4e \
   --download-tokenizers
 ```
@@ -1076,12 +1090,12 @@ freeze requires at least USD 0.40 in the USD 4 qualification segment and USD
 0.50 in the USD 13 held-out segment after adding the largest single-call
 reservation to exact projected spend.
 
-The resulting tracked artifact projects qualification costs of USD 1.302450,
-USD 0.159092, and USD 0.858669 for GLM, GPT-OSS, and Nemotron respectively.
-Its 1,104-call-per-candidate held-out calibration projects USD 11.167563, USD
-1.338386, and USD 7.068320. The corresponding sequential reservation headroom
-is USD 1.654389 for qualification and USD 1.807037, USD 11.658764, and USD
-5.919080 for the three held-out candidates. Interviewer totals include the
+The resulting tracked artifact projects qualification costs of USD 1.312337,
+USD 0.160138, and USD 0.863052 for GLM, GPT-OSS, and Nemotron respectively.
+Its 1,104-call-per-candidate held-out calibration projects USD 11.187789, USD
+1.340563, and USD 7.075029. The corresponding sequential reservation headroom
+is USD 1.639073 for qualification and USD 1.786811, USD 11.656587, and USD
+5.912371 for the three held-out candidates. Interviewer totals include the
 initial request and one synthetic
 tool-result follow-up, with a 500-token output allowance for each provider
 round. These are deterministic local projections, not provider billing
@@ -1092,8 +1106,8 @@ Validate the artifact without a tokenizer download or network access:
 
 ```bash
 python -m eval.validate_phase4_readiness \
-  eval/fixtures/preference_eval_phase4_together_readiness_v3.json \
-  eval/fixtures/preference_eval_phase4_together_v3.json \
+  eval/fixtures/preference_eval_phase4_together_readiness_v4.json \
+  eval/fixtures/preference_eval_phase4_together_v4.json \
   eval/fixtures/preference_eval_phase4_robustness_v1.json \
   eval/fixtures/preference_eval_dev_v1.json \
   eval/fixtures/preference_eval_dev_session_v1.json \
@@ -1102,7 +1116,7 @@ python -m eval.validate_phase4_readiness \
 
 The validator emits aggregate counts, hashes, costs, and headroom only. The
 readiness bundle hash is
-`239ac8d3091034c6df2dec440cc633e9792972702ff7b82cca7947ffdbfb605e`.
+`517e955976eaeec708cbedfadb46673038dcfd47e472407573997c4913ab1cd5`.
 It records zero inference calls and zero provider spend. The original external
 action was a separately authorized 15-call capability preflight. Those calls
 are the exact first 15 entries of the qualification plan, so a complete success
@@ -1112,28 +1126,28 @@ Build or validate the tracked zero-spend capability plan with:
 
 ```bash
 python -m eval.prepare_phase4_together_capability \
-  eval/fixtures/preference_eval_phase4_together_v3.json \
+  eval/fixtures/preference_eval_phase4_together_v4.json \
   eval/fixtures/preference_eval_phase4_robustness_v1.json \
-  eval/fixtures/preference_eval_phase4_together_readiness_v3.json \
+  eval/fixtures/preference_eval_phase4_together_readiness_v4.json \
   eval/fixtures/preference_eval_dev_v1.json \
   eval/fixtures/preference_eval_dev_session_v1.json \
   eval/fixtures/preference_eval_dev_semantic_map_v1.json \
-  eval/fixtures/preference_eval_phase4_together_capability_v2.json
+  eval/fixtures/preference_eval_phase4_together_capability_v3.json
 
 python -m eval.validate_phase4_capability \
-  eval/fixtures/preference_eval_phase4_together_capability_v2.json \
-  eval/fixtures/preference_eval_phase4_together_v3.json \
+  eval/fixtures/preference_eval_phase4_together_capability_v3.json \
+  eval/fixtures/preference_eval_phase4_together_v4.json \
   eval/fixtures/preference_eval_phase4_robustness_v1.json \
-  eval/fixtures/preference_eval_phase4_together_readiness_v3.json \
+  eval/fixtures/preference_eval_phase4_together_readiness_v4.json \
   eval/fixtures/preference_eval_dev_v1.json \
   eval/fixtures/preference_eval_dev_session_v1.json \
   eval/fixtures/preference_eval_dev_semantic_map_v1.json
 ```
 
 The plan hash is
-`d5b25ed4bc177509396b137002f916da89a8dd9dcd8b44704a26373cae334d11`.
+`2b78f3659e8a38e5ae74ea070172ea7eb9bc83a6c251a8bde2524573c6f12381`.
 It binds one canonical request for every combination of three candidates and
-five LLM roles. The 15 calls project to 71,091 microusd; their complete local
+five LLM roles. The 15 calls project to 73,005 microusd; their complete local
 authorization envelopes sum to 129,000 microusd. The plan itself records zero
 calls and zero spend.
 
@@ -1278,9 +1292,8 @@ spend; execution separately requires
 runner loads the API key only after every tracked/private binding, candidate
 eligibility rule, adjudication rule, and manual amount has passed. Any future
 invalid output first checkpoints the billed-call audit state and then must
-persist its content-free diagnostic before returning the terminal failure. Do
-not run GPT-OSS or Nemotron until this diagnostic boundary and adjudication
-policy are reviewed and merged.
+persist its content-free diagnostic before returning the terminal failure.
+These v3 authorization and execution commands are now audit-only.
 
 Future candidate authorizations use
 `preference_eval_phase4_adjudicated_candidate_authorization.v1`, a private
@@ -1288,3 +1301,90 @@ wrapper around the existing five-call authorization. It binds the exact
 adjudication-policy and provisional-state hashes, and the resulting execution
 state binds the wrapper hash rather than an unadjudicated authorization. The
 historical GLM authorization and state remain on their original contracts.
+
+The two comparison candidates then stopped at the evidence extractor with the
+same content-free paths. That exposed a broader provider-contract defect rather
+than a single-role prompt omission: 26 invariants across the five response
+models were either schema-visible, prompt-visible, normalizable, or dependent
+on the exact public request. The correction records that classification in a
+machine-readable manifest, normalizes nonsemantic list order and repeated IDs,
+and canonicalizes reversed fixed-ontology pairs with sign inversion. Exact
+request-bound adapters now check all five roles inside the paid runtime, so
+semantic failures become audited `invalid_output` outcomes rather than escaping
+to a later validator.
+
+The interviewer, evidence-extractor, and ontology-proposer wire contracts move
+to v2. Direct and hybrid readout remain byte-identical v1 contracts, and their
+four exact successful calls carry forward. Provider request v2 binds the
+semantic-validator artifact hash and resolves it through the trusted local
+registry. Because GLM's provisional ontology failure occurred under the same
+hidden-invariant class, the corrected delta includes all three models: three
+conversational roles for GLM and four each for GPT-OSS and Nemotron.
+
+Bound v2 execution does not accept a caller-supplied registry or response
+adapter. The provider runtime lazily resolves the exact module-owned registry,
+whose duplicate identities cannot be overwritten. Validator implementation
+identity `f077e2713b7ba0e6735f07e0ee367cc6d2203074841f78afda86ca450c009a09`
+binds the manifest, emitted schemas, prompt suffixes, semantic constants,
+reviewed validator/normalizer source, behavior-probe inventory, and the exact
+Pydantic 2.13.4 / pydantic-core 2.46.4 parsing runtime. `requirements.txt`
+pins Pydantic accordingly and the semantic module fails closed on a different
+runtime before a request can be built.
+
+The tracked
+`preference_eval_phase4_together_capability_delta_v1.json`, hash
+`25d286a8ceb16373e6868bb62bd81d3cf9b4cb0d2255f4ce02f66b2d4687f8e2`,
+binds suite v4
+`aea27b51ed24c8e4c11bfe0648a04ff0e29d25faeb519a9afa95e594a3d84283`,
+readiness v4
+`517e955976eaeec708cbedfadb46673038dcfd47e472407573997c4913ab1cd5`,
+and capability plan v3
+`2b78f3659e8a38e5ae74ea070172ea7eb9bc83a6c251a8bde2524573c6f12381`.
+It carries four calls, reruns eleven, records 31,639 microusd already spent,
+projects 52,140 microusd more, and caps new authorizations at 93,300 microusd.
+The 124,939-microusd cumulative worst case remains below the original
+150,000-microusd capability ceiling. Creating and validating the delta made no
+provider call and spent nothing.
+
+Rebuild the content-free delta from the ignored audits with
+`python -m eval.prepare_phase4_together_capability_delta`; validate it with
+`python -m eval.validate_phase4_capability_delta`. Both require the source
+adjudication/continuation/plan/suite, all ignored capability states and
+diagnostics, and the corrected plan/suite/readiness plus public development
+inputs. The exact CLI surface is available through `--help`; stdout contains
+only counts, hashes, and microusd totals.
+
+The same private rebuild emits the tracked, content-free
+`preference_eval_phase4_together_capability_delta_source_proof_v1.json`, hash
+`58d65a797d832a39ae1c3e2f65cddff893a296e04fa88b07f97ab89a187d5b15`.
+It binds the exact source-attempt, carry-forward, rerun, and semantic-manifest
+hashes after the ignored audits validate, while omitting values, messages, and
+context. Both the zero-spend validator and each paid candidate command require
+this proof. The manual authorization binds its exact hash, so repartitioning a
+carry and rerun cannot reuse an already approved execution boundary.
+
+After review and merge, use
+`python -m eval.authorize_phase4_together_delta_candidate` to create one
+short-lived ignored authorization and
+`python -m eval.run_phase4_together_delta_candidate` with
+`--execute-paid-delta-capability` to execute it. A fresh suite-v4 catalog
+preflight and new explicit user approval remain mandatory. The API key is
+loaded only after the delta, plan, readiness, catalog, candidate eligibility,
+and exact spend amount all validate. No paid delta call may run before this
+correction is reviewed and merged.
+
+Candidate execution follows the first-occurrence order frozen by the delta.
+For every candidate after the first, pass matching `--prior-authorization`
+and `--prior-state` arguments in that order to both commands. The new
+authorization binds the exact prefix of terminal state hashes and actual spend,
+then proves prior actual spend plus every remaining worst-case reservation is
+still within the original 150,000-microusd ceiling. Omitting an earlier attempt
+or reordering candidates fails before the API key is loaded. A sent call whose
+true bill exceeds its manual or provider cap is still checkpointed as a
+content-free, auditable terminal state, cannot produce a receipt or resume,
+and blocks every later candidate authorization.
+
+OpenRouter is deferred as an alternate-host diagnostic only if one model still
+fails after the corrected Together rerun. It is not part of qualification. Any
+such diagnostic would require an exact model and endpoint pin, no fallbacks, a
+separate reviewed budget and authorization, and recorded routing provenance.

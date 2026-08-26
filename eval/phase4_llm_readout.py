@@ -455,15 +455,25 @@ class LLMReadoutResponseDraft(ContractModel):
             abs_tol=1e-9,
         ):
             raise ValueError("LLM option probabilities must sum to one")
-        if len(self.supporting_evidence_event_ids) != len(
-            set(self.supporting_evidence_event_ids)
-        ):
-            raise ValueError("LLM supporting evidence ids must be unique")
-        assumption_ids = [
-            item.assumption_id for item in self.unsupported_assumptions
-        ]
-        if len(assumption_ids) != len(set(assumption_ids)):
-            raise ValueError("LLM unsupported assumption ids must be unique")
+        object.__setattr__(
+            self,
+            "supporting_evidence_event_ids",
+            sorted(set(self.supporting_evidence_event_ids)),
+        )
+        assumptions_by_id: dict[str, PredictionUnsupportedAssumption] = {}
+        for assumption in self.unsupported_assumptions:
+            previous = assumptions_by_id.get(assumption.assumption_id)
+            if previous is not None and previous != assumption:
+                raise ValueError("LLM unsupported assumption ids must be unique")
+            assumptions_by_id[assumption.assumption_id] = assumption
+        object.__setattr__(
+            self,
+            "unsupported_assumptions",
+            [
+                assumptions_by_id[assumption_id]
+                for assumption_id in sorted(assumptions_by_id)
+            ],
+        )
         return self
 
 

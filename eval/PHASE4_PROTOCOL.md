@@ -341,6 +341,69 @@ the exact adjudication-policy and provisional-state hashes; the future
 execution state binds that wrapper while the preserved GLM state remains
 byte-identical.
 
+Those two comparison runs then exposed a broader provider-contract omission.
+GPT-OSS and Nemotron stopped on the evidence extractor with identical
+content-free claim-level paths, but the same audit found schema-invisible rules
+in the ontology and readout response models. GLM's provisional ontology failure
+therefore cannot be treated as a settled candidate limit. The correction fixes
+the class rather than one prompt: a machine-readable 26-invariant manifest
+records whether every provider-facing rule is visible in schema or prompt,
+normalized on receipt, or checked against the exact request after parsing.
+Nonsemantic list order and repeated identifiers are canonicalized; reversed
+fixed-ontology pairs are reordered with the signed value inverted so meaning is
+preserved. Request-bound semantic validation now covers all five roles.
+
+Suite v4 upgrades only the interviewer, evidence-extractor, and ontology-
+proposer wire contracts to v2. The direct and hybrid readout wire contracts
+remain byte-identical v1 contracts, allowing their four exact successful calls
+to carry forward. Provider request v2 hash-binds the semantic-validator
+artifact, and execution resolves that identity only through the trusted local
+validator registry before parsing. Bound execution cannot accept a caller
+registry or adapter; it lazily resolves the exact module-owned singleton.
+Implementation identity
+`f077e2713b7ba0e6735f07e0ee367cc6d2203074841f78afda86ca450c009a09`
+also binds emitted schemas, prompts, semantic constants, reviewed validator and
+normalizer source, behavior probes, and the pinned Pydantic 2.13.4 /
+pydantic-core 2.46.4 runtime. The frozen artifact hashes are suite v4
+`aea27b51ed24c8e4c11bfe0648a04ff0e29d25faeb519a9afa95e594a3d84283`,
+readiness v4
+`517e955976eaeec708cbedfadb46673038dcfd47e472407573997c4913ab1cd5`,
+capability plan v3
+`2b78f3659e8a38e5ae74ea070172ea7eb9bc83a6c251a8bde2524573c6f12381`,
+and capability delta
+`25d286a8ceb16373e6868bb62bd81d3cf9b4cb0d2255f4ce02f66b2d4687f8e2`.
+
+The generic delta carries four exact direct/hybrid successes and reruns eleven
+conversational-role calls across all three candidates: three for GLM and four
+each for GPT-OSS and Nemotron. It records 31,639 microusd already spent,
+projects 52,140 microusd for the delta, and caps new authorizations at 93,300
+microusd, for a 124,939-microusd cumulative worst case under the original
+150,000-microusd ceiling. Building and validating the correction made no
+provider call and spent nothing. No paid delta call may run until the corrected
+artifacts are reviewed and merged, followed by a fresh catalog preflight and
+explicit user approval.
+
+Candidate-specific authorization follows the candidate order frozen in the
+delta. Each later authorization must supply the exact preceding authorization
+and terminal-state prefix, binding those state hashes and actual spend before
+proving that prior actual spend plus all remaining maximum reservations stays
+under the original 150,000-microusd ceiling. A sent call that exceeds a manual
+or provider cap is nevertheless checkpointed as an auditable terminal state;
+it cannot receive a success receipt, resume, or authorize another candidate.
+
+The content-free delta source proof, hash
+`58d65a797d832a39ae1c3e2f65cddff893a296e04fa88b07f97ab89a187d5b15`,
+is emitted only after the exact ignored source audits rebuild the delta. It
+binds the source attempts and carry/rerun partition without retaining values,
+messages, or context. Candidate authorization and execution require this exact
+proof and bind it into the manual approval, so a structurally valid alternate
+partition cannot pass the paid boundary under the reviewed receipt.
+
+OpenRouter is deferred as an alternate-host diagnostic only if one model still
+fails after the corrected Together rerun. It is not part of qualification. Any
+such diagnostic requires an exact model and endpoint pin, disabled fallbacks,
+recorded routing provenance, and a separate reviewed budget and authorization.
+
 The Phase 4A command prints content hashes and aggregate architecture counts.
 Phase 4A does not choose an LLM provider, prompt, model version, evidence
 weights, semantic mapper, or robustness estimator. The reviewed semantic map

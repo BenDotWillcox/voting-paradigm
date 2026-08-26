@@ -23,6 +23,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from pydantic_core import PydanticSerializationError
 
 from .contracts import (
     ContractModel,
@@ -41,6 +42,7 @@ from .phase4_robustness import (
     ProviderCallUsage,
     ProviderUsageLedger,
     provider_committed_totals,
+    validate_terminal_provider_budget_breach_ledger,
     validate_provider_usage_ledger,
 )
 
@@ -212,7 +214,10 @@ class ProviderNoChargeAttestation(ContractModel):
 class ProviderRequestBinding(ContractModel):
     """Content-free exact identity of one logical provider invocation."""
 
-    record_version: Literal["phase4_provider_request_binding.v1"] = (
+    record_version: Literal[
+        "phase4_provider_request_binding.v1",
+        "phase4_provider_request_binding.v2",
+    ] = (
         "phase4_provider_request_binding.v1"
     )
     call_id: StableId
@@ -235,6 +240,18 @@ class ProviderRequestBinding(ContractModel):
     response_schema_id: StableId
     response_schema_version: PositiveVersion
     response_schema_sha256: Sha256Digest
+    response_validator_id: StableId | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
+    response_validator_version: PositiveVersion | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
+    response_validator_sha256: Sha256Digest | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
     tool_definitions_sha256: Sha256Digest
     tool_calling_enabled: bool
     request_seed: Annotated[int, Field(ge=0)]
@@ -255,6 +272,20 @@ class ProviderRequestBinding(ContractModel):
 
     @model_validator(mode="after")
     def require_tools_only_for_interviewer(self) -> Self:
+        validator_parts = (
+            self.response_validator_id,
+            self.response_validator_version,
+            self.response_validator_sha256,
+        )
+        if any(value is not None for value in validator_parts) and not all(
+            value is not None for value in validator_parts
+        ):
+            raise ValueError("provider response-validator binding is incomplete")
+        validator_bound = all(value is not None for value in validator_parts)
+        if validator_bound != (
+            self.record_version == "phase4_provider_request_binding.v2"
+        ):
+            raise ValueError("provider request-binding version differs")
         empty_tools_sha = content_sha256([])
         if self.tool_calling_enabled:
             if self.role is not LLMRole.INTERVIEWER:
@@ -268,10 +299,74 @@ class ProviderRequestBinding(ContractModel):
         return self
 
 
+class ProviderResponseValidatorArtifact(ContractModel):
+    """Content-free identity of the parser and request-bound semantic checks."""
+
+    record_version: Literal["phase4_provider_response_validator.v1"] = (
+        "phase4_provider_response_validator.v1"
+    )
+    validator_id: StableId
+    validator_version: PositiveVersion
+    role: LLMRole
+    input_payload_sha256: Sha256Digest
+    response_schema_sha256: Sha256Digest
+    implementation_sha256: Sha256Digest
+
+
+@dataclass(frozen=True)
+class ProviderResponseContract:
+    """One inseparable response adapter and its content-free identity."""
+
+    adapter: TypeAdapter[object]
+    artifact: ProviderResponseValidatorArtifact | None = None
+
+    def json_schema(self, *, mode: Literal["validation"] = "validation"):
+        return self.adapter.json_schema(mode=mode)
+
+    def validate_python(self, value: object) -> object:
+        return self.adapter.validate_python(value)
+
+    def dump_python(self, value: object, *, mode: Literal["json"] = "json"):
+        return self.adapter.dump_python(value, mode=mode)
+
+
+def bind_provider_response_contract(
+    adapter: TypeAdapter[object],
+    *,
+    role: LLMRole,
+    input_payload: JsonValue,
+    validator_id: str | None = None,
+    validator_version: int | None = None,
+    implementation_sha256: str | None = None,
+) -> ProviderResponseContract:
+    """Bind request-relative validator identity, or preserve a schema-only path."""
+
+    validator_parts = (validator_id, validator_version, implementation_sha256)
+    if not any(value is not None for value in validator_parts):
+        return ProviderResponseContract(adapter=adapter)
+    if not all(value is not None for value in validator_parts):
+        raise ValueError("provider response-validator identity is incomplete")
+    schema = adapter.json_schema(mode="validation")
+    return ProviderResponseContract(
+        adapter=adapter,
+        artifact=ProviderResponseValidatorArtifact(
+            validator_id=validator_id,
+            validator_version=validator_version,
+            role=role,
+            input_payload_sha256=content_sha256(input_payload),
+            response_schema_sha256=content_sha256(schema),
+            implementation_sha256=implementation_sha256,
+        ),
+    )
+
+
 class PrivateStructuredProviderRequest(ContractModel):
     """Private transport input; never a tracked or participant-safe artifact."""
 
-    record_version: Literal["phase4_private_provider_request.v1"] = (
+    record_version: Literal[
+        "phase4_private_provider_request.v1",
+        "phase4_private_provider_request.v2",
+    ] = (
         "phase4_private_provider_request.v1"
     )
     binding: ProviderRequestBinding
@@ -279,6 +374,10 @@ class PrivateStructuredProviderRequest(ContractModel):
     prompt_payload: JsonValue
     input_payload: JsonValue
     response_json_schema: dict[str, JsonValue]
+    response_validator: ProviderResponseValidatorArtifact | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
     tool_definitions: list[dict[str, JsonValue]] = Field(default_factory=list)
 
     @model_validator(mode="after")
@@ -314,9 +413,117 @@ class PrivateStructuredProviderRequest(ContractModel):
         )
         if actual != expected:
             raise ValueError("provider request private hashes do not match")
+        validator_binding = (
+            self.binding.response_validator_id,
+            self.binding.response_validator_version,
+            self.binding.response_validator_sha256,
+        )
+        expected_validator_binding = (
+            self.response_validator.validator_id,
+            self.response_validator.validator_version,
+            content_sha256(self.response_validator),
+        ) if self.response_validator is not None else (None, None, None)
+        if validator_binding != expected_validator_binding:
+            raise ValueError("provider request response-validator binding differs")
+        if (self.response_validator is not None) != (
+            self.record_version == "phase4_private_provider_request.v2"
+        ):
+            raise ValueError("private provider request version differs")
+        if self.response_validator is not None and (
+            self.response_validator.role != self.binding.role
+            or self.response_validator.input_payload_sha256
+            != self.binding.input_payload_sha256
+            or self.response_validator.response_schema_sha256
+            != self.binding.response_schema_sha256
+        ):
+            raise ValueError("provider response-validator inputs differ")
         if self.binding.data_scope is not self.privacy_attestation.data_scope:
             raise ValueError("provider request and privacy scope do not match")
         return self
+
+
+class ProviderResponseValidatorFactory(Protocol):
+    """Trusted reconstruction of one request-bound response contract."""
+
+    def __call__(
+        self,
+        request: PrivateStructuredProviderRequest,
+    ) -> ProviderResponseContract: ...
+
+
+@dataclass(frozen=True)
+class ProviderResponseValidatorRegistration:
+    """One exact validator implementation available to the runtime."""
+
+    validator_id: str
+    validator_version: int
+    implementation_sha256: str
+    factory: ProviderResponseValidatorFactory
+
+    @property
+    def identity(self) -> tuple[str, int, str]:
+        return (
+            self.validator_id,
+            self.validator_version,
+            self.implementation_sha256,
+        )
+
+
+@dataclass(frozen=True)
+class ProviderResponseValidatorRegistry:
+    """Immutable trusted factories keyed by exact implementation identity."""
+
+    registrations: tuple[ProviderResponseValidatorRegistration, ...]
+
+    def __post_init__(self) -> None:
+        identities = [item.identity for item in self.registrations]
+        if len(identities) != len(set(identities)):
+            raise ValueError("provider response-validator registrations differ")
+
+    def resolve(
+        self,
+        request: PrivateStructuredProviderRequest,
+    ) -> ProviderResponseContract:
+        artifact = request.response_validator
+        if artifact is None:
+            raise ValueError("provider response-validator registry requires a binding")
+        identity = (
+            artifact.validator_id,
+            artifact.validator_version,
+            artifact.implementation_sha256,
+        )
+        registration = next(
+            (
+                item
+                for item in self.registrations
+                if item.identity == identity
+            ),
+            None,
+        )
+        if registration is None:
+            raise ValueError("provider response-validator implementation is untrusted")
+        contract = registration.factory(request)
+        if not isinstance(contract, ProviderResponseContract):
+            raise ValueError("provider response-validator factory returned no contract")
+        if contract.artifact != artifact:
+            raise ValueError("provider response-validator factory binding differs")
+        if content_sha256(
+            contract.json_schema(mode="validation")
+        ) != request.binding.response_schema_sha256:
+            raise ValueError("provider response-validator factory schema differs")
+        return contract
+
+
+def _resolve_installed_provider_response_contract(
+    request: PrivateStructuredProviderRequest,
+) -> ProviderResponseContract:
+    # Import lazily to avoid the provider/semantics module cycle while making
+    # the trusted registry impossible for a runtime caller to pre-install.
+    from .phase4_provider_semantics import (
+        PROVIDER_RESPONSE_VALIDATOR_REGISTRY,
+    )
+
+    return PROVIDER_RESPONSE_VALIDATOR_REGISTRY.resolve(request)
 
 
 class ProviderTransportResult(ContractModel):
@@ -705,7 +912,7 @@ def prepare_provider_request(
     input_payload: JsonValue,
     response_schema_id: str,
     response_schema_version: int,
-    response_adapter: TypeAdapter[object],
+    response_adapter: ProviderResponseContract,
     privacy_attestation: ProviderPrivacyAttestation,
     request_seed: int,
     provider_seed_parameter_sent: bool,
@@ -724,6 +931,11 @@ def prepare_provider_request(
     schema = response_adapter.json_schema(mode="validation")
     tools = tool_definitions or []
     binding = ProviderRequestBinding(
+        record_version=(
+            "phase4_provider_request_binding.v2"
+            if response_adapter.artifact is not None
+            else "phase4_provider_request_binding.v1"
+        ),
         call_id=call_id,
         robustness_profile_id=profile.profile_id,
         robustness_profile_version=profile.profile_version,
@@ -744,6 +956,21 @@ def prepare_provider_request(
         response_schema_id=response_schema_id,
         response_schema_version=response_schema_version,
         response_schema_sha256=content_sha256(schema),
+        response_validator_id=(
+            response_adapter.artifact.validator_id
+            if response_adapter.artifact is not None
+            else None
+        ),
+        response_validator_version=(
+            response_adapter.artifact.validator_version
+            if response_adapter.artifact is not None
+            else None
+        ),
+        response_validator_sha256=(
+            content_sha256(response_adapter.artifact)
+            if response_adapter.artifact is not None
+            else None
+        ),
         tool_definitions_sha256=content_sha256(tools),
         tool_calling_enabled=bool(tools),
         request_seed=request_seed,
@@ -754,16 +981,22 @@ def prepare_provider_request(
         created_at=created_at,
     )
     return PrivateStructuredProviderRequest(
+        record_version=(
+            "phase4_private_provider_request.v2"
+            if response_adapter.artifact is not None
+            else "phase4_private_provider_request.v1"
+        ),
         binding=binding,
         privacy_attestation=privacy_attestation,
         prompt_payload=prompt_payload,
         input_payload=input_payload,
         response_json_schema=schema,
+        response_validator=response_adapter.artifact,
         tool_definitions=tools,
     )
 
 
-def validate_provider_execution_journal(
+def _validate_provider_execution_journal(
     journal: ProviderExecutionJournal,
     ledger: ProviderUsageLedger,
     profile: Phase4ERobustnessProfile,
@@ -771,10 +1004,14 @@ def validate_provider_execution_journal(
     price_cards: list[ProviderPriceCard],
     *,
     require_complete: bool,
+    terminal_budget_breach: bool,
 ) -> None:
     """Recompute every public binding and authorization terminal outcome."""
 
-    validate_provider_usage_ledger(ledger, profile)
+    if terminal_budget_breach:
+        validate_terminal_provider_budget_breach_ledger(ledger, profile)
+    else:
+        validate_provider_usage_ledger(ledger, profile)
     profile_binding = (
         profile.profile_id,
         profile.profile_version,
@@ -929,6 +1166,58 @@ def validate_provider_execution_journal(
             and finalization.provider_seed_status is ProviderSeedStatus.NOT_SENT
         ):
             raise ValueError("completed provider request omitted seed provenance")
+
+
+def validate_provider_execution_journal(
+    journal: ProviderExecutionJournal,
+    ledger: ProviderUsageLedger,
+    profile: Phase4ERobustnessProfile,
+    candidates: list[OpenWeightModelCandidate],
+    price_cards: list[ProviderPriceCard],
+    *,
+    require_complete: bool,
+) -> None:
+    _validate_provider_execution_journal(
+        journal,
+        ledger,
+        profile,
+        candidates,
+        price_cards,
+        require_complete=require_complete,
+        terminal_budget_breach=False,
+    )
+
+
+def validate_terminal_provider_budget_breach_journal(
+    journal: ProviderExecutionJournal,
+    ledger: ProviderUsageLedger,
+    profile: Phase4ERobustnessProfile,
+    candidates: list[OpenWeightModelCandidate],
+    price_cards: list[ProviderPriceCard],
+) -> None:
+    """Audit a closed terminal overrun while preserving strict future blocking."""
+
+    _validate_provider_execution_journal(
+        journal,
+        ledger,
+        profile,
+        candidates,
+        price_cards,
+        require_complete=True,
+        terminal_budget_breach=True,
+    )
+    if (
+        not journal.finalizations
+        or journal.finalizations[-1].outcome
+        is not ProviderCallOutcome.TOKEN_BOUND_EXCEEDED
+        or [item.call_id for item in journal.request_bindings]
+        != [item.call_id for item in ledger.authorizations]
+        or [item.call_id for item in journal.finalizations]
+        != [item.call_id for item in ledger.calls]
+    ):
+        raise ValueError(
+            "terminal provider budget breach must end at the final token overrun"
+        )
 
 
 class ProviderBudgetRuntime:
@@ -1237,7 +1526,7 @@ class ProviderBudgetRuntime:
         self,
         request: PrivateStructuredProviderRequest,
         price_card: ProviderPriceCard,
-        response_adapter: TypeAdapter[object],
+        response_contract: ProviderResponseContract | None,
         transport: ProviderTransport,
         *,
         segment: BudgetSegment,
@@ -1245,6 +1534,26 @@ class ProviderBudgetRuntime:
     ) -> ProviderExecutionResult:
         """Reserve, invoke, validate, and close one logical model call."""
 
+        if request.response_validator is None:
+            if not isinstance(response_contract, ProviderResponseContract):
+                raise ValueError(
+                    "schema-only provider execution requires a response contract"
+                )
+            if response_contract.artifact is not None:
+                raise ValueError(
+                    "schema-only provider execution cannot bind a validator"
+                )
+            response_adapter = response_contract
+        else:
+            if response_contract is not None:
+                raise ValueError(
+                    "bound provider execution cannot accept a caller response contract"
+                )
+            response_adapter = _resolve_installed_provider_response_contract(request)
+        if content_sha256(
+            response_adapter.json_schema(mode="validation")
+        ) != request.binding.response_schema_sha256:
+            raise ValueError("provider execution response schema differs")
         if request.binding.price_card_sha256 != content_sha256(price_card):
             raise ValueError("provider request does not bind supplied price card")
         transport.validate_execution(request, segment=segment)
@@ -1360,8 +1669,14 @@ class ProviderBudgetRuntime:
             parsed = response_adapter.validate_python(
                 transport_result.output_payload
             )
-            response_hash = content_sha256(parsed)
-        except (ValidationError, TypeError, ValueError) as error:
+            canonical_output = response_adapter.dump_python(parsed, mode="json")
+            response_hash = content_sha256(canonical_output)
+        except (
+            ValidationError,
+            PydanticSerializationError,
+            TypeError,
+            ValueError,
+        ) as error:
             finalization = self._finalize(
                 binding,
                 price_card,

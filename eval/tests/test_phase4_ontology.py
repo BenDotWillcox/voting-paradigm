@@ -494,6 +494,63 @@ class TestContractsAndBindings:
 
 
 class TestProviderBoundary:
+    def test_draft_canonicalizes_nonsemantic_provider_lists(self):
+        first = UnsupportedAssumptionFlag(
+            flag_id="a_assumption",
+            description="The first assumption.",
+        )
+        second = UnsupportedAssumptionFlag(
+            flag_id="z_assumption",
+            description="The second assumption.",
+        )
+        draft = OntologyDimensionProposalDraft(
+            source_message_ids=["message_one", "message_one"],
+            proposed_dimension=dimension("community_voice"),
+            supporting_evidence_event_ids=["evidence_one", "evidence_one"],
+            candidate_duplicate_dimension_ids=["b", "a", "b"],
+            extractor_confidence=0.71,
+            unsupported_assumptions=[second, first, second],
+        )
+
+        assert draft.source_message_ids == ["message_one"]
+        assert draft.supporting_evidence_event_ids == ["evidence_one"]
+        assert draft.candidate_duplicate_dimension_ids == ["a", "b"]
+        assert [item.flag_id for item in draft.unsupported_assumptions] == [
+            "a_assumption",
+            "z_assumption",
+        ]
+
+    def test_draft_preserves_nonempty_source_lineage(self):
+        with pytest.raises(ValidationError, match="participant messages"):
+            OntologyDimensionProposalDraft(
+                source_message_ids=[],
+                proposed_dimension=dimension("community_voice"),
+                supporting_evidence_event_ids=[],
+                extractor_confidence=0.71,
+            )
+
+    def test_draft_rejects_conflicting_duplicate_assumption_ids(self):
+        with pytest.raises(
+            ValidationError,
+            match="unsupported assumption flag ids must be unique",
+        ):
+            OntologyDimensionProposalDraft(
+                source_message_ids=["message_one"],
+                proposed_dimension=dimension("community_voice"),
+                supporting_evidence_event_ids=[],
+                extractor_confidence=0.71,
+                unsupported_assumptions=[
+                    UnsupportedAssumptionFlag(
+                        flag_id="scope_assumption",
+                        description="The first interpretation.",
+                    ),
+                    UnsupportedAssumptionFlag(
+                        flag_id="scope_assumption",
+                        description="A conflicting interpretation.",
+                    ),
+                ],
+            )
+
     def test_provider_output_is_revalidated_and_stays_provisional(self):
         evidence = evidence_ledger()
         expansion = empty_expansion(evidence)
