@@ -966,9 +966,29 @@ def provider_committed_totals(
     return {segment: totals[segment] for segment in BudgetSegment}
 
 
-def validate_provider_usage_ledger(
+def provider_budget_limits_exceeded(
     ledger: ProviderUsageLedger,
     profile: Phase4ERobustnessProfile,
+) -> bool:
+    """Report whether actual or committed provider spend crossed a hard cap."""
+
+    for totals in (
+        provider_usage_totals(ledger),
+        provider_committed_totals(ledger),
+    ):
+        if any(
+            total > profile.budget_policy.segment_caps_microusd[segment]
+            for segment, total in totals.items()
+        ) or sum(totals.values()) > profile.budget_policy.hard_total_microusd:
+            return True
+    return False
+
+
+def _validate_provider_usage_ledger(
+    ledger: ProviderUsageLedger,
+    profile: Phase4ERobustnessProfile,
+    *,
+    enforce_budget_caps: bool,
 ) -> None:
     if (
         ledger.robustness_profile_id,
@@ -1029,15 +1049,58 @@ def validate_provider_usage_ledger(
                 )
         previous_authorized_at = authorization.created_at
 
-    for label, totals in (
-        ("usage", usage_totals),
-        ("committed spend", committed_totals),
-    ):
-        for segment, total in totals.items():
-            if total > profile.budget_policy.segment_caps_microusd[segment]:
-                raise ValueError(f"provider {label} exceeds a segment cap")
-        if sum(totals.values()) > profile.budget_policy.hard_total_microusd:
-            raise ValueError(f"provider {label} exceeds the hard total cap")
+    if enforce_budget_caps:
+        for label, totals in (
+            ("usage", usage_totals),
+            ("committed spend", committed_totals),
+        ):
+            for segment, total in totals.items():
+                if total > profile.budget_policy.segment_caps_microusd[segment]:
+                    raise ValueError(f"provider {label} exceeds a segment cap")
+            if sum(totals.values()) > profile.budget_policy.hard_total_microusd:
+                raise ValueError(f"provider {label} exceeds the hard total cap")
+
+
+def validate_provider_usage_ledger(
+    ledger: ProviderUsageLedger,
+    profile: Phase4ERobustnessProfile,
+) -> None:
+    _validate_provider_usage_ledger(
+        ledger,
+        profile,
+        enforce_budget_caps=True,
+    )
+
+
+def validate_terminal_provider_budget_breach_ledger(
+    ledger: ProviderUsageLedger,
+    profile: Phase4ERobustnessProfile,
+) -> None:
+    """Audit one closed last-call overrun without treating it as spend authority."""
+
+    authorization_ids = [item.call_id for item in ledger.authorizations]
+    call_ids = [item.call_id for item in ledger.calls]
+    if not call_ids or call_ids != authorization_ids:
+        raise ValueError(
+            "terminal provider budget breach must close every authorization"
+        )
+    if ledger.calls[-1].authorization_overrun_microusd <= 0:
+        raise ValueError("terminal provider budget breach needs a final overrun")
+    if not provider_budget_limits_exceeded(ledger, profile):
+        raise ValueError("terminal provider ledger does not exceed a hard cap")
+    prefix = ledger.model_copy(
+        update={
+            "authorizations": ledger.authorizations[:-1],
+            "calls": ledger.calls[:-1],
+        },
+        deep=True,
+    )
+    validate_provider_usage_ledger(prefix, profile)
+    _validate_provider_usage_ledger(
+        ledger,
+        profile,
+        enforce_budget_caps=False,
+    )
 
 
 def authorize_provider_call(

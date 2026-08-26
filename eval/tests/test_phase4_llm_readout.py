@@ -31,6 +31,7 @@ from eval.phase4_llm_readout import (
     LLMReadoutExecutor,
     LLMReadoutPolicy,
     LLMReadoutPromptArtifact,
+    LLMReadoutResponseDraft,
     build_direct_llm_prediction_snapshot,
     build_hybrid_prediction_snapshot,
     llm_prompt_artifact_reference,
@@ -53,6 +54,7 @@ from eval.phase4_prediction import (
     Phase4EvaluationRun,
     Phase4ModelConfiguration,
     PredictionCheckpoint,
+    PredictionUnsupportedAssumption,
     active_ontology_input_sha256,
     validate_phase4_evaluation_run,
     validate_prediction_v2_for_measure,
@@ -72,6 +74,64 @@ SEMANTIC_MAP = load_authored_semantic_map(
     ROOT / "eval/fixtures/preference_eval_dev_semantic_map_v1.json"
 )
 NOW = datetime(2026, 8, 17, 12, 0, tzinfo=timezone.utc)
+
+
+def test_readout_draft_canonicalizes_nonsemantic_provider_lists() -> None:
+    assumption = PredictionUnsupportedAssumption(
+        assumption_id="scope_assumption",
+        description="The packet leaves the scope uncertain.",
+        affected_option_ids=["option_b", "option_a", "option_b"],
+    )
+    other = PredictionUnsupportedAssumption(
+        assumption_id="eligibility_assumption",
+        description="Eligibility remains uncertain.",
+        affected_option_ids=["option_b"],
+    )
+
+    response = LLMReadoutResponseDraft(
+        option_probabilities={"option_a": 0.4, "option_b": 0.6},
+        settled_probability=0.6,
+        supporting_evidence_event_ids=["evidence_b", "evidence_a", "evidence_b"],
+        unsupported_assumptions=[assumption, other, assumption],
+    )
+
+    assert response.supporting_evidence_event_ids == ["evidence_a", "evidence_b"]
+    assert [item.assumption_id for item in response.unsupported_assumptions] == [
+        "eligibility_assumption",
+        "scope_assumption",
+    ]
+    assert response.unsupported_assumptions[1].affected_option_ids == [
+        "option_a",
+        "option_b",
+    ]
+
+
+def test_readout_draft_rejects_conflicting_duplicate_assumption_ids() -> None:
+    with pytest.raises(ValueError, match="unsupported assumption ids must be unique"):
+        LLMReadoutResponseDraft(
+            option_probabilities={"option_a": 0.4, "option_b": 0.6},
+            settled_probability=0.6,
+            unsupported_assumptions=[
+                PredictionUnsupportedAssumption(
+                    assumption_id="scope_assumption",
+                    description="The first interpretation.",
+                    affected_option_ids=["option_a"],
+                ),
+                PredictionUnsupportedAssumption(
+                    assumption_id="scope_assumption",
+                    description="A conflicting interpretation.",
+                    affected_option_ids=["option_b"],
+                ),
+            ],
+        )
+
+
+def test_readout_draft_preserves_probability_normalization() -> None:
+    with pytest.raises(ValueError, match="probabilities must sum to one"):
+        LLMReadoutResponseDraft(
+            option_probabilities={"option_a": 0.4, "option_b": 0.5},
+            settled_probability=0.5,
+        )
 
 
 def at(minutes: int) -> datetime:

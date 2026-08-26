@@ -39,6 +39,7 @@ from .phase4_evidence import (
     FixedOntologyClaim,
     FixedOntologyEvidenceLedger,
     UnsupportedAssumptionFlag,
+    canonical_unsupported_assumptions,
     conversation_messages_sha256,
 )
 from .phase4_interviewer import ConversationRole
@@ -486,28 +487,25 @@ class OntologyDimensionProposalDraft(ContractModel):
 
     @model_validator(mode="after")
     def validate_draft(self) -> Self:
-        if not self.source_message_ids:
+        source_message_ids = list(dict.fromkeys(self.source_message_ids))
+        if not source_message_ids:
             raise ValueError("dimension proposal requires participant messages")
-        _require_unique(self.source_message_ids, "dimension source message ids")
-        _require_unique(
-            self.supporting_evidence_event_ids,
-            "dimension supporting evidence event ids",
+        object.__setattr__(self, "source_message_ids", source_message_ids)
+        object.__setattr__(
+            self,
+            "supporting_evidence_event_ids",
+            list(dict.fromkeys(self.supporting_evidence_event_ids)),
         )
-        _require_unique(
-            self.candidate_duplicate_dimension_ids,
-            "candidate duplicate dimension ids",
+        object.__setattr__(
+            self,
+            "candidate_duplicate_dimension_ids",
+            sorted(set(self.candidate_duplicate_dimension_ids)),
         )
-        if self.candidate_duplicate_dimension_ids != sorted(
-            self.candidate_duplicate_dimension_ids
-        ):
-            raise ValueError("candidate duplicate dimension ids must be canonical")
-        flag_ids = [flag.flag_id for flag in self.unsupported_assumptions]
-        _require_unique(
-            flag_ids,
-            "dimension unsupported assumption ids",
+        object.__setattr__(
+            self,
+            "unsupported_assumptions",
+            canonical_unsupported_assumptions(self.unsupported_assumptions),
         )
-        if flag_ids != sorted(flag_ids):
-            raise ValueError("dimension unsupported assumptions must be canonical")
         return self
 
 
@@ -535,7 +533,7 @@ class OntologyDimensionProposal(_OntologyRecord):
 
     @model_validator(mode="after")
     def validate_proposal(self) -> Self:
-        OntologyDimensionProposalDraft(
+        normalized = OntologyDimensionProposalDraft(
             source_message_ids=self.source_message_ids,
             proposed_dimension=self.proposed_dimension,
             supporting_evidence_event_ids=self.supporting_evidence_event_ids,
@@ -544,6 +542,22 @@ class OntologyDimensionProposal(_OntologyRecord):
             ),
             extractor_confidence=self.extractor_confidence,
             unsupported_assumptions=self.unsupported_assumptions,
+        )
+        object.__setattr__(self, "source_message_ids", normalized.source_message_ids)
+        object.__setattr__(
+            self,
+            "supporting_evidence_event_ids",
+            normalized.supporting_evidence_event_ids,
+        )
+        object.__setattr__(
+            self,
+            "candidate_duplicate_dimension_ids",
+            normalized.candidate_duplicate_dimension_ids,
+        )
+        object.__setattr__(
+            self,
+            "unsupported_assumptions",
+            normalized.unsupported_assumptions,
         )
         return self
 

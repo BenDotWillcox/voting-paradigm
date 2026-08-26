@@ -575,7 +575,7 @@ def _attempt_record(
     )
 
 
-def _candidate_plan(
+def build_candidate_capability_plan(
     source_plan: TogetherCapabilityPlan,
     candidate_id: str,
     *,
@@ -666,7 +666,7 @@ def build_capability_continuation_plan(
         if candidate_id not in rejected
     ]
     candidate_plans = [
-        _candidate_plan(
+        build_candidate_capability_plan(
             corrected_plan,
             candidate_id,
             created_at=created_at,
@@ -798,10 +798,39 @@ def build_candidate_capability_authorization_bundle(
         continuation, candidate_plan.candidate_id
     ):
         raise ValueError("candidate plan differs from continuation")
+    return build_candidate_authorization_for_plan_owner(
+        content_sha256(continuation),
+        candidate_plan,
+        suite,
+        profile,
+        readiness,
+        catalog_bundle,
+        bundle_id=bundle_id,
+        approval_id=approval_id,
+        approved_at=approved_at,
+        expires_at=expires_at,
+    )
+
+
+def build_candidate_authorization_for_plan_owner(
+    plan_owner_sha256: Sha256Digest,
+    candidate_plan: TogetherCandidateCapabilityPlan,
+    suite: Phase4TogetherSuite,
+    profile: Phase4ERobustnessProfile,
+    readiness: Phase4TogetherReadinessBundle,
+    catalog_bundle: TogetherCatalogPreflightBundle,
+    *,
+    bundle_id: str,
+    approval_id: str,
+    approved_at: datetime,
+    expires_at: datetime,
+) -> TogetherCandidateCapabilityAuthorizationBundle:
+    """Build one private authorization bound to a reviewed candidate-plan owner."""
+
     manual = TogetherCandidateCapabilityManualApproval(
         approval_id=approval_id,
         approval_version=1,
-        continuation_plan_sha256=content_sha256(continuation),
+        continuation_plan_sha256=plan_owner_sha256,
         candidate_plan_sha256=content_sha256(candidate_plan),
         candidate_id=candidate_plan.candidate_id,
         approved_max_spend_microusd=(
@@ -842,15 +871,15 @@ def build_candidate_capability_authorization_bundle(
     bundle = TogetherCandidateCapabilityAuthorizationBundle(
         bundle_id=bundle_id,
         bundle_version=1,
-        continuation_plan_sha256=content_sha256(continuation),
+        continuation_plan_sha256=plan_owner_sha256,
         candidate_plan_sha256=content_sha256(candidate_plan),
         catalog_preflight_bundle_sha256=content_sha256(catalog_bundle),
         manual_approval=manual,
         live_authorization=live,
     )
-    validate_candidate_capability_authorization_bundle(
+    validate_candidate_authorization_for_plan_owner(
         bundle,
-        continuation,
+        plan_owner_sha256,
         candidate_plan,
         suite,
         profile,
@@ -872,20 +901,43 @@ def validate_candidate_capability_authorization_bundle(
     *,
     now: datetime,
 ) -> None:
+    if candidate_plan != candidate_plan_for(
+        continuation, candidate_plan.candidate_id
+    ):
+        raise ValueError("candidate capability plan is not continuation-eligible")
+    validate_candidate_authorization_for_plan_owner(
+        bundle,
+        content_sha256(continuation),
+        candidate_plan,
+        suite,
+        profile,
+        readiness,
+        catalog_bundle,
+        now=now,
+    )
+
+
+def validate_candidate_authorization_for_plan_owner(
+    bundle: TogetherCandidateCapabilityAuthorizationBundle,
+    plan_owner_sha256: Sha256Digest,
+    candidate_plan: TogetherCandidateCapabilityPlan,
+    suite: Phase4TogetherSuite,
+    profile: Phase4ERobustnessProfile,
+    readiness: Phase4TogetherReadinessBundle,
+    catalog_bundle: TogetherCatalogPreflightBundle,
+    *,
+    now: datetime,
+) -> None:
     if (
         bundle.continuation_plan_sha256,
         bundle.candidate_plan_sha256,
         bundle.catalog_preflight_bundle_sha256,
     ) != (
-        content_sha256(continuation),
+        plan_owner_sha256,
         content_sha256(candidate_plan),
         content_sha256(catalog_bundle),
     ):
         raise ValueError("candidate capability authorization hashes differ")
-    if candidate_plan != candidate_plan_for(
-        continuation, candidate_plan.candidate_id
-    ):
-        raise ValueError("candidate capability plan is not continuation-eligible")
     if (
         bundle.manual_approval.candidate_id != candidate_plan.candidate_id
         or bundle.manual_approval.approved_max_spend_microusd
@@ -915,7 +967,7 @@ def validate_candidate_capability_authorization_bundle(
 
 
 def _build_candidate_receipt(
-    continuation: TogetherCapabilityContinuationPlan,
+    plan_owner_sha256: Sha256Digest,
     plan: TogetherCandidateCapabilityPlan,
     suite: Phase4TogetherSuite,
     profile: Phase4ERobustnessProfile,
@@ -987,7 +1039,7 @@ def _build_candidate_receipt(
     return TogetherCandidateCapabilityReceipt(
         receipt_id=receipt_id,
         receipt_version=1,
-        continuation_plan_sha256=content_sha256(continuation),
+        continuation_plan_sha256=plan_owner_sha256,
         candidate_plan_sha256=content_sha256(plan),
         together_suite_sha256=content_sha256(suite),
         robustness_profile_sha256=content_sha256(profile),
@@ -1002,23 +1054,30 @@ def _build_candidate_receipt(
 
 def validate_candidate_capability_execution_state(
     state: TogetherCandidateCapabilityExecutionState,
-    continuation: TogetherCapabilityContinuationPlan,
+    continuation: TogetherCapabilityContinuationPlan | None,
     plan: TogetherCandidateCapabilityPlan,
     authorization: TogetherCandidateCapabilityAuthorizationBundle,
     suite: Phase4TogetherSuite,
     profile: Phase4ERobustnessProfile,
     *,
     authorization_binding_sha256: Sha256Digest | None = None,
+    plan_owner_sha256: Sha256Digest | None = None,
 ) -> None:
     expected_authorization_sha256 = (
         authorization_binding_sha256 or content_sha256(authorization)
     )
+    if plan_owner_sha256 is None:
+        if continuation is None:
+            raise ValueError("candidate capability plan owner hash is missing")
+        expected_plan_owner_sha256 = content_sha256(continuation)
+    else:
+        expected_plan_owner_sha256 = plan_owner_sha256
     if (
         state.continuation_plan_sha256,
         state.candidate_plan_sha256,
         state.authorization_bundle_sha256,
     ) != (
-        content_sha256(continuation),
+        expected_plan_owner_sha256,
         content_sha256(plan),
         expected_authorization_sha256,
     ):
@@ -1079,7 +1138,7 @@ def validate_candidate_capability_execution_state(
         raise ValueError("candidate capability state exceeds manual ceiling")
     if state.receipt is not None:
         rebuilt = _build_candidate_receipt(
-            continuation,
+            expected_plan_owner_sha256,
             plan,
             suite,
             profile,
@@ -1096,7 +1155,7 @@ def validate_candidate_capability_execution_state(
 def _execution_state(
     *,
     state_id: str,
-    continuation: TogetherCapabilityContinuationPlan,
+    plan_owner_sha256: Sha256Digest,
     plan: TogetherCandidateCapabilityPlan,
     authorization_binding_sha256: Sha256Digest,
     runtime: ProviderBudgetRuntime,
@@ -1106,7 +1165,7 @@ def _execution_state(
     return TogetherCandidateCapabilityExecutionState(
         state_id=state_id,
         state_version=1,
-        continuation_plan_sha256=content_sha256(continuation),
+        continuation_plan_sha256=plan_owner_sha256,
         candidate_plan_sha256=content_sha256(plan),
         authorization_bundle_sha256=authorization_binding_sha256,
         provider_ledger=runtime.ledger_snapshot(),
@@ -1149,12 +1208,8 @@ def execute_candidate_capability_preflight(
         Callable[[ProviderStructuredOutputDiagnostic], None] | None
     ) = None,
 ) -> TogetherCandidateCapabilityExecutionState:
-    """Execute one exact five-role plan and stop at that candidate's failure."""
+    """Validate the v2 continuation, then execute one candidate plan."""
 
-    started_at = clock()
-    effective_authorization_sha256 = (
-        authorization_binding_sha256 or content_sha256(authorization)
-    )
     validate_capability_continuation_plan(
         continuation,
         historical_plan,
@@ -1169,9 +1224,66 @@ def execute_candidate_capability_preflight(
         session,
         semantic_map,
     )
-    validate_candidate_capability_authorization_bundle(
+    if plan != candidate_plan_for(continuation, plan.candidate_id):
+        raise ValueError("candidate plan differs from continuation")
+    return execute_candidate_capability_plan(
+        content_sha256(continuation),
+        plan,
         authorization,
-        continuation,
+        suite,
+        profile,
+        readiness,
+        fixture,
+        session,
+        semantic_map,
+        catalog_bundle,
+        transport,
+        state_id=state_id,
+        ledger_id=ledger_id,
+        journal_id=journal_id,
+        clock=clock,
+        prior_state=prior_state,
+        authorization_binding_sha256=authorization_binding_sha256,
+        checkpoint=checkpoint,
+        validation_diagnostic_sink=validation_diagnostic_sink,
+    )
+
+
+def execute_candidate_capability_plan(
+    plan_owner_sha256: Sha256Digest,
+    plan: TogetherCandidateCapabilityPlan,
+    authorization: TogetherCandidateCapabilityAuthorizationBundle,
+    suite: Phase4TogetherSuite,
+    profile: Phase4ERobustnessProfile,
+    readiness: Phase4TogetherReadinessBundle,
+    fixture: EvaluationFixture,
+    session: PrequentialSessionScript,
+    semantic_map: AuthoredSemanticMapBundle,
+    catalog_bundle: TogetherCatalogPreflightBundle,
+    transport: ProviderTransport,
+    *,
+    state_id: str,
+    ledger_id: str,
+    journal_id: str,
+    clock: Callable[[], datetime],
+    prior_state: TogetherCandidateCapabilityExecutionState | None = None,
+    authorization_binding_sha256: Sha256Digest | None = None,
+    checkpoint: (
+        Callable[[TogetherCandidateCapabilityExecutionState], None] | None
+    ) = None,
+    validation_diagnostic_sink: (
+        Callable[[ProviderStructuredOutputDiagnostic], None] | None
+    ) = None,
+) -> TogetherCandidateCapabilityExecutionState:
+    """Execute one reviewed five-role plan and stop at its first failure."""
+
+    started_at = clock()
+    effective_authorization_sha256 = (
+        authorization_binding_sha256 or content_sha256(authorization)
+    )
+    validate_candidate_authorization_for_plan_owner(
+        authorization,
+        plan_owner_sha256,
         plan,
         suite,
         profile,
@@ -1197,12 +1309,13 @@ def execute_candidate_capability_preflight(
     else:
         validate_candidate_capability_execution_state(
             prior_state,
-            continuation,
+            None,
             plan,
             authorization,
             suite,
             profile,
             authorization_binding_sha256=effective_authorization_sha256,
+            plan_owner_sha256=plan_owner_sha256,
         )
         if prior_state.receipt is not None:
             return prior_state.model_copy(deep=True)
@@ -1228,7 +1341,7 @@ def execute_candidate_capability_preflight(
     def checkpoint_progress() -> None:
         progressive = _execution_state(
             state_id=state_id,
-            continuation=continuation,
+            plan_owner_sha256=plan_owner_sha256,
             plan=plan,
             authorization_binding_sha256=effective_authorization_sha256,
             runtime=runtime,
@@ -1237,12 +1350,13 @@ def execute_candidate_capability_preflight(
         )
         validate_candidate_capability_execution_state(
             progressive,
-            continuation,
+            None,
             plan,
             authorization,
             suite,
             profile,
             authorization_binding_sha256=effective_authorization_sha256,
+            plan_owner_sha256=plan_owner_sha256,
         )
         if checkpoint is not None:
             checkpoint(progressive)
@@ -1271,7 +1385,11 @@ def execute_candidate_capability_preflight(
             result = runtime.execute(
                 rebuilt.request,
                 rebuilt.price_card,
-                rebuilt.response_adapter,
+                (
+                    None
+                    if rebuilt.request.response_validator is not None
+                    else rebuilt.response_adapter
+                ),
                 transport,
                 segment=BudgetSegment.QUALIFICATION,
             )
@@ -1304,7 +1422,7 @@ def execute_candidate_capability_preflight(
         if not _call_passed(call, result.finalization):
             raise ValueError("candidate interviewer probe did not call a tool")
     receipt = _build_candidate_receipt(
-        continuation,
+        plan_owner_sha256,
         plan,
         suite,
         profile,
@@ -1316,7 +1434,7 @@ def execute_candidate_capability_preflight(
     )
     complete = _execution_state(
         state_id=state_id,
-        continuation=continuation,
+        plan_owner_sha256=plan_owner_sha256,
         plan=plan,
         authorization_binding_sha256=effective_authorization_sha256,
         runtime=runtime,
@@ -1325,12 +1443,13 @@ def execute_candidate_capability_preflight(
     )
     validate_candidate_capability_execution_state(
         complete,
-        continuation,
+        None,
         plan,
         authorization,
         suite,
         profile,
         authorization_binding_sha256=effective_authorization_sha256,
+        plan_owner_sha256=plan_owner_sha256,
     )
     if checkpoint is not None:
         checkpoint(complete)

@@ -7,8 +7,10 @@ from pathlib import Path
 import pytest
 from pydantic import JsonValue, TypeAdapter, ValidationError
 
+import eval.phase4_provider as phase4_provider_module
 from eval.contracts import ContractModel
 from eval.fixture_io import content_sha256
+from eval.phase4_llm_readout import LLMReadoutResponseDraft
 from eval.phase4_provider import (
     PrivateStructuredProviderRequest,
     ProviderBudgetRuntime,
@@ -19,13 +21,25 @@ from eval.phase4_provider import (
     ProviderPriceCard,
     ProviderPrivacyAttestation,
     ProviderRequestBinding,
+    ProviderResponseContract,
+    ProviderResponseValidatorRegistration,
+    ProviderResponseValidatorRegistry,
     ProviderSeedStatus,
     ProviderTransportResult,
     ScriptedProviderTransport,
+    bind_provider_response_contract,
     build_public_development_attestation,
     prepare_provider_request,
     price_provider_tokens,
     provider_request_content_sha256,
+    validate_provider_execution_journal,
+    validate_terminal_provider_budget_breach_journal,
+)
+from eval.phase4_provider_semantics import (
+    PROVIDER_RESPONSE_VALIDATOR_ID,
+    PROVIDER_RESPONSE_VALIDATOR_VERSION,
+    provider_response_adapter_for_role,
+    provider_response_validator_implementation_sha256,
 )
 from eval.phase4_qualification import (
     CandidateQualificationResult,
@@ -70,8 +84,19 @@ class DemoStructuredOutput(ContractModel):
     confidence: float
 
 
-OUTPUT_ADAPTER = TypeAdapter(DemoStructuredOutput)
-NON_JSON_OUTPUT_ADAPTER = TypeAdapter(set[int])
+class OpaqueOutput:
+    pass
+
+
+OUTPUT_ADAPTER = ProviderResponseContract(
+    adapter=TypeAdapter(DemoStructuredOutput)
+)
+NON_JSON_OUTPUT_ADAPTER = ProviderResponseContract(
+    adapter=TypeAdapter(set[int])
+)
+OPAQUE_OUTPUT_ADAPTER = ProviderResponseContract(
+    adapter=TypeAdapter(object)
+)
 
 
 def profile() -> Phase4ERobustnessProfile:
@@ -142,16 +167,19 @@ def prepared_request(
     created_at: datetime,
     attestation_id: str | None = None,
     provider_seed_parameter_sent: bool = True,
-    response_adapter: TypeAdapter = OUTPUT_ADAPTER,
+    response_adapter: ProviderResponseContract = OUTPUT_ADAPTER,
+    input_payload: JsonValue | None = None,
 ) -> PrivateStructuredProviderRequest:
     prompt_payload = {"system": "Return the exact structured contract."}
-    input_payload = {"public_development_case": "case_one"}
+    resolved_input_payload = input_payload or {
+        "public_development_case": "case_one"
+    }
     schema = response_adapter.json_schema(mode="validation")
     tools = tool_definitions(role)
     attestation = build_public_development_attestation(
         attestation_id=attestation_id or f"{call_id}_privacy",
         prompt_payload=prompt_payload,
-        input_payload=input_payload,
+        input_payload=resolved_input_payload,
         response_json_schema=schema,
         tool_definitions=tools,
     )
@@ -164,7 +192,7 @@ def prepared_request(
         prompt_id=f"{role.value}_prompt",
         prompt_version=1,
         prompt_payload=prompt_payload,
-        input_payload=input_payload,
+        input_payload=resolved_input_payload,
         response_schema_id=f"{role.value}_response",
         response_schema_version=1,
         response_adapter=response_adapter,
@@ -575,7 +603,285 @@ def test_invalid_structured_output_is_billed_and_terminal():
     runtime.audit([model], [pricing])
 
 
-def test_non_json_structured_output_is_billed_and_terminal():
+def test_request_bound_semantic_failure_is_invalid_output() -> None:
+    robustness_profile = profile()
+    model = candidate("candidate_semantic")
+    pricing = price_card(model)
+    input_payload: dict[str, JsonValue] = {
+        "canonical_option_ids": ["option_a", "option_b"],
+        "eligible_evidence_event_ids": ["evidence_one"],
+    }
+    adapter = provider_response_adapter_for_role(
+        LLMRole.DIRECT_READOUT,
+        response_schema_version=1,
+        input_payload=input_payload,
+        bind_request_semantics=True,
+    )
+    request = prepared_request(
+        robustness_profile,
+        model,
+        pricing,
+        call_id="semantic_invalid_output",
+        role=LLMRole.DIRECT_READOUT,
+        created_at=NOW,
+        response_adapter=adapter,
+        input_payload=input_payload,
+    )
+    result = successful_transport_result(
+        NOW + timedelta(seconds=1)
+    ).model_copy(
+        update={
+            "output_payload": {
+                "option_probabilities": {"option_a": 0.4, "option_b": 0.6},
+                "settled_probability": 0.6,
+                "supporting_evidence_event_ids": [],
+                "unsupported_assumptions": [],
+            }
+        }
+    )
+    runtime = ProviderBudgetRuntime(
+        robustness_profile,
+        ledger_id="provider_usage_semantic_invalid",
+        journal_id="provider_journal_semantic_invalid",
+    )
+    copied_artifact_contract = ProviderResponseContract(
+        adapter=TypeAdapter(LLMReadoutResponseDraft),
+        artifact=request.response_validator,
+    )
+    forged_registry = ProviderResponseValidatorRegistry(
+        registrations=(
+            ProviderResponseValidatorRegistration(
+                validator_id=PROVIDER_RESPONSE_VALIDATOR_ID,
+                validator_version=PROVIDER_RESPONSE_VALIDATOR_VERSION,
+                implementation_sha256=(
+                    provider_response_validator_implementation_sha256()
+                ),
+                factory=lambda _request: copied_artifact_contract,
+            ),
+        )
+    )
+    untouched_transport = ScriptedProviderTransport([result])
+
+    assert not hasattr(
+        phase4_provider_module,
+        "install_provider_response_validator_registry",
+    )
+    with pytest.raises(ValueError, match="caller response contract"):
+        runtime.execute(
+            request,
+            pricing,
+            forged_registry,  # type: ignore[arg-type]
+            untouched_transport,
+            segment=BudgetSegment.QUALIFICATION,
+        )
+    assert runtime.ledger_snapshot().authorizations == []
+    assert untouched_transport.requests == []
+
+    execution = runtime.execute(
+        request,
+        pricing,
+        None,
+        ScriptedProviderTransport([result]),
+        segment=BudgetSegment.QUALIFICATION,
+    )
+
+    assert execution.output is None
+    assert execution.finalization.outcome is ProviderCallOutcome.INVALID_OUTPUT
+    assert execution.finalization.failure_code == "structured_output_invalid"
+    runtime.audit([model], [pricing])
+
+
+def test_official_validator_registry_rejects_mixed_schema_before_send() -> None:
+    robustness_profile = profile()
+    model = candidate("candidate_mixed_validator_schema")
+    pricing = price_card(model)
+    input_payload: dict[str, JsonValue] = {
+        "canonical_option_ids": ["option_a", "option_b"],
+        "eligible_evidence_event_ids": ["evidence_one"],
+    }
+    mismatched_contract = bind_provider_response_contract(
+        TypeAdapter(DemoStructuredOutput),
+        role=LLMRole.DIRECT_READOUT,
+        input_payload=input_payload,
+        validator_id=PROVIDER_RESPONSE_VALIDATOR_ID,
+        validator_version=PROVIDER_RESPONSE_VALIDATOR_VERSION,
+        implementation_sha256=(
+            provider_response_validator_implementation_sha256()
+        ),
+    )
+    request = prepared_request(
+        robustness_profile,
+        model,
+        pricing,
+        call_id="mixed_validator_schema",
+        role=LLMRole.DIRECT_READOUT,
+        created_at=NOW,
+        response_adapter=mismatched_contract,
+        input_payload=input_payload,
+    )
+    runtime = ProviderBudgetRuntime(
+        robustness_profile,
+        ledger_id="provider_usage_mixed_validator_schema",
+        journal_id="provider_journal_mixed_validator_schema",
+    )
+    transport = ScriptedProviderTransport(
+        [successful_transport_result(NOW + timedelta(seconds=1))]
+    )
+
+    with pytest.raises(ValueError, match="factory binding differs"):
+        runtime.execute(
+            request,
+            pricing,
+            None,
+            transport,
+            segment=BudgetSegment.QUALIFICATION,
+        )
+
+    assert runtime.ledger_snapshot().authorizations == []
+    assert transport.requests == []
+
+
+def test_official_validator_registry_rejects_untrusted_identity_before_send() -> None:
+    robustness_profile = profile()
+    model = candidate("candidate_untrusted_validator")
+    pricing = price_card(model)
+    input_payload: dict[str, JsonValue] = {
+        "canonical_option_ids": ["option_a", "option_b"],
+        "eligible_evidence_event_ids": ["evidence_one"],
+    }
+    trusted_contract = provider_response_adapter_for_role(
+        LLMRole.DIRECT_READOUT,
+        response_schema_version=1,
+        input_payload=input_payload,
+        bind_request_semantics=True,
+    )
+    untrusted_contract = bind_provider_response_contract(
+        trusted_contract.adapter,
+        role=LLMRole.DIRECT_READOUT,
+        input_payload=input_payload,
+        validator_id=PROVIDER_RESPONSE_VALIDATOR_ID,
+        validator_version=PROVIDER_RESPONSE_VALIDATOR_VERSION,
+        implementation_sha256="f" * 64,
+    )
+    request = prepared_request(
+        robustness_profile,
+        model,
+        pricing,
+        call_id="untrusted_validator",
+        role=LLMRole.DIRECT_READOUT,
+        created_at=NOW,
+        response_adapter=untrusted_contract,
+        input_payload=input_payload,
+    )
+    runtime = ProviderBudgetRuntime(
+        robustness_profile,
+        ledger_id="provider_usage_untrusted_validator",
+        journal_id="provider_journal_untrusted_validator",
+    )
+    transport = ScriptedProviderTransport(
+        [successful_transport_result(NOW + timedelta(seconds=1))]
+    )
+
+    with pytest.raises(ValueError, match="implementation is untrusted"):
+        runtime.execute(
+            request,
+            pricing,
+            None,
+            transport,
+            segment=BudgetSegment.QUALIFICATION,
+        )
+
+    assert runtime.ledger_snapshot().authorizations == []
+    assert transport.requests == []
+
+
+def test_schema_only_v1_request_round_trips_without_v2_fields() -> None:
+    robustness_profile = profile()
+    model = candidate("candidate_legacy_request")
+    pricing = price_card(model)
+    request = prepared_request(
+        robustness_profile,
+        model,
+        pricing,
+        call_id="legacy_request",
+        role=LLMRole.DIRECT_READOUT,
+        created_at=NOW,
+    )
+    payload = request.model_dump(mode="json")
+
+    assert payload["record_version"] == "phase4_private_provider_request.v1"
+    assert payload["binding"]["record_version"] == (
+        "phase4_provider_request_binding.v1"
+    )
+    assert "response_validator" not in payload
+    assert not {
+        "response_validator_id",
+        "response_validator_version",
+        "response_validator_sha256",
+    } & set(payload["binding"])
+
+    round_tripped = PrivateStructuredProviderRequest.model_validate_json(
+        request.model_dump_json()
+    )
+    assert round_tripped.model_dump(mode="json") == payload
+    assert content_sha256(round_tripped) == content_sha256(payload)
+
+
+def test_v2_request_cannot_omit_or_mix_validator_identity() -> None:
+    robustness_profile = profile()
+    model = candidate("candidate_validator_binding")
+    pricing = price_card(model)
+    input_payload: dict[str, JsonValue] = {
+        "canonical_option_ids": ["option_a", "option_b"],
+        "eligible_evidence_event_ids": ["evidence_one"],
+    }
+    adapter = provider_response_adapter_for_role(
+        LLMRole.DIRECT_READOUT,
+        response_schema_version=1,
+        input_payload=input_payload,
+        bind_request_semantics=True,
+    )
+    request = prepared_request(
+        robustness_profile,
+        model,
+        pricing,
+        call_id="validator_binding",
+        role=LLMRole.DIRECT_READOUT,
+        created_at=NOW,
+        response_adapter=adapter,
+        input_payload=input_payload,
+    )
+
+    for field_name in (
+        "response_validator_id",
+        "response_validator_version",
+        "response_validator_sha256",
+    ):
+        binding_payload = request.binding.model_dump(mode="json")
+        binding_payload.pop(field_name)
+        with pytest.raises(ValidationError, match="validator binding is incomplete"):
+            ProviderRequestBinding.model_validate(binding_payload)
+
+    binding_payload = request.binding.model_dump(mode="json")
+    binding_payload["record_version"] = "phase4_provider_request_binding.v1"
+    with pytest.raises(ValidationError, match="request-binding version differs"):
+        ProviderRequestBinding.model_validate(binding_payload)
+
+    request_payload = request.model_dump(mode="json")
+    request_payload.pop("response_validator")
+    with pytest.raises(ValidationError, match="response-validator binding differs"):
+        PrivateStructuredProviderRequest.model_validate(request_payload)
+
+    request_payload = request.model_dump(mode="json")
+    request_payload["record_version"] = "phase4_private_provider_request.v1"
+    with pytest.raises(
+        ValidationError,
+        match="private provider request version differs",
+    ):
+        PrivateStructuredProviderRequest.model_validate(request_payload)
+
+
+def test_response_adapter_serializes_validated_output_before_hashing():
     robustness_profile = profile()
     model = candidate("candidate_a")
     pricing = price_card(model)
@@ -601,6 +907,44 @@ def test_non_json_structured_output_is_billed_and_terminal():
         request,
         pricing,
         NON_JSON_OUTPUT_ADAPTER,
+        ScriptedProviderTransport([result]),
+        segment=BudgetSegment.QUALIFICATION,
+    )
+
+    assert execution.output == {1, 2}
+    assert execution.finalization.outcome is ProviderCallOutcome.SUCCESS
+    assert execution.finalization.response_sha256 == content_sha256([1, 2])
+    assert execution.validation_diagnostic is None
+    assert runtime.ledger_snapshot().calls[0].billed_cost_microusd > 0
+    runtime.audit([model], [pricing])
+
+
+def test_unserializable_validated_output_is_billed_and_terminal():
+    robustness_profile = profile()
+    model = candidate("candidate_a")
+    pricing = price_card(model)
+    runtime = ProviderBudgetRuntime(
+        robustness_profile,
+        ledger_id="provider_usage_unserializable",
+        journal_id="provider_journal_unserializable",
+    )
+    request = prepared_request(
+        robustness_profile,
+        model,
+        pricing,
+        call_id="unserializable_output",
+        role=LLMRole.EVIDENCE_EXTRACTOR,
+        created_at=NOW,
+        response_adapter=OPAQUE_OUTPUT_ADAPTER,
+    )
+    result = successful_transport_result(
+        NOW + timedelta(seconds=1)
+    ).model_copy(update={"output_payload": OpaqueOutput()})
+
+    execution = runtime.execute(
+        request,
+        pricing,
+        OPAQUE_OUTPUT_ADAPTER,
         ScriptedProviderTransport([result]),
         segment=BudgetSegment.QUALIFICATION,
     )
@@ -666,6 +1010,83 @@ def test_token_bound_overrun_records_true_usage_and_closes_call():
     old_ledger["schema_version"] = "phase4_provider_usage_ledger.v1"
     with pytest.raises(ValidationError):
         ProviderUsageLedger.model_validate(old_ledger)
+
+
+def test_terminal_budget_breach_has_a_strict_accounting_audit_path():
+    robustness_profile = profile()
+    model = candidate("candidate_a")
+    pricing = price_card(model)
+    runtime = ProviderBudgetRuntime(
+        robustness_profile,
+        ledger_id="provider_usage_terminal_budget_breach",
+        journal_id="provider_journal_terminal_budget_breach",
+    )
+    request = prepared_request(
+        robustness_profile,
+        model,
+        pricing,
+        call_id="terminal_budget_breach",
+        role=LLMRole.DIRECT_READOUT,
+        created_at=NOW,
+    )
+    overrun = successful_transport_result(
+        NOW + timedelta(seconds=1)
+    ).model_copy(update={"input_tokens": 25_000_000, "output_tokens": 0})
+
+    execution = runtime.execute(
+        request,
+        pricing,
+        OUTPUT_ADAPTER,
+        ScriptedProviderTransport([overrun]),
+        segment=BudgetSegment.QUALIFICATION,
+    )
+    ledger = runtime.ledger_snapshot()
+    journal = runtime.journal_snapshot()
+
+    assert execution.finalization.outcome is ProviderCallOutcome.TOKEN_BOUND_EXCEEDED
+    with pytest.raises(ValueError, match="exceeds a segment cap"):
+        validate_provider_execution_journal(
+            journal,
+            ledger,
+            robustness_profile,
+            [model],
+            [pricing],
+            require_complete=True,
+        )
+    validate_terminal_provider_budget_breach_journal(
+        journal,
+        ledger,
+        robustness_profile,
+        [model],
+        [pricing],
+    )
+    with pytest.raises(ValueError, match="exceeds a segment cap"):
+        ProviderBudgetRuntime.resume(
+            robustness_profile,
+            ledger,
+            journal,
+            [model],
+            [pricing],
+        )
+
+    forged = journal.model_copy(
+        update={
+            "finalizations": [
+                journal.finalizations[-1].model_copy(
+                    update={"outcome": ProviderCallOutcome.SUCCESS}
+                )
+            ]
+        },
+        deep=True,
+    )
+    with pytest.raises(ValueError, match="token-bound outcome"):
+        validate_terminal_provider_budget_breach_journal(
+            forged,
+            ledger,
+            robustness_profile,
+            [model],
+            [pricing],
+        )
 
 
 @pytest.mark.parametrize(

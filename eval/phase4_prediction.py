@@ -381,10 +381,10 @@ class PredictionUnsupportedAssumption(ContractModel):
 
     @field_validator("affected_option_ids")
     @classmethod
-    def affected_option_ids_must_be_unique(
+    def canonicalize_affected_option_ids(
         cls, value: list[str]
     ) -> list[str]:
-        return _require_unique(value, "assumption affected option ids")
+        return sorted(set(value))
 
 
 class PredictionInputBinding(ContractModel):

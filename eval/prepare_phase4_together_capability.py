@@ -27,6 +27,7 @@ from .prequential import load_session_script
 
 CAPABILITY_PLAN_V1_CREATED_AT = datetime(2026, 8, 21, 22, 0, tzinfo=UTC)
 CAPABILITY_PLAN_V2_CREATED_AT = datetime(2026, 8, 21, 23, 0, tzinfo=UTC)
+CAPABILITY_PLAN_V3_CREATED_AT = datetime(2026, 8, 22, 5, 10, tzinfo=UTC)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -56,22 +57,22 @@ def main(argv: Sequence[str] | None = None) -> int:
         semantic_map = load_authored_semantic_map(
             args.development_semantic_map
         )
-        corrected_protocol = suite.suite_version >= 3
+        if suite.suite_version >= 4:
+            plan_version = 3
+            created_at = CAPABILITY_PLAN_V3_CREATED_AT
+        elif suite.suite_version >= 3:
+            plan_version = 2
+            created_at = CAPABILITY_PLAN_V2_CREATED_AT
+        else:
+            plan_version = 1
+            created_at = CAPABILITY_PLAN_V1_CREATED_AT
         plan = build_capability_plan(
             suite,
             profile,
             readiness,
-            plan_id=(
-                "phase4_together_capability_plan_v2"
-                if corrected_protocol
-                else "phase4_together_capability_plan_v1"
-            ),
-            plan_version=(2 if corrected_protocol else 1),
-            created_at=(
-                CAPABILITY_PLAN_V2_CREATED_AT
-                if corrected_protocol
-                else CAPABILITY_PLAN_V1_CREATED_AT
-            ),
+            plan_id=f"phase4_together_capability_plan_v{plan_version}",
+            plan_version=plan_version,
+            created_at=created_at,
         )
         validate_capability_plan(
             plan,

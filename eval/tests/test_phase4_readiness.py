@@ -12,8 +12,11 @@ from tokenizers.pre_tokenizers import Whitespace
 
 from eval.fixture_io import content_sha256, load_fixture
 from eval.phase4_readiness import (
+    HeldOutCalibrationKind,
     Phase4TogetherReadinessBundle,
+    QualificationVariant,
     TogetherExactTokenCounterSet,
+    _role_input_payload,
     build_qualification_resume_cursor,
     load_exact_tokenizer_from_snapshot,
     load_readiness_bundle,
@@ -22,6 +25,7 @@ from eval.phase4_readiness import (
     validate_readiness_bundle,
 )
 from eval.phase4_robustness import load_phase4_robustness_profile
+from eval.phase4_robustness import LLMRole
 from eval.phase4_semantic import load_authored_semantic_map
 from eval.phase4_together import load_together_suite
 from eval.prequential import load_session_script
@@ -136,6 +140,44 @@ def test_qualification_plan_has_exact_role_and_variant_matrix():
         assert sum(entry.input_token_counts_by_round) == entry.input_token_count
 
 
+def test_ontology_conformance_probe_is_qualification_only() -> None:
+    _, _, fixture, session, semantic_map = public_inputs()
+    common = {
+        "measure_index": 0,
+        "role": LLMRole.ONTOLOGY_PROPOSER,
+        "variant": QualificationVariant.CANONICAL,
+        "response_schema_version": 2,
+    }
+    qualification = _role_input_payload(
+        fixture,
+        session,
+        semantic_map,
+        held_out_wave_index=None,
+        held_out_calibration_kind=None,
+        **common,
+    )
+    held_out = _role_input_payload(
+        fixture,
+        session,
+        semantic_map,
+        held_out_wave_index=6,
+        held_out_calibration_kind=HeldOutCalibrationKind.INITIAL_WAVE,
+        **common,
+    )
+
+    assert "provider_response_conformance" in qualification
+    qualification_text = json.dumps(qualification, sort_keys=True)
+    assert "public_ontology_gap_message" in qualification_text
+    assert "public_ontology_gap_evidence" in qualification_text
+
+    assert "provider_response_conformance" not in held_out
+    held_out_text = json.dumps(held_out, sort_keys=True)
+    assert "public_ontology_gap_message" not in held_out_text
+    assert "public_ontology_gap_evidence" not in held_out_text
+    assert held_out["participant_messages"]
+    assert held_out["eligible_evidence_event_ids"]
+
+
 def test_qualification_cursor_resumes_only_from_an_exact_prefix():
     bundle = load_readiness_bundle(READINESS_PATH)
     manifest = bundle.qualification_manifest
@@ -181,6 +223,16 @@ def test_readiness_validator_rejects_projection_tampering():
     tampered = Phase4TogetherReadinessBundle.model_validate(payload)
 
     with pytest.raises(ValueError, match="token projection does not reconcile"):
+        validate(tampered)
+
+
+def test_readiness_validator_rebuilds_each_request_binding():
+    payload = json.loads(READINESS_PATH.read_text(encoding="utf-8"))
+    entry = payload["qualification_manifest"]["entries"][0]
+    entry["request_template_sha256"] = "0" * 64
+    tampered = Phase4TogetherReadinessBundle.model_validate(payload)
+
+    with pytest.raises(ValueError, match="rebuilt qualification request differs"):
         validate(tampered)
 
 

@@ -1,0 +1,18 @@
+{
+  "record_version": "phase4_capability_delta_source_proof.v1",
+  "proof_id": "phase4_together_capability_delta_source_proof_v1",
+  "proof_version": 1,
+  "validated_at": "2026-08-26T12:00:00Z",
+  "delta_plan_sha256": "25d286a8ceb16373e6868bb62bd81d3cf9b4cb0d2255f4ce02f66b2d4687f8e2",
+  "source_adjudication_policy_sha256": "939134d659d35a93aafb6a6fd11fec8fda25326681a93434ef918247f50ac581",
+  "source_continuation_sha256": "afa317dc2618001028c855bc4f1656e1ba57358a5eb5a5c92574010e2419d75e",
+  "source_capability_plan_sha256": "d5b25ed4bc177509396b137002f916da89a8dd9dcd8b44704a26373cae334d11",
+  "source_suite_sha256": "657ec77bec315bc55b01bae8bbc3c5fb95b1f584a2a49d9979c515621f9cd9fa",
+  "source_readiness_sha256": "239ac8d3091034c6df2dec440cc633e9792972702ff7b82cca7947ffdbfb605e",
+  "source_attempts_sha256": "5bb6852d2d5c5a23604cd51bcd6a25ae18658a537692f76d85c84a1218d37196",
+  "carried_forward_successes_sha256": "a708a126cad7c70a0bb45012291f7f64558af3c372781adb7617f2b3f7a21236",
+  "rerun_calls_sha256": "7fbc4672b034214e72fc41db6e335014a08d012f7336639bc4597019308a53a3",
+  "provider_response_semantics_manifest_sha256": "330c589dcc02caf97ee429ca62d068d8d06b299be18ef18337c9c82e360a5512",
+  "full_private_source_rebuild_passed": true,
+  "values_messages_and_context_omitted": true
+}

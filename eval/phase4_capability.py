@@ -42,6 +42,7 @@ from .phase4_provider import (
     ProviderTransport,
     validate_provider_execution_journal,
 )
+from .phase4_provider_semantics import build_public_capability_question
 from .phase4_readiness import (
     Phase4TogetherReadinessBundle,
     QualificationCallPlanEntry,
@@ -87,6 +88,7 @@ class CapabilityInterviewerTools:
         if len(item_ids) < 2 or len(item_ids) != len(set(item_ids)):
             raise ValueError("capability tools require unique ontology items")
         self._item_ids = set(item_ids)
+        self._question = build_public_capability_question(item_ids)
 
     def read_posterior_uncertainty(
         self,
@@ -104,9 +106,13 @@ class CapabilityInterviewerTools:
         self,
         request: ReadCandidateQuestionScoresRequest,
     ) -> ReadCandidateQuestionScoresResult:
-        del request
+        candidates = (
+            []
+            if self._question.question_id in request.excluded_question_ids
+            else [self._question.model_copy(deep=True)]
+        )
         return ReadCandidateQuestionScoresResult(
-            candidates=[],
+            candidates=candidates[: request.limit],
             model_version="capability_preflight_v1",
         )
 
@@ -892,7 +898,11 @@ def execute_capability_preflight(
             result = runtime.execute(
                 rebuilt.request,
                 rebuilt.price_card,
-                rebuilt.response_adapter,
+                (
+                    None
+                    if rebuilt.request.response_validator is not None
+                    else rebuilt.response_adapter
+                ),
                 transport,
                 segment=BudgetSegment.QUALIFICATION,
             )

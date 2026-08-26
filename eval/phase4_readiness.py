@@ -32,17 +32,20 @@ from .contracts import (
     StableId,
 )
 from .fixture_io import content_sha256
-from .phase4_evidence import EvidenceProposalDraft
-from .phase4_interviewer import InterviewerDecision
-from .phase4_llm_readout import LLMReadoutResponseDraft
-from .phase4_ontology import OntologyDimensionProposalDraft
 from .phase4_provider import (
     PrivateStructuredProviderRequest,
     ProviderPriceCard,
+    ProviderResponseContract,
     build_public_development_attestation,
     prepare_provider_request,
     price_provider_tokens,
     provider_request_content_sha256,
+)
+from .phase4_provider_semantics import (
+    PROVIDER_CONFORMANCE_FIELD,
+    build_public_capability_question,
+    provider_invariant_prompt_suffix,
+    provider_response_adapter_for_role,
 )
 from .phase4_robustness import (
     LLMRole,
@@ -64,7 +67,6 @@ from .phase4_together import (
     SharedRoleContract,
     build_together_chat_payload,
     build_together_interviewer_final_payload,
-    response_schema_for_role,
     tool_definitions_for_role,
     validate_request_against_role_envelope,
 )
@@ -79,6 +81,7 @@ from .prequential import PrequentialSessionScript
 
 
 READINESS_CREATED_AT = datetime(2026, 8, 21, 12, 0, tzinfo=UTC)
+READINESS_V4_CREATED_AT = datetime(2026, 8, 22, 5, 5, tzinfo=UTC)
 QUALIFICATION_VARIANT_IDS = (
     "canonical",
     "prompt_paraphrase_1",
@@ -106,6 +109,19 @@ TOKENIZER_FILE_PATTERNS = (
     "merges.txt",
     "added_tokens.json",
 )
+_QUALIFICATION_REQUEST_VALIDATION_CACHE: set[tuple[str, ...]] = set()
+
+
+def _readiness_created_at(suite: Phase4TogetherSuite) -> datetime:
+    return (
+        READINESS_V4_CREATED_AT
+        if suite.suite_version >= 4
+        else READINESS_CREATED_AT
+    )
+
+
+def _manifest_version(suite: Phase4TogetherSuite) -> int:
+    return 3 if suite.suite_version >= 4 else 2
 
 
 class ExactTokenCounter(Protocol):
@@ -567,7 +583,7 @@ class _RequestTemplate:
     variant_id: QualificationVariant
     prompt_payload: JsonValue
     input_payload: JsonValue
-    response_adapter: TypeAdapter[object]
+    response_adapter: ProviderResponseContract
     tool_definitions: list[dict[str, JsonValue]]
     request_seed: int
     output_token_upper_bound: int
@@ -581,7 +597,7 @@ class RebuiltQualificationCall:
 
     entry: QualificationCallPlanEntry
     request: PrivateStructuredProviderRequest
-    response_adapter: TypeAdapter[object]
+    response_adapter: ProviderResponseContract
     price_card: ProviderPriceCard
 
 
@@ -599,17 +615,19 @@ def _stable_seed(*parts: object) -> int:
     return int.from_bytes(hashlib.sha256(payload).digest()[:4], "big")
 
 
-def _role_response_adapter(role: LLMRole) -> TypeAdapter[object]:
-    adapters: dict[LLMRole, TypeAdapter[object]] = {
-        LLMRole.INTERVIEWER: TypeAdapter(InterviewerDecision),
-        LLMRole.EVIDENCE_EXTRACTOR: TypeAdapter(list[EvidenceProposalDraft]),
-        LLMRole.ONTOLOGY_PROPOSER: TypeAdapter(
-            list[OntologyDimensionProposalDraft]
-        ),
-        LLMRole.DIRECT_READOUT: TypeAdapter(LLMReadoutResponseDraft),
-        LLMRole.HYBRID_READOUT: TypeAdapter(LLMReadoutResponseDraft),
-    }
-    return adapters[role]
+def _role_response_adapter(
+    role: LLMRole,
+    *,
+    response_schema_version: int = 1,
+    input_payload: JsonValue | None = None,
+    bind_request_semantics: bool = False,
+) -> ProviderResponseContract:
+    return provider_response_adapter_for_role(
+        role,
+        response_schema_version=response_schema_version,
+        input_payload=input_payload,
+        bind_request_semantics=bind_request_semantics,
+    )
 
 
 def _role_usage(suite: Phase4TogetherSuite, role: LLMRole, *, held_out: bool):
@@ -780,6 +798,7 @@ def _role_input_payload(
     variant: QualificationVariant,
     held_out_wave_index: int | None,
     held_out_calibration_kind: HeldOutCalibrationKind | None,
+    response_schema_version: int = 1,
 ) -> JsonValue:
     if (held_out_wave_index is None) != (
         held_out_calibration_kind is None
@@ -824,6 +843,9 @@ def _role_input_payload(
         "evidence_history": history,
         "target_response_visible": False,
     }
+    conformance_probe = (
+        response_schema_version >= 2 and held_out_wave_index is None
+    )
     if held_out_wave_index is not None:
         base["calibration"] = {
             "method": (
@@ -863,26 +885,75 @@ def _role_input_payload(
                 ),
             }
         )
+        if conformance_probe:
+            expected_question = build_public_capability_question(
+                list(semantic_map.ontology.item_ids)
+            )
+            base[PROVIDER_CONFORMANCE_FIELD] = {
+                "contract_version": 1,
+                "expected_vetted_question": expected_question.model_dump(
+                    mode="json"
+                ),
+            }
         return base
     if role is LLMRole.EVIDENCE_EXTRACTOR:
+        participant_messages: list[dict[str, JsonValue]] = [
+            {
+                "message_id": f"public_message_{index + 1}",
+                "text": event.raw_response,
+            }
+            for index, event in enumerate(session.onboarding_evidence)
+        ]
+        if conformance_probe:
+            item_a, item_b = sorted(semantic_map.ontology.item_ids)[:2]
+            participant_messages.append(
+                {
+                    "message_id": "public_extractor_conformance_message",
+                    "text": (
+                        "For this public capability probe, I prefer "
+                        f"{item_a} over {item_b} with signed strength 1."
+                    ),
+                }
+            )
         base.update(
             {
                 "target_packet_visible": False,
-                "participant_messages": [
-                    {
-                        "message_id": f"public_message_{index + 1}",
-                        "text": event.raw_response,
-                    }
-                    for index, event in enumerate(session.onboarding_evidence)
-                ],
+                "participant_messages": participant_messages,
                 "active_ontology_dimension_ids": list(
                     semantic_map.ontology.item_ids
                 ),
                 "proposals_receive_model_weight": False,
             }
         )
+        if conformance_probe:
+            base[PROVIDER_CONFORMANCE_FIELD] = {
+                "contract_version": 1,
+                "required_source_message_id": (
+                    "public_extractor_conformance_message"
+                ),
+                "required_claim": {
+                    "item_a": item_a,
+                    "item_b": item_b,
+                    "value": 1.0,
+                },
+            }
         return base
     if role is LLMRole.ONTOLOGY_PROPOSER:
+        participant_messages: list[dict[str, JsonValue]] = [
+            {
+                "message_id": f"public_message_{index + 1}",
+                "text": event.raw_response,
+            }
+            for index, event in enumerate(session.onboarding_evidence)
+        ]
+        eligible_evidence: list[dict[str, JsonValue]] = [
+            {
+                "evidence_event_id": event.event_id,
+                "source_message_id": f"public_message_{index + 1}",
+                "confirmed": event.confirmed_by_participant,
+            }
+            for index, event in enumerate(session.onboarding_evidence)
+        ]
         base.update(
             {
                 "target_packet_visible": False,
@@ -897,6 +968,44 @@ def _role_input_payload(
                 "new_dimensions_receive_model_weight": False,
             }
         )
+        if response_schema_version >= 2:
+            base.update(
+                {
+                    "participant_messages": participant_messages,
+                    "eligible_evidence": eligible_evidence,
+                    "eligible_evidence_event_ids": [
+                        item["evidence_event_id"] for item in eligible_evidence
+                    ],
+                    "retired_ontology_dimension_ids": [],
+                }
+            )
+        if conformance_probe:
+            participant_messages.append(
+                {
+                    "message_id": "public_ontology_gap_message",
+                    "text": (
+                        "For this public capability probe, treat my preference "
+                        "for a clearly reversible civic decision path as "
+                        "outside the active ontology."
+                    ),
+                }
+            )
+            eligible_evidence.append(
+                {
+                    "evidence_event_id": "public_ontology_gap_evidence",
+                    "source_message_id": "public_ontology_gap_message",
+                    "confirmed": True,
+                }
+            )
+            base["eligible_evidence_event_ids"] = [
+                item["evidence_event_id"] for item in eligible_evidence
+            ]
+            base[PROVIDER_CONFORMANCE_FIELD] = {
+                "contract_version": 1,
+                "required_source_message_id": "public_ontology_gap_message",
+                "required_evidence_event_id": "public_ontology_gap_evidence",
+                "require_fresh_dimension": True,
+            }
         return base
 
     target = measure.model_dump(mode="json")
@@ -971,6 +1080,15 @@ def _request_template(
         }
         else role_contract.prompt_text
     )
+    if (
+        role_contract.response_schema_version >= 2
+        and variant
+        in {
+            QualificationVariant.PROMPT_PARAPHRASE_1,
+            QualificationVariant.PROMPT_PARAPHRASE_2,
+        }
+    ):
+        prompt_text = f"{prompt_text} {provider_invariant_prompt_suffix(role)}"
     prompt_payload: JsonValue = {
         "record_version": "phase4_together_qualification_prompt.v1",
         "role": role.value,
@@ -988,6 +1106,7 @@ def _request_template(
         variant=variant,
         held_out_wave_index=held_out_wave_index,
         held_out_calibration_kind=held_out_calibration_kind,
+        response_schema_version=role_contract.response_schema_version,
     )
     usage = _role_usage(suite, role, held_out=held_out_wave_index is not None)
     return _RequestTemplate(
@@ -1000,7 +1119,12 @@ def _request_template(
         variant_id=variant,
         prompt_payload=prompt_payload,
         input_payload=input_payload,
-        response_adapter=_role_response_adapter(role),
+        response_adapter=_role_response_adapter(
+            role,
+            response_schema_version=role_contract.response_schema_version,
+            input_payload=input_payload,
+            bind_request_semantics=suite.suite_version >= 4,
+        ),
         tool_definitions=tool_definitions_for_role(role),
         request_seed=_stable_seed(
             candidate.candidate_id,
@@ -1025,7 +1149,7 @@ def _planning_request(
     call_id: str,
     created_at: datetime = READINESS_CREATED_AT,
 ) -> PrivateStructuredProviderRequest:
-    schema = response_schema_for_role(template.role)
+    schema = template.response_adapter.json_schema(mode="validation")
     attestation = build_public_development_attestation(
         attestation_id=f"{call_id}_public_development",
         prompt_payload=template.prompt_payload,
@@ -1204,6 +1328,41 @@ def rebuild_qualification_call(
     )
 
 
+def _validate_qualification_request_bindings(
+    manifest: TogetherQualificationRequestManifest,
+    suite: Phase4TogetherSuite,
+    profile: Phase4ERobustnessProfile,
+    fixture: EvaluationFixture,
+    session: PrequentialSessionScript,
+    semantic_map: AuthoredSemanticMapBundle,
+) -> None:
+    """Rebuild each unique manifest once per process without credentials."""
+
+    cache_key = (
+        content_sha256(manifest),
+        content_sha256(suite),
+        content_sha256(profile),
+        content_sha256(fixture),
+        content_sha256(session),
+        content_sha256(semantic_map),
+    )
+    if cache_key in _QUALIFICATION_REQUEST_VALIDATION_CACHE:
+        return
+    for entry in manifest.entries:
+        rebuild_qualification_call(
+            suite,
+            profile,
+            fixture,
+            session,
+            semantic_map,
+            entry,
+            created_at=manifest.created_at,
+        )
+    if len(_QUALIFICATION_REQUEST_VALIDATION_CACHE) >= 8:
+        _QUALIFICATION_REQUEST_VALIDATION_CACHE.clear()
+    _QUALIFICATION_REQUEST_VALIDATION_CACHE.add(cache_key)
+
+
 def build_qualification_request_manifest(
     suite: Phase4TogetherSuite,
     profile: Phase4ERobustnessProfile,
@@ -1220,6 +1379,8 @@ def build_qualification_request_manifest(
         raise ValueError("qualification session does not bind development fixture")
     if semantic_map.fixture_sha256 != content_sha256(fixture):
         raise ValueError("qualification semantic map does not bind fixture")
+    created_at = _readiness_created_at(suite)
+    manifest_version = _manifest_version(suite)
     role_contracts = {item.role: item for item in suite.shared_role_contracts}
     entries: list[QualificationCallPlanEntry] = []
     specifications = []
@@ -1264,7 +1425,12 @@ def build_qualification_request_manifest(
             f"qual_{candidate.candidate_id}_{measure.measure_id}_"
             f"{role.value}_{variant.value}"
         )
-        request = _planning_request(profile, template, call_id=call_id)
+        request = _planning_request(
+            profile,
+            template,
+            call_id=call_id,
+            created_at=created_at,
+        )
         validate_request_against_role_envelope(
             suite,
             request,
@@ -1324,9 +1490,9 @@ def build_qualification_request_manifest(
             )
         )
     return TogetherQualificationRequestManifest(
-        plan_id="phase4_together_qualification_plan_v2",
-        plan_version=2,
-        created_at=READINESS_CREATED_AT,
+        plan_id=f"phase4_together_qualification_plan_v{manifest_version}",
+        plan_version=manifest_version,
+        created_at=created_at,
         together_suite_sha256=content_sha256(suite),
         robustness_profile_sha256=content_sha256(profile),
         public_development_fixture_sha256=content_sha256(fixture),
@@ -1346,6 +1512,8 @@ def build_held_out_calibration_manifest(
 ) -> TogetherHeldOutCalibrationManifest:
     """Count six initial waves plus twelve post-wave-six retests."""
 
+    created_at = _readiness_created_at(suite)
+    manifest_version = _manifest_version(suite)
     role_contracts = {item.role: item for item in suite.shared_role_contracts}
     rows: list[HeldOutWaveCalibration] = []
     specifications = [
@@ -1397,6 +1565,7 @@ def build_held_out_calibration_manifest(
                             profile,
                             template=template,
                             call_id=calibration_id,
+                            created_at=created_at,
                         )
                         validate_request_against_role_envelope(
                             suite,
@@ -1447,9 +1616,11 @@ def build_held_out_calibration_manifest(
                     )
                 )
     return TogetherHeldOutCalibrationManifest(
-        calibration_id="phase4_together_held_out_calibration_v2",
-        calibration_version=2,
-        created_at=READINESS_CREATED_AT,
+        calibration_id=(
+            f"phase4_together_held_out_calibration_v{manifest_version}"
+        ),
+        calibration_version=manifest_version,
+        created_at=created_at,
         together_suite_sha256=content_sha256(suite),
         robustness_profile_sha256=content_sha256(profile),
         public_development_fixture_sha256=content_sha256(fixture),
@@ -1594,6 +1765,8 @@ def build_readiness_bundle(
     qualification_minimum_headroom_microusd: int,
     held_out_minimum_headroom_microusd: int,
 ) -> Phase4TogetherReadinessBundle:
+    readiness_version = suite.suite_version
+    created_at = _readiness_created_at(suite)
     artifact_by_candidate = {
         item.candidate_id: item for item in tokenizer_artifacts
     }
@@ -1678,19 +1851,19 @@ def build_readiness_bundle(
             )
         )
     receipt = TogetherTokenReadinessReceipt(
-        receipt_id="phase4_together_token_readiness_v3",
-        receipt_version=3,
+        receipt_id=f"phase4_together_token_readiness_v{readiness_version}",
+        receipt_version=readiness_version,
         together_suite_id=suite.suite_id,
         together_suite_version=suite.suite_version,
         together_suite_sha256=content_sha256(suite),
         workload_sha256=content_sha256(suite.workload),
-        created_at=READINESS_CREATED_AT,
+        created_at=created_at,
         candidate_projections=projections,
     )
     headroom = TogetherHeadroomPolicy(
-        policy_id="phase4_together_headroom_v3",
-        policy_version=3,
-        created_at=READINESS_CREATED_AT,
+        policy_id=f"phase4_together_headroom_v{readiness_version}",
+        policy_version=readiness_version,
+        created_at=created_at,
         qualification_minimum_headroom_microusd=(
             qualification_minimum_headroom_microusd
         ),
@@ -1699,9 +1872,9 @@ def build_readiness_bundle(
         ),
     )
     bundle = Phase4TogetherReadinessBundle(
-        readiness_id="phase4_together_readiness_v3",
-        readiness_version=3,
-        created_at=READINESS_CREATED_AT,
+        readiness_id=f"phase4_together_readiness_v{readiness_version}",
+        readiness_version=readiness_version,
+        created_at=created_at,
         together_suite_id=suite.suite_id,
         together_suite_version=suite.suite_version,
         together_suite_sha256=content_sha256(suite),
@@ -1784,6 +1957,14 @@ def validate_readiness_bundle(
         calibration.public_development_fixture_sha256,
     ) != expected_manifest_bindings:
         raise ValueError("held-out calibration bindings differ")
+    _validate_qualification_request_bindings(
+        manifest,
+        suite,
+        profile,
+        fixture,
+        session,
+        semantic_map,
+    )
 
     candidate_by_id = {
         item.candidate.candidate_id: item for item in suite.candidates

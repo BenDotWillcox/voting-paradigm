@@ -139,6 +139,15 @@ class DeterministicCapabilityTransport:
         options = target["options"]
         assert isinstance(options, list)
         option_ids = [item["option_id"] for item in options]
+        history = input_payload["evidence_history"]
+        assert isinstance(history, list)
+        evidence_ids = [
+            item["event"]["event_id"]
+            for item in history
+            if isinstance(item, dict)
+            and item.get("source") == "public_synthetic_onboarding"
+            and isinstance(item.get("event"), dict)
+        ]
         probability = 1.0 / len(option_ids)
         return {
             "record_version": "phase4_llm_readout_response.v1",
@@ -146,7 +155,7 @@ class DeterministicCapabilityTransport:
                 option_id: probability for option_id in option_ids
             },
             "settled_probability": probability,
-            "supporting_evidence_event_ids": [],
+            "supporting_evidence_event_ids": evidence_ids[:1],
             "unsupported_assumptions": [],
         }
 
@@ -274,7 +283,9 @@ def test_capability_interviewer_tools_cover_the_complete_live_surface():
     conflicts = tools.read_evidence_conflicts(ReadEvidenceConflictsRequest())
 
     assert uncertainty.posterior_gap_std == 1.0
-    assert scores.candidates == []
+    assert len(scores.candidates) == 1
+    assert scores.candidates[0].item_a == "item_a"
+    assert scores.candidates[0].item_b == "item_b"
     assert coverage.item_count == 2
     assert coverage.possible_pair_count == 1
     assert conflicts.conflicts == []
