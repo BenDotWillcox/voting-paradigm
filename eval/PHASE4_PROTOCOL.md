@@ -277,7 +277,7 @@ silence quality, cost, and latency. The tracked Together suite freezes the
 three candidate artifacts, prices, and candidate-independent prompts/codecs
 before that run. The live HTTP client/tool loop and no-spend readiness gate are
 implemented. The account, source, and catalog receipt must be reissued against
-the corrected v3 suite before constructing a paid authorization. The original
+the corrected v5 suite before constructing a paid authorization. The original
 all-candidate capability gate stopped twice within the first candidate: once
 on a transient provider error and once on an interviewer invalid-output
 result. Direct review found that v2 combined tools, automatic tool choice, and
@@ -290,7 +290,7 @@ reviewed, zero-spend aggregation must bind the independent receipts into the
 full capability matrix. The catalog preflight makes authenticated network GETs but
 invokes no model and has an exact zero-provider-spend authorization.
 
-Validate the tracked zero-spend capability plan with:
+The following command preserves the historical v3 capability-plan replay:
 
 ```bash
 python -m eval.validate_phase4_capability \
@@ -381,7 +381,9 @@ microusd, for a 124,939-microusd cumulative worst case under the original
 150,000-microusd ceiling. Building and validating the correction made no
 provider call and spent nothing. No paid delta call may run until the corrected
 artifacts are reviewed and merged, followed by a fresh catalog preflight and
-explicit user approval.
+explicit user approval. That v4 requirement is preserved as the historical
+authorization boundary; current execution must bind the v5 selector-recovery
+chain below.
 
 Candidate-specific authorization follows the candidate order frozen in the
 delta. Each later authorization must supply the exact preceding authorization
@@ -399,10 +401,69 @@ messages, or context. Candidate authorization and execution require this exact
 proof and bind it into the manual approval, so a structurally valid alternate
 partition cannot pass the paid boundary under the reviewed receipt.
 
-OpenRouter is deferred as an alternate-host diagnostic only if one model still
-fails after the corrected Together rerun. It is not part of qualification. Any
-such diagnostic requires an exact model and endpoint pin, disabled fallbacks,
+The later GLM suite-v4 delta attempt passed extraction and made a real
+interviewer tool call, then failed validation at the nested question field while
+reproducing the complete canonical question object. The content-free diagnostic
+does not isolate the failing nested invariant. This is a serialization burden
+introduced by the harness, not the research decision being tested. The question
+bank remains dynamic: the exact current tool invocation ranks vetted candidates
+from the full bank, and the LLM still chooses which candidate to ask, clarify,
+or pause. Suite v5 narrows only the provider wire response for an ask decision
+to `selected_question_id`. Trusted local code requires that id to match an exact
+candidate returned by the same tool call, verifies its canonical checksum
+locally, then hydrates and validates the existing full decision. The invariant
+manifest v2, hash
+`944efa35f60c3a9286f96b201ef21a9b1ff7ecda1a9a6ae96369c491e959523b`,
+records selector grounding as post-parse and local materialization as normalized
+plus post-parse. The byte-identical v1 manifest remains available only for
+historical audit reconstruction. The ephemeral tool-result context is never
+stored; its exact hash is bound into the finalization. Model selection failures
+and missing or malformed local context have distinct audited outcomes.
+
+The operative frozen hashes are suite v5
+`e97b6213955cf86d18da98d2d1300679b17ab773838d1ed10fcdb84b1f1de9b8`,
+readiness v5
+`f6ac45a3da3a4c14784aa6a9562ec1e3c62cd141aba214748b4f6a9fcbbaf5fd`,
+and capability plan v4
+`e42b7d71c9ccfb07e6583313f07af60678178ef72eacf7182fa78255fa6f1fde`.
+The chained selector-recovery delta v2 has hash
+`0a09365d59e01694fbe33a3d4d3b6af335c35a01f0e45ae658467309bd53adb4`;
+its source proof has hash
+`c60ca23180894287f18f964e503f91ecb59a70a497f0d9a54fee075145be8261`.
+It carries five exact successes and reruns ten calls. It records 40,227
+microusd already spent, projects 43,584 microusd more, caps new authorizations
+at 80,500 microusd, and bounds the cumulative worst case at 120,727 microusd
+under the original 150,000-microusd ceiling. Constructing all v5 artifacts
+made no inference call and spent nothing.
+
+Validate the current no-spend capability plan with:
+
+```bash
+python -m eval.validate_phase4_capability \
+  eval/fixtures/preference_eval_phase4_together_capability_v4.json \
+  eval/fixtures/preference_eval_phase4_together_v5.json \
+  eval/fixtures/preference_eval_phase4_robustness_v1.json \
+  eval/fixtures/preference_eval_phase4_together_readiness_v5.json \
+  eval/fixtures/preference_eval_dev_v1.json \
+  eval/fixtures/preference_eval_dev_session_v1.json \
+  eval/fixtures/preference_eval_dev_semantic_map_v1.json
+```
+
+No paid selector-recovery call may run before independent review and merge, a
+fresh suite-v5 catalog preflight, and a new short-lived explicit user approval.
+The existing candidate-specific delta authorization and runner commands load
+this v2 plan/proof only through explicit schema dispatch; the historical v1
+loaders remain exact. The shared execution records bind the opaque reviewed
+delta/proof hashes, exact candidate subset, manifest version, ordered prior
+states, and cumulative spend, so no v1 conversion artifact is introduced.
+If the reviewed id-only selector still fails, stop adding provider-specific
+patches and reassess the provider boundary and project scope. Missing or invalid
+local hydration context remains a harness error and cannot support a candidate
+verdict. OpenRouter remains only a controlled alternate-host diagnostic: it
+requires
+an exact model and endpoint pin, disabled fallbacks and response healing,
 recorded routing provenance, and a separate reviewed budget and authorization.
+Any cross-host result is deployment evidence, not a model-family claim.
 
 The Phase 4A command prints content hashes and aggregate architecture counts.
 Phase 4A does not choose an LLM provider, prompt, model version, evidence

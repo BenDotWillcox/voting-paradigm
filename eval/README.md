@@ -822,7 +822,7 @@ deterministic no-network test double. A concrete hosted or self-hosted
 transport is selected only with the three candidate artifacts.
 
 `eval/phase4_together.py` now freezes the no-spend portion of that selection.
-The tracked `preference_eval_phase4_together_v4.json` suite binds Together's
+The tracked `preference_eval_phase4_together_v5.json` suite binds Together's
 20 August 2026 serverless catalog and privacy/capability documentation, exact
 upstream Hugging Face revisions, revision-bound weight-manifest identities,
 license provenance, advertised serving model strings and quantization, exact
@@ -833,7 +833,7 @@ revision is the exact captured catalog hash rather than a claim of bit-level
 identity with the upstream checkpoint. Qualification results must retain that
 limitation.
 
-The original v1 through v3 suites remain tracked as hash-pinned audit artifacts.
+The original v1 through v4 suites remain tracked as hash-pinned audit artifacts.
 The v2
 suite raises the interviewer logical-call envelope from 5,000 to 15,000 input
 tokens and from 500 to 1,000 output tokens, raises extractor/proposer input
@@ -842,11 +842,11 @@ envelopes to 7,000/8,000. Exact calibration showed that the v1 bounds could not
 carry all accumulated evidence, the interviewer's required tool-call follow-up,
 or the post-wave-six retest inputs. The v2
 transport originally combined tools and strict structured output in both
-rounds. The operative v3 suite corrects that shared protocol: round one
+rounds. The v3 suite corrected that shared protocol: round one
 requires at least one tool call and sends no final-output `response_format`;
 after the tool result, round two removes the tools and requires the strict
 decision schema. Both payloads are counted. No candidate, price, privacy rule,
-or budget segment changed. The operative v4 suite fixes the broader provider-
+or budget segment changed. The v4 suite fixed the broader provider-
 contract class exposed by the extractor failure. A machine-readable manifest
 covers all 26 provider-facing invariants. Nonsemantic list ordering and repeated
 identifiers are normalized on receipt, and reversed fixed-ontology pairs are
@@ -854,6 +854,31 @@ canonicalized with sign inversion. Request-bound semantics cover all five
 roles. The interviewer, evidence-extractor, and ontology-proposer wire contracts
 advance to v2; the direct and hybrid readout contracts remain byte-identical v1
 contracts so successful readout calls can carry forward.
+
+The operative v5 suite changes only the interviewer's final provider-facing
+decision. The interviewer still uses the LLM to navigate the dynamic vetted
+question surface: the exact current tool call ranks candidates from the full
+question bank and the model decides which returned candidate to ask (or whether
+to clarify or pause). This is not a tiny static questionnaire or a local
+deterministic question selector. For an ask decision, the provider now returns
+only the selected question's id. Trusted local code requires that id to identify
+a candidate from the same tool invocation, verifies the candidate's canonical
+content hash locally, and hydrates the existing full decision before validation,
+storage, and hashing. The model therefore keeps the substantive navigation
+choice without having to reproduce canonical fields or an opaque digest. The
+operative v2 invariant manifest, hash
+`944efa35f60c3a9286f96b201ef21a9b1ff7ecda1a9a6ae96369c491e959523b`,
+records this selector's grounding as post-parse and its local materialization as
+normalized plus post-parse. The preserved v1 manifest remains byte-identical for
+historical audit reconstruction.
+
+The exact tool-result context used for hydration is ephemeral and is excluded
+from durable provider records; its hash is bound into the finalization so the
+materialization is still auditable. An unknown, stale, or unreturned selector
+closes as model invalid output. Missing, malformed, or conflicting local
+context closes separately as a transport-contract failure, so a harness defect
+cannot be recorded as a model capability failure. Suite v5's canonical hash is
+`e97b6213955cf86d18da98d2d1300679b17ab773838d1ed10fcdb84b1f1de9b8`.
 
 Together was chosen over self-hosting because the USD 20 total budget cannot
 cover the sustained accelerator rental needed for the 120B and 550B candidates.
@@ -1011,7 +1036,7 @@ Validate the frozen no-spend suite without credentials or network access:
 
 ```bash
 python -m eval.validate_phase4_together \
-  eval/fixtures/preference_eval_phase4_together_v4.json \
+  eval/fixtures/preference_eval_phase4_together_v5.json \
   eval/fixtures/preference_eval_phase4_robustness_v1.json
 ```
 
@@ -1029,7 +1054,7 @@ run:
 
 ```bash
 python -m eval.preflight_phase4_together \
-  eval/fixtures/preference_eval_phase4_together_v4.json \
+  eval/fixtures/preference_eval_phase4_together_v5.json \
   eval/private_runs/phase4/together_catalog_preflight.json \
   --api-key-file .env.local \
   --confirm-project-scoped-key \
@@ -1058,20 +1083,21 @@ API-key value or hash, and refuses to write outside `eval/private_runs/`. It
 does not authorize capability probes or qualification.
 
 Earlier ignored catalog receipts bind preserved suite versions and cannot
-authorize v4. Re-run this zero-inference command after v4 merges; exact hash
-binding intentionally prevents carrying an old receipt across the protocol
-revision.
+authorize v5. Re-run this zero-inference command after v5 merges; exact hash
+binding intentionally prevents carrying a v4 or earlier receipt across the
+protocol revision. The v4 suite and its receipt remain audit inputs for the
+preserved provider-contract attempts, not live authorization inputs.
 
 Build the separate no-key, no-inference tokenizer-readiness artifact with:
 
 ```bash
 python -m eval.prepare_phase4_together_readiness \
-  eval/fixtures/preference_eval_phase4_together_v4.json \
+  eval/fixtures/preference_eval_phase4_together_v5.json \
   eval/fixtures/preference_eval_phase4_robustness_v1.json \
   eval/fixtures/preference_eval_dev_v1.json \
   eval/fixtures/preference_eval_dev_session_v1.json \
   eval/fixtures/preference_eval_dev_semantic_map_v1.json \
-  eval/fixtures/preference_eval_phase4_together_readiness_v4.json \
+  eval/fixtures/preference_eval_phase4_together_readiness_v5.json \
   --tokenizer-cache .cache/eval-tokenizers/phase4e \
   --download-tokenizers
 ```
@@ -1090,24 +1116,32 @@ freeze requires at least USD 0.40 in the USD 4 qualification segment and USD
 0.50 in the USD 13 held-out segment after adding the largest single-call
 reservation to exact projected spend.
 
-The resulting tracked artifact projects qualification costs of USD 1.312337,
-USD 0.160138, and USD 0.863052 for GLM, GPT-OSS, and Nemotron respectively.
-Its 1,104-call-per-candidate held-out calibration projects USD 11.187789, USD
-1.340563, and USD 7.075029. The corresponding sequential reservation headroom
-is USD 1.639073 for qualification and USD 1.786811, USD 11.656587, and USD
-5.912371 for the three held-out candidates. Interviewer totals include the
-initial request and one synthetic
-tool-result follow-up, with a 500-token output allowance for each provider
-round. These are deterministic local projections, not provider billing
+The resulting v5 artifact projects qualification costs of USD 1.307109, USD
+0.159562, and USD 0.860604 for GLM, GPT-OSS, and Nemotron respectively. Its
+1,104-call-per-candidate held-out calibration projects USD 11.322791, USD
+1.354910, and USD 7.142624. The corresponding sequential reservation headroom
+is USD 1.647325 for qualification and USD 1.651809, USD 11.642240, and USD
+5.844776 for the three held-out candidates. Interviewer totals include the
+initial request and one synthetic tool-result follow-up. Qualification models
+the exact one-candidate capability result; held-out calibration models ten
+deterministic ranked candidates. A real request returning more candidates is
+still exact-counted and pauses before transmission if it exceeds the frozen
+envelope. These are deterministic local projections, not provider billing
 claims: Together does not attest that its serving tokenizer is byte-identical
 to the upstream tokenizer. Provider-reported usage remains billing truth.
+
+For audit replay, the preserved v4 readiness artifact remains at hash
+`517e955976eaeec708cbedfadb46673038dcfd47e472407573997c4913ab1cd5`;
+its associated suite, capability plan, and delta retain the v4 numbers recorded
+in the historical recovery section below. V5 is a new authorization chain, not
+an in-place reinterpretation of those artifacts.
 
 Validate the artifact without a tokenizer download or network access:
 
 ```bash
 python -m eval.validate_phase4_readiness \
-  eval/fixtures/preference_eval_phase4_together_readiness_v4.json \
-  eval/fixtures/preference_eval_phase4_together_v4.json \
+  eval/fixtures/preference_eval_phase4_together_readiness_v5.json \
+  eval/fixtures/preference_eval_phase4_together_v5.json \
   eval/fixtures/preference_eval_phase4_robustness_v1.json \
   eval/fixtures/preference_eval_dev_v1.json \
   eval/fixtures/preference_eval_dev_session_v1.json \
@@ -1116,7 +1150,7 @@ python -m eval.validate_phase4_readiness \
 
 The validator emits aggregate counts, hashes, costs, and headroom only. The
 readiness bundle hash is
-`517e955976eaeec708cbedfadb46673038dcfd47e472407573997c4913ab1cd5`.
+`f6ac45a3da3a4c14784aa6a9562ec1e3c62cd141aba214748b4f6a9fcbbaf5fd`.
 It records zero inference calls and zero provider spend. The original external
 action was a separately authorized 15-call capability preflight. Those calls
 are the exact first 15 entries of the qualification plan, so a complete success
@@ -1126,28 +1160,28 @@ Build or validate the tracked zero-spend capability plan with:
 
 ```bash
 python -m eval.prepare_phase4_together_capability \
-  eval/fixtures/preference_eval_phase4_together_v4.json \
+  eval/fixtures/preference_eval_phase4_together_v5.json \
   eval/fixtures/preference_eval_phase4_robustness_v1.json \
-  eval/fixtures/preference_eval_phase4_together_readiness_v4.json \
+  eval/fixtures/preference_eval_phase4_together_readiness_v5.json \
   eval/fixtures/preference_eval_dev_v1.json \
   eval/fixtures/preference_eval_dev_session_v1.json \
   eval/fixtures/preference_eval_dev_semantic_map_v1.json \
-  eval/fixtures/preference_eval_phase4_together_capability_v3.json
+  eval/fixtures/preference_eval_phase4_together_capability_v4.json
 
 python -m eval.validate_phase4_capability \
-  eval/fixtures/preference_eval_phase4_together_capability_v3.json \
-  eval/fixtures/preference_eval_phase4_together_v4.json \
+  eval/fixtures/preference_eval_phase4_together_capability_v4.json \
+  eval/fixtures/preference_eval_phase4_together_v5.json \
   eval/fixtures/preference_eval_phase4_robustness_v1.json \
-  eval/fixtures/preference_eval_phase4_together_readiness_v4.json \
+  eval/fixtures/preference_eval_phase4_together_readiness_v5.json \
   eval/fixtures/preference_eval_dev_v1.json \
   eval/fixtures/preference_eval_dev_session_v1.json \
   eval/fixtures/preference_eval_dev_semantic_map_v1.json
 ```
 
 The plan hash is
-`2b78f3659e8a38e5ae74ea070172ea7eb9bc83a6c251a8bde2524573c6f12381`.
+`e42b7d71c9ccfb07e6583313f07af60678178ef72eacf7182fa78255fa6f1fde`.
 It binds one canonical request for every combination of three candidates and
-five LLM roles. The 15 calls project to 73,005 microusd; their complete local
+five LLM roles. The 15 calls project to 71,973 microusd; their complete local
 authorization envelopes sum to 129,000 microusd. The plan itself records zero
 calls and zero spend.
 
@@ -1363,15 +1397,12 @@ context. Both the zero-spend validator and each paid candidate command require
 this proof. The manual authorization binds its exact hash, so repartitioning a
 carry and rerun cannot reuse an already approved execution boundary.
 
-After review and merge, use
-`python -m eval.authorize_phase4_together_delta_candidate` to create one
-short-lived ignored authorization and
-`python -m eval.run_phase4_together_delta_candidate` with
-`--execute-paid-delta-capability` to execute it. A fresh suite-v4 catalog
-preflight and new explicit user approval remain mandatory. The API key is
-loaded only after the delta, plan, readiness, catalog, candidate eligibility,
-and exact spend amount all validate. No paid delta call may run before this
-correction is reviewed and merged.
+The reviewed v1 execution path used
+`python -m eval.authorize_phase4_together_delta_candidate` and
+`python -m eval.run_phase4_together_delta_candidate` with a fresh suite-v4
+catalog preflight and explicit user approval. That suite-v4 path is now audit-
+only. Its API-key loading and spend gates remain part of the preserved record;
+new authorization must bind the selector-recovery v2 chain instead.
 
 Candidate execution follows the first-occurrence order frozen by the delta.
 For every candidate after the first, pass matching `--prior-authorization`
@@ -1384,7 +1415,64 @@ true bill exceeds its manual or provider cap is still checkpointed as a
 content-free, auditable terminal state, cannot produce a receipt or resume,
 and blocks every later candidate authorization.
 
-OpenRouter is deferred as an alternate-host diagnostic only if one model still
-fails after the corrected Together rerun. It is not part of qualification. Any
-such diagnostic would require an exact model and endpoint pin, no fallbacks, a
-separate reviewed budget and authorization, and recorded routing provenance.
+The later GLM suite-v4 delta attempt added one more piece of evidence to that
+history. Its extractor passed, and its interviewer made a valid tool call, but
+the final response failed validation at the nested question field while trying
+to reproduce the complete canonical question object. The content-free
+diagnostic does not identify which nested invariant failed. The attempt spent
+8,588 microusd. It is treated as a harness-inconclusive serialization burden
+rather than evidence that the LLM cannot navigate preferences: choosing among
+the exact candidates returned by the ranking tool is the research behavior,
+while copying trusted canonical fields is not.
+
+Suite v5 therefore uses an id-only selector and trusted local hydration
+described above. The tracked suite, readiness, and capability-plan hashes are,
+respectively,
+`e97b6213955cf86d18da98d2d1300679b17ab773838d1ed10fcdb84b1f1de9b8`,
+`f6ac45a3da3a4c14784aa6a9562ec1e3c62cd141aba214748b4f6a9fcbbaf5fd`,
+and `e42b7d71c9ccfb07e6583313f07af60678178ef72eacf7182fa78255fa6f1fde`.
+The chained
+`preference_eval_phase4_together_selector_recovery_delta_v2.json`, hash
+`0a09365d59e01694fbe33a3d4d3b6af335c35a01f0e45ae658467309bd53adb4`,
+and its content-free source proof, hash
+`c60ca23180894287f18f964e503f91ecb59a70a497f0d9a54fee075145be8261`,
+bind both the reviewed v1 recovery chain and the later selector attempt.
+
+Five exact successes carry forward: the four previously preserved readouts and
+the later GLM extractor. Ten calls rerun: GLM's interviewer and ontology
+proposer, plus extractor, hybrid readout, interviewer, and ontology proposer
+for each comparison candidate. The chain records 40,227 microusd already
+spent, projects 43,584 microusd more, caps new authorizations at 80,500
+microusd, and bounds the cumulative worst case at 120,727 microusd under the
+original 150,000-microusd ceiling. Building the v5 suite, readiness, plan,
+delta, and proof made no inference call and spent nothing.
+
+Rebuild and validate the content-free v2 chain from its ignored source audits
+with `python -m eval.prepare_phase4_together_selector_recovery`; use `--help`
+for the exact private source paths. Stdout is aggregate-only. No paid selector-
+recovery call may run until these changes receive independent review and merge,
+a fresh suite-v5 catalog preflight succeeds, and Ben gives a new short-lived
+manual approval for the exact candidate amount.
+
+Reviewers can recheck the complete tracked chain without access to any ignored
+provider attempt with `python -m eval.validate_phase4_selector_recovery`; its
+`--help` lists the 14 public artifact inputs. The command rejects a
+`private_runs` path before reading it and prints only aggregate hashes, counts,
+and microusd totals.
+
+The candidate-specific authorization and execution commands above accept the
+selector-recovery v2 plan/proof through explicit schema dispatch while keeping
+the historical v1-only artifact loaders unchanged. They derive the exact
+2/4/4-call candidate subsets from the reviewed v2 plan, bind the v2 semantics
+manifest, and preserve the same ordered prior-state/spend-prefix checks.
+
+If the reviewed id-only selector still fails, stop adding provider-specific
+patches and reassess whether the remaining failure belongs to the provider, the
+harness, or the intended research scope. A missing or invalid local hydration
+context remains a harness error and cannot support a candidate verdict.
+OpenRouter is deferred as a controlled
+alternate-host diagnostic only; it is not part of qualification. Any such
+diagnostic requires an exact model and endpoint pin, disabled fallbacks,
+response-healing disabled, recorded routing provenance, and a separate reviewed
+budget and authorization. A cross-host difference would be deployment evidence,
+not a model-family result.

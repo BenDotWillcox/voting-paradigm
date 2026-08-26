@@ -32,6 +32,11 @@ from .contracts import (
     StableId,
 )
 from .fixture_io import content_sha256
+from .phase4_interviewer import (
+    ReadCandidateQuestionScoresResult,
+    VettedQuestionCandidate,
+    VettedQuestionOption,
+)
 from .phase4_provider import (
     PrivateStructuredProviderRequest,
     ProviderPriceCard,
@@ -82,6 +87,7 @@ from .prequential import PrequentialSessionScript
 
 READINESS_CREATED_AT = datetime(2026, 8, 21, 12, 0, tzinfo=UTC)
 READINESS_V4_CREATED_AT = datetime(2026, 8, 22, 5, 5, tzinfo=UTC)
+READINESS_V5_CREATED_AT = datetime(2026, 8, 26, 20, 5, tzinfo=UTC)
 QUALIFICATION_VARIANT_IDS = (
     "canonical",
     "prompt_paraphrase_1",
@@ -110,17 +116,21 @@ TOKENIZER_FILE_PATTERNS = (
     "added_tokens.json",
 )
 _QUALIFICATION_REQUEST_VALIDATION_CACHE: set[tuple[str, ...]] = set()
+QUALIFICATION_INTERVIEWER_CANDIDATE_WINDOW = 1
+HELD_OUT_INTERVIEWER_CANDIDATE_WINDOW = 10
 
 
 def _readiness_created_at(suite: Phase4TogetherSuite) -> datetime:
-    return (
-        READINESS_V4_CREATED_AT
-        if suite.suite_version >= 4
-        else READINESS_CREATED_AT
-    )
+    if suite.suite_version >= 5:
+        return READINESS_V5_CREATED_AT
+    if suite.suite_version >= 4:
+        return READINESS_V4_CREATED_AT
+    return READINESS_CREATED_AT
 
 
 def _manifest_version(suite: Phase4TogetherSuite) -> int:
+    if suite.suite_version >= 5:
+        return 4
     return 3 if suite.suite_version >= 4 else 2
 
 
@@ -1088,7 +1098,11 @@ def _request_template(
             QualificationVariant.PROMPT_PARAPHRASE_2,
         }
     ):
-        prompt_text = f"{prompt_text} {provider_invariant_prompt_suffix(role)}"
+        suffix = provider_invariant_prompt_suffix(
+            role,
+            role_contract.response_schema_version,
+        )
+        prompt_text = f"{prompt_text} {suffix}"
     prompt_payload: JsonValue = {
         "record_version": "phase4_together_qualification_prompt.v1",
         "role": role.value,
@@ -1185,7 +1199,14 @@ def _projected_provider_payloads(
     suite: Phase4TogetherSuite,
     request: PrivateStructuredProviderRequest,
 ) -> list[dict[str, JsonValue]]:
-    """Render one logical call, including the interviewer's one follow-up."""
+    """Render one logical call, including the interviewer's one follow-up.
+
+    Suite v5 counts the exact one-question public capability result during
+    qualification and a conservative top-ten candidate window for held-out
+    calibration.  The live transport still exact-counts every follow-up and
+    pauses before sending if a model requests a larger result that exceeds the
+    frozen envelope.
+    """
 
     initial = build_together_chat_payload(suite, request)
     if not request.binding.tool_calling_enabled:
@@ -1194,6 +1215,42 @@ def _projected_provider_payloads(
     messages = TypeAdapter(list[dict[str, JsonValue]]).validate_python(
         followup["messages"]
     )
+    tool_name = "read_evidence_coverage"
+    tool_arguments = "{}"
+    tool_result = '{"evidence_count":3}'
+    if suite.suite_version >= 5:
+        tool_name = "read_candidate_question_scores"
+        input_payload = request.input_payload
+        if not isinstance(input_payload, dict):
+            raise ValueError("interviewer projection input must be an object")
+        calibration = input_payload.get("calibration")
+        if calibration is None:
+            marker = input_payload.get(PROVIDER_CONFORMANCE_FIELD)
+            if not isinstance(marker, dict):
+                raise ValueError("interviewer qualification marker is missing")
+            question = VettedQuestionCandidate.model_validate(
+                marker.get("expected_vetted_question")
+            )
+            candidate_count = QUALIFICATION_INTERVIEWER_CANDIDATE_WINDOW
+            model_version = "capability_preflight_v1"
+        else:
+            question = _held_out_interviewer_calibration_question()
+            candidate_count = HELD_OUT_INTERVIEWER_CANDIDATE_WINDOW
+            model_version = "public_held_out_calibration_v1"
+        tool_arguments = json.dumps(
+            {"limit": candidate_count},
+            separators=(",", ":"),
+            sort_keys=True,
+        )
+        tool_result = _canonical_json(
+            ReadCandidateQuestionScoresResult(
+                candidates=[
+                    question.model_copy(deep=True)
+                    for _ in range(candidate_count)
+                ],
+                model_version=model_version,
+            ).model_dump(mode="json")
+        )
     messages.extend(
         [
             {
@@ -1204,8 +1261,8 @@ def _projected_provider_payloads(
                         "id": "readiness_tool_call",
                         "type": "function",
                         "function": {
-                            "name": "read_evidence_coverage",
-                            "arguments": "{}",
+                            "name": tool_name,
+                            "arguments": tool_arguments,
                         },
                     }
                 ],
@@ -1213,8 +1270,8 @@ def _projected_provider_payloads(
             {
                 "role": "tool",
                 "tool_call_id": "readiness_tool_call",
-                "name": "read_evidence_coverage",
-                "content": '{"evidence_count":3}',
+                "name": tool_name,
+                "content": tool_result,
             },
         ]
     )
@@ -1226,6 +1283,61 @@ def _projected_provider_payloads(
             followup,
         )
     return [initial, followup]
+
+
+def _held_out_interviewer_calibration_question() -> VettedQuestionCandidate:
+    """Build one public, deliberately long candidate repeated for token sizing."""
+
+    question_id = "phase4_public_held_out_calibration_question"
+    domain = "public held-out token calibration"
+    item_a = "phase4_public_calibration_dimension_alpha"
+    item_b = "phase4_public_calibration_dimension_beta"
+    prompt = (
+        "In a neutral fictional jurisdiction facing a consequential but "
+        "reversible civic choice, which of these two public values should "
+        "receive greater priority after considering implementation cost, "
+        "distributional effects, administrative feasibility, and uncertainty?"
+    )
+    options = [
+        VettedQuestionOption(
+            item_id=item_a,
+            text="Prioritize the first public calibration value",
+            description=(
+                "Give greater weight to the first value while recognizing "
+                "uncertain implementation effects and the independent status "
+                "of every later civic decision."
+            ),
+        ),
+        VettedQuestionOption(
+            item_id=item_b,
+            text="Prioritize the second public calibration value",
+            description=(
+                "Give greater weight to the second value while recognizing "
+                "uncertain implementation effects and the independent status "
+                "of every later civic decision."
+            ),
+        ),
+    ]
+    hash_payload = {
+        "question_id": question_id,
+        "question_version": 1,
+        "item_a": item_a,
+        "item_b": item_b,
+        "prompt": prompt,
+        "options": [item.model_dump(mode="json") for item in options],
+        "domain": domain,
+    }
+    return VettedQuestionCandidate(
+        question_id=question_id,
+        question_version=1,
+        question_sha256=content_sha256(hash_payload),
+        item_a=item_a,
+        item_b=item_b,
+        prompt=prompt,
+        options=options,
+        domain=domain,
+        score=1.0,
+    )
 
 
 def _candidate_parts(suite: Phase4TogetherSuite):

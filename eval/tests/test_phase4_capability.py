@@ -39,9 +39,18 @@ from eval.phase4_readiness import (
 from eval.phase4_robustness import BudgetSegment, LLMRole
 from eval.phase4_robustness import load_phase4_robustness_profile
 from eval.phase4_semantic import load_authored_semantic_map
-from eval.phase4_together import load_together_suite
+from eval.phase4_together import (
+    build_default_together_suite,
+    build_together_suite_v4,
+    load_together_suite,
+)
 from eval.prequential import load_session_script
-from eval.prepare_phase4_together_capability import main as prepare_main
+from eval.prepare_phase4_together_capability import (
+    CAPABILITY_PLAN_V3_CREATED_AT,
+    CAPABILITY_PLAN_V4_CREATED_AT,
+    capability_plan_version_and_time,
+    main as prepare_main,
+)
 from eval.run_phase4_together_capability import main as run_main
 from eval.tests.test_phase4_together_live import catalog_bundle
 from eval.validate_phase4_capability import main as validate_main
@@ -49,8 +58,12 @@ from eval.validate_phase4_capability import main as validate_main
 
 FIXTURES = Path(__file__).parents[1] / "fixtures"
 PLAN_PATH = FIXTURES / "preference_eval_phase4_together_capability_v1.json"
+PLAN_V3_PATH = FIXTURES / "preference_eval_phase4_together_capability_v3.json"
 READINESS_PATH = (
     FIXTURES / "preference_eval_phase4_together_readiness_v2.json"
+)
+READINESS_V4_PATH = (
+    FIXTURES / "preference_eval_phase4_together_readiness_v4.json"
 )
 SUITE_PATH = FIXTURES / "preference_eval_phase4_together_v2.json"
 PROFILE_PATH = FIXTURES / "preference_eval_phase4_robustness_v1.json"
@@ -241,6 +254,41 @@ def test_tracked_capability_plan_validates_and_records_zero_spend():
     assert summary["capability_max_spend_microusd"] == 150_000
     assert summary["provider_inference_calls_executed"] == 0
     assert summary["provider_spend_microusd"] == 0
+
+
+def test_v4_capability_plan_remains_exact_and_v5_advances_identity() -> None:
+    robustness_profile = load_phase4_robustness_profile(PROFILE_PATH)
+    legacy_suite = build_together_suite_v4(robustness_profile)
+    legacy_readiness = load_readiness_bundle(READINESS_V4_PATH)
+    legacy_plan = TogetherCapabilityPlan.model_validate_json(
+        PLAN_V3_PATH.read_text(encoding="utf-8")
+    )
+    fixture = load_fixture(DEV_FIXTURE_PATH)
+    session = load_session_script(DEV_SESSION_PATH)
+    semantic_map = load_authored_semantic_map(DEV_MAP_PATH)
+
+    validate_capability_plan(
+        legacy_plan,
+        legacy_suite,
+        robustness_profile,
+        legacy_readiness,
+        fixture,
+        session,
+        semantic_map,
+    )
+    assert content_sha256(legacy_plan) == (
+        "2b78f3659e8a38e5ae74ea070172ea7eb9bc83a6c251a8bde2524573c6f12381"
+    )
+    assert capability_plan_version_and_time(legacy_suite.suite_version) == (
+        3,
+        CAPABILITY_PLAN_V3_CREATED_AT,
+    )
+
+    current_suite = build_default_together_suite(robustness_profile)
+    assert capability_plan_version_and_time(current_suite.suite_version) == (
+        4,
+        CAPABILITY_PLAN_V4_CREATED_AT,
+    )
 
 
 def test_qualification_calls_rebuild_at_fresh_times_without_semantic_drift():

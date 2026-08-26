@@ -22,6 +22,8 @@ from eval.phase4_provider import (
     ProviderPrivacyAttestation,
     ProviderRequestBinding,
     ProviderResponseContract,
+    ProviderResponseContextError,
+    ProviderResponseSelectionError,
     ProviderResponseValidatorRegistration,
     ProviderResponseValidatorRegistry,
     ProviderSeedStatus,
@@ -84,6 +86,15 @@ class DemoStructuredOutput(ContractModel):
     confidence: float
 
 
+class DemoSelectionWire(ContractModel):
+    selected_id: str
+
+
+class DemoMaterializedOutput(ContractModel):
+    selected_id: str
+    canonical_label: str
+
+
 class OpaqueOutput:
     pass
 
@@ -96,6 +107,50 @@ NON_JSON_OUTPUT_ADAPTER = ProviderResponseContract(
 )
 OPAQUE_OUTPUT_ADAPTER = ProviderResponseContract(
     adapter=TypeAdapter(object)
+)
+
+
+def materialize_demo_selection(
+    value: object,
+    context: JsonValue | None,
+) -> object:
+    if not isinstance(value, DemoSelectionWire):
+        raise ProviderResponseContextError(
+            failure_code="response_validation_context_invalid"
+        )
+    if not isinstance(context, dict):
+        raise ProviderResponseContextError(
+            failure_code="response_validation_context_missing"
+        )
+    offered = context.get("offered")
+    if not isinstance(offered, list):
+        raise ProviderResponseContextError(
+            failure_code="response_validation_context_invalid"
+        )
+    matches = [
+        item
+        for item in offered
+        if isinstance(item, dict) and item.get("id") == value.selected_id
+    ]
+    if not matches:
+        raise ProviderResponseSelectionError(
+            path=("selected_id", "model_invented_secret"),
+            error_type="selection_not_offered",
+        )
+    if len(matches) != 1 or not isinstance(matches[0].get("label"), str):
+        raise ProviderResponseContextError(
+            failure_code="response_validation_context_conflict"
+        )
+    return {
+        "selected_id": value.selected_id,
+        "canonical_label": matches[0]["label"],
+    }
+
+
+MATERIALIZED_OUTPUT_ADAPTER = ProviderResponseContract(
+    adapter=TypeAdapter(DemoSelectionWire),
+    output_adapter=TypeAdapter(DemoMaterializedOutput),
+    materializer=materialize_demo_selection,
 )
 
 
@@ -224,6 +279,28 @@ def successful_transport_result(
         tool_call_count=tool_calls,
         tool_call_failure_count=0,
         latency_ms=latency_ms,
+        completed_at=completed_at,
+    )
+
+
+def contextual_transport_result(
+    completed_at: datetime,
+    *,
+    selected_id: str,
+    context: JsonValue,
+) -> ProviderTransportResult:
+    return ProviderTransportResult(
+        record_version="phase4_provider_transport_result.v2",
+        outcome=ProviderCallOutcome.SUCCESS,
+        output_payload={"selected_id": selected_id},
+        response_validation_context=context,
+        response_validation_context_sha256=content_sha256(context),
+        input_tokens=100,
+        output_tokens=20,
+        provider_request_id="provider-context-request-id",
+        provider_request_sent=True,
+        provider_seed_status=ProviderSeedStatus.SENT_UNCONFIRMED,
+        latency_ms=20.0,
         completed_at=completed_at,
     )
 
@@ -600,6 +677,229 @@ def test_invalid_structured_output_is_billed_and_terminal():
     assert "shape" not in diagnostic_json
     assert "Field required" not in diagnostic_json
     assert runtime.ledger_snapshot().calls[0].billed_cost_microusd > 0
+    runtime.audit([model], [pricing])
+
+
+def test_response_contract_materializes_wire_selector_from_ephemeral_context():
+    robustness_profile = profile()
+    model = candidate("candidate_materialized")
+    pricing = price_card(model)
+    request = prepared_request(
+        robustness_profile,
+        model,
+        pricing,
+        call_id="materialized_selector",
+        role=LLMRole.INTERVIEWER,
+        created_at=NOW,
+        response_adapter=MATERIALIZED_OUTPUT_ADAPTER,
+    )
+    context: JsonValue = {
+        "offered": [{"id": "question_one", "label": "Canonical wording"}]
+    }
+    transport_result = contextual_transport_result(
+        NOW + timedelta(seconds=1),
+        selected_id="question_one",
+        context=context,
+    )
+    runtime = ProviderBudgetRuntime(
+        robustness_profile,
+        ledger_id="provider_usage_materialized",
+        journal_id="provider_journal_materialized",
+    )
+
+    execution = runtime.execute(
+        request,
+        pricing,
+        MATERIALIZED_OUTPUT_ADAPTER,
+        ScriptedProviderTransport([transport_result]),
+        segment=BudgetSegment.QUALIFICATION,
+    )
+
+    assert execution.output == DemoMaterializedOutput(
+        selected_id="question_one",
+        canonical_label="Canonical wording",
+    )
+    assert execution.finalization.outcome is ProviderCallOutcome.SUCCESS
+    assert execution.finalization.record_version == (
+        "phase4_provider_call_finalization.v2"
+    )
+    assert execution.finalization.response_validation_context_sha256 == (
+        content_sha256(context)
+    )
+    assert execution.finalization.response_sha256 == content_sha256(
+        {
+            "selected_id": "question_one",
+            "canonical_label": "Canonical wording",
+        }
+    )
+    assert "Canonical wording" not in runtime.journal_snapshot().model_dump_json()
+    assert "Canonical wording" not in repr(transport_result)
+    assert "response_validation_context" not in transport_result.model_dump()
+    runtime.audit([model], [pricing])
+
+
+def test_unoffered_selector_is_billed_invalid_output_with_safe_diagnostic():
+    robustness_profile = profile()
+    model = candidate("candidate_unoffered")
+    pricing = price_card(model)
+    request = prepared_request(
+        robustness_profile,
+        model,
+        pricing,
+        call_id="unoffered_selector",
+        role=LLMRole.INTERVIEWER,
+        created_at=NOW,
+        response_adapter=MATERIALIZED_OUTPUT_ADAPTER,
+    )
+    context: JsonValue = {
+        "offered": [{"id": "question_one", "label": "Private planted text"}]
+    }
+    transport_result = contextual_transport_result(
+        NOW + timedelta(seconds=1),
+        selected_id="model_invented_secret",
+        context=context,
+    )
+    runtime = ProviderBudgetRuntime(
+        robustness_profile,
+        ledger_id="provider_usage_unoffered",
+        journal_id="provider_journal_unoffered",
+    )
+
+    execution = runtime.execute(
+        request,
+        pricing,
+        MATERIALIZED_OUTPUT_ADAPTER,
+        ScriptedProviderTransport([transport_result]),
+        segment=BudgetSegment.QUALIFICATION,
+    )
+
+    assert execution.output is None
+    assert execution.finalization.outcome is ProviderCallOutcome.INVALID_OUTPUT
+    assert execution.finalization.response_validation_context_sha256 == (
+        content_sha256(context)
+    )
+    assert execution.validation_diagnostic is not None
+    assert [
+        (item.path, item.error_type)
+        for item in execution.validation_diagnostic.issues
+    ] == [(["selected_id"], "selection_not_offered")]
+    diagnostic_json = execution.validation_diagnostic.model_dump_json()
+    assert "model_invented_secret" not in diagnostic_json
+    assert "Private planted text" not in diagnostic_json
+    assert runtime.ledger_snapshot().calls[0].billed_cost_microusd > 0
+    runtime.audit([model], [pricing])
+
+
+def test_missing_materialization_context_is_billed_transport_contract_error():
+    robustness_profile = profile()
+    model = candidate("candidate_missing_context")
+    pricing = price_card(model)
+    request = prepared_request(
+        robustness_profile,
+        model,
+        pricing,
+        call_id="missing_materialization_context",
+        role=LLMRole.INTERVIEWER,
+        created_at=NOW,
+        response_adapter=MATERIALIZED_OUTPUT_ADAPTER,
+    )
+    transport_result = successful_transport_result(
+        NOW + timedelta(seconds=1),
+        tool_calls=1,
+    ).model_copy(update={"output_payload": {"selected_id": "question_one"}})
+    runtime = ProviderBudgetRuntime(
+        robustness_profile,
+        ledger_id="provider_usage_missing_context",
+        journal_id="provider_journal_missing_context",
+    )
+
+    execution = runtime.execute(
+        request,
+        pricing,
+        MATERIALIZED_OUTPUT_ADAPTER,
+        ScriptedProviderTransport([transport_result]),
+        segment=BudgetSegment.QUALIFICATION,
+    )
+
+    assert execution.output is None
+    assert (
+        execution.finalization.outcome
+        is ProviderCallOutcome.TRANSPORT_CONTRACT_ERROR
+    )
+    assert execution.finalization.failure_code == (
+        "response_validation_context_missing"
+    )
+    assert execution.finalization.record_version == (
+        "phase4_provider_call_finalization.v1"
+    )
+    assert execution.finalization.response_validation_context_sha256 is None
+    assert execution.validation_diagnostic is None
+    assert runtime.ledger_snapshot().calls[0].billed_cost_microusd > 0
+    runtime.audit([model], [pricing])
+
+
+def test_transport_context_hash_and_contract_pairing_fail_closed():
+    context: JsonValue = {"offered": []}
+    with pytest.raises(ValidationError, match="context hash differs"):
+        ProviderTransportResult(
+            record_version="phase4_provider_transport_result.v2",
+            outcome=ProviderCallOutcome.SUCCESS,
+            output_payload={"selected_id": "question_one"},
+            response_validation_context=context,
+            response_validation_context_sha256=ZERO_HASH,
+            input_tokens=1,
+            output_tokens=1,
+            provider_request_sent=True,
+            provider_seed_status=ProviderSeedStatus.SENT_UNCONFIRMED,
+            latency_ms=1.0,
+            completed_at=NOW,
+        )
+    with pytest.raises(ValueError, match="must pair"):
+        ProviderResponseContract(
+            adapter=TypeAdapter(DemoSelectionWire),
+            output_adapter=TypeAdapter(DemoMaterializedOutput),
+        )
+
+
+def test_v1_provider_records_omit_response_validation_context_fields():
+    transport_result = successful_transport_result(NOW)
+    transport_payload = transport_result.model_dump(mode="json")
+    assert transport_payload["record_version"] == (
+        "phase4_provider_transport_result.v1"
+    )
+    assert "response_validation_context" not in transport_payload
+    assert "response_validation_context_sha256" not in transport_payload
+
+    robustness_profile = profile()
+    model = candidate("candidate_v1_context_omission")
+    pricing = price_card(model)
+    request = prepared_request(
+        robustness_profile,
+        model,
+        pricing,
+        call_id="v1_context_omission",
+        role=LLMRole.EVIDENCE_EXTRACTOR,
+        created_at=NOW,
+    )
+    runtime = ProviderBudgetRuntime(
+        robustness_profile,
+        ledger_id="provider_usage_v1_context_omission",
+        journal_id="provider_journal_v1_context_omission",
+    )
+    execution = runtime.execute(
+        request,
+        pricing,
+        OUTPUT_ADAPTER,
+        ScriptedProviderTransport(
+            [successful_transport_result(NOW + timedelta(seconds=1))]
+        ),
+        segment=BudgetSegment.QUALIFICATION,
+    )
+    finalization_payload = execution.finalization.model_dump(mode="json")
+    assert finalization_payload["record_version"] == (
+        "phase4_provider_call_finalization.v1"
+    )
+    assert "response_validation_context_sha256" not in finalization_payload
     runtime.audit([model], [pricing])
 
 

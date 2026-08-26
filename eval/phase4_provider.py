@@ -13,7 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Annotated, Literal, Protocol, Self
+from typing import Annotated, Callable, Literal, Protocol, Self
 
 from pydantic import (
     Field,
@@ -53,6 +53,16 @@ NonNegativeFiniteFloat = Annotated[
     float,
     Field(ge=0.0, allow_inf_nan=False),
 ]
+
+PROVIDER_RESPONSE_CONTEXT_FAILURE_CODES = frozenset(
+    {
+        "response_materialization_failed",
+        "response_validation_context_conflict",
+        "response_validation_context_invalid",
+        "response_validation_context_missing",
+        "response_validation_context_unexpected",
+    }
+)
 
 
 class ProviderDataScope(str, Enum):
@@ -313,21 +323,99 @@ class ProviderResponseValidatorArtifact(ContractModel):
     implementation_sha256: Sha256Digest
 
 
+class ProviderResponseSelectionError(ValueError):
+    """Safe model-output error for a selector not offered by trusted context."""
+
+    def __init__(
+        self,
+        *,
+        path: tuple[str | int, ...],
+        error_type: str,
+    ) -> None:
+        self.path = tuple(path)
+        self.error_type = TypeAdapter(StableId).validate_python(error_type)
+        super().__init__("provider response selected an unavailable value")
+
+
+class ProviderResponseContextError(ValueError):
+    """Content-free harness error while resolving a provider wire response."""
+
+    def __init__(self, *, failure_code: str) -> None:
+        validated = TypeAdapter(StableId).validate_python(failure_code)
+        if validated not in PROVIDER_RESPONSE_CONTEXT_FAILURE_CODES:
+            raise ValueError("provider response context failure code is unknown")
+        self.failure_code = validated
+        super().__init__("provider response validation context is invalid")
+
+
+ProviderResponseMaterializer = Callable[[object, JsonValue | None], object]
+
+
 @dataclass(frozen=True)
 class ProviderResponseContract:
-    """One inseparable response adapter and its content-free identity."""
+    """Wire schema plus optional trusted materialization to canonical output."""
 
     adapter: TypeAdapter[object]
     artifact: ProviderResponseValidatorArtifact | None = None
+    output_adapter: TypeAdapter[object] | None = None
+    materializer: ProviderResponseMaterializer | None = None
+
+    def __post_init__(self) -> None:
+        if (self.output_adapter is None) != (self.materializer is None):
+            raise ValueError(
+                "provider response materializer and output adapter must pair"
+            )
 
     def json_schema(self, *, mode: Literal["validation"] = "validation"):
         return self.adapter.json_schema(mode=mode)
 
-    def validate_python(self, value: object) -> object:
-        return self.adapter.validate_python(value)
+    def validate_python(
+        self,
+        value: object,
+        *,
+        response_validation_context: JsonValue | None = None,
+    ) -> object:
+        wire_value = self.adapter.validate_python(value)
+        if self.materializer is None:
+            if response_validation_context is not None:
+                raise ProviderResponseContextError(
+                    failure_code="response_validation_context_unexpected"
+                )
+            return wire_value
+        try:
+            materialized = self.materializer(
+                wire_value,
+                response_validation_context,
+            )
+            if self.output_adapter is None:  # pragma: no cover - paired above
+                raise ValueError("provider response output adapter is absent")
+            return self.output_adapter.validate_python(materialized)
+        except (ProviderResponseSelectionError, ProviderResponseContextError):
+            raise
+        except (
+            ValidationError,
+            PydanticSerializationError,
+            TypeError,
+            ValueError,
+        ) as error:
+            raise ProviderResponseContextError(
+                failure_code="response_materialization_failed"
+            ) from error
 
     def dump_python(self, value: object, *, mode: Literal["json"] = "json"):
-        return self.adapter.dump_python(value, mode=mode)
+        adapter = self.output_adapter or self.adapter
+        try:
+            return adapter.dump_python(value, mode=mode)
+        except (
+            PydanticSerializationError,
+            TypeError,
+            ValueError,
+        ) as error:
+            if self.output_adapter is None:
+                raise
+            raise ProviderResponseContextError(
+                failure_code="response_materialization_failed"
+            ) from error
 
 
 def bind_provider_response_contract(
@@ -338,12 +426,18 @@ def bind_provider_response_contract(
     validator_id: str | None = None,
     validator_version: int | None = None,
     implementation_sha256: str | None = None,
+    output_adapter: TypeAdapter[object] | None = None,
+    materializer: ProviderResponseMaterializer | None = None,
 ) -> ProviderResponseContract:
     """Bind request-relative validator identity, or preserve a schema-only path."""
 
     validator_parts = (validator_id, validator_version, implementation_sha256)
     if not any(value is not None for value in validator_parts):
-        return ProviderResponseContract(adapter=adapter)
+        return ProviderResponseContract(
+            adapter=adapter,
+            output_adapter=output_adapter,
+            materializer=materializer,
+        )
     if not all(value is not None for value in validator_parts):
         raise ValueError("provider response-validator identity is incomplete")
     schema = adapter.json_schema(mode="validation")
@@ -357,6 +451,8 @@ def bind_provider_response_contract(
             response_schema_sha256=content_sha256(schema),
             implementation_sha256=implementation_sha256,
         ),
+        output_adapter=output_adapter,
+        materializer=materializer,
     )
 
 
@@ -529,7 +625,10 @@ def _resolve_installed_provider_response_contract(
 class ProviderTransportResult(ContractModel):
     """Provider-neutral result returned by a concrete network transport."""
 
-    record_version: Literal["phase4_provider_transport_result.v1"] = (
+    record_version: Literal[
+        "phase4_provider_transport_result.v1",
+        "phase4_provider_transport_result.v2",
+    ] = (
         "phase4_provider_transport_result.v1"
     )
     outcome: Literal[
@@ -538,6 +637,15 @@ class ProviderTransportResult(ContractModel):
         ProviderCallOutcome.TRANSPORT_ERROR,
     ]
     output_payload: JsonValue | None = None
+    response_validation_context: JsonValue | None = Field(
+        default=None,
+        exclude=True,
+        repr=False,
+    )
+    response_validation_context_sha256: Sha256Digest | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
     input_tokens: NonNegativeCount
     output_tokens: NonNegativeCount
     provider_request_id: NonEmptyText | None = None
@@ -557,6 +665,21 @@ class ProviderTransportResult(ContractModel):
 
     @model_validator(mode="after")
     def require_outcome_shape(self) -> Self:
+        context_bound = self.response_validation_context is not None
+        if context_bound != (
+            self.response_validation_context_sha256 is not None
+        ):
+            raise ValueError("provider response validation context is incomplete")
+        if context_bound and self.response_validation_context_sha256 != (
+            content_sha256(self.response_validation_context)
+        ):
+            raise ValueError("provider response validation context hash differs")
+        if context_bound != (
+            self.record_version == "phase4_provider_transport_result.v2"
+        ):
+            raise ValueError("provider transport-result version differs")
+        if context_bound and self.outcome is not ProviderCallOutcome.SUCCESS:
+            raise ValueError("failed transport result cannot carry response context")
         if self.tool_call_failure_count > self.tool_call_count:
             raise ValueError("tool-call failures cannot exceed tool calls")
         if self.outcome is ProviderCallOutcome.SUCCESS:
@@ -626,7 +749,10 @@ class ScriptedProviderTransport:
 class ProviderCallFinalization(ContractModel):
     """Explicit terminal outcome for one authorization, including zero cost."""
 
-    record_version: Literal["phase4_provider_call_finalization.v1"] = (
+    record_version: Literal[
+        "phase4_provider_call_finalization.v1",
+        "phase4_provider_call_finalization.v2",
+    ] = (
         "phase4_provider_call_finalization.v1"
     )
     call_id: StableId
@@ -635,6 +761,10 @@ class ProviderCallFinalization(ContractModel):
     usage_sha256: Sha256Digest
     outcome: ProviderCallOutcome
     response_sha256: Sha256Digest | None = None
+    response_validation_context_sha256: Sha256Digest | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
     provider_request_id_sha256: Sha256Digest | None = None
     no_charge_attestation_sha256: Sha256Digest | None = None
     provider_seed_status: ProviderSeedStatus
@@ -652,6 +782,13 @@ class ProviderCallFinalization(ContractModel):
 
     @model_validator(mode="after")
     def require_terminal_shape(self) -> Self:
+        context_bound = self.response_validation_context_sha256 is not None
+        if context_bound != (
+            self.record_version == "phase4_provider_call_finalization.v2"
+        ):
+            raise ValueError("provider finalization version differs")
+        if context_bound and self.outcome is ProviderCallOutcome.CANCELLED:
+            raise ValueError("cancelled call cannot bind response context")
         if self.tool_call_failure_count > self.tool_call_count:
             raise ValueError("tool-call failures cannot exceed tool calls")
         successful = {
@@ -788,12 +925,32 @@ def _response_schema_property_names(schema: JsonValue) -> set[str]:
 def _structured_output_diagnostic(
     request: PrivateStructuredProviderRequest,
     finalization: ProviderCallFinalization,
-    error: ValidationError | TypeError | ValueError,
+    error: (
+        ProviderResponseSelectionError
+        | ValidationError
+        | TypeError
+        | ValueError
+    ),
 ) -> ProviderStructuredOutputDiagnostic:
     property_names = _response_schema_property_names(
         request.response_json_schema
     )
-    if isinstance(error, ValidationError):
+    if isinstance(error, ProviderResponseSelectionError):
+        issues = [
+            ProviderStructuredOutputValidationIssue(
+                path=[
+                    segment
+                    for segment in error.path
+                    if isinstance(segment, int)
+                    or (
+                        isinstance(segment, str)
+                        and segment in property_names
+                    )
+                ],
+                error_type=error.error_type,
+            )
+        ]
+    elif isinstance(error, ValidationError):
         errors = error.errors(
             include_url=False,
             include_context=False,
@@ -1139,6 +1296,9 @@ def _validate_provider_execution_journal(
             not binding.provider_seed_parameter_sent
             and finalization.provider_seed_status
             is not ProviderSeedStatus.NOT_SENT
+        ) or (
+            finalization.failure_code
+            in PROVIDER_RESPONSE_CONTEXT_FAILURE_CODES
         )
         if transport_contract_invalid and finalization.outcome not in {
             ProviderCallOutcome.TRANSPORT_CONTRACT_ERROR,
@@ -1395,6 +1555,7 @@ class ProviderBudgetRuntime:
         *,
         outcome: ProviderCallOutcome,
         response_sha256: str | None,
+        response_validation_context_sha256: str | None = None,
         provider_request_id: str | None,
         provider_seed_status: ProviderSeedStatus,
         input_tokens: int,
@@ -1433,6 +1594,9 @@ class ProviderBudgetRuntime:
             or (
                 not binding.provider_seed_parameter_sent
                 and provider_seed_status is not ProviderSeedStatus.NOT_SENT
+            )
+            or (
+                failure_code in PROVIDER_RESPONSE_CONTEXT_FAILURE_CODES
             )
         )
         if transport_contract_invalid and outcome not in {
@@ -1486,12 +1650,20 @@ class ProviderBudgetRuntime:
             created_at=completed_at,
         )
         finalization = ProviderCallFinalization(
+            record_version=(
+                "phase4_provider_call_finalization.v2"
+                if response_validation_context_sha256 is not None
+                else "phase4_provider_call_finalization.v1"
+            ),
             call_id=binding.call_id,
             request_binding_sha256=content_sha256(binding),
             authorization_sha256=content_sha256(authorization),
             usage_sha256=content_sha256(usage),
             outcome=outcome,
             response_sha256=response_sha256,
+            response_validation_context_sha256=(
+                response_validation_context_sha256
+            ),
             provider_request_id_sha256=(
                 content_sha256(provider_request_id)
                 if provider_request_id is not None
@@ -1565,6 +1737,9 @@ class ProviderBudgetRuntime:
         )
         transport_result = transport.invoke(request)
         binding = request.binding
+        response_validation_context_sha256 = (
+            transport_result.response_validation_context_sha256
+        )
         if not transport_result.provider_request_sent:
             no_charge_attestation = ProviderNoChargeAttestation(
                 attestation_id=f"{binding.call_id}_transport_not_sent",
@@ -1578,6 +1753,9 @@ class ProviderBudgetRuntime:
                 authorization,
                 outcome=ProviderCallOutcome.CANCELLED,
                 response_sha256=None,
+                response_validation_context_sha256=(
+                    response_validation_context_sha256
+                ),
                 provider_request_id=None,
                 provider_seed_status=ProviderSeedStatus.NOT_SENT,
                 input_tokens=0,
@@ -1600,6 +1778,9 @@ class ProviderBudgetRuntime:
                 authorization,
                 outcome=ProviderCallOutcome.TOKEN_BOUND_EXCEEDED,
                 response_sha256=None,
+                response_validation_context_sha256=(
+                    response_validation_context_sha256
+                ),
                 provider_request_id=transport_result.provider_request_id,
                 provider_seed_status=transport_result.provider_seed_status,
                 input_tokens=transport_result.input_tokens,
@@ -1632,6 +1813,9 @@ class ProviderBudgetRuntime:
                 authorization,
                 outcome=ProviderCallOutcome.TRANSPORT_CONTRACT_ERROR,
                 response_sha256=None,
+                response_validation_context_sha256=(
+                    response_validation_context_sha256
+                ),
                 provider_request_id=transport_result.provider_request_id,
                 provider_seed_status=transport_result.provider_seed_status,
                 input_tokens=transport_result.input_tokens,
@@ -1652,6 +1836,9 @@ class ProviderBudgetRuntime:
                 authorization,
                 outcome=transport_result.outcome,
                 response_sha256=None,
+                response_validation_context_sha256=(
+                    response_validation_context_sha256
+                ),
                 provider_request_id=transport_result.provider_request_id,
                 provider_seed_status=transport_result.provider_seed_status,
                 input_tokens=transport_result.input_tokens,
@@ -1667,11 +1854,38 @@ class ProviderBudgetRuntime:
             return ProviderExecutionResult(None, finalization)
         try:
             parsed = response_adapter.validate_python(
-                transport_result.output_payload
+                transport_result.output_payload,
+                response_validation_context=(
+                    transport_result.response_validation_context
+                ),
             )
             canonical_output = response_adapter.dump_python(parsed, mode="json")
             response_hash = content_sha256(canonical_output)
+        except ProviderResponseContextError as error:
+            finalization = self._finalize(
+                binding,
+                price_card,
+                authorization,
+                outcome=ProviderCallOutcome.TRANSPORT_CONTRACT_ERROR,
+                response_sha256=None,
+                response_validation_context_sha256=(
+                    response_validation_context_sha256
+                ),
+                provider_request_id=transport_result.provider_request_id,
+                provider_seed_status=transport_result.provider_seed_status,
+                input_tokens=transport_result.input_tokens,
+                output_tokens=transport_result.output_tokens,
+                tool_call_count=transport_result.tool_call_count,
+                tool_call_failure_count=(
+                    transport_result.tool_call_failure_count
+                ),
+                latency_ms=transport_result.latency_ms,
+                failure_code=error.failure_code,
+                completed_at=transport_result.completed_at,
+            )
+            return ProviderExecutionResult(None, finalization)
         except (
+            ProviderResponseSelectionError,
             ValidationError,
             PydanticSerializationError,
             TypeError,
@@ -1683,6 +1897,9 @@ class ProviderBudgetRuntime:
                 authorization,
                 outcome=ProviderCallOutcome.INVALID_OUTPUT,
                 response_sha256=None,
+                response_validation_context_sha256=(
+                    response_validation_context_sha256
+                ),
                 provider_request_id=transport_result.provider_request_id,
                 provider_seed_status=transport_result.provider_seed_status,
                 input_tokens=transport_result.input_tokens,
@@ -1710,6 +1927,9 @@ class ProviderBudgetRuntime:
             authorization,
             outcome=ProviderCallOutcome.SUCCESS,
             response_sha256=response_hash,
+            response_validation_context_sha256=(
+                response_validation_context_sha256
+            ),
             provider_request_id=transport_result.provider_request_id,
             provider_seed_status=transport_result.provider_seed_status,
             input_tokens=transport_result.input_tokens,

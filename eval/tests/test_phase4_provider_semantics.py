@@ -11,13 +11,28 @@ import eval.phase4_provider_semantics as provider_semantics
 from eval.fixture_io import content_sha256
 from eval.phase4_provider_semantics import (
     PROVIDER_RESPONSE_BEHAVIOR_SPEC,
+    PROVIDER_RESPONSE_BEHAVIOR_SPEC_V2,
     PROVIDER_RESPONSE_INVARIANT_MANIFEST,
+    PROVIDER_RESPONSE_INVARIANT_MANIFEST_V2,
+    PROVIDER_RESPONSE_SELECTOR_VALIDATOR_IMPLEMENTATION_SHA256,
     PROVIDER_RESPONSE_VALIDATOR_IMPLEMENTATION_SHA256,
+    InterviewerQuestionSelectionContext,
     ProviderInvariantDisposition,
     build_public_capability_question,
+    provider_invariant_prompt_suffix,
     provider_response_adapter_for_role,
     provider_response_schema_for_role,
     validate_provider_response_semantic_runtime,
+)
+from eval.phase4_interviewer import (
+    AskVettedQuestionDecision,
+    ReadCandidateQuestionScoresResult,
+    VettedQuestionCandidate,
+    vetted_question_sha256,
+)
+from eval.phase4_provider import (
+    ProviderResponseContextError,
+    ProviderResponseSelectionError,
 )
 from eval.phase4_robustness import LLMRole
 from eval.phase4_together import load_together_suite
@@ -115,10 +130,48 @@ def test_invariant_manifest_covers_every_role_and_normalizer_binding() -> None:
     } <= {item.invariant_id for item in manifest.invariants}
 
 
+def test_v2_manifest_adds_selector_grounding_and_local_materialization() -> None:
+    manifest = PROVIDER_RESPONSE_INVARIANT_MANIFEST_V2
+
+    assert manifest.record_version == "phase4_provider_response_invariants.v2"
+    assert manifest.response_schema_versions == {
+        LLMRole.INTERVIEWER: 3,
+        LLMRole.EVIDENCE_EXTRACTOR: 2,
+        LLMRole.ONTOLOGY_PROPOSER: 2,
+        LLMRole.DIRECT_READOUT: 1,
+        LLMRole.HYBRID_READOUT: 1,
+    }
+    interviewer_ids = {
+        item.invariant_id
+        for item in manifest.invariants
+        if item.role is LLMRole.INTERVIEWER
+    }
+    assert interviewer_ids == {
+        "interviewer_discriminated_action",
+        "interviewer_clarification_lineage",
+        "interviewer_question_selector_shape",
+        "interviewer_current_tool_question_grounding",
+        "interviewer_exact_local_question_materialization",
+    }
+    grounding = next(
+        item
+        for item in manifest.invariants
+        if item.invariant_id == "interviewer_current_tool_question_grounding"
+    )
+    assert grounding.dispositions == [ProviderInvariantDisposition.POST_PARSE]
+    assert content_sha256(manifest) == (
+        "944efa35f60c3a9286f96b201ef21a9b1ff7ecda1a9a6ae96369c491e959523b"
+    )
+    assert content_sha256(PROVIDER_RESPONSE_INVARIANT_MANIFEST) == (
+        "330c589dcc02caf97ee429ca62d068d8d06b299be18ef18337c9c82e360a5512"
+    )
+
+
 def test_provider_response_behavior_identity_is_frozen() -> None:
     assert PROVIDER_RESPONSE_VALIDATOR_IMPLEMENTATION_SHA256 == (
         "f077e2713b7ba0e6735f07e0ee367cc6d2203074841f78afda86ca450c009a09"
     )
+    assert len(PROVIDER_RESPONSE_SELECTOR_VALIDATOR_IMPLEMENTATION_SHA256) == 64
 
 
 def test_behavior_identity_binds_conformance_field(monkeypatch) -> None:
@@ -127,10 +180,45 @@ def test_behavior_identity_binds_conformance_field(monkeypatch) -> None:
         "PROVIDER_CONFORMANCE_FIELD",
         "changed_provider_conformance_field",
     )
+    payload_builder = getattr(
+        provider_semantics,
+        "_provider_response_selector_validator_implementation_payload",
+    )
+    payload = payload_builder()
 
-    assert content_sha256(
-        provider_semantics._provider_response_validator_implementation_payload()
-    ) != PROVIDER_RESPONSE_VALIDATOR_IMPLEMENTATION_SHA256
+    assert content_sha256(payload) != (
+        PROVIDER_RESPONSE_SELECTOR_VALIDATOR_IMPLEMENTATION_SHA256
+    )
+
+
+def test_behavior_identity_binds_context_codes_and_schema(monkeypatch) -> None:
+    payload_builder = getattr(
+        provider_semantics,
+        "_provider_response_selector_validator_implementation_payload",
+    )
+
+    monkeypatch.setattr(
+        provider_semantics,
+        "PROVIDER_RESPONSE_CONTEXT_FAILURE_CODES",
+        frozenset(
+            {
+                *provider_semantics.PROVIDER_RESPONSE_CONTEXT_FAILURE_CODES,
+                "response_validation_context_changed",
+            }
+        ),
+    )
+    changed_codes_sha256 = content_sha256(payload_builder())
+    monkeypatch.setattr(
+        provider_semantics,
+        "InterviewerQuestionSelectionContext",
+        dict[str, str],
+    )
+    changed_schema_sha256 = content_sha256(payload_builder())
+
+    assert changed_codes_sha256 != (
+        PROVIDER_RESPONSE_SELECTOR_VALIDATOR_IMPLEMENTATION_SHA256
+    )
+    assert changed_schema_sha256 != changed_codes_sha256
 
 
 def test_provider_semantic_runtime_version_fails_closed(monkeypatch) -> None:
@@ -156,6 +244,212 @@ def test_v1_schemas_still_bind_the_exact_historical_v3_suite() -> None:
         assert contract.response_schema_version == 1
         assert contract.response_schema_sha256 == content_sha256(
             provider_response_schema_for_role(contract.role, 1)
+        )
+
+
+def test_historical_interviewer_schemas_remain_byte_identical() -> None:
+    assert content_sha256(
+        provider_response_schema_for_role(LLMRole.INTERVIEWER, 1)
+    ) == "f43e1d227b57e58feee908ce55453e9277894829698c765d889534f919c86be0"
+    assert content_sha256(
+        provider_response_schema_for_role(LLMRole.INTERVIEWER, 2)
+    ) == "cc9f8ccf21472893b5f3e8d96194e4a842942e9cb45c3884f2f634ac3dbfbf08"
+    assert "exact vetted question" in provider_invariant_prompt_suffix(
+        LLMRole.INTERVIEWER
+    )
+    assert "selected_question_id" in provider_invariant_prompt_suffix(
+        LLMRole.INTERVIEWER,
+        3,
+    )
+    assert "selected_question_sha256" not in provider_invariant_prompt_suffix(
+        LLMRole.INTERVIEWER,
+        3,
+    )
+
+
+def _selector_context(
+    *questions: VettedQuestionCandidate,
+) -> dict[str, object]:
+    return InterviewerQuestionSelectionContext(
+        candidate_question_results=[
+            ReadCandidateQuestionScoresResult(
+                candidates=list(questions),
+                model_version="public_selector_test_model",
+            )
+        ]
+    ).model_dump(mode="json")
+
+
+def _selector_payload(question: VettedQuestionCandidate) -> dict[str, object]:
+    return {
+        "record_version": "phase4_ask_vetted_question_selector.v1",
+        "action": "ask_vetted_question",
+        "selected_question_id": question.question_id,
+        "rendering_mode": "canonical_vetted",
+    }
+
+
+def _selector_adapter(question: VettedQuestionCandidate | None = None):
+    conformance = (
+        {
+            "provider_response_conformance": {
+                "contract_version": 1,
+                "expected_vetted_question": question.model_dump(mode="json"),
+            }
+        }
+        if question is not None
+        else {}
+    )
+    return provider_response_adapter_for_role(
+        LLMRole.INTERVIEWER,
+        response_schema_version=3,
+        input_payload=conformance,
+    )
+
+
+def test_v3_interviewer_selector_hydrates_exact_canonical_question() -> None:
+    question = build_public_capability_question(["item_b", "item_a"])
+    adapter = _selector_adapter(question)
+
+    accepted = adapter.validate_python(
+        _selector_payload(question),
+        response_validation_context=_selector_context(question),
+    )
+
+    assert isinstance(accepted, AskVettedQuestionDecision)
+    assert accepted.question == question
+    assert adapter.artifact is not None
+    assert adapter.artifact.validator_version == 2
+    assert adapter.artifact.implementation_sha256 == (
+        PROVIDER_RESPONSE_SELECTOR_VALIDATOR_IMPLEMENTATION_SHA256
+    )
+    assert adapter.dump_python(accepted) == accepted.model_dump(mode="json")
+    schema = adapter.json_schema(mode="validation")
+    assert _property_schema(schema, "selected_question_id")
+    with pytest.raises(LookupError):
+        _property_schema(schema, "selected_question_sha256")
+    with pytest.raises(LookupError):
+        _property_schema(schema, "question")
+
+
+def test_v3_interviewer_selector_rejects_unknown_or_unreturned_question() -> None:
+    offered = build_public_capability_question(["item_b", "item_a"])
+    selected_payload = _selector_payload(offered)
+    selected_payload["selected_question_id"] = "unreturned_question_id"
+    adapter = _selector_adapter()
+
+    with pytest.raises(ProviderResponseSelectionError) as raised:
+        adapter.validate_python(
+            selected_payload,
+            response_validation_context=_selector_context(offered),
+        )
+
+    assert raised.value.path == ("selected_question_id",)
+    assert raised.value.error_type == "question_selector_not_returned"
+    rendered_error = f"{raised.value!r} {raised.value}"
+    assert selected_payload["selected_question_id"] not in rendered_error
+
+
+def test_v3_interviewer_selector_distinguishes_absent_tool_call_from_context() -> None:
+    question = build_public_capability_question(["item_b", "item_a"])
+    adapter = _selector_adapter()
+    empty_context = InterviewerQuestionSelectionContext().model_dump(mode="json")
+
+    with pytest.raises(ProviderResponseSelectionError):
+        adapter.validate_python(
+            _selector_payload(question),
+            response_validation_context=empty_context,
+        )
+    with pytest.raises(ProviderResponseContextError) as missing:
+        adapter.validate_python(_selector_payload(question))
+    assert missing.value.failure_code == "response_validation_context_missing"
+    with pytest.raises(ProviderResponseContextError) as malformed:
+        adapter.validate_python(
+            _selector_payload(question),
+            response_validation_context={"invented_context": []},
+        )
+    assert malformed.value.failure_code == "response_validation_context_invalid"
+
+
+def test_v3_interviewer_selector_rejects_conflicting_candidate_identity() -> None:
+    question = build_public_capability_question(["item_b", "item_a"])
+    changed = question.model_copy(update={"prompt": "A changed public prompt."})
+    changed = changed.model_copy(
+        update={"question_sha256": vetted_question_sha256(changed)}
+    )
+    changed = VettedQuestionCandidate.model_validate(
+        changed.model_dump(mode="json")
+    )
+
+    with pytest.raises(ProviderResponseContextError) as raised:
+        _selector_adapter().validate_python(
+            _selector_payload(question),
+            response_validation_context=_selector_context(question, changed),
+        )
+
+    assert raised.value.failure_code == "response_validation_context_conflict"
+
+
+def test_v3_interviewer_selector_deduplicates_identical_tool_results() -> None:
+    question = build_public_capability_question(["item_b", "item_a"])
+    result = ReadCandidateQuestionScoresResult(
+        candidates=[question],
+        model_version="public_selector_test_model",
+    )
+    context = InterviewerQuestionSelectionContext(
+        candidate_question_results=[result, result]
+    ).model_dump(mode="json")
+
+    accepted = _selector_adapter().validate_python(
+        _selector_payload(question),
+        response_validation_context=context,
+    )
+
+    assert isinstance(accepted, AskVettedQuestionDecision)
+    assert accepted.question == question
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {
+            "record_version": "phase4_clarify_existing_evidence.v1",
+            "action": "clarify_existing_evidence",
+            "clarification_kind": "confirm_scope",
+            "linked_evidence_event_ids": ["evidence_one"],
+        },
+        {
+            "record_version": "phase4_pause_and_resume.v1",
+            "action": "pause_and_resume",
+        },
+    ],
+)
+def test_v3_interviewer_non_question_actions_remain_canonical(
+    payload: dict[str, object],
+) -> None:
+    adapter = _selector_adapter()
+    context = InterviewerQuestionSelectionContext().model_dump(mode="json")
+
+    accepted = adapter.validate_python(
+        payload,
+        response_validation_context=context,
+    )
+
+    assert adapter.dump_python(accepted) == accepted.model_dump(mode="json")
+
+
+def test_v3_interviewer_rejects_full_question_echo_wire_shape() -> None:
+    question = build_public_capability_question(["item_b", "item_a"])
+
+    with pytest.raises(ValidationError):
+        _selector_adapter().validate_python(
+            {
+                "record_version": "phase4_ask_vetted_question.v1",
+                "action": "ask_vetted_question",
+                "question": question.model_dump(mode="json"),
+                "rendering_mode": "canonical_vetted",
+            },
+            response_validation_context=_selector_context(question),
         )
 
 
@@ -205,6 +499,11 @@ def test_interviewer_adapter_requires_the_exact_public_question() -> None:
         }
     )
     assert accepted.question == question
+    assert adapter.artifact is not None
+    assert adapter.artifact.validator_version == 1
+    assert adapter.artifact.implementation_sha256 == (
+        PROVIDER_RESPONSE_VALIDATOR_IMPLEMENTATION_SHA256
+    )
 
     with pytest.raises(ValidationError, match="exact vetted question"):
         adapter.validate_python(
@@ -793,6 +1092,61 @@ ADVERSARIAL_PROBES: dict[str, Callable[[], None]] = {
 }
 
 
+def _probe_interviewer_selector_shape() -> None:
+    question = build_public_capability_question(["item_b", "item_a"])
+    with pytest.raises(ValidationError):
+        _selector_adapter().validate_python(
+            {
+                "record_version": "phase4_ask_vetted_question.v1",
+                "action": "ask_vetted_question",
+                "question": question.model_dump(mode="json"),
+                "rendering_mode": "canonical_vetted",
+            },
+            response_validation_context=_selector_context(question),
+        )
+
+
+def _probe_interviewer_current_tool_grounding() -> None:
+    offered = build_public_capability_question(["item_b", "item_a"])
+    unreturned_payload = _selector_payload(offered)
+    unreturned_payload["selected_question_id"] = "unreturned_question_id"
+    with pytest.raises(ProviderResponseSelectionError) as unreturned:
+        _selector_adapter().validate_python(
+            unreturned_payload,
+            response_validation_context=_selector_context(offered),
+        )
+    assert unreturned.value.path == ("selected_question_id",)
+    assert unreturned.value.error_type == "question_selector_not_returned"
+
+
+def _probe_interviewer_local_materialization() -> None:
+    question = build_public_capability_question(["item_b", "item_a"])
+    accepted = _selector_adapter().validate_python(
+        _selector_payload(question),
+        response_validation_context=_selector_context(question),
+    )
+    assert isinstance(accepted, AskVettedQuestionDecision)
+    assert accepted.question == question
+
+
+ADVERSARIAL_PROBES_V2 = {
+    key: value
+    for key, value in ADVERSARIAL_PROBES.items()
+    if key != "interviewer_exact_question"
+}
+ADVERSARIAL_PROBES_V2.update(
+    {
+        "interviewer_selector_shape": _probe_interviewer_selector_shape,
+        "interviewer_current_tool_grounding": (
+            _probe_interviewer_current_tool_grounding
+        ),
+        "interviewer_local_materialization": (
+            _probe_interviewer_local_materialization
+        ),
+    }
+)
+
+
 def test_every_manifest_invariant_has_one_exercised_adversarial_probe() -> None:
     manifest_ids = {
         item.invariant_id for item in PROVIDER_RESPONSE_INVARIANT_MANIFEST.invariants
@@ -807,3 +1161,23 @@ def test_every_manifest_invariant_has_one_exercised_adversarial_probe() -> None:
 @pytest.mark.parametrize("probe_name", sorted(ADVERSARIAL_PROBES))
 def test_provider_response_adversarial_probe(probe_name: str) -> None:
     ADVERSARIAL_PROBES[probe_name]()
+
+
+def test_v2_behavior_spec_covers_every_v2_manifest_invariant() -> None:
+    manifest_ids = {
+        item.invariant_id
+        for item in PROVIDER_RESPONSE_INVARIANT_MANIFEST_V2.invariants
+    }
+    probe_names = {
+        item.probe_id for item in PROVIDER_RESPONSE_BEHAVIOR_SPEC_V2.probes
+    }
+
+    assert {
+        item.invariant_id for item in PROVIDER_RESPONSE_BEHAVIOR_SPEC_V2.probes
+    } == manifest_ids
+    assert probe_names == set(ADVERSARIAL_PROBES_V2)
+
+
+@pytest.mark.parametrize("probe_name", sorted(ADVERSARIAL_PROBES_V2))
+def test_provider_response_v2_adversarial_probe(probe_name: str) -> None:
+    ADVERSARIAL_PROBES_V2[probe_name]()

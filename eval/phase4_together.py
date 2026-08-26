@@ -36,6 +36,7 @@ from .phase4_interviewer import (
 from .phase4_provider import PrivateStructuredProviderRequest, ProviderPriceCard
 from .phase4_provider_semantics import (
     PROVIDER_RESPONSE_SCHEMA_VERSION,
+    PROVIDER_RESPONSE_SELECTOR_SCHEMA_VERSION,
     provider_invariant_prompt_suffix,
     provider_response_schema_for_role,
 )
@@ -71,6 +72,7 @@ TOGETHER_TWO_PHASE_INTERVIEWER_SUITE_VERSION = 3
 CAPTURED_AT = datetime(2026, 8, 20, 12, 0, tzinfo=timezone.utc)
 SUITE_V3_CREATED_AT = datetime(2026, 8, 21, 18, 0, tzinfo=timezone.utc)
 SUITE_V4_CREATED_AT = datetime(2026, 8, 22, 5, 0, tzinfo=timezone.utc)
+SUITE_V5_CREATED_AT = datetime(2026, 8, 26, 20, 0, tzinfo=timezone.utc)
 
 EVIDENCE_EXTRACTOR_PROMPT_V1 = (
     "Extract only preference claims explicitly supported by the supplied "
@@ -986,39 +988,59 @@ def _role_contracts(*, suite_version: int) -> list[SharedRoleContract]:
     }
     for role in sorted(LLMRole, key=lambda item: item.value):
         prompt, response_contract_id = definitions[role]
+        interviewer_selector = (
+            suite_version >= 5 and role is LLMRole.INTERVIEWER
+        )
+        corrected_role_contract = (
+            suite_version >= 4 and role in v2_schema_roles
+        )
         if (
-            suite_version >= 4
-            and role in v2_schema_roles
+            corrected_role_contract
             and role is not LLMRole.EVIDENCE_EXTRACTOR
         ):
-            prompt = f"{prompt} {provider_invariant_prompt_suffix(role)}"
-        schema_version = (
-            PROVIDER_RESPONSE_SCHEMA_VERSION
-            if suite_version >= 4 and role in v2_schema_roles
-            else 1
-        )
-        if schema_version >= 2:
-            response_contract_id = response_contract_id.removesuffix("_v1") + "_v2"
+            suffix = (
+                provider_invariant_prompt_suffix(
+                    role,
+                    PROVIDER_RESPONSE_SELECTOR_SCHEMA_VERSION,
+                )
+                if interviewer_selector
+                else provider_invariant_prompt_suffix(role)
+            )
+            prompt = f"{prompt} {suffix}"
+        schema_version = 1
+        if corrected_role_contract:
+            schema_version = (
+                PROVIDER_RESPONSE_SELECTOR_SCHEMA_VERSION
+                if interviewer_selector
+                else PROVIDER_RESPONSE_SCHEMA_VERSION
+            )
+        if schema_version > 1:
+            response_contract_id = (
+                response_contract_id.removesuffix("_v1")
+                + f"_v{schema_version}"
+            )
+        if role is LLMRole.INTERVIEWER:
+            if suite_version >= 5:
+                prompt_id = "phase4_interviewer_together_v4"
+                prompt_version = 4
+            elif suite_version >= 4:
+                prompt_id = "phase4_interviewer_together_v3"
+                prompt_version = 3
+            else:
+                prompt_id = "phase4_interviewer_together_v2"
+                prompt_version = 2
+        else:
+            prompt_id = (
+                f"phase4_{role.value}_together_v2"
+                if corrected_role_contract
+                else f"phase4_{role.value}_together_v1"
+            )
+            prompt_version = 2 if corrected_role_contract else 1
         contracts.append(
             SharedRoleContract(
                 role=role,
-                prompt_id=(
-                    "phase4_interviewer_together_v3"
-                    if role is LLMRole.INTERVIEWER and suite_version >= 4
-                    else "phase4_interviewer_together_v2"
-                    if role is LLMRole.INTERVIEWER
-                    else f"phase4_{role.value}_together_v2"
-                    if suite_version >= 4 and role in v2_schema_roles
-                    else f"phase4_{role.value}_together_v1"
-                ),
-                prompt_version=(
-                    3
-                    if role is LLMRole.INTERVIEWER and suite_version >= 4
-                    else 2
-                    if role is LLMRole.INTERVIEWER
-                    or (suite_version >= 4 and role in v2_schema_roles)
-                    else 1
-                ),
+                prompt_id=prompt_id,
+                prompt_version=prompt_version,
                 prompt_text=prompt,
                 prompt_sha256=content_sha256(prompt),
                 response_schema_id=response_contract_id,
@@ -1091,7 +1113,7 @@ def _workload_plan() -> TogetherWorkloadPlan:
 def _build_together_suite(
     profile: Phase4ERobustnessProfile,
     *,
-    suite_version: Literal[3, 4],
+    suite_version: Literal[3, 4, 5],
 ) -> Phase4TogetherSuite:
     """Build one exact no-network Together suite version."""
 
@@ -1150,11 +1172,11 @@ def _build_together_suite(
     suite = Phase4TogetherSuite(
         suite_id=f"preference_eval_phase4_together_v{suite_version}",
         suite_version=suite_version,
-        created_at=(
-            SUITE_V4_CREATED_AT
-            if suite_version == 4
-            else SUITE_V3_CREATED_AT
-        ),
+        created_at={
+            3: SUITE_V3_CREATED_AT,
+            4: SUITE_V4_CREATED_AT,
+            5: SUITE_V5_CREATED_AT,
+        }[suite_version],
         robustness_profile_id=profile.profile_id,
         robustness_profile_version=profile.profile_version,
         robustness_profile_sha256=content_sha256(profile),
@@ -1176,9 +1198,17 @@ def build_together_suite_v3(
     return _build_together_suite(profile, suite_version=3)
 
 
+def build_together_suite_v4(
+    profile: Phase4ERobustnessProfile,
+) -> Phase4TogetherSuite:
+    """Rebuild the preserved v4 normalized-response audit artifact."""
+
+    return _build_together_suite(profile, suite_version=4)
+
+
 def build_default_together_suite(
     profile: Phase4ERobustnessProfile,
 ) -> Phase4TogetherSuite:
-    """Build the tracked v4 suite with an explicit pair-order contract."""
+    """Build suite v5 with trusted local interviewer-question hydration."""
 
-    return _build_together_suite(profile, suite_version=4)
+    return _build_together_suite(profile, suite_version=5)

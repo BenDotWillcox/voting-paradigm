@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable, Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated, Literal, Self
+from typing import Annotated, Literal, Protocol, Self
 
 from pydantic import Field, field_validator, model_validator
 
@@ -50,6 +51,7 @@ from .phase4_provider import (
 )
 from .phase4_provider_semantics import (
     PROVIDER_RESPONSE_INVARIANT_MANIFEST,
+    PROVIDER_RESPONSE_INVARIANT_MANIFEST_V2,
     ProviderResponseInvariantManifest,
     provider_response_invariant_manifest_sha256,
 )
@@ -81,6 +83,24 @@ from .prequential import PrequentialSessionScript
 Microusd = Annotated[int, Field(ge=0)]
 NonNegativeCount = Annotated[int, Field(ge=0)]
 PositiveCount = Annotated[int, Field(ge=1)]
+
+
+class ExecutableCapabilityDelta(Protocol):
+    """Common paid-execution surface of a reviewed capability delta."""
+
+    plan_id: str
+    plan_version: int
+    created_at: datetime
+    corrected_suite_sha256: str
+    corrected_readiness_sha256: str
+    corrected_capability_plan_sha256: str
+    provider_response_semantics_manifest_sha256: str
+    rerun_calls: list[TogetherCapabilityCallPlan]
+    prior_provider_spend_microusd: int
+    original_capability_max_spend_microusd: int
+
+
+ExecutableCapabilityDeltaSourceProof = ContractModel
 SourceAuthorization = (
     TogetherCandidateCapabilityAuthorizationBundle
     | TogetherAdjudicatedCandidateCapabilityAuthorization
@@ -628,7 +648,7 @@ DeltaPriorAttempt = tuple[
 ]
 
 
-def _delta_candidate_order(delta: TogetherCapabilityDeltaPlan) -> list[str]:
+def _delta_candidate_order(delta: ExecutableCapabilityDelta) -> list[str]:
     order: list[str] = []
     for call in delta.rerun_calls:
         if call.candidate_id not in order:
@@ -1157,8 +1177,44 @@ def build_capability_delta_source_proof(
     return proof
 
 
+def _validate_execution_delta_source_proof(
+    proof: ExecutableCapabilityDeltaSourceProof,
+    delta: ExecutableCapabilityDelta,
+) -> None:
+    """Dispatch an exact plan/proof pair without weakening either contract."""
+
+    if isinstance(delta, TogetherCapabilityDeltaPlan):
+        if not isinstance(proof, TogetherCapabilityDeltaSourceProof):
+            raise ValueError("capability delta source proof schema differs")
+        validate_capability_delta_source_proof(proof, delta)
+        return
+
+    from .phase4_selector_recovery import (
+        TogetherSelectorRecoveryDeltaPlan,
+        TogetherSelectorRecoverySourceProof,
+        validate_selector_recovery_source_proof,
+    )
+
+    if not isinstance(delta, TogetherSelectorRecoveryDeltaPlan):
+        raise ValueError("capability delta execution schema is unsupported")
+    if not isinstance(proof, TogetherSelectorRecoverySourceProof):
+        raise ValueError("capability delta source proof schema differs")
+    validate_selector_recovery_source_proof(proof, delta)
+
+
+def _execution_manifest_sha256(delta: ExecutableCapabilityDelta) -> str:
+    if isinstance(delta, TogetherCapabilityDeltaPlan):
+        return provider_response_invariant_manifest_sha256()
+
+    from .phase4_selector_recovery import TogetherSelectorRecoveryDeltaPlan
+
+    if not isinstance(delta, TogetherSelectorRecoveryDeltaPlan):
+        raise ValueError("capability delta execution schema is unsupported")
+    return content_sha256(PROVIDER_RESPONSE_INVARIANT_MANIFEST_V2)
+
+
 def rerun_calls_for_candidate(
-    delta: TogetherCapabilityDeltaPlan,
+    delta: ExecutableCapabilityDelta,
     candidate_id: str,
 ) -> list[TogetherCapabilityCallPlan]:
     calls = [
@@ -1172,8 +1228,8 @@ def rerun_calls_for_candidate(
 
 
 def validate_capability_delta_execution_inputs(
-    delta: TogetherCapabilityDeltaPlan,
-    source_proof: TogetherCapabilityDeltaSourceProof,
+    delta: ExecutableCapabilityDelta,
+    source_proof: ExecutableCapabilityDeltaSourceProof,
     corrected_plan: TogetherCapabilityPlan,
     suite: Phase4TogetherSuite,
     profile: Phase4ERobustnessProfile,
@@ -1184,12 +1240,12 @@ def validate_capability_delta_execution_inputs(
 ) -> None:
     """Validate the public artifacts needed to execute the reviewed delta."""
 
-    validate_capability_delta_source_proof(source_proof, delta)
+    _validate_execution_delta_source_proof(source_proof, delta)
     expected = (
         content_sha256(corrected_plan),
         content_sha256(suite),
         content_sha256(readiness),
-        provider_response_invariant_manifest_sha256(),
+        _execution_manifest_sha256(delta),
     )
     actual = (
         delta.corrected_capability_plan_sha256,
@@ -1217,13 +1273,14 @@ def validate_capability_delta_execution_inputs(
 
 
 def delta_candidate_plan_for(
-    delta: TogetherCapabilityDeltaPlan,
+    delta: ExecutableCapabilityDelta,
     corrected_plan: TogetherCapabilityPlan,
     suite: Phase4TogetherSuite,
     profile: Phase4ERobustnessProfile,
     readiness: Phase4TogetherReadinessBundle,
     candidate_id: str,
 ) -> TogetherDeltaCandidatePlan:
+    manifest_sha256 = _execution_manifest_sha256(delta)
     if (
         delta.corrected_capability_plan_sha256,
         delta.corrected_suite_sha256,
@@ -1233,7 +1290,7 @@ def delta_candidate_plan_for(
         content_sha256(corrected_plan),
         content_sha256(suite),
         content_sha256(readiness),
-        provider_response_invariant_manifest_sha256(),
+        manifest_sha256,
     ):
         raise ValueError("delta candidate plan inputs differ from delta")
     calls = rerun_calls_for_candidate(delta, candidate_id)
@@ -1259,7 +1316,7 @@ def delta_candidate_plan_for(
             readiness.qualification_manifest
         ),
         provider_response_semantics_manifest_sha256=(
-            provider_response_invariant_manifest_sha256()
+            manifest_sha256
         ),
         candidate_id=candidate_id,
         calls=calls,
@@ -1273,7 +1330,7 @@ def delta_candidate_plan_for(
 
 def validate_delta_candidate_plan(
     candidate_plan: TogetherDeltaCandidatePlan,
-    delta: TogetherCapabilityDeltaPlan,
+    delta: ExecutableCapabilityDelta,
     corrected_plan: TogetherCapabilityPlan,
     suite: Phase4TogetherSuite,
     profile: Phase4ERobustnessProfile,
@@ -1292,8 +1349,8 @@ def validate_delta_candidate_plan(
 
 
 def _validated_prior_candidate_progress(
-    delta: TogetherCapabilityDeltaPlan,
-    source_proof: TogetherCapabilityDeltaSourceProof,
+    delta: ExecutableCapabilityDelta,
+    source_proof: ExecutableCapabilityDeltaSourceProof,
     corrected_plan: TogetherCapabilityPlan,
     suite: Phase4TogetherSuite,
     profile: Phase4ERobustnessProfile,
@@ -1384,7 +1441,7 @@ def _validated_prior_candidate_progress(
 
 
 def _remaining_delta_authorized_max(
-    delta: TogetherCapabilityDeltaPlan,
+    delta: ExecutableCapabilityDelta,
     corrected_plan: TogetherCapabilityPlan,
     suite: Phase4TogetherSuite,
     profile: Phase4ERobustnessProfile,
@@ -1406,8 +1463,8 @@ def _remaining_delta_authorized_max(
 
 
 def build_delta_candidate_authorization_bundle(
-    delta: TogetherCapabilityDeltaPlan,
-    source_proof: TogetherCapabilityDeltaSourceProof,
+    delta: ExecutableCapabilityDelta,
+    source_proof: ExecutableCapabilityDeltaSourceProof,
     candidate_plan: TogetherDeltaCandidatePlan,
     corrected_plan: TogetherCapabilityPlan,
     suite: Phase4TogetherSuite,
@@ -1421,7 +1478,7 @@ def build_delta_candidate_authorization_bundle(
     approved_at: datetime,
     expires_at: datetime,
 ) -> TogetherDeltaCandidateAuthorizationBundle:
-    validate_capability_delta_source_proof(source_proof, delta)
+    _validate_execution_delta_source_proof(source_proof, delta)
     validate_delta_candidate_plan(
         candidate_plan,
         delta,
@@ -1552,8 +1609,8 @@ def build_delta_candidate_authorization_bundle(
 
 def validate_delta_candidate_authorization_bundle(
     bundle: TogetherDeltaCandidateAuthorizationBundle,
-    delta: TogetherCapabilityDeltaPlan,
-    source_proof: TogetherCapabilityDeltaSourceProof,
+    delta: ExecutableCapabilityDelta,
+    source_proof: ExecutableCapabilityDeltaSourceProof,
     candidate_plan: TogetherDeltaCandidatePlan,
     corrected_plan: TogetherCapabilityPlan,
     suite: Phase4TogetherSuite,
@@ -1564,7 +1621,7 @@ def validate_delta_candidate_authorization_bundle(
     prior_attempts: Sequence[DeltaPriorAttempt] = (),
     now: datetime,
 ) -> None:
-    validate_capability_delta_source_proof(source_proof, delta)
+    _validate_execution_delta_source_proof(source_proof, delta)
     validate_delta_candidate_plan(
         candidate_plan,
         delta,
@@ -1694,7 +1751,7 @@ def _delta_call_passed(
 
 
 def _build_delta_candidate_receipt(
-    delta: TogetherCapabilityDeltaPlan,
+    delta: ExecutableCapabilityDelta,
     plan: TogetherDeltaCandidatePlan,
     suite: Phase4TogetherSuite,
     profile: Phase4ERobustnessProfile,
@@ -1781,7 +1838,7 @@ def _build_delta_candidate_receipt(
 
 def validate_delta_candidate_execution_state(
     state: TogetherDeltaCandidateExecutionState,
-    delta: TogetherCapabilityDeltaPlan,
+    delta: ExecutableCapabilityDelta,
     plan: TogetherDeltaCandidatePlan,
     authorization: TogetherDeltaCandidateAuthorizationBundle,
     suite: Phase4TogetherSuite,
@@ -1904,7 +1961,7 @@ def validate_delta_candidate_execution_state(
 def _delta_execution_state(
     *,
     state_id: str,
-    delta: TogetherCapabilityDeltaPlan,
+    delta: ExecutableCapabilityDelta,
     plan: TogetherDeltaCandidatePlan,
     authorization: TogetherDeltaCandidateAuthorizationBundle,
     runtime: ProviderBudgetRuntime,
@@ -1939,8 +1996,8 @@ def _delta_execution_state(
 
 
 def execute_delta_candidate_capability_preflight(
-    delta: TogetherCapabilityDeltaPlan,
-    source_proof: TogetherCapabilityDeltaSourceProof,
+    delta: ExecutableCapabilityDelta,
+    source_proof: ExecutableCapabilityDeltaSourceProof,
     corrected_plan: TogetherCapabilityPlan,
     plan: TogetherDeltaCandidatePlan,
     authorization: TogetherDeltaCandidateAuthorizationBundle,
@@ -2234,3 +2291,44 @@ def load_capability_delta_source_proof(
     return TogetherCapabilityDeltaSourceProof.model_validate_json(
         Path(path).read_text(encoding="utf-8")
     )
+
+
+def _load_execution_artifact_payload(path: str | Path) -> dict[str, object]:
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError("capability delta execution artifact must be an object")
+    return payload
+
+
+def load_executable_capability_delta_plan(
+    path: str | Path,
+) -> ExecutableCapabilityDelta:
+    """Load one explicitly supported reviewed delta schema."""
+
+    payload = _load_execution_artifact_payload(path)
+    schema_version = payload.get("schema_version")
+    if schema_version == "preference_eval_phase4_capability_delta.v1":
+        return TogetherCapabilityDeltaPlan.model_validate(payload)
+    if schema_version == "preference_eval_phase4_selector_recovery_delta.v2":
+        from .phase4_selector_recovery import TogetherSelectorRecoveryDeltaPlan
+
+        return TogetherSelectorRecoveryDeltaPlan.model_validate(payload)
+    raise ValueError("capability delta execution plan schema is unsupported")
+
+
+def load_executable_capability_delta_source_proof(
+    path: str | Path,
+) -> ExecutableCapabilityDeltaSourceProof:
+    """Load one explicitly supported reviewed source-proof schema."""
+
+    payload = _load_execution_artifact_payload(path)
+    record_version = payload.get("record_version")
+    if record_version == "phase4_capability_delta_source_proof.v1":
+        return TogetherCapabilityDeltaSourceProof.model_validate(payload)
+    if record_version == "phase4_selector_recovery_source_proof.v2":
+        from .phase4_selector_recovery import (
+            TogetherSelectorRecoverySourceProof,
+        )
+
+        return TogetherSelectorRecoverySourceProof.model_validate(payload)
+    raise ValueError("capability delta execution proof schema is unsupported")

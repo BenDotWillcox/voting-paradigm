@@ -24,6 +24,7 @@ from eval.phase4_together import (
     build_together_chat_payload,
     build_together_interviewer_final_payload,
     build_together_suite_v3,
+    build_together_suite_v4,
     load_together_suite,
     validate_request_against_role_envelope,
 )
@@ -123,14 +124,60 @@ def prepared_request(
     )
 
 
-def test_tracked_suite_matches_deterministic_builder() -> None:
+def test_tracked_v4_suite_matches_preserved_builder() -> None:
     loaded = suite()
-    expected = build_default_together_suite(profile())
+    expected = build_together_suite_v4(profile())
 
     assert loaded == expected
     assert content_sha256(loaded) == content_sha256(expected)
     assert len(loaded.candidates) == 3
     assert len(loaded.shared_role_contracts) == 5
+    assert content_sha256(loaded) == (
+        "aea27b51ed24c8e4c11bfe0648a04ff0e29d25faeb519a9afa95e594a3d84283"
+    )
+
+
+def test_v5_changes_only_the_interviewer_role_contract() -> None:
+    legacy = build_together_suite_v4(profile())
+    current = build_default_together_suite(profile())
+    legacy_contracts = {item.role: item for item in legacy.shared_role_contracts}
+    current_contracts = {
+        item.role: item for item in current.shared_role_contracts
+    }
+
+    assert current.suite_version == 5
+    assert current.created_at == datetime(
+        2026,
+        8,
+        26,
+        20,
+        tzinfo=timezone.utc,
+    )
+    assert current.catalog == legacy.catalog
+    assert current.provider_terms == legacy.provider_terms
+    assert current.candidates == legacy.candidates
+    assert current.workload == legacy.workload
+    for role in LLMRole:
+        if role is not LLMRole.INTERVIEWER:
+            assert current_contracts[role] == legacy_contracts[role]
+
+    legacy_interviewer = legacy_contracts[LLMRole.INTERVIEWER]
+    current_interviewer = current_contracts[LLMRole.INTERVIEWER]
+    assert legacy_interviewer.response_schema_version == 2
+    assert current_interviewer.response_schema_version == 3
+    assert current_interviewer.response_schema_id == (
+        "phase4_interviewer_decision_and_tool_contracts_v3"
+    )
+    assert current_interviewer.prompt_id == "phase4_interviewer_together_v4"
+    assert current_interviewer.prompt_version == 4
+    assert "selected_question_id" in current_interviewer.prompt_text
+    assert "selected_question_sha256" not in current_interviewer.prompt_text
+    assert current_interviewer.response_schema_sha256 != (
+        legacy_interviewer.response_schema_sha256
+    )
+    assert current_interviewer.tool_definitions_sha256 == (
+        legacy_interviewer.tool_definitions_sha256
+    )
 
 
 def test_v1_suite_is_preserved_as_an_exact_audit_artifact() -> None:
@@ -363,6 +410,25 @@ def test_validate_cli_is_aggregate_and_zero_spend(capsys) -> None:
     assert payload["network_call_count"] == 0
     assert payload["spend_microusd"] == 0
     assert "prompt_text" not in captured.out
+
+
+def test_validate_cli_accepts_default_v5_builder(tmp_path, capsys) -> None:
+    current = build_default_together_suite(profile())
+    suite_path = tmp_path / "together_suite_v5.json"
+    suite_path.write_text(
+        json.dumps(current.model_dump(mode="json"), indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+
+    exit_code = validate_main([str(suite_path), str(PROFILE_PATH)])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert captured.err == ""
+    payload = json.loads(captured.out)
+    assert payload["suite_sha256"] == content_sha256(current)
+    assert payload["network_call_count"] == 0
+    assert payload["spend_microusd"] == 0
 
 
 def test_validate_cli_accepts_the_exact_legacy_v1_audit_artifact(capsys) -> None:

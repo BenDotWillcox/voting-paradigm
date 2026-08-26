@@ -27,8 +27,8 @@ from .phase4_capability_recovery import (
     delta_candidate_plan_for,
     delta_candidate_state_summary,
     execute_delta_candidate_capability_preflight,
-    load_capability_delta_plan,
-    load_capability_delta_source_proof,
+    load_executable_capability_delta_plan,
+    load_executable_capability_delta_source_proof,
     validate_capability_delta_execution_inputs,
     validate_delta_candidate_authorization_bundle,
 )
@@ -98,8 +98,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         diagnostic_output = private_capability_output(
             validation_diagnostic_path(state_output)
         )
-        delta = load_capability_delta_plan(args.delta)
-        source_proof = load_capability_delta_source_proof(args.source_proof)
+        delta = load_executable_capability_delta_plan(args.delta)
+        source_proof = load_executable_capability_delta_source_proof(
+            args.source_proof
+        )
         corrected_plan = TogetherCapabilityPlan.model_validate_json(
             args.corrected_plan.read_text(encoding="utf-8")
         )

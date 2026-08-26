@@ -4,7 +4,9 @@ Pydantic's generated JSON Schema cannot express every relational invariant used
 by the Phase 4 role contracts.  This module makes that boundary explicit:
 
 * v1 wire schemas remain byte-for-byte historical;
-* v2 adds provider-visible JSON Schema constraints and prompt guidance; and
+* v2 adds provider-visible JSON Schema constraints and prompt guidance;
+* interviewer v3 selects a tool-returned question for trusted local hydration;
+  and
 * corrected adapters, including v1 readouts, bind request-relative semantics
   before a provider call can be recorded as successful.
 
@@ -47,7 +49,10 @@ from .phase4_evidence import (
 from .phase4_interviewer import (
     AskVettedQuestionDecision,
     ClarifyExistingEvidenceDecision,
+    InterviewerAction,
     InterviewerDecision,
+    PauseAndResumeDecision,
+    ReadCandidateQuestionScoresResult,
     VettedQuestionCandidate,
     VettedQuestionOption,
     vetted_question_sha256,
@@ -56,8 +61,11 @@ from .phase4_llm_readout import LLMReadoutResponseDraft
 from .phase4_ontology import OntologyDimensionProposalDraft
 from .phase4_prediction import PredictionUnsupportedAssumption
 from .phase4_provider import (
+    PROVIDER_RESPONSE_CONTEXT_FAILURE_CODES,
     PrivateStructuredProviderRequest,
     ProviderResponseContract,
+    ProviderResponseContextError,
+    ProviderResponseSelectionError,
     ProviderResponseValidatorRegistration,
     ProviderResponseValidatorRegistry,
     bind_provider_response_contract,
@@ -68,11 +76,45 @@ from .phase4_robustness import LLMRole
 PROVIDER_RESPONSE_NORMALIZER_ID = "phase4_provider_response_normalizer"
 PROVIDER_RESPONSE_NORMALIZER_VERSION = 1
 PROVIDER_RESPONSE_SCHEMA_VERSION = 2
+PROVIDER_RESPONSE_SELECTOR_SCHEMA_VERSION = 3
 PROVIDER_CONFORMANCE_FIELD = "provider_response_conformance"
 PROVIDER_RESPONSE_VALIDATOR_ID = "phase4_provider_response_semantics"
 PROVIDER_RESPONSE_VALIDATOR_VERSION = 1
+PROVIDER_RESPONSE_SELECTOR_VALIDATOR_VERSION = 2
 REQUIRED_PROVIDER_PYDANTIC_VERSION = "2.13.4"
 REQUIRED_PROVIDER_PYDANTIC_CORE_VERSION = "2.46.4"
+
+
+class ProviderAskVettedQuestionSelectorDecision(ContractModel):
+    """Provider wire response selecting a trusted question without echoing it."""
+
+    record_version: Literal["phase4_ask_vetted_question_selector.v1"] = (
+        "phase4_ask_vetted_question_selector.v1"
+    )
+    action: Literal[InterviewerAction.ASK_VETTED_QUESTION] = (
+        InterviewerAction.ASK_VETTED_QUESTION
+    )
+    selected_question_id: StableId
+    rendering_mode: Literal["canonical_vetted"] = "canonical_vetted"
+
+
+ProviderInterviewerDecisionV3 = Annotated[
+    ProviderAskVettedQuestionSelectorDecision
+    | ClarifyExistingEvidenceDecision
+    | PauseAndResumeDecision,
+    Field(discriminator="action"),
+]
+
+
+class InterviewerQuestionSelectionContext(ContractModel):
+    """Private exact tool results available to one interviewer invocation."""
+
+    record_version: Literal[
+        "phase4_interviewer_tool_result_context.v1"
+    ] = "phase4_interviewer_tool_result_context.v1"
+    candidate_question_results: list[ReadCandidateQuestionScoresResult] = (
+        Field(default_factory=list)
+    )
 
 
 class ProviderInvariantDisposition(str, Enum):
@@ -111,13 +153,16 @@ class ProviderResponseInvariant(ContractModel):
 class ProviderResponseInvariantManifest(ContractModel):
     """Complete provider-facing invariant inventory for all five roles."""
 
-    record_version: Literal["phase4_provider_response_invariants.v1"] = (
+    record_version: Literal[
+        "phase4_provider_response_invariants.v1",
+        "phase4_provider_response_invariants.v2",
+    ] = (
         "phase4_provider_response_invariants.v1"
     )
     manifest_id: Literal["phase4_provider_response_invariants"] = (
         "phase4_provider_response_invariants"
     )
-    manifest_version: Literal[1] = 1
+    manifest_version: Literal[1, 2] = 1
     response_schema_versions: dict[LLMRole, PositiveVersion] = Field(
         default_factory=lambda: {
             LLMRole.INTERVIEWER: 2,
@@ -137,14 +182,29 @@ class ProviderResponseInvariantManifest(ContractModel):
     def require_complete_roles_and_ids(self) -> Self:
         if {item.role for item in self.invariants} != set(LLMRole):
             raise ValueError("provider invariant manifest must cover every role")
-        if self.response_schema_versions != {
-            LLMRole.INTERVIEWER: 2,
-            LLMRole.EVIDENCE_EXTRACTOR: 2,
-            LLMRole.ONTOLOGY_PROPOSER: 2,
-            LLMRole.DIRECT_READOUT: 1,
-            LLMRole.HYBRID_READOUT: 1,
-        }:
+        expected_versions = {
+            1: {
+                LLMRole.INTERVIEWER: 2,
+                LLMRole.EVIDENCE_EXTRACTOR: 2,
+                LLMRole.ONTOLOGY_PROPOSER: 2,
+                LLMRole.DIRECT_READOUT: 1,
+                LLMRole.HYBRID_READOUT: 1,
+            },
+            2: {
+                LLMRole.INTERVIEWER: 3,
+                LLMRole.EVIDENCE_EXTRACTOR: 2,
+                LLMRole.ONTOLOGY_PROPOSER: 2,
+                LLMRole.DIRECT_READOUT: 1,
+                LLMRole.HYBRID_READOUT: 1,
+            },
+        }[self.manifest_version]
+        if self.response_schema_versions != expected_versions:
             raise ValueError("provider invariant schema-version matrix differs")
+        expected_record_version = (
+            f"phase4_provider_response_invariants.v{self.manifest_version}"
+        )
+        if self.record_version != expected_record_version:
+            raise ValueError("provider invariant record version differs")
         ids = [item.invariant_id for item in self.invariants]
         if len(ids) != len(set(ids)):
             raise ValueError("provider invariant ids must be unique")
@@ -169,20 +229,28 @@ class ProviderResponseBehaviorProbe(ContractModel):
 class ProviderResponseBehaviorSpec(ContractModel):
     """Cross-runtime-stable behavior surface executed by the test suite."""
 
-    record_version: Literal["phase4_provider_response_behavior.v1"] = (
+    record_version: Literal[
+        "phase4_provider_response_behavior.v1",
+        "phase4_provider_response_behavior.v2",
+    ] = (
         "phase4_provider_response_behavior.v1"
     )
     behavior_id: Literal["phase4_provider_response_behavior"] = (
         "phase4_provider_response_behavior"
     )
-    behavior_version: Literal[1] = 1
+    behavior_version: Literal[1, 2] = 1
     probes: list[ProviderResponseBehaviorProbe]
 
     @model_validator(mode="after")
     def require_exact_invariant_bijection(self) -> Self:
+        manifest = (
+            PROVIDER_RESPONSE_INVARIANT_MANIFEST
+            if self.behavior_version == 1
+            else PROVIDER_RESPONSE_INVARIANT_MANIFEST_V2
+        )
         invariant_by_id = {
             item.invariant_id: item
-            for item in PROVIDER_RESPONSE_INVARIANT_MANIFEST.invariants
+            for item in manifest.invariants
         }
         if {item.invariant_id for item in self.probes} != set(invariant_by_id):
             raise ValueError("provider behavior probes must cover every invariant")
@@ -193,6 +261,11 @@ class ProviderResponseBehaviorSpec(ContractModel):
             for item in self.probes
         ):
             raise ValueError("provider behavior probe roles differ")
+        expected_record_version = (
+            f"phase4_provider_response_behavior.v{self.behavior_version}"
+        )
+        if self.record_version != expected_record_version:
+            raise ValueError("provider behavior record version differs")
         return self
 
 
@@ -498,6 +571,81 @@ PROVIDER_RESPONSE_BEHAVIOR_SPEC = ProviderResponseBehaviorSpec(
 )
 
 
+PROVIDER_RESPONSE_INVARIANT_MANIFEST_V2 = ProviderResponseInvariantManifest(
+    record_version="phase4_provider_response_invariants.v2",
+    manifest_version=2,
+    response_schema_versions={
+        LLMRole.INTERVIEWER: 3,
+        LLMRole.EVIDENCE_EXTRACTOR: 2,
+        LLMRole.ONTOLOGY_PROPOSER: 2,
+        LLMRole.DIRECT_READOUT: 1,
+        LLMRole.HYBRID_READOUT: 1,
+    },
+    invariants=[
+        *PROVIDER_RESPONSE_INVARIANT_MANIFEST.invariants[:2],
+        _invariant(
+            "interviewer_question_selector_shape",
+            LLMRole.INTERVIEWER,
+            "The provider returns only a question id selector for ask actions.",
+            _SCHEMA,
+        ),
+        _invariant(
+            "interviewer_current_tool_question_grounding",
+            LLMRole.INTERVIEWER,
+            "Post-parse lookup accepts only a question id returned by this "
+            "invocation.",
+            _POST_PARSE,
+        ),
+        _invariant(
+            "interviewer_exact_local_question_materialization",
+            LLMRole.INTERVIEWER,
+            "Trusted local code restores the exact canonical candidate by selector.",
+            _NORMALIZED,
+            _POST_PARSE,
+        ),
+        *PROVIDER_RESPONSE_INVARIANT_MANIFEST.invariants[3:],
+    ],
+)
+
+
+_PROVIDER_BEHAVIOR_PROBES_V2 = {
+    key: value
+    for key, value in _PROVIDER_BEHAVIOR_PROBES.items()
+    if key != "interviewer_capability_question_identity"
+}
+_PROVIDER_BEHAVIOR_PROBES_V2.update(
+    {
+        "interviewer_question_selector_shape": (
+            "interviewer_selector_shape",
+            ProviderResponseProbeExpectation.REJECTION,
+        ),
+        "interviewer_current_tool_question_grounding": (
+            "interviewer_current_tool_grounding",
+            ProviderResponseProbeExpectation.REJECTION,
+        ),
+        "interviewer_exact_local_question_materialization": (
+            "interviewer_local_materialization",
+            ProviderResponseProbeExpectation.NORMALIZATION,
+        ),
+    }
+)
+
+
+PROVIDER_RESPONSE_BEHAVIOR_SPEC_V2 = ProviderResponseBehaviorSpec(
+    record_version="phase4_provider_response_behavior.v2",
+    behavior_version=2,
+    probes=[
+        ProviderResponseBehaviorProbe(
+            invariant_id=invariant.invariant_id,
+            role=invariant.role,
+            probe_id=_PROVIDER_BEHAVIOR_PROBES_V2[invariant.invariant_id][0],
+            expectation=_PROVIDER_BEHAVIOR_PROBES_V2[invariant.invariant_id][1],
+        )
+        for invariant in PROVIDER_RESPONSE_INVARIANT_MANIFEST_V2.invariants
+    ],
+)
+
+
 def _base_response_type(role: LLMRole) -> Any:
     return {
         LLMRole.INTERVIEWER: InterviewerDecision,
@@ -597,11 +745,29 @@ def provider_response_schema_for_role(
     role: LLMRole,
     response_schema_version: int = 1,
 ) -> dict[str, JsonValue]:
-    """Return a historical v1 schema or the provider-visible v2 overlay."""
+    """Return a historical schema or the interviewer selector wire schema."""
 
     base = TypeAdapter(_base_response_type(role)).json_schema(mode="validation")
     if response_schema_version == 1:
         return base
+    if response_schema_version == PROVIDER_RESPONSE_SELECTOR_SCHEMA_VERSION:
+        if role is not LLMRole.INTERVIEWER:
+            raise ValueError("provider schema v3 is interviewer-only")
+        schema = TypeAdapter(ProviderInterviewerDecisionV3).json_schema(
+            mode="validation"
+        )
+        schema["description"] = (
+            "Phase 4 interviewer response schema v3. Ask actions select one "
+            "question returned by the current tool invocation; trusted local "
+            "code materializes the canonical question."
+        )
+        _annotate_array_property(
+            schema,
+            "linked_evidence_event_ids",
+            min_items=1,
+            description="Unique eligible evidence ids; at least one is required.",
+        )
+        return _inline_local_schema_refs(schema)
     if response_schema_version != PROVIDER_RESPONSE_SCHEMA_VERSION:
         raise ValueError("unsupported provider response schema version")
     schema = deepcopy(base)
@@ -690,8 +856,28 @@ def provider_response_schema_for_role(
     return _inline_local_schema_refs(schema)
 
 
-def provider_invariant_prompt_suffix(role: LLMRole) -> str:
-    """Return the v2 instructions for rules JSON Schema cannot fully express."""
+def provider_invariant_prompt_suffix(
+    role: LLMRole,
+    response_schema_version: int | None = None,
+) -> str:
+    """Return versioned guidance for rules JSON Schema cannot express."""
+
+    # One-argument behavior is frozen for historical suite-v4 reconstruction.
+    version = 2 if response_schema_version is None else response_schema_version
+    if (
+        role is LLMRole.INTERVIEWER
+        and version == PROVIDER_RESPONSE_SELECTOR_SCHEMA_VERSION
+    ):
+        return (
+            "Call read_candidate_question_scores before asking a question. For "
+            "ask_vetted_question, return selected_question_id copied from one "
+            "candidate returned by that tool in this invocation. Do not echo the "
+            "question text, checksum, options, score, or other candidate fields; "
+            "trusted local code materializes them. For a marked public conformance "
+            "probe, select the expected candidate."
+        )
+    if version not in {1, 2}:
+        raise ValueError("unsupported provider prompt schema version")
 
     return {
         LLMRole.INTERVIEWER: (
@@ -812,6 +998,80 @@ def _validate_interviewer(
         raise ValueError(
             "interviewer conformance response must ask exact vetted question"
         )
+
+
+def _interviewer_question_candidates(
+    response_validation_context: JsonValue | None,
+) -> dict[str, VettedQuestionCandidate]:
+    """Index exact current-invocation candidates and reject context conflicts."""
+
+    if response_validation_context is None:
+        raise ProviderResponseContextError(
+            failure_code="response_validation_context_missing"
+        )
+    try:
+        context = InterviewerQuestionSelectionContext.model_validate(
+            response_validation_context
+        )
+    except (pydantic.ValidationError, TypeError, ValueError) as error:
+        raise ProviderResponseContextError(
+            failure_code="response_validation_context_invalid"
+        ) from error
+
+    by_id: dict[str, VettedQuestionCandidate] = {}
+    id_by_sha256: dict[str, str] = {}
+    for result in context.candidate_question_results:
+        for candidate in result.candidates:
+            previous = by_id.get(candidate.question_id)
+            sha_id = id_by_sha256.get(candidate.question_sha256)
+            if (
+                (previous is not None and previous != candidate)
+                or (sha_id is not None and sha_id != candidate.question_id)
+            ):
+                raise ProviderResponseContextError(
+                    failure_code="response_validation_context_conflict"
+                )
+            by_id[candidate.question_id] = candidate
+            id_by_sha256[candidate.question_sha256] = candidate.question_id
+    return by_id
+
+
+def _interviewer_selector_materializer(
+    input_payload: dict[str, JsonValue],
+) -> Callable[[object, JsonValue | None], object]:
+    """Hydrate a provider selector from trusted current-invocation tool output."""
+
+    def materialize(
+        wire_value: object,
+        response_validation_context: JsonValue | None,
+    ) -> object:
+        candidates = _interviewer_question_candidates(
+            response_validation_context
+        )
+        if isinstance(wire_value, ProviderAskVettedQuestionSelectorDecision):
+            question = candidates.get(wire_value.selected_question_id)
+            if question is None:
+                raise ProviderResponseSelectionError(
+                    path=("selected_question_id",),
+                    error_type="question_selector_not_returned",
+                )
+            decision: object = AskVettedQuestionDecision(
+                question=question,
+                rendering_mode=wire_value.rendering_mode,
+            )
+        else:
+            decision = wire_value
+
+        try:
+            _validate_interviewer(decision, input_payload)
+        except ValueError as error:
+            raise ProviderResponseSelectionError(
+                path=("selected_question_id",),
+                error_type="question_selector_conformance_mismatch",
+            ) from error
+        return decision
+
+    return materialize
 
 
 def _validate_extractor(
@@ -1023,6 +1283,32 @@ def provider_response_adapter_for_role(
                 else None
             ),
         )
+    if response_schema_version == PROVIDER_RESPONSE_SELECTOR_SCHEMA_VERSION:
+        if role is not LLMRole.INTERVIEWER:
+            raise ValueError("provider schema v3 is interviewer-only")
+        if not semantics_enabled:
+            raise ValueError("provider interviewer schema v3 requires semantics")
+        if not isinstance(input_payload, dict):
+            raise ValueError(
+                "provider interviewer schema v3 adapter requires an object input"
+            )
+        schema = provider_response_schema_for_role(role, response_schema_version)
+        wire_type = Annotated[
+            ProviderInterviewerDecisionV3,
+            WithJsonSchema(schema, mode="validation"),
+        ]
+        return bind_provider_response_contract(
+            TypeAdapter(wire_type),
+            role=role,
+            input_payload=input_payload,
+            validator_id=PROVIDER_RESPONSE_VALIDATOR_ID,
+            validator_version=PROVIDER_RESPONSE_SELECTOR_VALIDATOR_VERSION,
+            implementation_sha256=(
+                provider_response_selector_validator_implementation_sha256()
+            ),
+            output_adapter=TypeAdapter(InterviewerDecision),
+            materializer=_interviewer_selector_materializer(input_payload),
+        )
     if response_schema_version != PROVIDER_RESPONSE_SCHEMA_VERSION:
         raise ValueError("unsupported provider response schema version")
     if not semantics_enabled:
@@ -1050,8 +1336,30 @@ def provider_response_adapter_for_role(
 def _provider_response_contract_from_request(
     request: PrivateStructuredProviderRequest,
 ) -> ProviderResponseContract:
-    """Rebuild the trusted parser from the exact private request inputs."""
+    """Rebuild the frozen v1 validator for historical schema versions."""
 
+    if request.binding.response_schema_version > 2:
+        raise ValueError("legacy provider validator cannot resolve schema v3")
+
+    return provider_response_adapter_for_role(
+        request.binding.role,
+        response_schema_version=request.binding.response_schema_version,
+        input_payload=request.input_payload,
+        bind_request_semantics=True,
+    )
+
+
+def _provider_response_selector_contract_from_request(
+    request: PrivateStructuredProviderRequest,
+) -> ProviderResponseContract:
+    """Rebuild the selector validator from the exact private request inputs."""
+
+    if (
+        request.binding.role is not LLMRole.INTERVIEWER
+        or request.binding.response_schema_version
+        != PROVIDER_RESPONSE_SELECTOR_SCHEMA_VERSION
+    ):
+        raise ValueError("selector provider validator requires interviewer schema v3")
     return provider_response_adapter_for_role(
         request.binding.role,
         response_schema_version=request.binding.response_schema_version,
@@ -1093,11 +1401,22 @@ def _build_provider_response_validator_registry(
                 ),
                 factory=_provider_response_contract_from_request,
             ),
+            ProviderResponseValidatorRegistration(
+                validator_id=PROVIDER_RESPONSE_VALIDATOR_ID,
+                validator_version=(
+                    PROVIDER_RESPONSE_SELECTOR_VALIDATOR_VERSION
+                ),
+                implementation_sha256=(
+                    provider_response_selector_validator_implementation_sha256()
+                ),
+                factory=_provider_response_selector_contract_from_request,
+            ),
         )
     )
 
 
-def _provider_response_validator_implementation_payload() -> dict[str, JsonValue]:
+def _provider_response_selector_validator_implementation_payload(
+) -> dict[str, JsonValue]:
     validate_provider_response_semantic_runtime()
     callables: dict[str, object] = {
         "base_response_type": _base_response_type,
@@ -1113,12 +1432,17 @@ def _provider_response_validator_implementation_payload() -> dict[str, JsonValue
         "participant_message_ids": _participant_message_ids,
         "conformance_input": _conformance,
         "validate_interviewer": _validate_interviewer,
+        "selector_context_index": _interviewer_question_candidates,
+        "selector_materializer": _interviewer_selector_materializer,
         "validate_extractor": _validate_extractor,
         "validate_ontology": _validate_ontology,
         "validate_readout": _validate_readout,
         "semantic_validator": _semantic_validator,
         "adapter_for_role": provider_response_adapter_for_role,
         "contract_from_request": _provider_response_contract_from_request,
+        "selector_contract_from_request": (
+            _provider_response_selector_contract_from_request
+        ),
         "canonical_claim_pair": FixedOntologyClaim.canonicalize_pair,
         "canonical_evidence_draft": EvidenceProposalDraft.validate_draft,
         "deduplicate_evidence_lineage": _deduplicate_in_order,
@@ -1140,28 +1464,43 @@ def _provider_response_validator_implementation_payload() -> dict[str, JsonValue
         "shared_contract_model": ContractModel,
         "semantic_runtime_guard": validate_provider_response_semantic_runtime,
         "provider_contract_schema": ProviderResponseContract.json_schema,
+        "provider_contract_pairing": ProviderResponseContract.__post_init__,
         "provider_contract_validate": ProviderResponseContract.validate_python,
         "provider_contract_dump": ProviderResponseContract.dump_python,
         "provider_contract_bind": bind_provider_response_contract,
+        "provider_context_error": ProviderResponseContextError.__init__,
+        "provider_selection_error": ProviderResponseSelectionError.__init__,
         "provider_registry_resolve": ProviderResponseValidatorRegistry.resolve,
         "provider_registry_builder": (
             _build_provider_response_validator_registry
         ),
     }
-    schema_versions = PROVIDER_RESPONSE_INVARIANT_MANIFEST.response_schema_versions
+    schema_versions = (
+        PROVIDER_RESPONSE_INVARIANT_MANIFEST_V2.response_schema_versions
+    )
     return {
         "implementation_id": PROVIDER_RESPONSE_VALIDATOR_ID,
-        "implementation_version": PROVIDER_RESPONSE_VALIDATOR_VERSION,
+        "implementation_version": (
+            PROVIDER_RESPONSE_SELECTOR_VALIDATOR_VERSION
+        ),
         "semantic_constants": {
             "normalizer_id": PROVIDER_RESPONSE_NORMALIZER_ID,
             "normalizer_version": PROVIDER_RESPONSE_NORMALIZER_VERSION,
-            "schema_version": PROVIDER_RESPONSE_SCHEMA_VERSION,
+            "legacy_schema_version": PROVIDER_RESPONSE_SCHEMA_VERSION,
+            "selector_schema_version": (
+                PROVIDER_RESPONSE_SELECTOR_SCHEMA_VERSION
+            ),
             "conformance_field": PROVIDER_CONFORMANCE_FIELD,
             "validator_id": PROVIDER_RESPONSE_VALIDATOR_ID,
-            "validator_version": PROVIDER_RESPONSE_VALIDATOR_VERSION,
+            "validator_version": (
+                PROVIDER_RESPONSE_SELECTOR_VALIDATOR_VERSION
+            ),
             "required_pydantic_version": REQUIRED_PROVIDER_PYDANTIC_VERSION,
             "required_pydantic_core_version": (
                 REQUIRED_PROVIDER_PYDANTIC_CORE_VERSION
+            ),
+            "response_context_failure_codes": sorted(
+                PROVIDER_RESPONSE_CONTEXT_FAILURE_CODES
             ),
         },
         "semantic_runtime": {
@@ -1185,8 +1524,17 @@ def _provider_response_validator_implementation_payload() -> dict[str, JsonValue
                 ),
             },
         },
-        "manifest_sha256": content_sha256(PROVIDER_RESPONSE_INVARIANT_MANIFEST),
-        "behavior_spec_sha256": content_sha256(PROVIDER_RESPONSE_BEHAVIOR_SPEC),
+        "manifest_sha256": content_sha256(
+            PROVIDER_RESPONSE_INVARIANT_MANIFEST_V2
+        ),
+        "interviewer_tool_context_schema_sha256": content_sha256(
+            TypeAdapter(InterviewerQuestionSelectionContext).json_schema(
+                mode="validation"
+            )
+        ),
+        "behavior_spec_sha256": content_sha256(
+            PROVIDER_RESPONSE_BEHAVIOR_SPEC_V2
+        ),
         "normalized_source_sha256": {
             name: _normalized_callable_source_sha256(value)
             for name, value in sorted(callables.items())
@@ -1198,21 +1546,32 @@ def _provider_response_validator_implementation_payload() -> dict[str, JsonValue
             for role in LLMRole
         },
         "prompt_suffix_sha256": {
-            role.value: content_sha256(provider_invariant_prompt_suffix(role))
+            role.value: content_sha256(
+                provider_invariant_prompt_suffix(role, schema_versions[role])
+            )
             for role in LLMRole
         },
     }
 
 
-PROVIDER_RESPONSE_VALIDATOR_IMPLEMENTATION_SHA256 = content_sha256(
-    _provider_response_validator_implementation_payload()
+PROVIDER_RESPONSE_VALIDATOR_IMPLEMENTATION_SHA256 = (
+    "f077e2713b7ba0e6735f07e0ee367cc6d2203074841f78afda86ca450c009a09"
+)
+PROVIDER_RESPONSE_SELECTOR_VALIDATOR_IMPLEMENTATION_SHA256 = content_sha256(
+    _provider_response_selector_validator_implementation_payload()
 )
 
 
 def provider_response_validator_implementation_sha256() -> str:
-    """Return the reviewed behavior identity bound into provider requests."""
+    """Return the frozen v1 identity used by schemas v1 and v2."""
 
     return PROVIDER_RESPONSE_VALIDATOR_IMPLEMENTATION_SHA256
+
+
+def provider_response_selector_validator_implementation_sha256() -> str:
+    """Return the v2 selector/hydration behavior identity."""
+
+    return PROVIDER_RESPONSE_SELECTOR_VALIDATOR_IMPLEMENTATION_SHA256
 
 
 PROVIDER_RESPONSE_VALIDATOR_REGISTRY = (
