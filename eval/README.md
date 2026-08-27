@@ -1515,11 +1515,96 @@ authorization, selected model, or replacement candidate, so the reviewed
 workflow remains blocked. This is not an unbypassable property of the old v1
 validator: v1 checks a supplied receipt's hash and matrix but cannot replay its
 private provider audit. `Phase4QualificationBundle.v1` also requires exactly
-three complete candidate results. Before any qualification call, a separately
-reviewed versioned scope amendment must preserve the original three-candidate
-roster, identify the two runnable deployments, retain the Nemotron/Together
-result as inconclusive and not run in qualification, forbid a post-hoc
-replacement, and define both the two-deployment authorization/result contracts
-and their frozen comparison/selection rules. The qualification runner must
-consume and source-validate that amendment as its actual gate; the result must
-not emit or be described as a v1 `Phase4QualificationBundle`.
+three complete candidate results. On this aggregate alone, qualification would
+require a separately reviewed versioned scope amendment that preserves the
+original three-candidate roster, identifies the two runnable deployments,
+retains the Nemotron/Together result as inconclusive and not run in
+qualification, forbids a post-hoc replacement, and defines both the
+two-deployment authorization/result contracts and their frozen
+comparison/selection rules. The one-call diagnostic below is the reviewed next
+evidence step before deciding whether that amendment is still necessary. Any
+amended qualification runner must consume and source-validate its scope as the
+actual gate; its result must not emit or be described as a v1
+`Phase4QualificationBundle`.
+
+### Phase 4E Nemotron HTTP Diagnostic Retry
+
+The capability aggregate above is an immutable record of the evidence that
+existed when it was built. The original Nemotron HTTP 400 response body was
+not retained and cannot be reconstructed. The diagnostic-retry slice does not
+rewrite that event. Instead, `eval/phase4_capability_retry.py` binds the exact
+failed evidence-extractor request to one new call id with explicit retry
+lineage.
+
+Provider HTTP failures now produce a private, content-free diagnostic made
+only from finite local categories: HTTP status, envelope shape, allowlisted
+error type and code, and an allowlisted rejected top-level request field when
+the provider supplies one. Raw response bodies, free-text error messages,
+response headers, and unrecognized remote values are never retained. Unknown
+values collapse to `unrecognized`; empty, non-JSON, and unstructured bodies
+remain distinguishable without copying their contents. The diagnostic binds
+the exact request and finalization hashes. A Together error envelope is not
+guaranteed to supply an actionable parameter, so even a repeated 400 may
+remain root-cause-inconclusive.
+
+The tracked no-spend retry plan and source proof are:
+
+- `preference_eval_phase4_together_capability_diagnostic_retry_v1.json`
+- `preference_eval_phase4_together_capability_diagnostic_retry_source_proof_v1.json`
+
+Their canonical hashes are respectively
+`bb357556cd6b67a8f96d2a19e56d537bf511c3a9940dd1fb7072e10c98d0239b`
+and
+`3b0d3de1d85819ea7f233c923cee83600670e289f8bf50df9492695736a4b3cc`.
+
+They preserve the original three-candidate roster and bind exactly one
+Nemotron `evidence_extractor` replay under `retry_reserve`. The request-content
+hash must equal the failed call's hash. The maximum authorization is 7,200
+microusd, public development input is mandatory, participant content is
+forbidden, and the runner cannot fall back to another deployment, continue to
+Nemotron's remaining roles, select a model, or record a model-capability
+rejection. Building and validating these artifacts makes no provider call and
+spends nothing.
+
+Use `python -m eval.validate_phase4_capability_diagnostic_retry` to review the
+public plan/proof chain; `--help` lists the public inputs. After independent
+review and merge, run a fresh zero-inference catalog preflight. Then create a
+private approval with
+`python -m eval.authorize_phase4_capability_diagnostic_retry`; the approval is
+valid for at most 30 minutes and must name one call and exactly 7,200
+microusd. Only then may
+`python -m eval.run_phase4_capability_diagnostic_retry` issue the single paid
+request with `--execute-paid-diagnostic-retry` and
+`--confirm-max-spend-microusd 7200`. Private state stays under
+`eval/private_runs/`.
+
+The paid authorization is also single-use at the local runner boundary. Before
+loading credentials or making a network request, the runner exclusively claims
+the retry-plan hash in `eval/private_runs/`; the claim body binds the
+authorization-bundle hash and the hashed private-relative state-output path.
+A crash
+before the send or an ambiguous delivery leaves that claim in place and
+requires reconciliation plus a new reviewed approval; changing or deleting
+the requested state-output path cannot make the same plan sendable again.
+
+Interpret the terminal result without turning this deployment diagnostic into
+a model verdict:
+
+- Success shows that the first 400 was not a persistent rejection of this
+  exact request. It does not authorize the three unattempted suffix roles.
+- A repeated HTTP 400 establishes reproducible rejection by the exact Together
+  deployment. Its finite diagnostic may identify a request field, but a
+  generic envelope still leaves the harness-versus-deployment cause open.
+- Another provider, transport, or availability failure remains inconclusive.
+- A valid HTTP response with invalid structured output returns to the existing
+  model-versus-validator adjudication path.
+- Any other outcome stops for review. No fallback or automatic continuation is
+  allowed.
+
+After the retry, rebuild the capability disposition in a new aggregate or
+follow-up artifact while retaining the original aggregate unchanged. If all
+three deployments still cannot enter qualification, author and review the
+qualification-scope amendment before any qualification call. Otherwise define
+the reviewed continuation needed to complete Nemotron's remaining capability
+roles. Only after that roster decision is frozen may public-development
+qualification proceed.

@@ -735,6 +735,7 @@ def test_response_contract_materializes_wire_selector_from_ephemeral_context():
     assert "Canonical wording" not in runtime.journal_snapshot().model_dump_json()
     assert "Canonical wording" not in repr(transport_result)
     assert "response_validation_context" not in transport_result.model_dump()
+    assert "provider_http_error_metadata" not in transport_result.model_dump()
     runtime.audit([model], [pricing])
 
 
@@ -869,6 +870,10 @@ def test_v1_provider_records_omit_response_validation_context_fields():
     )
     assert "response_validation_context" not in transport_payload
     assert "response_validation_context_sha256" not in transport_payload
+    assert "provider_http_error_metadata" not in transport_payload
+    assert ProviderTransportResult.model_validate(transport_payload) == (
+        transport_result
+    )
 
     robustness_profile = profile()
     model = candidate("candidate_v1_context_omission")

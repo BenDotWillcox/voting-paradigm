@@ -81,6 +81,61 @@ class ProviderCallOutcome(str, Enum):
     CANCELLED = "cancelled"
 
 
+class ProviderHTTPErrorEnvelopeState(str, Enum):
+    """Safe structural classification of a non-success HTTP response body."""
+
+    EMPTY = "empty"
+    INVALID_JSON = "invalid_json"
+    UNSTRUCTURED = "unstructured"
+    STANDARD = "standard"
+
+
+class ProviderHTTPErrorType(str, Enum):
+    """Finite provider-error types safe to retain without remote text."""
+
+    NOT_PRESENT = "not_present"
+    INVALID_REQUEST_ERROR = "invalid_request_error"
+    AUTHENTICATION_ERROR = "authentication_error"
+    PERMISSION_ERROR = "permission_error"
+    NOT_FOUND_ERROR = "not_found_error"
+    RATE_LIMIT_ERROR = "rate_limit_error"
+    API_ERROR = "api_error"
+    SERVER_ERROR = "server_error"
+    SERVICE_UNAVAILABLE_ERROR = "service_unavailable_error"
+    UNRECOGNIZED = "unrecognized"
+
+
+class ProviderHTTPErrorCode(str, Enum):
+    """Finite provider-error codes safe to retain without remote text."""
+
+    NOT_PRESENT = "not_present"
+    INVALID_API_KEY = "invalid_api_key"
+    MISSING_API_KEY = "missing_api_key"
+    MODEL_NOT_AVAILABLE = "model_not_available"
+    MODEL_NOT_FOUND = "model_not_found"
+    CONTEXT_LENGTH_EXCEEDED = "context_length_exceeded"
+    RATE_LIMIT_EXCEEDED = "rate_limit_exceeded"
+    INSUFFICIENT_QUOTA = "insufficient_quota"
+    UNRECOGNIZED = "unrecognized"
+
+
+class ProviderRejectedRequestField(str, Enum):
+    """Locally emitted top-level request fields safe to name in an audit."""
+
+    NOT_PRESENT = "not_present"
+    MODEL = "model"
+    MESSAGES = "messages"
+    TEMPERATURE = "temperature"
+    MAX_TOKENS = "max_tokens"
+    N = "n"
+    STREAM = "stream"
+    RESPONSE_FORMAT = "response_format"
+    SEED = "seed"
+    TOOLS = "tools"
+    TOOL_CHOICE = "tool_choice"
+    UNRECOGNIZED = "unrecognized"
+
+
 class ProviderSeedStatus(str, Enum):
     NOT_SENT = "not_sent"
     SENT_UNCONFIRMED = "sent_unconfirmed"
@@ -622,12 +677,49 @@ def _resolve_installed_provider_response_contract(
     return PROVIDER_RESPONSE_VALIDATOR_REGISTRY.resolve(request)
 
 
+class ProviderHTTPErrorMetadata(ContractModel):
+    """Ephemeral, allowlisted metadata from one non-success HTTP response."""
+
+    http_status_code: Annotated[int, Field(ge=100, le=599)]
+    envelope_state: ProviderHTTPErrorEnvelopeState
+    error_type: ProviderHTTPErrorType = ProviderHTTPErrorType.NOT_PRESENT
+    error_code: ProviderHTTPErrorCode = ProviderHTTPErrorCode.NOT_PRESENT
+    rejected_request_field: ProviderRejectedRequestField = (
+        ProviderRejectedRequestField.NOT_PRESENT
+    )
+    raw_body_omitted: Literal[True] = True
+    free_text_message_omitted: Literal[True] = True
+    response_headers_omitted: Literal[True] = True
+    unrecognized_fields_omitted: Literal[True] = True
+
+    @model_validator(mode="after")
+    def require_envelope_shape(self) -> Self:
+        if 200 <= self.http_status_code < 300:
+            raise ValueError("HTTP error metadata cannot describe success")
+        details = (
+            self.error_type,
+            self.error_code,
+            self.rejected_request_field,
+        )
+        if self.envelope_state is not ProviderHTTPErrorEnvelopeState.STANDARD:
+            if details != (
+                ProviderHTTPErrorType.NOT_PRESENT,
+                ProviderHTTPErrorCode.NOT_PRESENT,
+                ProviderRejectedRequestField.NOT_PRESENT,
+            ):
+                raise ValueError(
+                    "unstructured HTTP error cannot retain envelope details"
+                )
+        return self
+
+
 class ProviderTransportResult(ContractModel):
     """Provider-neutral result returned by a concrete network transport."""
 
     record_version: Literal[
         "phase4_provider_transport_result.v1",
         "phase4_provider_transport_result.v2",
+        "phase4_provider_transport_result.v3",
     ] = (
         "phase4_provider_transport_result.v1"
     )
@@ -643,6 +735,10 @@ class ProviderTransportResult(ContractModel):
         repr=False,
     )
     response_validation_context_sha256: Sha256Digest | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
+    provider_http_error_metadata: ProviderHTTPErrorMetadata | None = Field(
         default=None,
         exclude_if=lambda value: value is None,
     )
@@ -674,12 +770,24 @@ class ProviderTransportResult(ContractModel):
             content_sha256(self.response_validation_context)
         ):
             raise ValueError("provider response validation context hash differs")
-        if context_bound != (
-            self.record_version == "phase4_provider_transport_result.v2"
-        ):
+        http_error_bound = self.provider_http_error_metadata is not None
+        expected_version = (
+            "phase4_provider_transport_result.v2"
+            if context_bound
+            else (
+                "phase4_provider_transport_result.v3"
+                if http_error_bound
+                else "phase4_provider_transport_result.v1"
+            )
+        )
+        if self.record_version != expected_version:
             raise ValueError("provider transport-result version differs")
+        if context_bound and http_error_bound:
+            raise ValueError("provider transport result mixes response contexts")
         if context_bound and self.outcome is not ProviderCallOutcome.SUCCESS:
             raise ValueError("failed transport result cannot carry response context")
+        if http_error_bound and self.outcome is not ProviderCallOutcome.PROVIDER_ERROR:
+            raise ValueError("HTTP error metadata requires a provider error")
         if self.tool_call_failure_count > self.tool_call_count:
             raise ValueError("tool-call failures cannot exceed tool calls")
         if self.outcome is ProviderCallOutcome.SUCCESS:
@@ -852,6 +960,54 @@ class ProviderStructuredOutputDiagnostic(ContractModel):
         return self
 
 
+class ProviderHTTPErrorDiagnostic(ContractModel):
+    """Private content-free explanation of one provider HTTP failure."""
+
+    record_version: Literal[
+        "phase4_provider_http_error_diagnostic.v1"
+    ] = "phase4_provider_http_error_diagnostic.v1"
+    call_id: StableId
+    model_candidate_id: StableId
+    role: LLMRole
+    request_binding_sha256: Sha256Digest
+    request_content_sha256: Sha256Digest
+    finalization_sha256: Sha256Digest
+    provider_request_id_sha256: Sha256Digest | None = None
+    failure_code: StableId
+    http_status_code: Annotated[int, Field(ge=100, le=599)]
+    envelope_state: ProviderHTTPErrorEnvelopeState
+    error_type: ProviderHTTPErrorType
+    error_code: ProviderHTTPErrorCode
+    rejected_request_field: ProviderRejectedRequestField
+    raw_body_omitted: Literal[True] = True
+    free_text_message_omitted: Literal[True] = True
+    response_headers_omitted: Literal[True] = True
+    unrecognized_fields_omitted: Literal[True] = True
+    created_at: datetime
+
+    @field_validator("created_at")
+    @classmethod
+    def require_aware_created_at(cls, value: datetime) -> datetime:
+        _require_aware(value, "provider HTTP-error diagnostic created_at")
+        return value
+
+    @model_validator(mode="after")
+    def require_envelope_shape(self) -> Self:
+        if self.failure_code.startswith("together_http_") and (
+            self.failure_code != f"together_http_{self.http_status_code}"
+        ):
+            raise ValueError("Together HTTP diagnostic status differs")
+        metadata = ProviderHTTPErrorMetadata(
+            http_status_code=self.http_status_code,
+            envelope_state=self.envelope_state,
+            error_type=self.error_type,
+            error_code=self.error_code,
+            rejected_request_field=self.rejected_request_field,
+        )
+        del metadata
+        return self
+
+
 class ProviderExecutionJournal(ContractModel):
     """Content-free provider request and terminal-outcome lineage."""
 
@@ -900,6 +1056,7 @@ class ProviderExecutionResult:
     output: object | None
     finalization: ProviderCallFinalization
     validation_diagnostic: ProviderStructuredOutputDiagnostic | None = None
+    provider_error_diagnostic: ProviderHTTPErrorDiagnostic | None = None
 
 
 def _response_schema_property_names(schema: JsonValue) -> set[str]:
@@ -985,6 +1142,37 @@ def _structured_output_diagnostic(
         finalization_sha256=content_sha256(finalization),
         error_count=len(issues),
         issues=issues,
+        created_at=finalization.created_at,
+    )
+
+
+def _http_error_diagnostic(
+    request: PrivateStructuredProviderRequest,
+    finalization: ProviderCallFinalization,
+    metadata: ProviderHTTPErrorMetadata,
+) -> ProviderHTTPErrorDiagnostic:
+    if finalization.outcome is not ProviderCallOutcome.PROVIDER_ERROR:
+        raise ValueError("HTTP diagnostic requires provider-error finalization")
+    if finalization.failure_code is None:
+        raise ValueError("HTTP diagnostic requires a failure code")
+    return ProviderHTTPErrorDiagnostic(
+        call_id=request.binding.call_id,
+        model_candidate_id=request.binding.model_candidate_id,
+        role=request.binding.role,
+        request_binding_sha256=content_sha256(request.binding),
+        request_content_sha256=provider_request_content_sha256(
+            request.binding
+        ),
+        finalization_sha256=content_sha256(finalization),
+        provider_request_id_sha256=(
+            finalization.provider_request_id_sha256
+        ),
+        failure_code=finalization.failure_code,
+        http_status_code=metadata.http_status_code,
+        envelope_state=metadata.envelope_state,
+        error_type=metadata.error_type,
+        error_code=metadata.error_code,
+        rejected_request_field=metadata.rejected_request_field,
         created_at=finalization.created_at,
     )
 
@@ -1851,7 +2039,20 @@ class ProviderBudgetRuntime:
                 failure_code=transport_result.failure_code,
                 completed_at=transport_result.completed_at,
             )
-            return ProviderExecutionResult(None, finalization)
+            http_diagnostic = (
+                _http_error_diagnostic(
+                    request,
+                    finalization,
+                    transport_result.provider_http_error_metadata,
+                )
+                if transport_result.provider_http_error_metadata is not None
+                else None
+            )
+            return ProviderExecutionResult(
+                None,
+                finalization,
+                provider_error_diagnostic=http_diagnostic,
+            )
         try:
             parsed = response_adapter.validate_python(
                 transport_result.output_payload,

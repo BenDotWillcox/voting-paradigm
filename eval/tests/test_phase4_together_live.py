@@ -23,6 +23,7 @@ from eval.phase4_provider import (
     ProviderResponseContract,
     build_public_development_attestation,
     prepare_provider_request,
+    provider_request_content_sha256,
     price_provider_tokens,
 )
 from eval.phase4_provider_semantics import (
@@ -42,6 +43,7 @@ from eval.phase4_together import (
 from eval.phase4_together_live import (
     TogetherAccountPrivacyAttestation,
     TogetherAmbiguousDeliveryError,
+    TogetherAuthorizedProviderRequest,
     TogetherCandidateTokenProjection,
     TogetherCatalogPreflightBundle,
     TogetherCatalogPreflightClient,
@@ -1360,7 +1362,7 @@ def test_ambiguous_sent_response_preserves_outstanding_authorization() -> None:
     assert ledger.calls == []
 
 
-@pytest.mark.parametrize("status_code", [429, 500, 503])
+@pytest.mark.parametrize("status_code", [101, 429, 500, 503])
 def test_http_error_closes_runtime_reservation(status_code: int) -> None:
     loaded = suite()
     request = prepared_request(loaded)
@@ -1499,6 +1501,138 @@ def test_live_authorization_excludes_held_out_segment() -> None:
 
     with pytest.raises(ValidationError):
         TogetherLiveAuthorization.model_validate(payload)
+
+
+def test_live_authorization_v1_round_trip_omits_exact_request_extension() -> None:
+    original = live_authorization(suite())
+    payload = original.model_dump(mode="json")
+
+    assert "authorized_requests" not in payload
+    assert TogetherLiveAuthorization.model_validate(payload) == original
+
+
+def test_exact_live_authorization_rejects_any_other_request() -> None:
+    loaded = suite()
+    request = prepared_request(
+        loaded,
+        call_id="exact_retry_call",
+        created_at=NOW + timedelta(minutes=1),
+    )
+    artifact = loaded.candidates[1]
+    maximum = price_provider_tokens(
+        artifact.price_card,
+        input_tokens=request.binding.input_token_upper_bound,
+        output_tokens=request.binding.output_token_upper_bound,
+    )
+    exact_request = TogetherAuthorizedProviderRequest(
+        call_id=request.binding.call_id,
+        model_candidate_id=request.binding.model_candidate_id,
+        role=request.binding.role,
+        request_content_sha256=provider_request_content_sha256(
+            request.binding
+        ),
+        authorized_max_cost_microusd=maximum,
+    )
+    readiness = token_readiness(loaded)
+    policy = headroom_policy()
+    authorization = TogetherLiveAuthorization(
+        record_version="phase4_together_live_authorization.v2",
+        authorization_id="together_exact_retry_test",
+        authorization_version=2,
+        together_suite_id=loaded.suite_id,
+        together_suite_version=loaded.suite_version,
+        together_suite_sha256=content_sha256(loaded),
+        robustness_profile_sha256=content_sha256(profile()),
+        account_privacy_attestation_sha256=content_sha256(
+            account_attestation(loaded)
+        ),
+        catalog_preflight_receipt_sha256=content_sha256(
+            catalog_receipt(loaded)
+        ),
+        token_readiness_receipt_sha256=content_sha256(readiness),
+        headroom_policy_sha256=content_sha256(policy),
+        stage=TogetherPaidStage.CAPABILITY_PREFLIGHT,
+        budget_segment=BudgetSegment.RETRY_RESERVE,
+        authorized_candidate_ids=[request.binding.model_candidate_id],
+        authorized_roles=[request.binding.role],
+        authorized_requests=[exact_request],
+        approved_max_spend_microusd=maximum,
+        approved_at=NOW,
+        expires_at=NOW + timedelta(hours=1),
+    )
+
+    class FixedTokenCounter:
+        def count_payload(self, candidate_id, payload):
+            projection = {
+                item.candidate_id: item
+                for item in readiness.candidate_projections
+            }[candidate_id]
+            candidate = {
+                item.candidate.candidate_id: item.candidate
+                for item in loaded.candidates
+            }[candidate_id]
+            return TogetherPayloadTokenCount(
+                candidate_id=candidate_id,
+                candidate_sha256=content_sha256(candidate),
+                tokenizer_id=projection.tokenizer_id,
+                tokenizer_version=projection.tokenizer_version,
+                tokenizer_artifact_sha256=(
+                    projection.tokenizer_artifact_sha256
+                ),
+                payload_sha256=content_sha256(payload),
+                input_token_count=10,
+            )
+
+    exact_transport = TogetherHTTPTransport(
+        loaded,
+        profile(),
+        catalog_bundle(loaded),
+        readiness,
+        policy,
+        authorization,
+        SecretStr("test_secret_that_never_persists"),
+        client=httpx.Client(
+            transport=httpx.MockTransport(
+                lambda http_request: httpx.Response(500, json={})
+            )
+        ),
+        token_counter=FixedTokenCounter(),
+        now=NOW + timedelta(minutes=1),
+        clock=lambda: NOW + timedelta(minutes=2),
+    )
+    exact_transport.validate_execution(
+        request,
+        segment=BudgetSegment.RETRY_RESERVE,
+    )
+    wrong_scope = authorization.model_dump(mode="json")
+    wrong_scope["budget_segment"] = BudgetSegment.QUALIFICATION.value
+    with pytest.raises(ValidationError, match="retry-diagnostic-only"):
+        TogetherLiveAuthorization.model_validate(wrong_scope)
+    wrong_call = request.model_copy(
+        update={
+            "binding": request.binding.model_copy(
+                update={"call_id": "another_retry_call"}
+            )
+        }
+    )
+    with pytest.raises(ValueError, match="not exactly authorized"):
+        exact_transport.validate_execution(
+            wrong_call,
+            segment=BudgetSegment.RETRY_RESERVE,
+        )
+
+    wrong_content = request.model_copy(
+        update={
+            "binding": request.binding.model_copy(
+                update={"temperature": 0.25}
+            )
+        }
+    )
+    with pytest.raises(ValueError, match="exact request binding differs"):
+        exact_transport.validate_execution(
+            wrong_content,
+            segment=BudgetSegment.RETRY_RESERVE,
+        )
 
 
 def test_followup_http_error_retains_prior_round_usage() -> None:

@@ -1,0 +1,20 @@
+{
+  "record_version": "phase4_capability_diagnostic_retry_source_proof.v1",
+  "proof_id": "phase4_together_nemotron_http_retry_source_proof_v1",
+  "proof_version": 1,
+  "validated_at": "2026-08-27T01:01:00Z",
+  "retry_plan_sha256": "bb357556cd6b67a8f96d2a19e56d537bf511c3a9940dd1fb7072e10c98d0239b",
+  "capability_aggregation_sha256": "e9a0bd7141a9536041e3d242d0696daade3b3325c562cf1bd2a4b5f34dd8452e",
+  "capability_aggregation_source_proof_sha256": "de14bde9c424c530a62367ffec202d936f8180ec123db300996baa4956c9a156",
+  "source_authorization_sha256": "89e31ed0196c84a63ec9e1f9a73068cfa43c872f781647b4a6a68762e23f61f5",
+  "source_state_sha256": "fe6940a888022b0d854ac4064f50c88a260db80d3348a270feace549de30bb55",
+  "source_request_binding_sha256": "b9243378bfa04284471069e06c280a277dda5d92e8a4882012311040546930d3",
+  "source_request_content_sha256": "2f7ef57b39f601fb172ea32a32d0af946561eb546b1589e3adb5fc8babb4268b",
+  "source_provider_event_sha256": "4658aead9574e7dd6a468ea8f8fe063a2d2983afdda9c5db17a4695ff827b0a3",
+  "full_private_source_validation_passed": true,
+  "exact_private_request_rebuild_passed": true,
+  "source_artifacts_unchanged": true,
+  "values_messages_and_context_omitted": true,
+  "provider_inference_calls_executed_by_proof_creation": 0,
+  "provider_spend_microusd_by_proof_creation": 0
+}
