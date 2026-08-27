@@ -59,8 +59,14 @@ from .phase4_provider import (
     PrivateStructuredProviderRequest,
     ProviderCallOutcome,
     ProviderDataScope,
+    ProviderHTTPErrorCode,
+    ProviderHTTPErrorEnvelopeState,
+    ProviderHTTPErrorMetadata,
+    ProviderHTTPErrorType,
+    ProviderRejectedRequestField,
     ProviderSeedStatus,
     ProviderTransportResult,
+    provider_request_content_sha256,
     price_provider_tokens,
 )
 from .phase4_robustness import (
@@ -427,12 +433,26 @@ class TogetherPaidStage(str, Enum):
     QUALIFICATION = "qualification"
 
 
+class TogetherAuthorizedProviderRequest(ContractModel):
+    """One exact provider-visible request approved for a paid send."""
+
+    record_version: Literal[
+        "phase4_together_authorized_provider_request.v1"
+    ] = "phase4_together_authorized_provider_request.v1"
+    call_id: StableId
+    model_candidate_id: StableId
+    role: LLMRole
+    request_content_sha256: Sha256Digest
+    authorized_max_cost_microusd: Annotated[int, Field(gt=0)]
+
+
 class TogetherLiveAuthorization(ContractModel):
     """Required user authorization object for the paid Together transport."""
 
-    record_version: Literal["phase4_together_live_authorization.v1"] = (
-        "phase4_together_live_authorization.v1"
-    )
+    record_version: Literal[
+        "phase4_together_live_authorization.v1",
+        "phase4_together_live_authorization.v2",
+    ] = "phase4_together_live_authorization.v1"
     authorization_id: StableId
     authorization_version: PositiveVersion
     together_suite_id: StableId
@@ -452,6 +472,10 @@ class TogetherLiveAuthorization(ContractModel):
     authorized_candidate_ids: list[StableId]
     authorized_roles: list[LLMRole]
     approved_max_spend_microusd: Microusd
+    authorized_requests: list[TogetherAuthorizedProviderRequest] | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
     approved_at: datetime
     expires_at: datetime
 
@@ -469,16 +493,47 @@ class TogetherLiveAuthorization(ContractModel):
             self.authorized_candidate_ids,
             "Together authorized candidate ids",
         )
-        require_complete_enum_set(
-            "Together authorized roles",
-            self.authorized_roles,
-            LLMRole,
-            set_name="Phase 4E Together live v1",
-        )
         if [item.value for item in self.authorized_roles] != sorted(
             item.value for item in self.authorized_roles
         ):
             raise ValueError("Together authorized roles must be canonical")
+        if self.record_version == "phase4_together_live_authorization.v1":
+            if self.authorized_requests is not None:
+                raise ValueError("Together live v1 cannot bind exact requests")
+            require_complete_enum_set(
+                "Together authorized roles",
+                self.authorized_roles,
+                LLMRole,
+                set_name="Phase 4E Together live v1",
+            )
+        else:
+            if not self.authorized_requests:
+                raise ValueError("Together live v2 requires exact requests")
+            if (
+                self.stage is not TogetherPaidStage.CAPABILITY_PREFLIGHT
+                or self.budget_segment is not BudgetSegment.RETRY_RESERVE
+            ):
+                raise ValueError("Together live v2 is retry-diagnostic-only")
+            call_ids = [item.call_id for item in self.authorized_requests]
+            if call_ids != sorted(call_ids) or len(call_ids) != len(set(call_ids)):
+                raise ValueError("Together authorized requests must be canonical")
+            expected_candidates = sorted(
+                {item.model_candidate_id for item in self.authorized_requests}
+            )
+            expected_roles = sorted(
+                {item.role for item in self.authorized_requests},
+                key=lambda item: item.value,
+            )
+            if self.authorized_candidate_ids != expected_candidates:
+                raise ValueError("Together exact-request candidates differ")
+            if self.authorized_roles != expected_roles:
+                raise ValueError("Together exact-request roles differ")
+            expected_spend = sum(
+                item.authorized_max_cost_microusd
+                for item in self.authorized_requests
+            )
+            if self.approved_max_spend_microusd != expected_spend:
+                raise ValueError("Together exact-request spend does not reconcile")
         if self.stage is TogetherPaidStage.CAPABILITY_PREFLIGHT:
             if self.capability_preflight_receipt_sha256 is not None:
                 raise ValueError("capability authorization cannot bind its result")
@@ -1196,8 +1251,11 @@ def validate_live_authorization(
     expected_segment_cap = profile.budget_policy.segment_caps_microusd[
         authorization.budget_segment
     ]
-    if authorization.approved_max_spend_microusd != expected_segment_cap:
-        raise ValueError("Together live authorization segment cap differs")
+    if authorization.record_version == "phase4_together_live_authorization.v1":
+        if authorization.approved_max_spend_microusd != expected_segment_cap:
+            raise ValueError("Together live authorization segment cap differs")
+    elif authorization.approved_max_spend_microusd > expected_segment_cap:
+        raise ValueError("Together exact-request authorization exceeds segment cap")
     validate_catalog_preflight_bundle(suite, catalog_bundle)
     expected_hashes = (
         content_sha256(catalog_bundle.account_privacy_attestation),
@@ -1276,6 +1334,93 @@ def _seed_status(
     return ProviderSeedStatus.SENT_UNCONFIRMED
 
 
+def _allowlisted_error_type(value: object) -> ProviderHTTPErrorType:
+    if value is None:
+        return ProviderHTTPErrorType.NOT_PRESENT
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        for member in ProviderHTTPErrorType:
+            if member.value == normalized and member not in {
+                ProviderHTTPErrorType.NOT_PRESENT,
+                ProviderHTTPErrorType.UNRECOGNIZED,
+            }:
+                return member
+    return ProviderHTTPErrorType.UNRECOGNIZED
+
+
+def _allowlisted_error_code(value: object) -> ProviderHTTPErrorCode:
+    if value is None:
+        return ProviderHTTPErrorCode.NOT_PRESENT
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        for member in ProviderHTTPErrorCode:
+            if member.value == normalized and member not in {
+                ProviderHTTPErrorCode.NOT_PRESENT,
+                ProviderHTTPErrorCode.UNRECOGNIZED,
+            }:
+                return member
+    return ProviderHTTPErrorCode.UNRECOGNIZED
+
+
+def _allowlisted_rejected_field(value: object) -> ProviderRejectedRequestField:
+    if value is None:
+        return ProviderRejectedRequestField.NOT_PRESENT
+    if not isinstance(value, str):
+        return ProviderRejectedRequestField.UNRECOGNIZED
+    normalized = value.strip().lower()
+    separators = "$.[]/:"
+    for separator in separators:
+        normalized = normalized.replace(separator, " ")
+    tokens = normalized.split()
+    allowed = {
+        member.value: member
+        for member in ProviderRejectedRequestField
+        if member not in {
+            ProviderRejectedRequestField.NOT_PRESENT,
+            ProviderRejectedRequestField.UNRECOGNIZED,
+        }
+    }
+    if tokens and tokens[0] in allowed:
+        return allowed[tokens[0]]
+    return ProviderRejectedRequestField.UNRECOGNIZED
+
+
+def _together_http_error_metadata(
+    response: httpx.Response,
+) -> ProviderHTTPErrorMetadata:
+    """Reduce an untrusted response body to finite content-free categories."""
+
+    if not response.content:
+        return ProviderHTTPErrorMetadata(
+            http_status_code=response.status_code,
+            envelope_state=ProviderHTTPErrorEnvelopeState.EMPTY,
+        )
+    try:
+        payload = response.json()
+    except (json.JSONDecodeError, UnicodeDecodeError, ValueError):
+        return ProviderHTTPErrorMetadata(
+            http_status_code=response.status_code,
+            envelope_state=ProviderHTTPErrorEnvelopeState.INVALID_JSON,
+        )
+    if not isinstance(payload, Mapping) or not isinstance(
+        payload.get("error"), Mapping
+    ):
+        return ProviderHTTPErrorMetadata(
+            http_status_code=response.status_code,
+            envelope_state=ProviderHTTPErrorEnvelopeState.UNSTRUCTURED,
+        )
+    error = payload["error"]
+    return ProviderHTTPErrorMetadata(
+        http_status_code=response.status_code,
+        envelope_state=ProviderHTTPErrorEnvelopeState.STANDARD,
+        error_type=_allowlisted_error_type(error.get("type")),
+        error_code=_allowlisted_error_code(error.get("code")),
+        rejected_request_field=_allowlisted_rejected_field(
+            error.get("param")
+        ),
+    )
+
+
 class TogetherHTTPTransport:
     """Authorized synchronous Together chat transport with a bounded tool loop."""
 
@@ -1319,6 +1464,14 @@ class TogetherHTTPTransport:
         self._projection_by_candidate = {
             item.candidate_id: item for item in projection.candidate_projections
         }
+        self._price_card_by_candidate = {
+            item.candidate.candidate_id: item.price_card
+            for item in suite.candidates
+        }
+        self._authorized_request_by_call_id = {
+            item.call_id: item
+            for item in authorization.authorized_requests or []
+        }
         self._tool_executor = tool_executor
         self._max_tool_rounds = max_tool_rounds
         self._clock = clock or (lambda: datetime.now(timezone.utc))
@@ -1352,6 +1505,31 @@ class TogetherHTTPTransport:
             self._authorization.robustness_profile_sha256
         ):
             raise ValueError("Together request uses an unauthorized profile")
+        if self._authorization.record_version == (
+            "phase4_together_live_authorization.v2"
+        ):
+            exact = self._authorized_request_by_call_id.get(binding.call_id)
+            if exact is None:
+                raise ValueError("Together request is not exactly authorized")
+            exact_identity = (
+                exact.model_candidate_id,
+                exact.role,
+                exact.request_content_sha256,
+            )
+            binding_identity = (
+                binding.model_candidate_id,
+                binding.role,
+                provider_request_content_sha256(binding),
+            )
+            if exact_identity != binding_identity:
+                raise ValueError("Together exact request binding differs")
+            actual_max = price_provider_tokens(
+                self._price_card_by_candidate[binding.model_candidate_id],
+                input_tokens=binding.input_token_upper_bound,
+                output_tokens=binding.output_token_upper_bound,
+            )
+            if actual_max != exact.authorized_max_cost_microusd:
+                raise ValueError("Together exact request cost differs")
         initial_payload = build_together_chat_payload(self._suite, request)
         count = self._count_payload(request, initial_payload)
         if count.input_token_count > binding.input_token_upper_bound:
@@ -1480,8 +1658,12 @@ class TogetherHTTPTransport:
                 ) from error
             if response.status_code < 200 or response.status_code >= 300:
                 return ProviderTransportResult(
+                    record_version="phase4_provider_transport_result.v3",
                     outcome=ProviderCallOutcome.PROVIDER_ERROR,
                     output_payload=None,
+                    provider_http_error_metadata=(
+                        _together_http_error_metadata(response)
+                    ),
                     input_tokens=total_input,
                     output_tokens=total_output,
                     provider_request_id="|".join(request_ids) or None,

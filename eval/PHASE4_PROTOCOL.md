@@ -489,13 +489,75 @@ records no reviewed v1 capability receipt or qualification authorization, so
 the controlled workflow remains blocked. This is not an unbypassable property
 of the old v1 validator, which cannot replay a supplied receipt's private
 provider audit. The v1 qualification bundle also requires exactly three
-complete candidate results. Qualification therefore requires a separately
-reviewed versioned authorization and result scope that preserves the original
-roster, retains the affected deployment as inconclusive and not run in
-qualification, forbids replacement, and precommits the two-runnable-candidate
-comparison before any qualification metric is observed. The qualification
-runner must consume and source-validate that scope as its actual gate; it must
-not emit or be described as a v1 `Phase4QualificationBundle`.
+complete candidate results. On this aggregate alone, qualification would
+require a separately reviewed versioned authorization and result scope that
+preserves the original roster, retains the affected deployment as inconclusive
+and not run in qualification, forbids replacement, and precommits the
+two-runnable-candidate comparison before any qualification metric is observed.
+The one-call diagnostic below is the reviewed next evidence step before that
+scope decision. Any amended qualification runner must consume and
+source-validate its scope as the actual gate; it must not emit or be described
+as a v1 `Phase4QualificationBundle`.
+
+The first capability aggregate is immutable. It records the original
+Nemotron/Together HTTP 400 exactly as observed and is not revised after later
+diagnostic evidence. Because that response's body was discarded, its cause
+cannot be recovered from the historical audit.
+
+The next no-spend slice adds finite provider HTTP-error diagnostics and an
+exact one-call diagnostic-retry contract. Diagnostics may retain only the HTTP
+status, structural envelope category, allowlisted error type/code, and an
+allowlisted rejected top-level request field when supplied. Raw bodies,
+free-text messages, headers, and unknown remote values are omitted; unknown
+values become a local `unrecognized` category. Each diagnostic hash-binds the
+exact request and finalization. This captures evidence without treating a
+provider error body as participant or model output.
+
+The tracked retry plan and content-free source proof bind one byte-equivalent
+replay of Nemotron's failed `evidence_extractor` request. The call uses the
+`retry_reserve` segment and has a 7,200-microusd maximum authorization. It
+preserves the three-candidate roster, forbids participant content, fallback,
+suffix-role continuation, model rejection, and model selection, and makes no
+provider call during construction or validation. The historical aggregate,
+source authorization, source state, request-content hash, and provider-event
+lineage are all inputs to the proof rather than mutable records.
+The plan's canonical hash is
+`bb357556cd6b67a8f96d2a19e56d537bf511c3a9940dd1fb7072e10c98d0239b`;
+the source-proof hash is
+`3b0d3de1d85819ea7f233c923cee83600670e289f8bf50df9492695736a4b3cc`.
+
+Paid execution remains blocked until this slice is independently reviewed and
+merged, the authenticated zero-inference catalog preflight is refreshed, and
+Ben issues a new manual approval for exactly one call and 7,200 microusd. That
+approval expires within 30 minutes. The runner must stop after the single
+attempt regardless of outcome.
+
+The local paid boundary treats the authorization as single-use. It acquires an
+exclusive private claim keyed to the retry-plan hash before loading credentials
+or touching the network; the claim body binds the authorization-bundle hash and
+the hashed private-relative state-output path. A pre-send crash or ambiguous delivery
+leaves the claim in place and requires reconciliation plus a new reviewed
+approval; changing or deleting the requested state-output path cannot permit a
+resend.
+
+The predeclared interpretation is:
+
+- success means the first 400 was not a persistent rejection of that exact
+  request, but does not authorize the remaining roles;
+- a repeated 400 establishes reproducible rejection by this exact deployment,
+  while a generic sanitized envelope may still leave root cause unresolved;
+- another provider, transport, or availability error stays inconclusive;
+- invalid structured output returns to the existing model-versus-validator
+  adjudication path; and
+- every other outcome stops for review.
+
+After the retry, create a new follow-up aggregation/disposition without
+changing the historical aggregate. If the three-deployment qualification
+roster still cannot be completed, review and merge the qualification-scope
+amendment before spending on qualification. If the retry succeeds, separately
+review the contract needed to exercise Nemotron's remaining capability roles.
+Qualification may begin only after that roster and authorization scope are
+frozen.
 
 The Phase 4A command prints content hashes and aggregate architecture counts.
 Phase 4A does not choose an LLM provider, prompt, model version, evidence
