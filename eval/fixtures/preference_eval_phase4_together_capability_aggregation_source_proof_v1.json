@@ -1,0 +1,17 @@
+{
+  "record_version": "phase4_capability_aggregation_source_proof.v1",
+  "proof_id": "phase4_together_capability_aggregation_source_proof_v1",
+  "proof_version": 1,
+  "validated_at": "2026-08-27T00:11:00Z",
+  "aggregation_sha256": "e9a0bd7141a9536041e3d242d0696daade3b3325c562cf1bd2a4b5f34dd8452e",
+  "selector_recovery_delta_sha256": "0a09365d59e01694fbe33a3d4d3b6af335c35a01f0e45ae658467309bd53adb4",
+  "selector_recovery_source_proof_sha256": "c60ca23180894287f18f964e503f91ecb59a70a497f0d9a54fee075145be8261",
+  "catalog_preflight_bundle_sha256": "dc7ba02c1c9c2de86b8a2d65a1781d8336c60bc4f701ba639e73e3b92645a2e2",
+  "candidate_outcomes_sha256": "e2fa1b68c7778b6204ca36d5558c2ec1cc7ce964139f1e92237dbe90764c842d",
+  "private_authorization_state_bindings_sha256": "1a01ea72b22e58c288be8f4834cf61ea3c322822f966ec5c2bd1fb05cc69c16f",
+  "full_private_source_validation_passed": true,
+  "candidate_roster_preserved": true,
+  "values_messages_and_context_omitted": true,
+  "provider_inference_calls_executed_by_proof_creation": 0,
+  "provider_spend_microusd_by_proof_creation": 0
+}

@@ -438,7 +438,8 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 - Phase 4E candidate-isolated continuation in `eval/phase4_capability_continuation.py`: a tracked zero-spend artifact hash-binds both preserved private attempts plus the corrected v3 suite/readiness and v2 capability plan, retains all three candidates in independent five-role plans with exact 78,000/9,000/42,000-microusd ceilings, requires separate private approvals and states, predeclares a shared provider/schema disposition if all three tool-complete interviewers fail the separate root-union output phase, and explicitly cannot authorize qualification or weaken the frozen three-candidate comparison
 - Phase 4E capability adjudication in `eval/phase4_capability_adjudication.py`: the corrected GLM run passed four roles including the two-phase interviewer and provisionally failed ontology-proposer validation after 14,121 microusd; a tracked zero-spend policy binds its exact ignored state, withholds final rejection until both comparison candidates exercise the same schema, requires shared-harness review for a uniform same-role/exact-schema failure, wraps future private authorizations with the exact policy/state hashes, and makes future invalid outputs persist content-free error counts/types/schema paths without changing preserved provider-journal or state hashes
 - Phase 4E provider-contract capability delta in `eval/phase4_capability_recovery.py`: the hidden extractor rule exposed a broader class of schema-invisible provider invariants, so the reviewed correction covers all five roles and hash-binds the module-owned semantic validator—including its pinned Pydantic runtime—in provider-request v2 rather than treating GLM's ontology failure as settled; the tracked generic delta carries four exact readout successes and reruns eleven conversational-role calls across all three models (three for GLM and four each for GPT-OSS/Nemotron), binds 31,639 microusd already spent, projects 52,140 microusd, authorizes at most 93,300 microusd more, and keeps the 124,939-microusd cumulative worst case below the original ceiling; later candidate approvals bind the exact prior terminal-state/spend prefix, and any billed cap breach is durably checkpointed but blocks receipt, resume, and further authorization; construction made no provider call and spent nothing, while fresh catalog evidence and explicit user approval remain mandatory before execution
-- Phase 4E interviewer-selector recovery in `eval/phase4_selector_recovery.py`: after the later GLM attempt passed extraction and made a real interviewer tool call but failed validation while copying the nested canonical question object, suite v5 keeps the LLM's substantive navigation role over dynamically tool-ranked vetted candidates while narrowing the provider ask response to candidate id only; local trusted hydration verifies the canonical checksum and reconstructs the stored decision from the same ephemeral hash-bound tool result, and missing harness context is not misclassified as model failure; the tracked v2 chain carries five exact successes, reruns ten calls, binds 40,227 microusd prior spend, projects 43,584 microusd, authorizes at most 80,500 microusd more, and keeps the 120,727-microusd cumulative worst case below the original ceiling; suite/readiness/capability/delta/proof hashes are frozen, construction made no provider call and spent nothing, and review/merge, fresh catalog preflight, and a new explicit approval are required before execution
+- Phase 4E interviewer-selector recovery in `eval/phase4_selector_recovery.py`: after the later GLM attempt passed extraction and made a real interviewer tool call but failed validation while copying the nested canonical question object, suite v5 keeps the LLM's substantive navigation role over dynamically tool-ranked vetted candidates while narrowing the provider ask response to candidate id only; local trusted hydration verifies the canonical checksum and reconstructs the stored decision from the same ephemeral hash-bound tool result, and missing harness context is not misclassified as model failure; the tracked v2 chain carries five exact successes, reruns ten calls, binds 40,227 microusd prior spend, projects 43,584 microusd, authorizes at most 80,500 microusd more, and keeps the 120,727-microusd cumulative worst case below the original ceiling; suite/readiness/capability/delta/proof hashes are frozen, construction made no provider call and spent nothing, and paid recovery occurred only after review/merge, fresh catalog preflight, and new explicit approvals
+- Phase 4E capability aggregation in `eval/phase4_capability_aggregation.py`: the suite-v5 recovery under the reviewed protocol records complete five-role capability coverage for GLM-5.2 and GPT-OSS 120B while Nemotron 3 Ultra's exact Together deployment remains provider/deployment-inconclusive after an HTTP 400 with no model output returned, no provider-reported usage, and no charge; the content-free aggregate binds all 15 corrected-plan coordinates, all three ignored authorization/state hashes, five carried and six observed successes, one provider failure, three unattempted suffix roles, 51,042 microusd cumulative capability spend, and zero aggregation calls/spend; it rejects any model-capability conclusion from the provider error, performs no model selection, and records no v1 capability receipt or authorization, leaving the reviewed workflow blocked pending separately reviewed two-runnable-deployment authorization and result contracts that the qualification runner must source-validate, preserve the original roster, forbid replacement, and never present as a v1 qualification bundle
 - Fixed-bank eval harness: 4 authored synthetic personas + seeded Dirichlet-mixture persona generator (`eval/personas.py`), three response models as the misspecification axis (`gaussian_gap` matches the Gaussian likelihood, `logistic_choice` matches BT, `sloppy` matches neither — `eval/response_models.py`), held-out pair splits, log-likelihood/accuracy/Brier/Kendall-τ/calibration curves, models × policies comparison (`python -m eval.run_preference_eval --response-model ...`), grid sweeps for notebooks (`eval/sweeps.py`)
 - API: `/sessions/evidence` endpoint (replaces `/sessions/respond`), model + selection-policy params on session start
 - TS hygiene: Zod-validated JSONB boundaries (`lib/validations/preferences-schemas.ts`); `startPreferenceSession` race fixed via server-generated UUID + single insert
@@ -481,28 +482,27 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
   round remains in the restricted audit trail
 
 **Next, in order:**
-1. Independently review and merge the suite-v5 interviewer selector/hydration
-   correction and selector-recovery v2 chain; do not make another paid call
-   before that review
-2. Reissue the zero-inference catalog receipt against suite v5
-3. With new exact approvals, execute the frozen 10-call recovery after its five
-   carry-forward successes; preserve candidate-isolated evidence and the exact
-   prior-state/spend prefix
-4. If the reviewed id-only selector still fails, stop provider-specific
-   patching and reassess the harness, provider, and research scope; use
-   OpenRouter only as a separately
-   reviewed, endpoint-pinned, no-fallback diagnostic if that distinction matters
-5. Aggregate the independent candidate receipts into the full capability
-   matrix through a reviewed zero-spend artifact
-6. Run the public-development qualification within the USD 4 cap; record all
-   three results and select only among candidates that pass the frozen gates
-7. Freeze the selected model/deployment, prompts, seeds, remaining policy
+1. Independently review and merge the zero-spend capability aggregation; do
+   not issue another provider call before that review
+2. Author and review a versioned qualification-scope amendment that preserves
+   the original three-candidate roster, runs only the two capability-passed
+   deployments, keeps Nemotron/Together provider-inconclusive and not run in
+   qualification, forbids replacement, and freezes the two-candidate
+   authorization, result, and comparison/selection contracts
+3. Reissue any time-sensitive zero-inference catalog evidence and obtain exact
+   short-lived approval only after the amended qualification gate is merged
+4. Run public-development qualification within the USD 4 cap and select only
+   among deployments that pass the amended frozen gates
+5. Keep OpenRouter deferred as a separately reviewed, endpoint-pinned,
+   no-fallback deployment diagnostic unless the provider distinction becomes
+   necessary to the research claim
+6. Freeze the selected model/deployment, prompts, seeds, remaining policy
    values, and calibrated robustness thresholds before Ben's held-out case
    study
-8. Build separate blind evaluation and future-facing showcase modes
-9. Schedule and execute the six blinded waves and 7-14 day retests only after
+7. Build separate blind evaluation and future-facing showcase modes
+8. Schedule and execute the six blinded waves and 7-14 day retests only after
    the remaining model/evaluation freeze is complete
-10. *(Deferred)* LLM-generated vote rationales and personas
+9. *(Deferred)* LLM-generated vote rationales and personas
 
 ### Demo 3: Algorithmic districting
 
