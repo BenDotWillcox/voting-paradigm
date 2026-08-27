@@ -449,8 +449,8 @@ python -m eval.validate_phase4_capability \
   eval/fixtures/preference_eval_dev_semantic_map_v1.json
 ```
 
-No paid selector-recovery call may run before independent review and merge, a
-fresh suite-v5 catalog preflight, and a new short-lived explicit user approval.
+The paid selector-recovery calls ran only after independent review and merge, a
+fresh suite-v5 catalog preflight, and new short-lived explicit user approvals.
 The existing candidate-specific delta authorization and runner commands load
 this v2 plan/proof only through explicit schema dispatch; the historical v1
 loaders remain exact. The shared execution records bind the opaque reviewed
@@ -464,6 +464,38 @@ requires
 an exact model and endpoint pin, disabled fallbacks and response healing,
 recorded routing provenance, and a separate reviewed budget and authorization.
 Any cross-host result is deployment evidence, not a model-family claim.
+
+The resulting capability evidence is frozen in
+`preference_eval_phase4_together_capability_aggregation_v1.json`, canonical
+hash
+`e9a0bd7141a9536041e3d242d0696daade3b3325c562cf1bd2a4b5f34dd8452e`.
+Its content-free source proof has hash
+`de14bde9c424c530a62367ffec202d936f8180ec123db300996baa4956c9a156`.
+GLM-5.2 and GPT-OSS 120B have complete five-role capability evidence and are
+capability-passed, not qualified. The exact Nemotron 3 Ultra/Together
+deployment is provider/deployment-inconclusive after an HTTP 400 with no model
+output returned, no provider-reported token usage, and no charge; this does not
+establish a model-capability failure. The aggregate binds 5 carried successes,
+6 observed successes, 1
+provider failure, 3 unattempted suffix roles, 7 recovery calls, and cumulative
+capability spend of 51,042 microusd. Building the aggregate made no provider
+call and spent nothing.
+
+`python -m eval.prepare_phase4_capability_aggregation` rebuilds the tracked
+result from the exact ignored authorization/state sources.
+`python -m eval.validate_phase4_capability_aggregation` rechecks the complete
+public chain without private access and emits aggregate-only output. The result
+records no reviewed v1 capability receipt or qualification authorization, so
+the controlled workflow remains blocked. This is not an unbypassable property
+of the old v1 validator, which cannot replay a supplied receipt's private
+provider audit. The v1 qualification bundle also requires exactly three
+complete candidate results. Qualification therefore requires a separately
+reviewed versioned authorization and result scope that preserves the original
+roster, retains the affected deployment as inconclusive and not run in
+qualification, forbids replacement, and precommits the two-runnable-candidate
+comparison before any qualification metric is observed. The qualification
+runner must consume and source-validate that scope as its actual gate; it must
+not emit or be described as a v1 `Phase4QualificationBundle`.
 
 The Phase 4A command prints content hashes and aggregate architecture counts.
 Phase 4A does not choose an LLM provider, prompt, model version, evidence

@@ -1449,10 +1449,9 @@ delta, and proof made no inference call and spent nothing.
 
 Rebuild and validate the content-free v2 chain from its ignored source audits
 with `python -m eval.prepare_phase4_together_selector_recovery`; use `--help`
-for the exact private source paths. Stdout is aggregate-only. No paid selector-
-recovery call may run until these changes receive independent review and merge,
-a fresh suite-v5 catalog preflight succeeds, and Ben gives a new short-lived
-manual approval for the exact candidate amount.
+for the exact private source paths. Stdout is aggregate-only. The paid recovery
+was run only after independent review and merge, a fresh suite-v5 catalog
+preflight, and Ben's short-lived approvals for the exact candidate amounts.
 
 Reviewers can recheck the complete tracked chain without access to any ignored
 provider attempt with `python -m eval.validate_phase4_selector_recovery`; its
@@ -1476,3 +1475,51 @@ diagnostic requires an exact model and endpoint pin, disabled fallbacks,
 response-healing disabled, recorded routing provenance, and a separate reviewed
 budget and authorization. A cross-host difference would be deployment evidence,
 not a model-family result.
+
+### Phase 4E Capability Aggregation
+
+The suite-v5 recovery produced enough evidence to close the audited capability-
+attempt sequence but not to construct the frozen v1 capability receipt.
+GLM-5.2 and GPT-OSS 120B
+each have exact five-role coverage after their carried and newly observed
+successes are merged. They are **capability-passed**, not qualified. Nemotron 3
+Ultra's exact Together deployment returned an HTTP 400 with no model output
+returned, no provider-reported token usage, and no charge on its first recovery
+call. That deployment is
+**provider/deployment-inconclusive**; the event is not a model response, does
+not reject the underlying model family, and is not compared as a quality
+result. Its later recovery roles remain unattempted.
+
+`eval/phase4_capability_aggregation.py` rebuilds that disposition from the
+reviewed selector delta, the fresh catalog receipt, and all three exact ignored
+authorization/state pairs. The tracked aggregate has canonical hash
+`e9a0bd7141a9536041e3d242d0696daade3b3325c562cf1bd2a4b5f34dd8452e`;
+its content-free private-source proof has hash
+`de14bde9c424c530a62367ffec202d936f8180ec123db300996baa4956c9a156`.
+The result covers all 15 corrected-plan coordinates: 5 carried successes, 6
+new successes, 1 provider failure, and 3 roles not attempted after that
+failure. Seven recovery calls were issued. Recovery spend was 10,815 microusd,
+bringing cumulative capability spend to 51,042 microusd and leaving 98,958
+microusd under the original 150,000-microusd ceiling. Aggregation itself made
+zero provider calls and spent zero.
+
+Rebuild the aggregate from ignored audits with
+`python -m eval.prepare_phase4_capability_aggregation`; use `--help` for the
+exact private source arguments. Review the tracked artifacts without private
+access with `python -m eval.validate_phase4_capability_aggregation`; its
+`--help` lists the 16 public inputs. Both commands print aggregate-only output,
+and the public validator rejects any `private_runs` path before reading it.
+
+This record deliberately has no capability-preflight receipt, qualification
+authorization, selected model, or replacement candidate, so the reviewed
+workflow remains blocked. This is not an unbypassable property of the old v1
+validator: v1 checks a supplied receipt's hash and matrix but cannot replay its
+private provider audit. `Phase4QualificationBundle.v1` also requires exactly
+three complete candidate results. Before any qualification call, a separately
+reviewed versioned scope amendment must preserve the original three-candidate
+roster, identify the two runnable deployments, retain the Nemotron/Together
+result as inconclusive and not run in qualification, forbid a post-hoc
+replacement, and define both the two-deployment authorization/result contracts
+and their frozen comparison/selection rules. The qualification runner must
+consume and source-validate that amendment as its actual gate; the result must
+not emit or be described as a v1 `Phase4QualificationBundle`.
