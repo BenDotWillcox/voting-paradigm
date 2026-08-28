@@ -987,12 +987,6 @@ def _validate_observation_against_entry(
         entry.output_token_upper_bound,
     ):
         raise ValueError("qualification observation request binding differs")
-    if observation.request_content_sha256 != entry.request_template_sha256:
-        raise ValueError("qualification observation request does not match plan")
-    if observation.usage.input_tokens > entry.input_token_upper_bound or (
-        observation.usage.output_tokens > entry.output_token_upper_bound
-    ):
-        raise ValueError("qualification observation exceeds token envelope")
     expected_source = (
         QualificationObservationSource.CARRIED_CAPABILITY_SUCCESS
         if coordinate.call_id in carried_call_ids
@@ -1000,6 +994,15 @@ def _validate_observation_against_entry(
     )
     if observation.source is not expected_source:
         raise ValueError("qualification observation carry status differs")
+    if (
+        expected_source is QualificationObservationSource.NEW_QUALIFICATION_CALL
+        and observation.request_content_sha256 != entry.request_template_sha256
+    ):
+        raise ValueError("qualification observation request does not match plan")
+    if observation.usage.input_tokens > entry.input_token_upper_bound or (
+        observation.usage.output_tokens > entry.output_token_upper_bound
+    ):
+        raise ValueError("qualification observation exceeds token envelope")
 
 
 def _build_coordinate_results(
