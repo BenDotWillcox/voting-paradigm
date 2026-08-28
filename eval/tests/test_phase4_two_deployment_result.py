@@ -14,6 +14,7 @@ from eval.phase4_llm_readout import LLMReadoutResponseDraft
 from eval.phase4_provider import (
     ProviderCallFinalization,
     ProviderCallOutcome,
+    ProviderRequestBinding,
     ProviderSeedStatus,
     provider_request_content_sha256,
 )
@@ -215,6 +216,43 @@ def _observations() -> tuple[QualificationCallObservation, ...]:
             )
         )
     return tuple(observations)
+
+
+def _with_historical_v1_request_binding(
+    observation: QualificationCallObservation,
+) -> QualificationCallObservation:
+    binding_payload = observation.request_binding.model_dump(mode="json")
+    binding_payload["record_version"] = "phase4_provider_request_binding.v1"
+    for name in (
+        "response_validator_id",
+        "response_validator_version",
+        "response_validator_sha256",
+    ):
+        binding_payload.pop(name, None)
+    binding = ProviderRequestBinding.model_validate(binding_payload)
+    request_sha256 = provider_request_content_sha256(binding)
+    usage = observation.usage.model_copy(
+        update={"request_sha256": request_sha256}
+    )
+    finalization = observation.finalization.model_copy(
+        update={
+            "request_binding_sha256": content_sha256(binding),
+            "usage_sha256": content_sha256(usage),
+        }
+    )
+    payload = observation.model_dump(mode="json")
+    payload.update(
+        {
+            "request_binding": binding.model_dump(mode="json"),
+            "request_binding_sha256": content_sha256(binding),
+            "request_content_sha256": request_sha256,
+            "usage": usage.model_dump(mode="json"),
+            "usage_sha256": content_sha256(usage),
+            "finalization": finalization.model_dump(mode="json"),
+            "finalization_sha256": content_sha256(finalization),
+        }
+    )
+    return QualificationCallObservation.model_validate(payload)
 
 
 def _source_bindings(
@@ -432,6 +470,45 @@ def test_historical_interviewer_replay_cannot_be_upgraded_to_verified() -> None:
 
     with pytest.raises(ValidationError, match="overclaims evidence"):
         QualificationCallObservation.model_validate(payload)
+
+
+def test_carried_v1_request_binding_keeps_historical_lineage() -> None:
+    observations = list(_observations())
+    source = next(
+        item
+        for item in observations
+        if item.source
+        is QualificationObservationSource.CARRIED_CAPABILITY_SUCCESS
+        and item.role is LLMRole.DIRECT_READOUT
+    )
+    historical = _with_historical_v1_request_binding(source)
+    execution_plan = _inputs()[-1]
+    call = next(
+        item
+        for candidate in execution_plan.candidate_plans
+        for item in candidate.calls
+        if item.call_id == historical.call_id
+    )
+
+    assert historical.request_content_sha256 != (
+        call.source_entry.request_template_sha256
+    )
+    result = _build(_replace_observation(observations, historical))
+    assert len(result.coordinate_results) == 304
+
+
+def test_new_call_request_must_still_match_current_plan() -> None:
+    observations = list(_observations())
+    source = next(
+        item
+        for item in observations
+        if item.source is QualificationObservationSource.NEW_QUALIFICATION_CALL
+        and item.role is LLMRole.DIRECT_READOUT
+    )
+    historical = _with_historical_v1_request_binding(source)
+
+    with pytest.raises(ValueError, match="request does not match plan"):
+        _build(_replace_observation(observations, historical))
 
 
 def test_execution_plan_metric_policy_is_authoritative() -> None:
