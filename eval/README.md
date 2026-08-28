@@ -1520,11 +1520,11 @@ require a separately reviewed versioned scope amendment that preserves the
 original three-candidate roster, identifies the two runnable deployments,
 retains the Nemotron/Together result as inconclusive and not run in
 qualification, forbids a post-hoc replacement, and defines both the
-two-deployment authorization/result contracts and their frozen
-comparison/selection rules. The one-call diagnostic below is the reviewed next
-evidence step before deciding whether that amendment is still necessary. Any
-amended qualification runner must consume and source-validate its scope as the
-actual gate; its result must not emit or be described as a v1
+two-deployment authorization/result requirements and their frozen
+comparison/selection rules. The one-call diagnostic below was completed before
+that amendment was authored; its terminal evidence is bound into the later
+scope proof. Any amended qualification runner must consume and source-validate
+its scope as the actual gate; its result must not emit or be described as a v1
 `Phase4QualificationBundle`.
 
 ### Phase 4E Nemotron HTTP Diagnostic Retry
@@ -1601,10 +1601,85 @@ a model verdict:
 - Any other outcome stops for review. No fallback or automatic continuation is
   allowed.
 
-After the retry, rebuild the capability disposition in a new aggregate or
-follow-up artifact while retaining the original aggregate unchanged. If all
-three deployments still cannot enter qualification, author and review the
-qualification-scope amendment before any qualification call. Otherwise define
-the reviewed continuation needed to complete Nemotron's remaining capability
-roles. Only after that roster decision is frozen may public-development
-qualification proceed.
+The paid retry later returned an HTTP 500 `server_error` with no model output,
+no provider-reported tokens, and no charge. Its disposition is
+`provider_or_transport_inconclusive`. The single-use claim prevents another
+send under that plan. This does not reject Nemotron's model family, but it does
+leave the exact Together deployment unrunnable for the controlled
+qualification.
+
+### Phase 4E Two-Deployment Qualification Scope
+
+The reviewed no-spend scope amendment is frozen in:
+
+- `preference_eval_phase4_two_deployment_qualification_scope_v1.json`
+- `preference_eval_phase4_two_deployment_qualification_scope_source_proof_v1.json`
+
+Their canonical hashes are respectively
+`42010288efd4dcba8bec9cd8aa9c4cef8c94d7e32e8e17b6b4a812e419708b46`
+and
+`d7dc3c435570c438cdd4c851273ed3a28f6c9a37180c095246cd393666836dff`.
+The source proof fully revalidates the ignored retry authorization, terminal
+state, source state, and fresh retry catalog before retaining only finite HTTP
+metadata and hashes. It contains no request, response, value, message, or
+conversation content.
+
+The original GLM-5.2, GPT-OSS 120B, and Nemotron 3 Ultra roster remains frozen.
+GLM and GPT-OSS are the two runnable deployments. Nemotron/Together remains
+`provider_deployment_inconclusive_not_run`: it is not rejected, replaced,
+ranked, or used to produce qualification quality metrics. The amendment was
+created before any qualification metric was observed and made zero provider
+calls with zero spend.
+
+The original 456-entry readiness manifest is immutable. The amendment derives
+its exact 304-entry GLM/GPT-OSS subsequence without renumbering source ordinals.
+Ten exact successful capability calls already present in that manifest are
+hash-bound carry-forwards and must not be replayed or reauthorized. A later
+paid runner may send only the remaining 294 requests: 147 per deployment, with
+14 interviewer, 14 extractor, 14 ontology-proposer, 126 direct-readout, and
+126 hybrid-readout calls in total.
+
+The complete two-deployment scope projects 1,466,671 microusd and has a
+2,384,400-microusd all-envelope maximum. Removing the ten carried calls leaves
+1,421,524 microusd projected and 2,297,400 microusd in exact new-call
+reservations. With 51,042 microusd already spent on capability work, the
+cumulative worst case is 2,348,442 microusd, leaving 1,651,558 microusd under
+the frozen USD 4 qualification segment cap. The largest single reservation is
+25,400 microusd, and sequential projected headroom is 2,502,034 microusd.
+
+The amendment binds the exact legacy hard-failure list, ordered selection
+criteria, and practical-equivalence bands. `provider_call_failure` is the sole
+legacy hard-gate override. Its exact five underlying outcomes—provider error,
+transport error, transport-contract error, token-bound exceeded, and
+cancelled—pause the whole scope without selection pending a separately
+reviewed continuation. All other candidate hard gates remain unchanged,
+including required-role, structured-output, role-contract, interviewer-tool,
+robustness-output, strict order/label, and projected-study-cost failures.
+Selection requires complete results for both runnable deployments, so one
+failure cannot silently turn the run into a one-deployment contest. If both
+deployments complete, selection is limited to hard-gate-passing GLM and
+GPT-OSS results, and one selected deployment still serves every LLM role.
+
+These authorization and result policies are precommitments, not runtime
+enforcement. The scope-aware authorization, execution state, pause behavior,
+and result validator in the next reviewed slice must make each policy field
+enforceable before any qualification request is sent.
+
+Build the amendment from the exact ignored retry audit with
+`python -m eval.prepare_phase4_qualification_scope_amendment`; use `--help` for
+the complete source list. Public review uses
+`python -m eval.validate_phase4_qualification_scope_amendment`, which rejects
+`private_runs` inputs before reading them and prints aggregate-only counts,
+costs, and hashes.
+
+This slice still does not authorize paid qualification. The next reviewed
+slice must add a distinct scope-aware exact-request authorization, scoped
+cursor, candidate-isolated execution state, and distinct two-deployment v1
+result contract rather than the legacy `Phase4QualificationBundle.v1`. It must
+bind this amendment and proof, a new post-merge catalog preflight, fresh
+explicit user approval, the ten exact carry-forwards, and only the 294 new
+requests. The 456-call readiness manifest remains the immutable source of
+coordinates and costs, but is not itself an executable cursor or
+authorization. `TogetherLiveAuthorization.v1/v2` and
+`Phase4QualificationBundle.v1` remain unchanged and cannot authorize or
+describe the amended path.
