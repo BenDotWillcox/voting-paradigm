@@ -1055,7 +1055,7 @@ run:
 ```bash
 python -m eval.preflight_phase4_together \
   eval/fixtures/preference_eval_phase4_together_v5.json \
-  eval/private_runs/phase4/together_catalog_preflight.json \
+  eval/private_runs/phase4/together_catalog_preflight_v5_unique.json \
   --api-key-file .env.local \
   --confirm-project-scoped-key \
   --confirm-training-sharing-disabled \
@@ -1655,15 +1655,55 @@ cancelled—pause the whole scope without selection pending a separately
 reviewed continuation. All other candidate hard gates remain unchanged,
 including required-role, structured-output, role-contract, interviewer-tool,
 robustness-output, strict order/label, and projected-study-cost failures.
-Selection requires complete results for both runnable deployments, so one
-failure cannot silently turn the run into a one-deployment contest. If both
-deployments complete, selection is limited to hard-gate-passing GLM and
-GPT-OSS results, and one selected deployment still serves every LLM role.
+Selection requires a terminal result for both runnable deployment attempts, so
+one failure cannot silently turn the run into a one-deployment contest. Both
+attempts must reach a terminal disposition before selection: a provider,
+transport, ambiguous-delivery, or harness pause blocks selection, while a
+candidate-local substantive hard failure may stop that candidate early and
+still permit selection of a fully completed, hard-gate-passing sibling. One
+selected deployment still serves every LLM role.
 
-These authorization and result policies are precommitments, not runtime
-enforcement. The scope-aware authorization, execution state, pause behavior,
-and result validator in the next reviewed slice must make each policy field
-enforceable before any qualification request is sent.
+The subsequent zero-spend execution slice makes those precommitments
+enforceable. Its tracked plan is
+`preference_eval_phase4_two_deployment_qualification_execution_v1.json`, with
+canonical hash
+`11b199fe5a7b2e312172b3c949a4f99c80ca58013a38be4ed76d98eb64c485a1`.
+The plan preserves all 304 original readiness ordinals, marks the ten reviewed
+capability successes as replay-forbidden carry records, and exposes exactly
+294 provider calls to the paid boundary. The corresponding private carry
+bundle is rebuilt from all five ignored capability source states and
+revalidates every stored output against the current role adapter before it can
+be authorized.
+
+The qualification metric policy is now frozen before provider output exists:
+only the six development responses in `choice` state contribute prediction
+quality; canonical direct and hybrid readouts are reported separately and
+then equally weighted; log loss uses a `1e-15` floor; exact top-probability
+ties receive fractional credit; delegated-risk diagnostics use the complete
+`[0.65, 0.75, 0.85, 0.95]` grid; and robustness remains disaggregated by
+candidate, readout role, and measure before the frozen banded selection rule
+is applied.
+
+`phase4_qualification_runtime.py` defines a distinct exact-request
+authorization and candidate-isolated progressive state rather than extending
+the legacy three-candidate contracts. Every paid request must rebuild from its
+source manifest entry, match its content hash and envelope reservation, remain
+public-development-only, and fit the shared USD 4 qualification cap after the
+51,042 microusd already spent. State is checkpointed after every call. A
+substantive invalid output terminates only that candidate while the sibling is
+still attempted; any provider, transport, ambiguous-delivery, shared-budget,
+or local-harness condition blocks selection and requires review. New
+interviewer tool results are locally replayed and hash-compared. The two
+historical carried interviewer successes are accurately marked replay-
+unverifiable because their tool transcripts were never retained.
+
+The paid runner is one-shot. It acquires an fsynced claim keyed by the exact
+execution-plan hash before loading the API key or constructing an HTTP client.
+Any existing claim blocks automatic rerun even if a checkpoint was deleted;
+interruption therefore requires manual provider-side reconciliation. The
+runner uses the shared Together invocation mechanics, disables redirects and
+environment proxy inheritance, and accepts no fallback, replacement, or
+automatic retry.
 
 Build the amendment from the exact ignored retry audit with
 `python -m eval.prepare_phase4_qualification_scope_amendment`; use `--help` for
@@ -1672,14 +1712,113 @@ the complete source list. Public review uses
 `private_runs` inputs before reading them and prints aggregate-only counts,
 costs, and hashes.
 
-This slice still does not authorize paid qualification. The next reviewed
-slice must add a distinct scope-aware exact-request authorization, scoped
-cursor, candidate-isolated execution state, and distinct two-deployment v1
-result contract rather than the legacy `Phase4QualificationBundle.v1`. It must
-bind this amendment and proof, a new post-merge catalog preflight, fresh
-explicit user approval, the ten exact carry-forwards, and only the 294 new
-requests. The 456-call readiness manifest remains the immutable source of
-coordinates and costs, but is not itself an executable cursor or
-authorization. `TogetherLiveAuthorization.v1/v2` and
-`Phase4QualificationBundle.v1` remain unchanged and cannot authorize or
-describe the amended path.
+Build or revalidate the execution plan and private carry with
+`python -m eval.prepare_phase4_two_deployment_qualification`; use `--help` for
+the reviewed public chain and five ignored source-state paths. Paid execution
+still requires this slice to be reviewed and merged, followed by a new
+zero-inference catalog preflight and a fresh explicit approval for exactly 294
+calls, 2,297,400 microusd of new reservations, and 2,348,442 microusd
+cumulative worst-case qualification spend. The no-spend authorizer and paid
+runner are respectively
+`python -m eval.authorize_phase4_two_deployment_qualification` and
+`python -m eval.run_phase4_two_deployment_qualification`; neither legacy live
+authorization nor `Phase4QualificationBundle.v1` can enter this path.
+After both candidate attempts reach a terminal state,
+`python -m eval.assemble_phase4_two_deployment_qualification` revalidates the
+full public chain, historical carry sources, exact authorization, durable
+execution claim, and both private candidate audits before deriving metrics or
+selection. It writes the content-bearing result only inside that ignored run
+directory and confines the tracked aggregate receipt to
+`eval/review_summaries/`; stdout and failures remain aggregate-only.
+
+Use a new catalog-receipt name for this one-shot run; do not overwrite any
+historical preflight. The following PowerShell template fixes the otherwise
+long positional order and keeps every content-bearing artifact ignored. Run
+it only after this slice is reviewed and merged. The authorizer is zero-spend;
+the runner is the only paid command and can send at most 294 calls because a
+frozen stop gate may terminate either candidate early.
+
+```powershell
+$public = @(
+  'eval/fixtures/preference_eval_phase4_together_selector_recovery_delta_v2.json'
+  'eval/fixtures/preference_eval_phase4_together_selector_recovery_source_proof_v2.json'
+  'eval/fixtures/preference_eval_phase4_together_capability_delta_v1.json'
+  'eval/fixtures/preference_eval_phase4_together_capability_delta_source_proof_v1.json'
+  'eval/fixtures/preference_eval_phase4_together_capability_v3.json'
+  'eval/fixtures/preference_eval_phase4_together_v4.json'
+  'eval/fixtures/preference_eval_phase4_together_readiness_v4.json'
+  'eval/fixtures/preference_eval_phase4_together_capability_v4.json'
+  'eval/fixtures/preference_eval_phase4_together_v5.json'
+  'eval/fixtures/preference_eval_phase4_together_readiness_v5.json'
+  'eval/fixtures/preference_eval_phase4_robustness_v1.json'
+  'eval/fixtures/preference_eval_dev_v1.json'
+  'eval/fixtures/preference_eval_dev_session_v1.json'
+  'eval/fixtures/preference_eval_dev_semantic_map_v1.json'
+)
+$scope = @(
+  'eval/fixtures/preference_eval_phase4_two_deployment_qualification_scope_v1.json'
+  'eval/fixtures/preference_eval_phase4_two_deployment_qualification_scope_source_proof_v1.json'
+  'eval/fixtures/preference_eval_phase4_together_capability_aggregation_v1.json'
+)
+$scopeReview = @(
+  'eval/fixtures/preference_eval_phase4_together_capability_aggregation_source_proof_v1.json'
+  'eval/fixtures/preference_eval_phase4_together_capability_diagnostic_retry_v1.json'
+  'eval/fixtures/preference_eval_phase4_together_capability_diagnostic_retry_source_proof_v1.json'
+)
+$sources = @(
+  '--source-state'; 'eval/private_runs/phase4/together_glm_5_2_candidate_capability_state_v3.json'
+  '--source-state'; 'eval/private_runs/phase4/together_glm_5_2_delta_state_v4_20260826.json'
+  '--source-state'; 'eval/private_runs/phase4/together_glm_5_2_selector_recovery_state_v5_20260826.json'
+  '--source-state'; 'eval/private_runs/phase4/together_gpt_oss_120b_candidate_capability_state_v1.json'
+  '--source-state'; 'eval/private_runs/phase4/together_gpt_oss_120b_selector_recovery_state_v2_20260826.json'
+)
+$plan = 'eval/fixtures/preference_eval_phase4_two_deployment_qualification_execution_v1.json'
+$carry = 'eval/private_runs/phase4/together_two_deployment_qualification_carry_v1.json'
+$catalog = 'eval/private_runs/phase4/together_catalog_preflight_two_deployment_v1.json'
+$authorization = 'eval/private_runs/phase4/together_two_deployment_qualification_authorization_v1.json'
+$run = 'eval/private_runs/phase4/together_two_deployment_qualification_run_v1'
+
+python -m eval.preflight_phase4_together `
+  eval/fixtures/preference_eval_phase4_together_v5.json $catalog `
+  --api-key-file .env.local --confirm-project-scoped-key `
+  --confirm-training-sharing-disabled --confirm-default-nonstorage `
+  --acknowledge-temporary-caching --execute-zero-spend
+
+python -m eval.authorize_phase4_two_deployment_qualification `
+  @public @scope $plan $carry $catalog $authorization @sources `
+  --approve-call-count 294 --approve-max-spend-microusd 2297400 `
+  --confirm-cumulative-authorized-max-microusd 2348442 `
+  --confirm-public-development-only --confirm-no-participant-content `
+  --confirm-no-automatic-retry --confirm-no-fallback-or-replacement `
+  --valid-minutes 240
+
+python -m eval.run_phase4_two_deployment_qualification `
+  @public @scope $plan $carry $catalog $authorization $run @sources `
+  --api-key-file .env.local --execute-paid-two-deployment-qualification `
+  --confirm-call-count 294 --confirm-max-spend-microusd 2297400 `
+  --confirm-cumulative-authorized-max-microusd 2348442
+
+$resultTime = (Get-Date).ToUniversalTime().ToString('o')
+python -m eval.assemble_phase4_two_deployment_qualification `
+  @public @scope @scopeReview $plan $carry $authorization $catalog $run `
+  "$run/private_result_v1.json" `
+  eval/review_summaries/phase4_two_deployment_qualification_receipt_v1.json `
+  @sources `
+  --candidate-state "$run/together_glm_5_2_qualification_state_v1.json" `
+  --candidate-state "$run/together_gpt_oss_120b_qualification_state_v1.json" `
+  --qualification-id phase4_two_deployment_qualification_v1 `
+  --receipt-id phase4_two_deployment_qualification_receipt_v1 `
+  --created-at $resultTime
+```
+
+Use a new, previously unused output filename for every preflight. The command
+does not treat an existing receipt as append-only and must never overwrite the
+historical evidence bound by an earlier authorization.
+
+The two candidate states and full result must share the run-specific
+`eval/private_runs/` directory. Only the aggregate receipt directly under
+`eval/review_summaries/` is tracked-eligible; it omits provider requests,
+responses, parsed outputs, tool payloads, and participant content. The
+assembler revalidates the durable claim, both exact terminal states, every
+carried source chain, all 304 coordinate dispositions, and the frozen result
+policy without making a provider request or spending money.
