@@ -579,22 +579,44 @@ policy. The exact legacy hard-failure list is bound into the amendment;
 underlying outcomes—provider error, transport error, transport-contract error,
 token-bound exceeded, and cancelled—to pause the whole scope without selection
 pending review. All other candidate hard gates remain unchanged. Both runnable
-deployments must complete before selection. No Nemotron metric, fallback,
-replacement, or model-family conclusion is allowed.
+deployment attempts must reach terminal dispositions before selection. A
+provider, transport, ambiguous-delivery, or harness pause blocks selection. A
+candidate-local substantive hard failure may stop that candidate early and
+still permit selection of a fully completed, hard-gate-passing sibling. No
+Nemotron metric, fallback, replacement, or model-family conclusion is allowed.
 
-Those authorization and result policies are precommitted here but are not yet
-runtime enforcement. The next reviewed slice must implement them in the
-scope-aware authorization, execution-state, pause, and result validators before
-any qualification request is sent.
+The following zero-spend execution slice implements those policies without
+changing the historical contracts. Its frozen plan hash is
+`11b199fe5a7b2e312172b3c949a4f99c80ca58013a38be4ed76d98eb64c485a1`:
+304 original coordinates, ten replay-forbidden carried successes, and 294
+exact new provider calls. A private carry bundle rebuilds the ten outputs from
+five ignored source states and revalidates them under the current response
+adapters. Historical interviewer tool transcripts were not retained, so those
+two carries are explicitly replay-unverifiable; every new interviewer tool
+result is replayed locally and hash-compared.
 
-This amendment itself made no call and spent nothing. Paid qualification still
-requires a later reviewed scope-aware exact-request authorization and distinct
-two-deployment v1 result contract (not the legacy
-`Phase4QualificationBundle.v1`), a scoped cursor over the 304-entry
-subsequence, candidate-isolated state, a new catalog preflight, and fresh
-explicit approval. The old live authorizations and three-candidate
-qualification bundle remain unchanged and cannot authorize or describe this
-path.
+The executable boundary requires a fresh, short-lived, exact-request approval
+for 2,297,400 microusd of new reservations. It enforces the shared USD 4
+qualification cap including 51,042 microusd of prior capability spend,
+candidate-isolated ledgers, a checkpoint after every call, public-development
+inputs only, and no retry, fallback, or replacement. A provider or transport
+failure pauses selection but cannot suppress the sibling candidate attempt. A
+candidate hard failure terminates that candidate; the other candidate must
+still reach its own terminal disposition before selection is considered.
+
+The result path consumes all 304 coordinate dispositions, binds the execution
+plan and metric-policy hashes, reports direct and hybrid development quality
+separately plus their frozen equal-weight mean, retains robustness at the
+candidate/role/measure level, and applies the precommitted banded selection.
+Raw parsed outputs remain private; the tracked-eligible receipt contains only
+hashes, counts, metrics, gates, and the selected deployment or pause status.
+
+This implementation itself makes no call and spends nothing. Actual paid
+qualification still requires review and merge, a new catalog preflight, and a
+fresh explicit user approval. The one-shot execution claim is acquired before
+credential loading and permanently blocks automatic replay after any crash or
+interruption. The old live authorizations and three-candidate qualification
+bundle remain unchanged and cannot authorize or describe this path.
 
 The Phase 4A command prints content hashes and aggregate architecture counts.
 Phase 4A does not choose an LLM provider, prompt, model version, evidence

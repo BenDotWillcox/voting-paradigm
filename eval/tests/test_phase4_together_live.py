@@ -57,6 +57,7 @@ from eval.phase4_together_live import (
     TogetherPaidStage,
     TogetherPublicSourceCheck,
     TogetherPublicSourceReverification,
+    _build_together_invocation_core,
     build_catalog_preflight_authorization,
     build_catalog_preflight_receipt,
     fetch_public_source_reverification,
@@ -500,6 +501,34 @@ def transport(
 ) -> TogetherHTTPTransport:
     readiness = token_readiness(loaded)
 
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    return TogetherHTTPTransport(
+        loaded,
+        profile(),
+        catalog_bundle(loaded),
+        readiness,
+        headroom_policy(),
+        live_authorization(loaded, budget_segment=budget_segment),
+        SecretStr("test_secret_that_never_persists"),
+        client=client,
+        token_counter=fixed_token_counter(
+            loaded,
+            readiness,
+            input_token_count=input_token_count,
+        ),
+        tool_executor=tool_executor,
+        now=NOW + timedelta(minutes=1),
+        max_tool_rounds=max_tool_rounds,
+        clock=lambda: clock_time or NOW + timedelta(minutes=2),
+    )
+
+
+def fixed_token_counter(
+    loaded: Phase4TogetherSuite,
+    readiness: TogetherTokenReadinessReceipt,
+    *,
+    input_token_count: int,
+):
     class FixedTokenCounter:
         def count_payload(self, candidate_id, payload):
             projection = {
@@ -522,22 +551,7 @@ def transport(
                 input_token_count=input_token_count,
             )
 
-    client = httpx.Client(transport=httpx.MockTransport(handler))
-    return TogetherHTTPTransport(
-        loaded,
-        profile(),
-        catalog_bundle(loaded),
-        readiness,
-        headroom_policy(),
-        live_authorization(loaded, budget_segment=budget_segment),
-        SecretStr("test_secret_that_never_persists"),
-        client=client,
-        token_counter=FixedTokenCounter(),
-        tool_executor=tool_executor,
-        now=NOW + timedelta(minutes=1),
-        max_tool_rounds=max_tool_rounds,
-        clock=lambda: clock_time or NOW + timedelta(minutes=2),
-    )
+    return FixedTokenCounter()
 
 
 def chat_response(
@@ -977,6 +991,46 @@ def test_live_transport_integrates_with_budget_runtime() -> None:
     ledger = runtime.ledger_snapshot()
     assert ledger.calls[0].input_tokens == 5
     assert ledger.calls[0].output_tokens == 3
+
+
+def test_shared_invocation_core_preserves_legacy_transport_result() -> None:
+    loaded = suite()
+    readiness = token_readiness(loaded)
+    request = prepared_request(loaded)
+
+    def handler(http_request: httpx.Request) -> httpx.Response:
+        assert http_request.url.path == "/v1/chat/completions"
+        return httpx.Response(
+            200,
+            json=chat_response(
+                content='{"choice":"yes","confidence":0.8}',
+                prompt_tokens=5,
+                completion_tokens=3,
+            ),
+        )
+
+    legacy_result = transport(loaded, handler).invoke(request)
+    core = _build_together_invocation_core(
+        suite=loaded,
+        projection=readiness,
+        api_key=SecretStr("test_secret_that_never_persists"),
+        client=httpx.Client(transport=httpx.MockTransport(handler)),
+        token_counter=fixed_token_counter(
+            loaded,
+            readiness,
+            input_token_count=10,
+        ),
+        tool_executor=None,
+        clock=lambda: NOW + timedelta(minutes=2),
+        max_tool_rounds=1,
+    )
+    core_result = core.invoke(request)
+
+    legacy_payload = legacy_result.model_dump(mode="json")
+    core_payload = core_result.model_dump(mode="json")
+    legacy_payload["latency_ms"] = 0.0
+    core_payload["latency_ms"] = 0.0
+    assert core_payload == legacy_payload
 
 
 def test_live_transport_executes_bounded_interviewer_tool_loop() -> None:
@@ -1583,6 +1637,14 @@ def test_exact_live_authorization_rejects_any_other_request() -> None:
                 input_token_count=10,
             )
 
+    http_called = False
+
+    def handler(http_request: httpx.Request) -> httpx.Response:
+        nonlocal http_called
+        del http_request
+        http_called = True
+        return httpx.Response(500, json={})
+
     exact_transport = TogetherHTTPTransport(
         loaded,
         profile(),
@@ -1592,9 +1654,7 @@ def test_exact_live_authorization_rejects_any_other_request() -> None:
         authorization,
         SecretStr("test_secret_that_never_persists"),
         client=httpx.Client(
-            transport=httpx.MockTransport(
-                lambda http_request: httpx.Response(500, json={})
-            )
+            transport=httpx.MockTransport(handler)
         ),
         token_counter=FixedTokenCounter(),
         now=NOW + timedelta(minutes=1),
@@ -1620,6 +1680,21 @@ def test_exact_live_authorization_rejects_any_other_request() -> None:
             wrong_call,
             segment=BudgetSegment.RETRY_RESERVE,
         )
+    runtime = ProviderBudgetRuntime(
+        profile(),
+        ledger_id="together_exact_validation_order_ledger",
+        journal_id="together_exact_validation_order_journal",
+    )
+    with pytest.raises(ValueError, match="not exactly authorized"):
+        runtime.execute(
+            wrong_call,
+            artifact.price_card,
+            OUTPUT_ADAPTER,
+            exact_transport,
+            segment=BudgetSegment.RETRY_RESERVE,
+        )
+    assert runtime.ledger_snapshot().authorizations == []
+    assert http_called is False
 
     wrong_content = request.model_copy(
         update={

@@ -1421,119 +1421,48 @@ def _together_http_error_metadata(
     )
 
 
-class TogetherHTTPTransport:
-    """Authorized synchronous Together chat transport with a bounded tool loop."""
+class _TogetherInvocationCore:
+    """Authorization-free Together HTTP, tool-loop, and token-counting core.
+
+    Construction is intentionally confined to
+    :func:`_build_together_invocation_core`.  A transport must validate its own
+    authorization before delegating here; this object owns only the
+    reproducible provider invocation mechanics.
+    """
 
     def __init__(
         self,
-        suite: Phase4TogetherSuite,
-        profile: Phase4ERobustnessProfile,
-        catalog_bundle: TogetherCatalogPreflightBundle,
-        projection: TogetherTokenReadinessReceipt,
-        headroom: TogetherHeadroomPolicy,
-        authorization: TogetherLiveAuthorization,
-        api_key: SecretStr,
         *,
+        suite: Phase4TogetherSuite,
+        projection: TogetherTokenReadinessReceipt,
+        api_key: SecretStr,
         client: httpx.Client,
         token_counter: TogetherTokenCounter,
-        capability_receipt: TogetherCapabilityPreflightReceipt | None = None,
         tool_executor: TogetherToolExecutor | None = None,
-        now: datetime,
-        max_tool_rounds: int = DEFAULT_MAX_TOOL_ROUNDS,
-        clock: Callable[[], datetime] | None = None,
+        clock: Callable[[], datetime],
+        max_tool_rounds: int,
     ) -> None:
-        validate_live_authorization(
-            suite,
-            profile,
-            catalog_bundle,
-            projection,
-            headroom,
-            authorization,
-            capability_receipt=capability_receipt,
-            now=now,
-        )
-        if not api_key.get_secret_value():
-            raise ValueError("Together API key is empty")
-        if max_tool_rounds != DEFAULT_MAX_TOOL_ROUNDS:
-            raise ValueError("Together max tool rounds differ from readiness")
         self._suite = suite.model_copy(deep=True)
-        self._authorization = authorization.model_copy(deep=True)
         self._api_key = api_key
         self._client = client
         self._token_counter = token_counter
         self._projection_by_candidate = {
             item.candidate_id: item for item in projection.candidate_projections
         }
-        self._price_card_by_candidate = {
-            item.candidate.candidate_id: item.price_card
-            for item in suite.candidates
-        }
-        self._authorized_request_by_call_id = {
-            item.call_id: item
-            for item in authorization.authorized_requests or []
-        }
         self._tool_executor = tool_executor
         self._max_tool_rounds = max_tool_rounds
-        self._clock = clock or (lambda: datetime.now(timezone.utc))
+        self._clock = clock
 
-    def validate_execution(
+    def count_initial_payload(
         self,
         request: PrivateStructuredProviderRequest,
-        *,
-        segment: BudgetSegment,
-    ) -> None:
-        binding = request.binding
-        observed_at = self._clock()
-        _require_aware(observed_at, "Together transport execution time")
-        if not (
-            self._authorization.approved_at
-            <= observed_at
-            <= self._authorization.expires_at
-        ):
-            raise ValueError("Together live authorization is not active")
-        if segment is not self._authorization.budget_segment:
-            raise ValueError("Together request uses an unauthorized budget segment")
-        if binding.data_scope is not ProviderDataScope.PUBLIC_DEVELOPMENT:
-            raise ValueError("Together qualification transport is public-only")
-        if binding.model_candidate_id not in (
-            self._authorization.authorized_candidate_ids
-        ):
-            raise ValueError("Together request uses an unauthorized candidate")
-        if binding.role not in self._authorization.authorized_roles:
-            raise ValueError("Together request uses an unauthorized role")
-        if binding.robustness_profile_sha256 != (
-            self._authorization.robustness_profile_sha256
-        ):
-            raise ValueError("Together request uses an unauthorized profile")
-        if self._authorization.record_version == (
-            "phase4_together_live_authorization.v2"
-        ):
-            exact = self._authorized_request_by_call_id.get(binding.call_id)
-            if exact is None:
-                raise ValueError("Together request is not exactly authorized")
-            exact_identity = (
-                exact.model_candidate_id,
-                exact.role,
-                exact.request_content_sha256,
-            )
-            binding_identity = (
-                binding.model_candidate_id,
-                binding.role,
-                provider_request_content_sha256(binding),
-            )
-            if exact_identity != binding_identity:
-                raise ValueError("Together exact request binding differs")
-            actual_max = price_provider_tokens(
-                self._price_card_by_candidate[binding.model_candidate_id],
-                input_tokens=binding.input_token_upper_bound,
-                output_tokens=binding.output_token_upper_bound,
-            )
-            if actual_max != exact.authorized_max_cost_microusd:
-                raise ValueError("Together exact request cost differs")
-        initial_payload = build_together_chat_payload(self._suite, request)
-        count = self._count_payload(request, initial_payload)
-        if count.input_token_count > binding.input_token_upper_bound:
-            raise ValueError("Together exact input count exceeds request bound")
+    ) -> TogetherPayloadTokenCount:
+        """Count the exact initial wire payload for a validated request."""
+
+        return self._count_payload(
+            request,
+            build_together_chat_payload(self._suite, request),
+        )
 
     def _count_payload(
         self,
@@ -1846,3 +1775,159 @@ class TogetherHTTPTransport:
                     payload,
                 )
         raise AssertionError("Together tool loop did not terminate")
+
+
+def _build_together_invocation_core(
+    *,
+    suite: Phase4TogetherSuite,
+    projection: TogetherTokenReadinessReceipt,
+    api_key: SecretStr,
+    client: httpx.Client,
+    token_counter: TogetherTokenCounter,
+    tool_executor: TogetherToolExecutor | None,
+    clock: Callable[[], datetime],
+    max_tool_rounds: int,
+) -> _TogetherInvocationCore:
+    """Build provider mechanics only after a caller validates authorization.
+
+    This deliberately accepts no authorization object.  Callers must own and
+    enforce their versioned authorization contract before exposing the core's
+    ``invoke`` method through a transport.
+    """
+
+    if not api_key.get_secret_value():
+        raise ValueError("Together API key is empty")
+    if max_tool_rounds != DEFAULT_MAX_TOOL_ROUNDS:
+        raise ValueError("Together max tool rounds differ from readiness")
+    return _TogetherInvocationCore(
+        suite=suite,
+        projection=projection,
+        api_key=api_key,
+        client=client,
+        token_counter=token_counter,
+        tool_executor=tool_executor,
+        clock=clock,
+        max_tool_rounds=max_tool_rounds,
+    )
+
+
+class TogetherHTTPTransport:
+    """Authorized synchronous Together transport using the shared core."""
+
+    def __init__(
+        self,
+        suite: Phase4TogetherSuite,
+        profile: Phase4ERobustnessProfile,
+        catalog_bundle: TogetherCatalogPreflightBundle,
+        projection: TogetherTokenReadinessReceipt,
+        headroom: TogetherHeadroomPolicy,
+        authorization: TogetherLiveAuthorization,
+        api_key: SecretStr,
+        *,
+        client: httpx.Client,
+        token_counter: TogetherTokenCounter,
+        capability_receipt: TogetherCapabilityPreflightReceipt | None = None,
+        tool_executor: TogetherToolExecutor | None = None,
+        now: datetime,
+        max_tool_rounds: int = DEFAULT_MAX_TOOL_ROUNDS,
+        clock: Callable[[], datetime] | None = None,
+    ) -> None:
+        validate_live_authorization(
+            suite,
+            profile,
+            catalog_bundle,
+            projection,
+            headroom,
+            authorization,
+            capability_receipt=capability_receipt,
+            now=now,
+        )
+        if not api_key.get_secret_value():
+            raise ValueError("Together API key is empty")
+        if max_tool_rounds != DEFAULT_MAX_TOOL_ROUNDS:
+            raise ValueError("Together max tool rounds differ from readiness")
+        self._suite = suite.model_copy(deep=True)
+        self._authorization = authorization.model_copy(deep=True)
+        self._price_card_by_candidate = {
+            item.candidate.candidate_id: item.price_card
+            for item in suite.candidates
+        }
+        self._authorized_request_by_call_id = {
+            item.call_id: item
+            for item in authorization.authorized_requests or []
+        }
+        self._clock = clock or (lambda: datetime.now(timezone.utc))
+        self._invocation_core = _build_together_invocation_core(
+            suite=suite,
+            projection=projection,
+            api_key=api_key,
+            client=client,
+            token_counter=token_counter,
+            tool_executor=tool_executor,
+            clock=self._clock,
+            max_tool_rounds=max_tool_rounds,
+        )
+
+    def validate_execution(
+        self,
+        request: PrivateStructuredProviderRequest,
+        *,
+        segment: BudgetSegment,
+    ) -> None:
+        binding = request.binding
+        observed_at = self._clock()
+        _require_aware(observed_at, "Together transport execution time")
+        if not (
+            self._authorization.approved_at
+            <= observed_at
+            <= self._authorization.expires_at
+        ):
+            raise ValueError("Together live authorization is not active")
+        if segment is not self._authorization.budget_segment:
+            raise ValueError("Together request uses an unauthorized budget segment")
+        if binding.data_scope is not ProviderDataScope.PUBLIC_DEVELOPMENT:
+            raise ValueError("Together qualification transport is public-only")
+        if binding.model_candidate_id not in (
+            self._authorization.authorized_candidate_ids
+        ):
+            raise ValueError("Together request uses an unauthorized candidate")
+        if binding.role not in self._authorization.authorized_roles:
+            raise ValueError("Together request uses an unauthorized role")
+        if binding.robustness_profile_sha256 != (
+            self._authorization.robustness_profile_sha256
+        ):
+            raise ValueError("Together request uses an unauthorized profile")
+        if self._authorization.record_version == (
+            "phase4_together_live_authorization.v2"
+        ):
+            exact = self._authorized_request_by_call_id.get(binding.call_id)
+            if exact is None:
+                raise ValueError("Together request is not exactly authorized")
+            exact_identity = (
+                exact.model_candidate_id,
+                exact.role,
+                exact.request_content_sha256,
+            )
+            binding_identity = (
+                binding.model_candidate_id,
+                binding.role,
+                provider_request_content_sha256(binding),
+            )
+            if exact_identity != binding_identity:
+                raise ValueError("Together exact request binding differs")
+            actual_max = price_provider_tokens(
+                self._price_card_by_candidate[binding.model_candidate_id],
+                input_tokens=binding.input_token_upper_bound,
+                output_tokens=binding.output_token_upper_bound,
+            )
+            if actual_max != exact.authorized_max_cost_microusd:
+                raise ValueError("Together exact request cost differs")
+        count = self._invocation_core.count_initial_payload(request)
+        if count.input_token_count > binding.input_token_upper_bound:
+            raise ValueError("Together exact input count exceeds request bound")
+
+    def invoke(
+        self,
+        request: PrivateStructuredProviderRequest,
+    ) -> ProviderTransportResult:
+        return self._invocation_core.invoke(request)
