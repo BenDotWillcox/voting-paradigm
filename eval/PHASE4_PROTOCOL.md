@@ -494,10 +494,10 @@ require a separately reviewed versioned authorization and result scope that
 preserves the original roster, retains the affected deployment as inconclusive
 and not run in qualification, forbids replacement, and precommits the
 two-runnable-candidate comparison before any qualification metric is observed.
-The one-call diagnostic below is the reviewed next evidence step before that
-scope decision. Any amended qualification runner must consume and
-source-validate its scope as the actual gate; it must not emit or be described
-as a v1 `Phase4QualificationBundle`.
+The one-call diagnostic below was completed before that scope decision; its
+terminal evidence is bound into the later amendment proof. Any amended
+qualification runner must consume and source-validate its scope as the actual
+gate; it must not emit or be described as a v1 `Phase4QualificationBundle`.
 
 The first capability aggregate is immutable. It records the original
 Nemotron/Together HTTP 400 exactly as observed and is not revised after later
@@ -551,13 +551,50 @@ The predeclared interpretation is:
   adjudication path; and
 - every other outcome stops for review.
 
-After the retry, create a new follow-up aggregation/disposition without
-changing the historical aggregate. If the three-deployment qualification
-roster still cannot be completed, review and merge the qualification-scope
-amendment before spending on qualification. If the retry succeeds, separately
-review the contract needed to exercise Nemotron's remaining capability roles.
-Qualification may begin only after that roster and authorization scope are
-frozen.
+The paid retry returned an HTTP 500 `server_error`, zero provider-reported
+tokens, zero cost, and no model output. It remains
+`provider_or_transport_inconclusive`; the single-use plan cannot be sent
+again. The original aggregate is unchanged.
+
+The subsequent zero-spend two-deployment qualification amendment has canonical
+hash
+`42010288efd4dcba8bec9cd8aa9c4cef8c94d7e32e8e17b6b4a812e419708b46`;
+its content-free private-source proof has hash
+`d7dc3c435570c438cdd4c851273ed3a28f6c9a37180c095246cd393666836dff`.
+The original three-candidate roster remains frozen. GLM-5.2 and GPT-OSS 120B
+are the exact runnable deployments; Nemotron/Together remains a deployment-
+inconclusive not-run record, not a model-family rejection or replacement.
+
+The 456-call readiness manifest remains immutable. Qualification scope is its
+304-entry GLM/GPT-OSS subsequence at the original source ordinals. Ten exact
+capability successes carry forward by hash, so only 294 requests may be newly
+authorized. Their projected cost is 1,421,524 microusd and their exact envelope
+maximum is 2,297,400 microusd. Including 51,042 microusd of prior capability
+spend, cumulative worst case is 2,348,442 microusd under the frozen USD 4
+qualification cap.
+
+The amended outcome policy retains the frozen hard gates and banded selection
+policy. The exact legacy hard-failure list is bound into the amendment;
+`provider_call_failure` is its sole override. The amendment binds the same five
+underlying outcomes—provider error, transport error, transport-contract error,
+token-bound exceeded, and cancelled—to pause the whole scope without selection
+pending review. All other candidate hard gates remain unchanged. Both runnable
+deployments must complete before selection. No Nemotron metric, fallback,
+replacement, or model-family conclusion is allowed.
+
+Those authorization and result policies are precommitted here but are not yet
+runtime enforcement. The next reviewed slice must implement them in the
+scope-aware authorization, execution-state, pause, and result validators before
+any qualification request is sent.
+
+This amendment itself made no call and spent nothing. Paid qualification still
+requires a later reviewed scope-aware exact-request authorization and distinct
+two-deployment v1 result contract (not the legacy
+`Phase4QualificationBundle.v1`), a scoped cursor over the 304-entry
+subsequence, candidate-isolated state, a new catalog preflight, and fresh
+explicit approval. The old live authorizations and three-candidate
+qualification bundle remain unchanged and cannot authorize or describe this
+path.
 
 The Phase 4A command prints content hashes and aggregate architecture counts.
 Phase 4A does not choose an LLM provider, prompt, model version, evidence
