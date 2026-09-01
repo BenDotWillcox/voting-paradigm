@@ -1822,3 +1822,179 @@ responses, parsed outputs, tool payloads, and participant content. The
 assembler revalidates the durable claim, both exact terminal states, every
 carried source chain, all 304 coordinate dispositions, and the frozen result
 policy without making a provider request or spending money.
+
+### Phase 4E Qualification Attempt V2
+
+The completed v1 two-deployment qualification is immutable evidence. It ended
+with `no_runnable_candidate_qualified`, selected no deployment, spent 46,245
+microusd during that attempt, and remains valid as recorded. Attempt v2 does
+not replay, reinterpret, or overwrite it. The cumulative actual provider spend
+entering v2 is 97,287 microusd, including the earlier capability work.
+
+The v1 failures exposed a provider-response observability gap: root-level
+validation errors could not identify which readout invariant failed, and the
+raw JSON response bodies were not retained. Suite v6 therefore binds a
+field-local readout response contract and a strict JSON decoder. Raw Together
+response bytes must first decode as strict UTF-8; duplicate object keys and
+nonfinite numbers then fail closed in the outer envelope, final message
+content, and tool arguments. The proof and plan also bind the exact live
+Together invocation code containing all three JSON decode sites. The
+probability acceptance tolerance, option-coverage rule, evidence grounding,
+hard gates, metric policy, and banded selection policy are unchanged. Because
+the historical raw bodies cannot prove compliance with these decoder rules,
+**none of the v1 successes carry forward**. Attempt v2 schedules all 304
+GLM/GPT-OSS coordinates as fresh provider calls.
+
+The first four calls are a paired conformance stage: direct and hybrid readout
+for each of the two candidates. Those calls are part of the 304 total, not an
+additional probe budget. The remainder preserves paired candidate interleave,
+so each candidate reaches corresponding coordinates before either can run far
+ahead. The first-sent candidate alternates across adjacent pairs within each
+stage, counterbalancing candidate position. A candidate-local substantive hard
+failure remains local; a provider or harness pause still blocks selection. A
+passing deployment may win under the unchanged policy, but a winner is not
+guaranteed—the outcome remains empirical.
+
+The tracked zero-spend artifacts are:
+
+- `preference_eval_phase4_together_v6.json`, canonical hash
+  `fa610e6751f688a7ece9990282b8ec3dc763395d2c939d00d643c6981587a77b`;
+- `preference_eval_phase4_together_readiness_v6.json`, canonical hash
+  `6dbd9c47859c49a0eef3451ce22626297f7f4c01fd1d315f2a61d58a01c3643e`;
+- `preference_eval_phase4_qualification_attempt_source_proof_v2.json`,
+  canonical hash
+  `1a332c6715317dedddb6f70728157180e32dd2d9fb62ae013e9e632b298f86a3`;
+  and
+- `preference_eval_phase4_two_deployment_qualification_attempt_v2.json`,
+  canonical hash
+  `af3501c9391cffa13f0a494e6879332b4cd5eb32a4bf6e932e61987dcf213dc5`.
+
+The 304-call plan projects 1,500,351 microusd and caps new reservations at
+2,384,400 microusd. With 97,287 microusd already spent, cumulative authorized
+worst case is 2,481,687 microusd under the frozen USD 4 qualification segment;
+sequential projected headroom is 2,376,962 microusd.
+
+Validate the complete tracked surface with:
+
+```text
+python -m eval.validate_phase4_qualification_attempt \
+  eval/fixtures/preference_eval_phase4_together_v5.json \
+  eval/fixtures/preference_eval_phase4_together_readiness_v5.json \
+  eval/fixtures/preference_eval_phase4_together_v6.json \
+  eval/fixtures/preference_eval_phase4_together_readiness_v6.json \
+  eval/fixtures/preference_eval_phase4_qualification_attempt_source_proof_v2.json \
+  eval/fixtures/preference_eval_phase4_two_deployment_qualification_attempt_v2.json \
+  eval/fixtures/preference_eval_phase4_robustness_v1.json \
+  eval/fixtures/preference_eval_dev_v1.json \
+  eval/fixtures/preference_eval_dev_session_v1.json \
+  eval/fixtures/preference_eval_dev_semantic_map_v1.json
+```
+
+The public validator rejects any `private_runs` path before reading it,
+revalidates the canonical v5/v6 suite builders and both readiness bundles on
+public development inputs, checks the proof's current response-semantics,
+readout-validator, JSON-decoder, and live Together decoder-integration bindings,
+and validates the plan against the exact v6 manifest. It cannot rebuild the
+content-free source proof from the ignored v1 states and result; that stronger
+private-source audit was performed by the preparation command and is hash-bound
+in the tracked proof. Attempt-v2 construction made zero inference calls, spent
+nothing, and created no live authorization.
+
+The separately versioned v2 runtime now turns that precommitment into an exact
+paid boundary without changing the v1 contracts. The authorizer is a
+zero-network, zero-credential command: it reconstructs all 304 request hashes,
+requires a fresh suite-v6 catalog preflight checked within the prior 30 minutes,
+binds the exact reviewed two-deployment scope, and writes a private
+authorization valid for at most two hours. Its literal manual gates are 304
+calls, 2,384,400 microusd of new reservations, 97,287 microusd of prior actual
+spend, and 2,481,687 microusd cumulative authorized worst case, plus explicit
+confirmation of public-development-only inputs, no participant content, paired
+execution, no automatic retry, and no fallback or replacement.
+
+The paid runner repeats the same four numeric confirmations before reading any
+file. It validates the short-lived authorization and exact request rebuild,
+then durably claims the plan before loading the API key or constructing an HTTP
+client. That claim is one-shot: a crash or ambiguous delivery requires manual
+provider-side reconciliation and cannot be turned into an automatic resend.
+The first four included direct/hybrid conformance calls run in paired candidate
+order; the remaining coordinates keep the frozen interleave. Pair-first
+position alternates within each stage. Candidate hard failures are local, while
+provider, transport, ambiguous-delivery, or harness conditions stop the global
+comparison under the precommitted policy.
+
+Authorization files and progressive candidate states must remain under a
+run-specific `eval/private_runs/` path. The runner writes one
+`<candidate_id>_qualification_attempt_state_v2.json` per candidate and refuses
+to start if either state path already exists. The terminal states retain full
+provider ledgers, journals, outputs, typed-tool replays, sanitized diagnostics,
+and content-free receipts; stdout remains aggregate-only.
+
+The execution boundary intentionally does not select a deployment. The
+no-network result assembler loads and validates both exact terminal states,
+the reviewed scope and catalog, the short-lived authorization, and the durable
+execution claim. It reconciles the shared execution order, approval-window
+request times, spend prefix, and all 304 dispositions before applying the
+unchanged hard gates, metric policy, and banded selection rule. A candidate-local
+invalid output can hard-fail one deployment while permitting a qualified sibling
+to win. A global pause yields no selection, and two substantive failures still
+produce no winner. The exact result remains private; the tracked-eligible receipt
+contains aggregate metrics, selection status, and hashes but no model output.
+
+An execution sequence uses new, unused private filenames for each preflight,
+authorization, and run directory:
+
+```powershell
+$proof = 'eval/fixtures/preference_eval_phase4_qualification_attempt_source_proof_v2.json'
+$plan = 'eval/fixtures/preference_eval_phase4_two_deployment_qualification_attempt_v2.json'
+$scope = 'eval/fixtures/preference_eval_phase4_two_deployment_qualification_scope_v1.json'
+$suite = 'eval/fixtures/preference_eval_phase4_together_v6.json'
+$readiness = 'eval/fixtures/preference_eval_phase4_together_readiness_v6.json'
+$profile = 'eval/fixtures/preference_eval_phase4_robustness_v1.json'
+$fixture = 'eval/fixtures/preference_eval_dev_v1.json'
+$session = 'eval/fixtures/preference_eval_dev_session_v1.json'
+$map = 'eval/fixtures/preference_eval_dev_semantic_map_v1.json'
+$catalog = 'eval/private_runs/phase4/together_catalog_preflight_attempt_v2.json'
+$authorization = 'eval/private_runs/phase4/qualification_attempt_authorization_v2.json'
+$run = 'eval/private_runs/phase4/qualification_attempt_run_v2'
+$result = "$run/qualification_attempt_result_v2.json"
+$receipt = 'eval/review_summaries/qualification_attempt_receipt_v2.json'
+
+python -m eval.preflight_phase4_together $suite $catalog `
+  --api-key-file .env.local --confirm-project-scoped-key `
+  --confirm-training-sharing-disabled --confirm-default-nonstorage `
+  --acknowledge-temporary-caching --execute-zero-spend
+
+python -m eval.authorize_phase4_qualification_attempt `
+  $proof $plan $scope $suite $readiness $profile $fixture $session $map `
+  $catalog $authorization --approve-call-count 304 `
+  --approve-max-spend-microusd 2384400 `
+  --confirm-prior-actual-spend-microusd 97287 `
+  --confirm-cumulative-authorized-max-microusd 2481687 `
+  --confirm-public-development-only --confirm-no-participant-content `
+  --confirm-paired-execution-order --confirm-no-automatic-retry `
+  --confirm-no-fallback-or-replacement --valid-minutes 60
+
+python -m eval.run_phase4_qualification_attempt `
+  $proof $plan $scope $suite $readiness $profile $fixture $session $map `
+  $catalog $authorization $run --api-key-file .env.local `
+  --execute-paid-qualification-attempt-v2 --confirm-call-count 304 `
+  --confirm-max-spend-microusd 2384400 `
+  --confirm-prior-actual-spend-microusd 97287 `
+  --confirm-cumulative-authorized-max-microusd 2481687
+
+python -m eval.assemble_phase4_qualification_attempt `
+  $proof $plan $scope $suite $readiness $profile $fixture $session $map `
+  $catalog $authorization `
+  $run $result $receipt `
+  --candidate-state "$run/together_glm_5_2_qualification_attempt_state_v2.json" `
+  --candidate-state "$run/together_gpt_oss_120b_qualification_attempt_state_v2.json" `
+  --qualification-id qualification_attempt_v2 `
+  --receipt-id qualification_attempt_v2_receipt `
+  --created-at 2026-08-28T12:00:00Z
+```
+
+These commands are documentation, not authorization. A fresh catalog receipt,
+short-lived approval, and explicit user consent are still required immediately
+before any paid execution. Use the actual terminal completion time for the
+assembler's `--created-at` value. The assembler itself makes no network request
+and spends nothing.

@@ -15,7 +15,7 @@ from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from statistics import fmean
-from typing import Annotated, Literal, Self
+from typing import Annotated, Literal, Protocol, Self, TypeVar
 
 from pydantic import Field, field_validator, model_validator
 
@@ -820,7 +820,10 @@ class TwoDeploymentQualificationResult(ContractModel):
             ):
                 raise ValueError("failed qualification cannot select a candidate")
         else:
-            selected = _select_candidate(eligible, self.selection_policy)
+            selected = select_two_deployment_candidate(
+                eligible,
+                self.selection_policy,
+            )
             if (
                 self.status is not QualificationResultStatus.SELECTED
                 or self.selected_candidate_id != selected.candidate_id
@@ -890,7 +893,8 @@ class TwoDeploymentQualificationAggregateReceipt(ContractModel):
         return self
 
 
-def _p95(values: list[float]) -> float:
+def qualification_p95(values: list[float]) -> float:
+    """Return the shared qualification p95 used by every result version."""
     ordered = sorted(values)
     if not ordered:
         return 0.0
@@ -1194,7 +1198,7 @@ def _robustness_prediction(
     )
 
 
-def _build_robustness_slice(
+def build_qualification_robustness_slice(
     observations_by_call_id: dict[str, QualificationCallObservation],
     coordinate_results_by_call_id: dict[str, QualificationCoordinateResult],
     entries: list[QualificationCallPlanEntry],
@@ -1203,6 +1207,8 @@ def _build_robustness_slice(
     candidate: OpenWeightModelCandidate,
     option_ids: list[str],
 ) -> QualificationRobustnessSlice:
+    """Build the shared per-measure robustness slice for a result version."""
+
     ordered_entries = sorted(
         entries,
         key=lambda item: VARIANT_ORDER.index(item.coordinate.variant_id),
@@ -1279,13 +1285,15 @@ def _build_robustness_slice(
     )
 
 
-def _build_development_metrics(
+def build_qualification_development_metrics(
     candidate_id: str,
     role: LLMRole,
     slices: list[QualificationRobustnessSlice],
     fixture: EvaluationFixture,
     session: PrequentialSessionScript,
 ) -> QualificationDevelopmentMetrics | None:
+    """Build the frozen public-development quality metrics when complete."""
+
     canonical_by_measure = {
         item.measure_id: next(
             prediction
@@ -1368,7 +1376,7 @@ def _build_development_metrics(
     )
 
 
-def _candidate_hard_failure_reasons(
+def qualification_candidate_hard_failure_reasons(
     *,
     role_counts: dict[LLMRole, int],
     invalid_output_count: int,
@@ -1381,6 +1389,8 @@ def _candidate_hard_failure_reasons(
     held_out_projected_cost_microusd: int,
     profile: Phase4ERobustnessProfile,
 ) -> list[str]:
+    """Derive the frozen qualification hard-failure reason ordering."""
+
     reasons: list[str] = []
     if any(role_counts.get(role, 0) == 0 for role in LLMRole):
         reasons.append("required_role_missing")
@@ -1462,14 +1472,14 @@ def _build_candidate_result(
             RobustnessPerturbationKind.OPTION_LABEL,
         }
     )
-    direct_metrics = _build_development_metrics(
+    direct_metrics = build_qualification_development_metrics(
         candidate.candidate_id,
         LLMRole.DIRECT_READOUT,
         slices,
         fixture,
         session,
     )
-    hybrid_metrics = _build_development_metrics(
+    hybrid_metrics = build_qualification_development_metrics(
         candidate.candidate_id,
         LLMRole.HYBRID_READOUT,
         slices,
@@ -1505,7 +1515,7 @@ def _build_candidate_result(
         for item in readiness.token_readiness_receipt.candidate_projections
         if item.candidate_id == candidate.candidate_id
     )
-    reasons = _candidate_hard_failure_reasons(
+    reasons = qualification_candidate_hard_failure_reasons(
         role_counts=normalized_role_counts,
         invalid_output_count=invalid_count,
         role_contract_failure_count=role_failures,
@@ -1583,7 +1593,7 @@ def _build_candidate_result(
         qualification_cost_microusd=sum(
             item.usage.billed_cost_microusd for item in observations
         ),
-        p95_latency_ms=_p95(
+        p95_latency_ms=qualification_p95(
             [item.finalization.latency_ms for item in observations]
         ),
         hard_failure_reasons=reasons,
@@ -1600,10 +1610,28 @@ def _build_candidate_result(
     )
 
 
-def _select_candidate(
-    eligible: list[TwoDeploymentCandidateResult],
+class QualificationSelectionCandidate(Protocol):
+    """Structural surface shared by versioned two-deployment results."""
+
+    candidate_id: str
+    prompt_and_stochastic_mean_jsd: float | None
+    selection_mean_log_loss: float | None
+    held_out_projected_cost_microusd: int
+    p95_latency_ms: float
+
+
+QualificationSelectionCandidateT = TypeVar(
+    "QualificationSelectionCandidateT",
+    bound=QualificationSelectionCandidate,
+)
+
+
+def select_two_deployment_candidate(
+    eligible: list[QualificationSelectionCandidateT],
     policy: QualificationSelectionPolicy,
-) -> TwoDeploymentCandidateResult:
+) -> QualificationSelectionCandidateT:
+    """Apply the frozen banded-priority selector to compatible results."""
+
     if not eligible:
         raise ValueError("two-deployment selection needs an eligible candidate")
     if any(
@@ -1759,7 +1787,7 @@ def build_two_deployment_qualification_result(
                 if len(slice_entries) != len(VARIANT_ORDER):
                     raise ValueError("qualification robustness source slice differs")
                 slices.append(
-                    _build_robustness_slice(
+                    build_qualification_robustness_slice(
                         observations_by_call_id,
                         coordinate_results_by_call_id,
                         slice_entries,
@@ -1829,7 +1857,10 @@ def build_two_deployment_qualification_result(
     )
     eligible = [item for item in results if item.passed_hard_gates is True]
     selected = (
-        _select_candidate(eligible, scope.result_policy.selection_policy)
+        select_two_deployment_candidate(
+            eligible,
+            scope.result_policy.selection_policy,
+        )
         if eligible and not paused
         else None
     )

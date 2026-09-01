@@ -15,6 +15,7 @@ from eval.phase4_readiness import (
     HELD_OUT_INTERVIEWER_CANDIDATE_WINDOW,
     QUALIFICATION_INTERVIEWER_CANDIDATE_WINDOW,
     READINESS_V5_CREATED_AT,
+    READINESS_V6_CREATED_AT,
     HeldOutCalibrationKind,
     Phase4TogetherReadinessBundle,
     QualificationVariant,
@@ -33,7 +34,9 @@ from eval.phase4_readiness import (
     validate_readiness_bundle,
 )
 from eval.phase4_provider_semantics import (
+    PROVIDER_RESPONSE_READOUT_VALIDATOR_VERSION,
     PROVIDER_RESPONSE_SELECTOR_VALIDATOR_VERSION,
+    provider_invariant_prompt_suffix,
 )
 from eval.phase4_robustness import load_phase4_robustness_profile
 from eval.phase4_robustness import LLMRole
@@ -41,6 +44,7 @@ from eval.phase4_semantic import load_authored_semantic_map
 from eval.phase4_together import (
     build_default_together_suite,
     build_together_suite_v4,
+    build_together_suite_v5,
     load_together_suite,
 )
 from eval.prequential import load_session_script
@@ -182,7 +186,7 @@ def test_v4_readiness_and_interviewer_request_remain_exact() -> None:
 
 def test_v5_readiness_uses_selector_request_and_candidate_windows() -> None:
     robustness_profile = load_phase4_robustness_profile(PROFILE_PATH)
-    current_suite = build_default_together_suite(robustness_profile)
+    current_suite = build_together_suite_v5(robustness_profile)
     fixture = load_fixture(DEV_FIXTURE_PATH)
     session = load_session_script(DEV_SESSION_PATH)
     semantic_map = load_authored_semantic_map(DEV_MAP_PATH)
@@ -269,6 +273,95 @@ def test_v5_readiness_uses_selector_request_and_candidate_windows() -> None:
             for item in held_out_result["candidates"]
         }
     ) == 1
+
+
+def test_v6_readiness_versions_readouts_and_namespaces_call_ids() -> None:
+    robustness_profile = load_phase4_robustness_profile(PROFILE_PATH)
+    legacy_suite = build_together_suite_v5(robustness_profile)
+    current_suite = build_default_together_suite(robustness_profile)
+    fixture = load_fixture(DEV_FIXTURE_PATH)
+    session = load_session_script(DEV_SESSION_PATH)
+    semantic_map = load_authored_semantic_map(DEV_MAP_PATH)
+    legacy_manifest = build_qualification_request_manifest(
+        legacy_suite,
+        robustness_profile,
+        fixture,
+        session,
+        semantic_map,
+        _constant_counters(legacy_suite),
+    )
+    manifest = build_qualification_request_manifest(
+        current_suite,
+        robustness_profile,
+        fixture,
+        session,
+        semantic_map,
+        _constant_counters(current_suite),
+    )
+
+    assert manifest.plan_version == 5
+    assert manifest.created_at == READINESS_V6_CREATED_AT
+    assert all(
+        item.coordinate.call_id.startswith("qual_suite_v6_")
+        for item in manifest.entries
+    )
+    assert {
+        item.coordinate.call_id for item in manifest.entries
+    }.isdisjoint(
+        item.coordinate.call_id for item in legacy_manifest.entries
+    )
+    role_contracts = {
+        item.role: item for item in current_suite.shared_role_contracts
+    }
+    candidate = current_suite.candidates[0]
+    for role in {LLMRole.DIRECT_READOUT, LLMRole.HYBRID_READOUT}:
+        contract = role_contracts[role]
+        suffix = provider_invariant_prompt_suffix(role, 2)
+        for variant in {
+            QualificationVariant.CANONICAL,
+            QualificationVariant.PROMPT_PARAPHRASE_1,
+            QualificationVariant.PROMPT_PARAPHRASE_2,
+        }:
+            template = _request_template(
+                current_suite,
+                fixture,
+                session,
+                semantic_map,
+                candidate=candidate.candidate,
+                price_card=candidate.price_card,
+                role_contract=contract,
+                measure_index=0,
+                variant=variant,
+                held_out_wave_index=None,
+                held_out_calibration_kind=None,
+            )
+            prompt_payload = template.prompt_payload
+            assert isinstance(prompt_payload, dict)
+            instructions = prompt_payload["instructions"]
+            assert isinstance(instructions, str)
+            assert instructions.endswith(suffix)
+            assert instructions.count(suffix) == 1
+
+        entry = next(
+            item
+            for item in manifest.entries
+            if item.coordinate.candidate_id == candidate.candidate.candidate_id
+            and item.coordinate.role is role
+            and item.coordinate.variant_id is QualificationVariant.CANONICAL
+        )
+        rebuilt = rebuild_qualification_call(
+            current_suite,
+            robustness_profile,
+            fixture,
+            session,
+            semantic_map,
+            entry,
+            created_at=manifest.created_at,
+        )
+        assert rebuilt.request.binding.response_schema_version == 2
+        assert rebuilt.request.binding.response_validator_version == (
+            PROVIDER_RESPONSE_READOUT_VALIDATOR_VERSION
+        )
 
 
 def test_qualification_plan_has_exact_role_and_variant_matrix():

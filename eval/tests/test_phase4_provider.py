@@ -23,6 +23,7 @@ from eval.phase4_provider import (
     ProviderRequestBinding,
     ProviderResponseContract,
     ProviderResponseContextError,
+    ProviderResponseJSONError,
     ProviderResponseSelectionError,
     ProviderResponseValidatorRegistration,
     ProviderResponseValidatorRegistry,
@@ -31,6 +32,7 @@ from eval.phase4_provider import (
     ScriptedProviderTransport,
     bind_provider_response_contract,
     build_public_development_attestation,
+    decode_provider_response_json,
     prepare_provider_request,
     price_provider_tokens,
     provider_request_content_sha256,
@@ -38,8 +40,11 @@ from eval.phase4_provider import (
     validate_terminal_provider_budget_breach_journal,
 )
 from eval.phase4_provider_semantics import (
+    PROVIDER_RESPONSE_READOUT_VALIDATOR_VERSION,
+    PROVIDER_RESPONSE_SELECTOR_VALIDATOR_VERSION,
     PROVIDER_RESPONSE_VALIDATOR_ID,
     PROVIDER_RESPONSE_VALIDATOR_VERSION,
+    provider_readout_response_adapter_for_role,
     provider_response_adapter_for_role,
     provider_response_validator_implementation_sha256,
 )
@@ -223,6 +228,7 @@ def prepared_request(
     attestation_id: str | None = None,
     provider_seed_parameter_sent: bool = True,
     response_adapter: ProviderResponseContract = OUTPUT_ADAPTER,
+    response_schema_version: int = 1,
     input_payload: JsonValue | None = None,
 ) -> PrivateStructuredProviderRequest:
     prompt_payload = {"system": "Return the exact structured contract."}
@@ -249,7 +255,7 @@ def prepared_request(
         prompt_payload=prompt_payload,
         input_payload=resolved_input_payload,
         response_schema_id=f"{role.value}_response",
-        response_schema_version=1,
+        response_schema_version=response_schema_version,
         response_adapter=response_adapter,
         privacy_attestation=attestation,
         request_seed=42,
@@ -680,6 +686,50 @@ def test_invalid_structured_output_is_billed_and_terminal():
     runtime.audit([model], [pricing])
 
 
+@pytest.mark.parametrize(
+    "raw_json",
+    [
+        '{"model_secret":"first","model_secret":"second"}',
+        '{"nested":{"model_secret":"first","model_secret":"second"}}',
+    ],
+)
+def test_provider_json_decoder_rejects_duplicate_keys_without_leaking(
+    raw_json: str,
+) -> None:
+    with pytest.raises(ProviderResponseJSONError) as caught:
+        decode_provider_response_json(raw_json)
+
+    assert caught.value.path == ()
+    assert caught.value.error_type == "duplicate_object_key"
+    rendered = repr(caught.value)
+    assert "model_secret" not in rendered
+    assert "first" not in rendered
+    assert "second" not in rendered
+
+
+def test_provider_json_decoder_preserves_historical_json_behavior() -> None:
+    raw_json = '{"items":[1,true,null,{"label":"kept"}]}'
+
+    assert decode_provider_response_json(raw_json) == json.loads(raw_json)
+    with pytest.raises(json.JSONDecodeError):
+        decode_provider_response_json("not json")
+
+
+@pytest.mark.parametrize(
+    "constant",
+    ["NaN", "Infinity", "-Infinity", "1e10000"],
+)
+def test_provider_json_decoder_rejects_nonfinite_json_numbers(
+    constant: str,
+) -> None:
+    with pytest.raises(ProviderResponseJSONError) as caught:
+        decode_provider_response_json(f'{{"probability":{constant}}}')
+
+    assert caught.value.path == ()
+    assert caught.value.error_type == "nonfinite_json_number"
+    assert constant not in repr(caught.value)
+
+
 def test_response_contract_materializes_wire_selector_from_ephemeral_context():
     robustness_profile = profile()
     model = candidate("candidate_materialized")
@@ -1098,6 +1148,144 @@ def test_official_validator_registry_rejects_untrusted_identity_before_send() ->
 
     assert runtime.ledger_snapshot().authorizations == []
     assert transport.requests == []
+
+
+def test_installed_validator_resolver_accepts_v1_v2_and_readout_v3() -> None:
+    robustness_profile = profile()
+    model = candidate("candidate_installed_validator_versions")
+    pricing = price_card(model)
+    readout_input: dict[str, JsonValue] = {
+        "canonical_option_ids": ["option_a", "option_b"],
+        "eligible_evidence_event_ids": ["evidence_one"],
+    }
+    selector_input: dict[str, JsonValue] = {
+        "provider_response_conformance": {}
+    }
+    cases = (
+        (
+            LLMRole.DIRECT_READOUT,
+            1,
+            PROVIDER_RESPONSE_VALIDATOR_VERSION,
+            readout_input,
+            provider_response_adapter_for_role(
+                LLMRole.DIRECT_READOUT,
+                response_schema_version=1,
+                input_payload=readout_input,
+                bind_request_semantics=True,
+            ),
+        ),
+        (
+            LLMRole.INTERVIEWER,
+            3,
+            PROVIDER_RESPONSE_SELECTOR_VALIDATOR_VERSION,
+            selector_input,
+            provider_response_adapter_for_role(
+                LLMRole.INTERVIEWER,
+                response_schema_version=3,
+                input_payload=selector_input,
+                bind_request_semantics=True,
+            ),
+        ),
+        (
+            LLMRole.DIRECT_READOUT,
+            2,
+            PROVIDER_RESPONSE_READOUT_VALIDATOR_VERSION,
+            readout_input,
+            provider_readout_response_adapter_for_role(
+                LLMRole.DIRECT_READOUT,
+                input_payload=readout_input,
+            ),
+        ),
+    )
+
+    for ordinal, (
+        role,
+        schema_version,
+        validator_version,
+        input_payload,
+        expected_contract,
+    ) in enumerate(cases, start=1):
+        request = prepared_request(
+            robustness_profile,
+            model,
+            pricing,
+            call_id=f"installed_validator_version_{ordinal}",
+            role=role,
+            created_at=NOW,
+            response_adapter=expected_contract,
+            response_schema_version=schema_version,
+            input_payload=input_payload,
+        )
+
+        resolved = (
+            phase4_provider_module._resolve_installed_provider_response_contract(
+                request
+            )
+        )
+
+        assert request.response_validator is not None
+        assert request.response_validator.validator_version == validator_version
+        assert resolved.artifact == request.response_validator
+        assert resolved.json_schema(mode="validation") == (
+            expected_contract.json_schema(mode="validation")
+        )
+
+
+@pytest.mark.parametrize(
+    ("artifact_field", "binding_field", "untrusted_value"),
+    [
+        ("implementation_sha256", "response_validator_sha256", "f" * 64),
+        ("validator_version", "response_validator_version", 999),
+    ],
+)
+def test_installed_readout_validator_resolver_rejects_untrusted_identity(
+    artifact_field: str,
+    binding_field: str,
+    untrusted_value: str | int,
+) -> None:
+    robustness_profile = profile()
+    model = candidate("candidate_untrusted_readout_validator")
+    pricing = price_card(model)
+    input_payload: dict[str, JsonValue] = {
+        "canonical_option_ids": ["option_a", "option_b"],
+        "eligible_evidence_event_ids": ["evidence_one"],
+    }
+    contract = provider_readout_response_adapter_for_role(
+        LLMRole.DIRECT_READOUT,
+        input_payload=input_payload,
+    )
+    request = prepared_request(
+        robustness_profile,
+        model,
+        pricing,
+        call_id="untrusted_readout_validator",
+        role=LLMRole.DIRECT_READOUT,
+        created_at=NOW,
+        response_adapter=contract,
+        response_schema_version=2,
+        input_payload=input_payload,
+    )
+    payload = request.model_dump(mode="json")
+    artifact_payload = payload["response_validator"]
+    assert isinstance(artifact_payload, dict)
+    artifact_payload[artifact_field] = untrusted_value
+    binding_payload = payload["binding"]
+    assert isinstance(binding_payload, dict)
+    binding_payload[binding_field] = (
+        content_sha256(artifact_payload)
+        if binding_field == "response_validator_sha256"
+        else untrusted_value
+    )
+    if binding_field != "response_validator_sha256":
+        binding_payload["response_validator_sha256"] = content_sha256(
+            artifact_payload
+        )
+    tampered = PrivateStructuredProviderRequest.model_validate(payload)
+
+    with pytest.raises(ValueError, match="implementation is untrusted"):
+        phase4_provider_module._resolve_installed_provider_response_contract(
+            tampered
+        )
 
 
 def test_schema_only_v1_request_round_trips_without_v2_fields() -> None:

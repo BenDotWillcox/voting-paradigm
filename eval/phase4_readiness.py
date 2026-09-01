@@ -48,8 +48,10 @@ from .phase4_provider import (
 )
 from .phase4_provider_semantics import (
     PROVIDER_CONFORMANCE_FIELD,
+    PROVIDER_RESPONSE_SCHEMA_VERSION,
     build_public_capability_question,
     provider_invariant_prompt_suffix,
+    provider_readout_response_adapter_for_role,
     provider_response_adapter_for_role,
 )
 from .phase4_robustness import (
@@ -88,6 +90,7 @@ from .prequential import PrequentialSessionScript
 READINESS_CREATED_AT = datetime(2026, 8, 21, 12, 0, tzinfo=UTC)
 READINESS_V4_CREATED_AT = datetime(2026, 8, 22, 5, 5, tzinfo=UTC)
 READINESS_V5_CREATED_AT = datetime(2026, 8, 26, 20, 5, tzinfo=UTC)
+READINESS_V6_CREATED_AT = datetime(2026, 8, 28, 20, 35, tzinfo=UTC)
 QUALIFICATION_VARIANT_IDS = (
     "canonical",
     "prompt_paraphrase_1",
@@ -121,6 +124,8 @@ HELD_OUT_INTERVIEWER_CANDIDATE_WINDOW = 10
 
 
 def _readiness_created_at(suite: Phase4TogetherSuite) -> datetime:
+    if suite.suite_version >= 6:
+        return READINESS_V6_CREATED_AT
     if suite.suite_version >= 5:
         return READINESS_V5_CREATED_AT
     if suite.suite_version >= 4:
@@ -129,6 +134,8 @@ def _readiness_created_at(suite: Phase4TogetherSuite) -> datetime:
 
 
 def _manifest_version(suite: Phase4TogetherSuite) -> int:
+    if suite.suite_version >= 6:
+        return 5
     if suite.suite_version >= 5:
         return 4
     return 3 if suite.suite_version >= 4 else 2
@@ -632,6 +639,17 @@ def _role_response_adapter(
     input_payload: JsonValue | None = None,
     bind_request_semantics: bool = False,
 ) -> ProviderResponseContract:
+    if (
+        bind_request_semantics
+        and role in READOUT_ROLES
+        and response_schema_version == PROVIDER_RESPONSE_SCHEMA_VERSION
+    ):
+        if not isinstance(input_payload, dict):
+            raise ValueError("provider readout semantics require an object input")
+        return provider_readout_response_adapter_for_role(
+            role,
+            input_payload=input_payload,
+        )
     return provider_response_adapter_for_role(
         role,
         response_schema_version=response_schema_version,
@@ -1533,8 +1551,13 @@ def build_qualification_request_manifest(
             held_out_wave_index=None,
             held_out_calibration_kind=None,
         )
+        call_id_prefix = (
+            f"qual_suite_v{suite.suite_version}"
+            if suite.suite_version >= 6
+            else "qual"
+        )
         call_id = (
-            f"qual_{candidate.candidate_id}_{measure.measure_id}_"
+            f"{call_id_prefix}_{candidate.candidate_id}_{measure.measure_id}_"
             f"{role.value}_{variant.value}"
         )
         request = _planning_request(

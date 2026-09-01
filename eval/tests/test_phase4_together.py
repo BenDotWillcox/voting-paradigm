@@ -14,6 +14,7 @@ from eval.phase4_provider import (
     build_public_development_attestation,
     prepare_provider_request,
 )
+from eval.phase4_provider_semantics import provider_invariant_prompt_suffix
 from eval.phase4_robustness import LLMRole, load_phase4_robustness_profile
 from eval.phase4_together import (
     EVIDENCE_EXTRACTOR_PROMPT_V1,
@@ -25,6 +26,7 @@ from eval.phase4_together import (
     build_together_interviewer_final_payload,
     build_together_suite_v3,
     build_together_suite_v4,
+    build_together_suite_v5,
     load_together_suite,
     validate_request_against_role_envelope,
 )
@@ -37,6 +39,9 @@ PROFILE_PATH = (
 SUITE_PATH = ROOT / "eval/fixtures/preference_eval_phase4_together_v4.json"
 LEGACY_V3_SUITE_PATH = (
     ROOT / "eval/fixtures/preference_eval_phase4_together_v3.json"
+)
+LEGACY_V5_SUITE_PATH = (
+    ROOT / "eval/fixtures/preference_eval_phase4_together_v5.json"
 )
 LEGACY_V2_SUITE_PATH = (
     ROOT / "eval/fixtures/preference_eval_phase4_together_v2.json"
@@ -139,7 +144,7 @@ def test_tracked_v4_suite_matches_preserved_builder() -> None:
 
 def test_v5_changes_only_the_interviewer_role_contract() -> None:
     legacy = build_together_suite_v4(profile())
-    current = build_default_together_suite(profile())
+    current = build_together_suite_v5(profile())
     legacy_contracts = {item.role: item for item in legacy.shared_role_contracts}
     current_contracts = {
         item.role: item for item in current.shared_role_contracts
@@ -177,6 +182,60 @@ def test_v5_changes_only_the_interviewer_role_contract() -> None:
     )
     assert current_interviewer.tool_definitions_sha256 == (
         legacy_interviewer.tool_definitions_sha256
+    )
+
+
+def test_v6_changes_only_the_readout_role_contracts() -> None:
+    legacy = build_together_suite_v5(profile())
+    current = build_default_together_suite(profile())
+    legacy_contracts = {item.role: item for item in legacy.shared_role_contracts}
+    current_contracts = {
+        item.role: item for item in current.shared_role_contracts
+    }
+
+    assert current.suite_version == 6
+    assert current.created_at == datetime(
+        2026,
+        8,
+        28,
+        20,
+        30,
+        tzinfo=timezone.utc,
+    )
+    assert current.catalog == legacy.catalog
+    assert current.provider_terms == legacy.provider_terms
+    assert current.candidates == legacy.candidates
+    assert current.workload == legacy.workload
+    for role in {
+        LLMRole.INTERVIEWER,
+        LLMRole.EVIDENCE_EXTRACTOR,
+        LLMRole.ONTOLOGY_PROPOSER,
+    }:
+        assert current_contracts[role] == legacy_contracts[role]
+    for role in {LLMRole.DIRECT_READOUT, LLMRole.HYBRID_READOUT}:
+        legacy_readout = legacy_contracts[role]
+        current_readout = current_contracts[role]
+        assert legacy_readout.response_schema_version == 1
+        assert current_readout.response_schema_version == 2
+        assert current_readout.prompt_id == f"phase4_{role.value}_together_v2"
+        assert current_readout.prompt_version == 2
+        assert current_readout.prompt_text.endswith(
+            provider_invariant_prompt_suffix(role, 2)
+        )
+        assert current_readout.response_schema_sha256 != (
+            legacy_readout.response_schema_sha256
+        )
+        assert current_readout.tool_definitions_sha256 == (
+            legacy_readout.tool_definitions_sha256
+        )
+
+
+def test_v5_suite_is_preserved_as_an_exact_audit_artifact() -> None:
+    legacy = load_together_suite(LEGACY_V5_SUITE_PATH)
+
+    assert legacy == build_together_suite_v5(profile())
+    assert content_sha256(legacy) == (
+        "e97b6213955cf86d18da98d2d1300679b17ab773838d1ed10fcdb84b1f1de9b8"
     )
 
 
@@ -413,8 +472,27 @@ def test_validate_cli_is_aggregate_and_zero_spend(capsys) -> None:
 
 
 def test_validate_cli_accepts_default_v5_builder(tmp_path, capsys) -> None:
-    current = build_default_together_suite(profile())
+    current = build_together_suite_v5(profile())
     suite_path = tmp_path / "together_suite_v5.json"
+    suite_path.write_text(
+        json.dumps(current.model_dump(mode="json"), indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+
+    exit_code = validate_main([str(suite_path), str(PROFILE_PATH)])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert captured.err == ""
+    payload = json.loads(captured.out)
+    assert payload["suite_sha256"] == content_sha256(current)
+    assert payload["network_call_count"] == 0
+    assert payload["spend_microusd"] == 0
+
+
+def test_validate_cli_accepts_default_v6_builder(tmp_path, capsys) -> None:
+    current = build_default_together_suite(profile())
+    suite_path = tmp_path / "together_suite_v6.json"
     suite_path.write_text(
         json.dumps(current.model_dump(mode="json"), indent=2, sort_keys=True),
         encoding="utf-8",

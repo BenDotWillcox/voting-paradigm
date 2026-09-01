@@ -625,3 +625,90 @@ and public Phase 4E precommitment now close two of those boundaries; the
 qualified candidate, live deployment attestation, seeds, remaining policy
 values, and calibrated thresholds still must be selected on public development
 data and frozen before any held-out response is viewed.
+
+## Qualification attempt v2 (zero-spend precommitment)
+
+The completed two-deployment qualification v1 is immutable no-winner history:
+`no_runnable_candidate_qualified`, no selected deployment, and 46,245 microusd
+spent during the attempt. Together with earlier capability work, the actual
+provider-spend prefix bound into attempt v2 is 97,287 microusd. V2 neither
+reinterprets nor overwrites that result.
+
+The two v1 failures were unlocalized root-level readout-validation errors.
+Suite v6 makes the provider-facing readout invariants field-local where
+possible, preserves the exact `1e-9` probability acceptance window, and adds a
+strict JSON decoder before Pydantic materialization. Outer response bytes must
+first decode as strict UTF-8; duplicate object keys and nonfinite numbers then
+fail closed in the Together envelope, final message content, and tool arguments.
+A separate implementation hash binds those live Together call sites, rather
+than only the decoder helper. The raw v1 JSON bodies were not retained and
+therefore cannot prove compliance with the new decoder rules. Consequently,
+attempt v2 carries zero results and schedules all 304 runnable GLM/GPT-OSS
+coordinates as fresh calls.
+
+Four paired readout-conformance calls—direct and hybrid for each candidate—are
+front-loaded inside the 304-call total. The remainder is candidate-paired and
+interleaved at corresponding source-manifest coordinates. Within each stage,
+the candidate sent first alternates across adjacent pairs, counterbalancing
+provider position instead of always favoring the same deployment. The roster,
+hard gates, provider/harness pause behavior, equal-weight direct/hybrid metric,
+and banded selection policy remain unchanged. One hard-gate-passing candidate
+may be selected, but selection is not guaranteed and the outcome is empirical.
+
+The canonical v6 suite, readiness, aggregate proof, and plan hashes are,
+respectively, `fa610e6751f688a7ece9990282b8ec3dc763395d2c939d00d643c6981587a77b`,
+`6dbd9c47859c49a0eef3451ce22626297f7f4c01fd1d315f2a61d58a01c3643e`,
+`1a332c6715317dedddb6f70728157180e32dd2d9fb62ae013e9e632b298f86a3`,
+and `af3501c9391cffa13f0a494e6879332b4cd5eb32a4bf6e932e61987dcf213dc5`.
+New projected spend is 1,500,351 microusd; new reservation maximum is
+2,384,400 microusd; cumulative authorized worst case is 2,481,687 microusd;
+and sequential projected headroom is 2,376,962 microusd under the frozen USD 4
+qualification cap.
+
+`python -m eval.validate_phase4_qualification_attempt` validates only the
+tracked surface. It rejects `private_runs` paths before reading, rebuilds both
+canonical suite versions, validates both readiness bundles from public
+development inputs, checks the proof's live response-semantics,
+readout-validator, JSON-decoder, and Together decoder-integration bindings, and
+binds the plan to the exact v6 manifest. It cannot rebuild claims derived from
+ignored v1 provider states and the private result; that audit boundary is
+stated explicitly in its aggregate output. This slice made zero provider calls,
+spent nothing, and created no live authorization.
+
+The v2 paid boundary is separately versioned. Its authorizer loads no API key,
+constructs no client, and makes no network request. It requires a fresh v6
+catalog preflight no more than 30 minutes old, the exact reviewed
+two-deployment scope artifact, and an exact-request authorization with a
+maximum two-hour lifetime. Construction is gated on the literal reviewed
+values: 304 calls, 2,384,400 microusd new reservation maximum, 97,287 microusd
+prior actual spend, and 2,481,687 microusd cumulative authorized worst case.
+The user must also affirm public-development-only inputs, no participant
+content, paired execution order, no automatic retry, and no fallback or
+replacement.
+
+Before paid execution, the runner repeats the four numeric gates, revalidates
+the fresh catalog and short-lived authorization, and rebuilds every request.
+It then creates an fsynced one-shot execution claim keyed by the exact plan
+before loading the credential or constructing the HTTP client. Existing state
+or an existing claim fails closed; crashes and ambiguous deliveries require
+manual reconciliation rather than replay.
+
+Execution preserves the plan's first four paired direct/hybrid conformance
+calls and its remaining candidate interleave. A substantive hard failure stops
+only that candidate; provider, transport, ambiguous-delivery, and harness
+conditions stop the global comparison. Progressive ledgers, journals, outputs,
+tool replays, sanitized diagnostics, and terminal candidate receipts remain in
+one run-specific ignored `eval/private_runs/` directory.
+
+The runner itself produces no winner. The separate no-network result assembler
+loads the exact scope, authorization, catalog preflight, durable execution
+claim, and both candidate state files. It requires terminal state and merged
+chronology validation, then reconciles spend and all 304 coordinate
+dispositions before applying the unchanged hard gates, equal-weight
+direct/hybrid metric, and banded selection policy. A candidate-local invalid
+output can disqualify only that candidate and still permit a qualified sibling
+to win. A global pause forces no selection, and two substantive failures
+legitimately produce no qualified deployment. The assembler writes the exact
+result only to the ignored private run directory and derives a model-output-free
+aggregate receipt under `eval/review_summaries/`. This infrastructure made no
+provider call and spent nothing.

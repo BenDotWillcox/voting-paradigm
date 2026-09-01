@@ -993,6 +993,202 @@ def test_live_transport_integrates_with_budget_runtime() -> None:
     assert ledger.calls[0].output_tokens == 3
 
 
+def test_duplicate_response_key_is_billed_invalid_output_without_leaking() -> None:
+    loaded = suite()
+    request = prepared_request(loaded)
+    artifact = loaded.candidates[1]
+
+    def handler(http_request: httpx.Request) -> httpx.Response:
+        assert http_request.url.path == "/v1/chat/completions"
+        return httpx.Response(
+            200,
+            json=chat_response(
+                content=(
+                    '{"choice":"model_secret","choice":"yes",'
+                    '"confidence":0.8}'
+                ),
+                prompt_tokens=5,
+                completion_tokens=3,
+            ),
+        )
+
+    runtime = ProviderBudgetRuntime(
+        profile(),
+        ledger_id="together_duplicate_json_ledger",
+        journal_id="together_duplicate_json_journal",
+    )
+    execution = runtime.execute(
+        request,
+        artifact.price_card,
+        OUTPUT_ADAPTER,
+        transport(loaded, handler),
+        segment=BudgetSegment.QUALIFICATION,
+    )
+
+    assert execution.output is None
+    assert execution.finalization.outcome is ProviderCallOutcome.INVALID_OUTPUT
+    assert execution.finalization.failure_code == "duplicate_json_object_key"
+    assert execution.validation_diagnostic is not None
+    assert [
+        (item.path, item.error_type)
+        for item in execution.validation_diagnostic.issues
+    ] == [([], "duplicate_object_key")]
+    assert "model_secret" not in execution.validation_diagnostic.model_dump_json()
+    assert runtime.ledger_snapshot().calls[0].billed_cost_microusd > 0
+    runtime.audit([artifact.candidate], [artifact.price_card])
+
+
+def test_duplicate_tool_argument_key_is_billed_invalid_output() -> None:
+    loaded = suite()
+    request = prepared_request(loaded, role=LLMRole.INTERVIEWER)
+    artifact = loaded.candidates[1]
+
+    class ToolExecutor:
+        def execute(self, name, arguments):
+            del name, arguments
+            raise AssertionError("duplicate tool arguments must not execute")
+
+    def handler(http_request: httpx.Request) -> httpx.Response:
+        assert http_request.url.path == "/v1/chat/completions"
+        return httpx.Response(
+            200,
+            json=chat_response(
+                content=None,
+                prompt_tokens=5,
+                completion_tokens=2,
+                tool_calls=[
+                    {
+                        "id": "tool_call_duplicate",
+                        "type": "function",
+                        "function": {
+                            "name": "read_evidence_coverage",
+                            "arguments": '{"limit":1,"limit":2}',
+                        },
+                    }
+                ],
+            ),
+        )
+
+    runtime = ProviderBudgetRuntime(
+        profile(),
+        ledger_id="together_duplicate_tool_json_ledger",
+        journal_id="together_duplicate_tool_json_journal",
+    )
+    execution = runtime.execute(
+        request,
+        artifact.price_card,
+        OUTPUT_ADAPTER,
+        transport(loaded, handler, tool_executor=ToolExecutor()),
+        segment=BudgetSegment.QUALIFICATION,
+    )
+
+    assert execution.finalization.outcome is ProviderCallOutcome.INVALID_OUTPUT
+    assert execution.finalization.failure_code == "duplicate_json_object_key"
+    assert execution.finalization.tool_call_count == 1
+    assert execution.finalization.tool_call_failure_count == 1
+    assert execution.validation_diagnostic is not None
+    assert execution.validation_diagnostic.issues[0].error_type == (
+        "duplicate_object_key"
+    )
+    runtime.audit([artifact.candidate], [artifact.price_card])
+
+
+@pytest.mark.parametrize("number", ["NaN", "1e10000"])
+def test_nonfinite_response_number_is_billed_invalid_output(number: str) -> None:
+    loaded = suite()
+    request = prepared_request(loaded)
+    artifact = loaded.candidates[1]
+
+    def handler(http_request: httpx.Request) -> httpx.Response:
+        assert http_request.url.path == "/v1/chat/completions"
+        return httpx.Response(
+            200,
+            json=chat_response(
+                content=(
+                    '{"choice":"yes","confidence":' + number + "}"
+                ),
+                prompt_tokens=5,
+                completion_tokens=3,
+            ),
+        )
+
+    runtime = ProviderBudgetRuntime(
+        profile(),
+        ledger_id="together_nonfinite_json_ledger",
+        journal_id="together_nonfinite_json_journal",
+    )
+    execution = runtime.execute(
+        request,
+        artifact.price_card,
+        OUTPUT_ADAPTER,
+        transport(loaded, handler),
+        segment=BudgetSegment.QUALIFICATION,
+    )
+
+    assert execution.finalization.outcome is ProviderCallOutcome.INVALID_OUTPUT
+    assert execution.finalization.failure_code == "nonfinite_json_number"
+    assert execution.validation_diagnostic is not None
+    assert execution.validation_diagnostic.issues[0].error_type == (
+        "nonfinite_json_number"
+    )
+    runtime.audit([artifact.candidate], [artifact.price_card])
+
+
+def test_nonfinite_tool_argument_never_executes_locally() -> None:
+    loaded = suite()
+    request = prepared_request(loaded, role=LLMRole.INTERVIEWER)
+    artifact = loaded.candidates[1]
+
+    class ToolExecutor:
+        def execute(self, name, arguments):
+            del name, arguments
+            raise AssertionError("nonfinite tool arguments must not execute")
+
+    def handler(http_request: httpx.Request) -> httpx.Response:
+        assert http_request.url.path == "/v1/chat/completions"
+        return httpx.Response(
+            200,
+            json=chat_response(
+                content=None,
+                prompt_tokens=5,
+                completion_tokens=2,
+                tool_calls=[
+                    {
+                        "id": "tool_call_nonfinite",
+                        "type": "function",
+                        "function": {
+                            "name": "read_evidence_coverage",
+                            "arguments": '{"limit":Infinity}',
+                        },
+                    }
+                ],
+            ),
+        )
+
+    runtime = ProviderBudgetRuntime(
+        profile(),
+        ledger_id="together_nonfinite_tool_json_ledger",
+        journal_id="together_nonfinite_tool_json_journal",
+    )
+    execution = runtime.execute(
+        request,
+        artifact.price_card,
+        OUTPUT_ADAPTER,
+        transport(loaded, handler, tool_executor=ToolExecutor()),
+        segment=BudgetSegment.QUALIFICATION,
+    )
+
+    assert execution.finalization.outcome is ProviderCallOutcome.INVALID_OUTPUT
+    assert execution.finalization.failure_code == "nonfinite_json_number"
+    assert execution.finalization.tool_call_count == 1
+    assert execution.finalization.tool_call_failure_count == 1
+    assert execution.validation_diagnostic is not None
+    assert execution.validation_diagnostic.issues[0].error_type == (
+        "nonfinite_json_number"
+    )
+    runtime.audit([artifact.candidate], [artifact.price_card])
+
+
 def test_shared_invocation_core_preserves_legacy_transport_result() -> None:
     loaded = suite()
     readiness = token_readiness(loaded)
@@ -1414,6 +1610,77 @@ def test_ambiguous_sent_response_preserves_outstanding_authorization() -> None:
     ledger = runtime.ledger_snapshot()
     assert len(ledger.authorizations) == 1
     assert ledger.calls == []
+
+
+@pytest.mark.parametrize(
+    "raw_envelope",
+    [
+        '{"id":"one","id":"two"}',
+        '{"id":"one","usage":{"prompt_tokens":1e10000}}',
+    ],
+)
+def test_unsafe_outer_envelope_preserves_outstanding_authorization(
+    raw_envelope: str,
+) -> None:
+    loaded = suite()
+    request = prepared_request(loaded)
+    artifact = loaded.candidates[1]
+
+    def handler(http_request: httpx.Request) -> httpx.Response:
+        del http_request
+        return httpx.Response(
+            200,
+            text=raw_envelope,
+            headers={"Content-Type": "application/json"},
+        )
+
+    runtime = ProviderBudgetRuntime(
+        profile(),
+        ledger_id="together_unsafe_envelope_ledger",
+        journal_id="together_unsafe_envelope_journal",
+    )
+    with pytest.raises(TogetherAmbiguousDeliveryError):
+        runtime.execute(
+            request,
+            artifact.price_card,
+            OUTPUT_ADAPTER,
+            transport(loaded, handler),
+            segment=BudgetSegment.QUALIFICATION,
+        )
+
+    assert len(runtime.ledger_snapshot().authorizations) == 1
+    assert runtime.ledger_snapshot().calls == []
+
+
+def test_non_utf8_outer_envelope_preserves_outstanding_authorization() -> None:
+    loaded = suite()
+    request = prepared_request(loaded)
+    artifact = loaded.candidates[1]
+
+    def handler(http_request: httpx.Request) -> httpx.Response:
+        del http_request
+        return httpx.Response(
+            200,
+            content=b'{"id":"\xff"}',
+            headers={"Content-Type": "application/json; charset=latin-1"},
+        )
+
+    runtime = ProviderBudgetRuntime(
+        profile(),
+        ledger_id="together_non_utf8_envelope_ledger",
+        journal_id="together_non_utf8_envelope_journal",
+    )
+    with pytest.raises(TogetherAmbiguousDeliveryError):
+        runtime.execute(
+            request,
+            artifact.price_card,
+            OUTPUT_ADAPTER,
+            transport(loaded, handler),
+            segment=BudgetSegment.QUALIFICATION,
+        )
+
+    assert len(runtime.ledger_snapshot().authorizations) == 1
+    assert runtime.ledger_snapshot().calls == []
 
 
 @pytest.mark.parametrize("status_code", [101, 429, 500, 503])
