@@ -17,6 +17,7 @@ fail if a provider-facing role or enforcement disposition silently disappears.
 from __future__ import annotations
 
 import inspect
+import math
 import textwrap
 from copy import deepcopy
 from enum import Enum
@@ -29,6 +30,7 @@ from pydantic import (
     Field,
     TypeAdapter,
     WithJsonSchema,
+    field_validator,
     model_validator,
 )
 
@@ -37,6 +39,7 @@ from .contracts import (
     JsonValue,
     NonEmptyText,
     PositiveVersion,
+    Probability,
     StableId,
 )
 from .fixture_io import content_sha256
@@ -156,13 +159,14 @@ class ProviderResponseInvariantManifest(ContractModel):
     record_version: Literal[
         "phase4_provider_response_invariants.v1",
         "phase4_provider_response_invariants.v2",
+        "phase4_provider_response_invariants.v3",
     ] = (
         "phase4_provider_response_invariants.v1"
     )
     manifest_id: Literal["phase4_provider_response_invariants"] = (
         "phase4_provider_response_invariants"
     )
-    manifest_version: Literal[1, 2] = 1
+    manifest_version: Literal[1, 2, 3] = 1
     response_schema_versions: dict[LLMRole, PositiveVersion] = Field(
         default_factory=lambda: {
             LLMRole.INTERVIEWER: 2,
@@ -196,6 +200,13 @@ class ProviderResponseInvariantManifest(ContractModel):
                 LLMRole.ONTOLOGY_PROPOSER: 2,
                 LLMRole.DIRECT_READOUT: 1,
                 LLMRole.HYBRID_READOUT: 1,
+            },
+            3: {
+                LLMRole.INTERVIEWER: 3,
+                LLMRole.EVIDENCE_EXTRACTOR: 2,
+                LLMRole.ONTOLOGY_PROPOSER: 2,
+                LLMRole.DIRECT_READOUT: 2,
+                LLMRole.HYBRID_READOUT: 2,
             },
         }[self.manifest_version]
         if self.response_schema_versions != expected_versions:
@@ -232,22 +243,24 @@ class ProviderResponseBehaviorSpec(ContractModel):
     record_version: Literal[
         "phase4_provider_response_behavior.v1",
         "phase4_provider_response_behavior.v2",
+        "phase4_provider_response_behavior.v3",
     ] = (
         "phase4_provider_response_behavior.v1"
     )
     behavior_id: Literal["phase4_provider_response_behavior"] = (
         "phase4_provider_response_behavior"
     )
-    behavior_version: Literal[1, 2] = 1
+    behavior_version: Literal[1, 2, 3] = 1
     probes: list[ProviderResponseBehaviorProbe]
 
     @model_validator(mode="after")
     def require_exact_invariant_bijection(self) -> Self:
-        manifest = (
-            PROVIDER_RESPONSE_INVARIANT_MANIFEST
-            if self.behavior_version == 1
-            else PROVIDER_RESPONSE_INVARIANT_MANIFEST_V2
-        )
+        if self.behavior_version == 1:
+            manifest = PROVIDER_RESPONSE_INVARIANT_MANIFEST
+        elif self.behavior_version == 2:
+            manifest = PROVIDER_RESPONSE_INVARIANT_MANIFEST_V2
+        else:
+            manifest = PROVIDER_RESPONSE_INVARIANT_MANIFEST_V3
         invariant_by_id = {
             item.invariant_id: item
             for item in manifest.invariants
@@ -642,6 +655,38 @@ PROVIDER_RESPONSE_BEHAVIOR_SPEC_V2 = ProviderResponseBehaviorSpec(
             expectation=_PROVIDER_BEHAVIOR_PROBES_V2[invariant.invariant_id][1],
         )
         for invariant in PROVIDER_RESPONSE_INVARIANT_MANIFEST_V2.invariants
+    ],
+)
+
+
+PROVIDER_RESPONSE_INVARIANT_MANIFEST_V3 = ProviderResponseInvariantManifest(
+    record_version="phase4_provider_response_invariants.v3",
+    manifest_version=3,
+    response_schema_versions={
+        LLMRole.INTERVIEWER: 3,
+        LLMRole.EVIDENCE_EXTRACTOR: 2,
+        LLMRole.ONTOLOGY_PROPOSER: 2,
+        LLMRole.DIRECT_READOUT: 2,
+        LLMRole.HYBRID_READOUT: 2,
+    },
+    invariants=[
+        item.model_copy(deep=True)
+        for item in PROVIDER_RESPONSE_INVARIANT_MANIFEST_V2.invariants
+    ],
+)
+
+
+PROVIDER_RESPONSE_BEHAVIOR_SPEC_V3 = ProviderResponseBehaviorSpec(
+    record_version="phase4_provider_response_behavior.v3",
+    behavior_version=3,
+    probes=[
+        ProviderResponseBehaviorProbe(
+            invariant_id=invariant.invariant_id,
+            role=invariant.role,
+            probe_id=_PROVIDER_BEHAVIOR_PROBES_V2[invariant.invariant_id][0],
+            expectation=_PROVIDER_BEHAVIOR_PROBES_V2[invariant.invariant_id][1],
+        )
+        for invariant in PROVIDER_RESPONSE_INVARIANT_MANIFEST_V3.invariants
     ],
 )
 
@@ -1583,3 +1628,303 @@ def provider_response_invariant_manifest_sha256() -> str:
     """Return the stable identity available to review and test tooling."""
 
     return content_sha256(PROVIDER_RESPONSE_INVARIANT_MANIFEST)
+
+
+PROVIDER_RESPONSE_READOUT_VALIDATOR_VERSION = 3
+
+
+class ProviderLLMReadoutResponseV2(ContractModel):
+    """Readout-only wire model with field-local, content-free failures.
+
+    The canonical domain response remains ``LLMReadoutResponseDraft.v1``.  This
+    wire type changes only validation observability and representation-level
+    normalization; it does not broaden the accepted probability simplex or
+    repair request-relative semantic mistakes.
+    """
+
+    record_version: Literal["phase4_llm_readout_response.v1"] = (
+        "phase4_llm_readout_response.v1"
+    )
+    option_probabilities: dict[StableId, Probability] = Field(min_length=2)
+    settled_probability: Probability
+    supporting_evidence_event_ids: list[StableId] = Field(default_factory=list)
+    unsupported_assumptions: list[PredictionUnsupportedAssumption] = Field(
+        default_factory=list
+    )
+
+    @field_validator("option_probabilities")
+    @classmethod
+    def require_probability_simplex(
+        cls,
+        value: dict[str, float],
+    ) -> dict[str, float]:
+        total = sum(value.values())
+        if not math.isclose(total, 1.0, rel_tol=0.0, abs_tol=1e-9):
+            raise pydantic_core.PydanticCustomError(
+                "probability_simplex_violation",
+                "option probabilities must sum to one",
+            )
+        # Rescaling does not broaden acceptance: it canonicalizes only vectors
+        # already inside the historical 1e-9 acceptance window.
+        return {
+            option_id: (0.0 if probability == 0.0 else probability / total)
+            for option_id, probability in value.items()
+        }
+
+    @field_validator("supporting_evidence_event_ids")
+    @classmethod
+    def canonicalize_supporting_evidence_ids(cls, value: list[str]) -> list[str]:
+        return sorted(set(value))
+
+    @field_validator("unsupported_assumptions")
+    @classmethod
+    def canonicalize_unsupported_assumptions(
+        cls,
+        value: list[PredictionUnsupportedAssumption],
+    ) -> list[PredictionUnsupportedAssumption]:
+        assumptions_by_id: dict[str, PredictionUnsupportedAssumption] = {}
+        for assumption in value:
+            previous = assumptions_by_id.get(assumption.assumption_id)
+            if previous is not None and previous != assumption:
+                raise pydantic_core.PydanticCustomError(
+                    "unsupported_assumption_id_conflict",
+                    "unsupported assumption ids must identify one exact record",
+                )
+            assumptions_by_id[assumption.assumption_id] = assumption
+        return [
+            assumptions_by_id[assumption_id]
+            for assumption_id in sorted(assumptions_by_id)
+        ]
+
+
+def _readout_v2_eligible_evidence_ids(
+    input_payload: dict[str, JsonValue],
+) -> set[str]:
+    if "eligible_evidence_event_ids" in input_payload:
+        return _string_set(
+            input_payload.get("eligible_evidence_event_ids"),
+            "eligible evidence event ids",
+        )
+    eligible_ids: set[str] = set()
+    history = input_payload.get("evidence_history")
+    if not isinstance(history, list):
+        raise ValueError("readout evidence history must be a list")
+    for record in history:
+        if not isinstance(record, dict) or record.get("source") != (
+            "public_synthetic_onboarding"
+        ):
+            continue
+        event = record.get("event")
+        if not isinstance(event, dict):
+            raise ValueError("readout onboarding evidence must be an object")
+        event_id = event.get("event_id")
+        if not isinstance(event_id, str):
+            raise ValueError("readout onboarding evidence id must be a string")
+        eligible_ids.add(event_id)
+    return eligible_ids
+
+
+def _readout_v2_materializer(
+    input_payload: dict[str, JsonValue],
+) -> Callable[[object, JsonValue | None], object]:
+    option_ids = _string_set(
+        input_payload.get("canonical_option_ids"),
+        "canonical option ids",
+    )
+    eligible_ids = _readout_v2_eligible_evidence_ids(input_payload)
+
+    def materialize(
+        value: object,
+        response_validation_context: JsonValue | None,
+    ) -> object:
+        if response_validation_context is not None:
+            raise ProviderResponseContextError(
+                failure_code="response_validation_context_unexpected"
+            )
+        if not isinstance(value, ProviderLLMReadoutResponseV2):
+            raise ProviderResponseContextError(
+                failure_code="response_materialization_failed"
+            )
+        if set(value.option_probabilities) != option_ids:
+            raise ProviderResponseSelectionError(
+                path=("option_probabilities",),
+                error_type="option_coverage_mismatch",
+            )
+        cited_ids = set(value.supporting_evidence_event_ids)
+        if not cited_ids <= eligible_ids:
+            raise ProviderResponseSelectionError(
+                path=("supporting_evidence_event_ids",),
+                error_type="ineligible_evidence_reference",
+            )
+        if eligible_ids and not cited_ids:
+            raise ProviderResponseSelectionError(
+                path=("supporting_evidence_event_ids",),
+                error_type="eligible_evidence_reference_required",
+            )
+        for index, assumption in enumerate(value.unsupported_assumptions):
+            if not set(assumption.affected_option_ids) <= option_ids:
+                raise ProviderResponseSelectionError(
+                    path=(
+                        "unsupported_assumptions",
+                        index,
+                        "affected_option_ids",
+                    ),
+                    error_type="unknown_affected_option_reference",
+                )
+        return value.model_dump(mode="json")
+
+    return materialize
+
+
+def provider_readout_response_adapter_for_role(
+    role: LLMRole,
+    *,
+    input_payload: JsonValue,
+) -> ProviderResponseContract:
+    """Build the readout schema-v2 wire contract and canonical materializer."""
+
+    if role not in {LLMRole.DIRECT_READOUT, LLMRole.HYBRID_READOUT}:
+        raise ValueError("readout provider adapter requires a readout role")
+    if not isinstance(input_payload, dict):
+        raise ValueError("readout provider adapter requires an object input")
+    schema = provider_response_schema_for_role(role, PROVIDER_RESPONSE_SCHEMA_VERSION)
+    wire_type = Annotated[
+        ProviderLLMReadoutResponseV2,
+        WithJsonSchema(schema, mode="validation"),
+    ]
+    return bind_provider_response_contract(
+        TypeAdapter(wire_type),
+        role=role,
+        input_payload=input_payload,
+        validator_id=PROVIDER_RESPONSE_VALIDATOR_ID,
+        validator_version=PROVIDER_RESPONSE_READOUT_VALIDATOR_VERSION,
+        implementation_sha256=(
+            provider_response_readout_validator_implementation_sha256()
+        ),
+        output_adapter=TypeAdapter(LLMReadoutResponseDraft),
+        materializer=_readout_v2_materializer(input_payload),
+    )
+
+
+def _provider_readout_response_contract_from_request(
+    request: PrivateStructuredProviderRequest,
+) -> ProviderResponseContract:
+    if request.binding.role not in {
+        LLMRole.DIRECT_READOUT,
+        LLMRole.HYBRID_READOUT,
+    } or request.binding.response_schema_version != PROVIDER_RESPONSE_SCHEMA_VERSION:
+        raise ValueError("readout provider validator requires schema v2")
+    return provider_readout_response_adapter_for_role(
+        request.binding.role,
+        input_payload=request.input_payload,
+    )
+
+
+def _provider_response_readout_validator_implementation_payload(
+) -> dict[str, JsonValue]:
+    validate_provider_response_semantic_runtime()
+    callables: dict[str, object] = {
+        "schema_for_role": provider_response_schema_for_role,
+        "readout_wire_model": ProviderLLMReadoutResponseV2,
+        "readout_probability_simplex": (
+            ProviderLLMReadoutResponseV2.require_probability_simplex
+        ),
+        "readout_evidence_normalization": (
+            ProviderLLMReadoutResponseV2.canonicalize_supporting_evidence_ids
+        ),
+        "readout_assumption_normalization": (
+            ProviderLLMReadoutResponseV2.canonicalize_unsupported_assumptions
+        ),
+        "readout_eligible_evidence": _readout_v2_eligible_evidence_ids,
+        "readout_materializer": _readout_v2_materializer,
+        "readout_adapter": provider_readout_response_adapter_for_role,
+        "contract_from_request": _provider_readout_response_contract_from_request,
+        "canonical_readout_model": LLMReadoutResponseDraft,
+        "canonical_readout": LLMReadoutResponseDraft.validate_response,
+        "canonical_prediction_assumption_model": PredictionUnsupportedAssumption,
+        "canonical_prediction_assumption_options": (
+            PredictionUnsupportedAssumption.canonicalize_affected_option_ids
+        ),
+        "object_input": _object,
+        "string_set_input": _string_set,
+        "provider_contract_schema": ProviderResponseContract.json_schema,
+        "provider_contract_pairing": ProviderResponseContract.__post_init__,
+        "provider_contract_validate": ProviderResponseContract.validate_python,
+        "provider_contract_dump": ProviderResponseContract.dump_python,
+        "provider_contract_bind": bind_provider_response_contract,
+        "provider_context_error": ProviderResponseContextError.__init__,
+        "provider_selection_error": ProviderResponseSelectionError.__init__,
+        "provider_registry_resolve": ProviderResponseValidatorRegistry.resolve,
+        "semantic_runtime_guard": validate_provider_response_semantic_runtime,
+    }
+    schema_versions = PROVIDER_RESPONSE_INVARIANT_MANIFEST_V3.response_schema_versions
+    return {
+        "implementation_id": PROVIDER_RESPONSE_VALIDATOR_ID,
+        "implementation_version": PROVIDER_RESPONSE_READOUT_VALIDATOR_VERSION,
+        "semantic_constants": {
+            "normalizer_id": PROVIDER_RESPONSE_NORMALIZER_ID,
+            "normalizer_version": PROVIDER_RESPONSE_NORMALIZER_VERSION,
+            "readout_schema_version": PROVIDER_RESPONSE_SCHEMA_VERSION,
+            "validator_id": PROVIDER_RESPONSE_VALIDATOR_ID,
+            "validator_version": PROVIDER_RESPONSE_READOUT_VALIDATOR_VERSION,
+            "probability_abs_tolerance": 1e-9,
+            "required_pydantic_version": REQUIRED_PROVIDER_PYDANTIC_VERSION,
+            "required_pydantic_core_version": REQUIRED_PROVIDER_PYDANTIC_CORE_VERSION,
+        },
+        "semantic_runtime": {
+            "pydantic_version": pydantic.__version__,
+            "pydantic_core_version": pydantic_core.__version__,
+            "contract_model_config": {
+                "extra": ContractModel.model_config.get("extra"),
+                "str_strip_whitespace": ContractModel.model_config.get(
+                    "str_strip_whitespace"
+                ),
+                "validate_assignment": ContractModel.model_config.get(
+                    "validate_assignment"
+                ),
+            },
+        },
+        "manifest_sha256": content_sha256(PROVIDER_RESPONSE_INVARIANT_MANIFEST_V3),
+        "behavior_spec_sha256": content_sha256(PROVIDER_RESPONSE_BEHAVIOR_SPEC_V3),
+        "normalized_source_sha256": {
+            name: _normalized_callable_source_sha256(value)
+            for name, value in sorted(callables.items())
+        },
+        "response_schema_sha256": {
+            role.value: content_sha256(
+                provider_response_schema_for_role(role, schema_versions[role])
+            )
+            for role in (LLMRole.DIRECT_READOUT, LLMRole.HYBRID_READOUT)
+        },
+        "prompt_suffix_sha256": {
+            role.value: content_sha256(
+                provider_invariant_prompt_suffix(role, schema_versions[role])
+            )
+            for role in (LLMRole.DIRECT_READOUT, LLMRole.HYBRID_READOUT)
+        },
+    }
+
+
+PROVIDER_RESPONSE_READOUT_VALIDATOR_IMPLEMENTATION_SHA256 = content_sha256(
+    _provider_response_readout_validator_implementation_payload()
+)
+
+
+def provider_response_readout_validator_implementation_sha256() -> str:
+    """Return the readout-v2 wire/materialization implementation identity."""
+
+    return PROVIDER_RESPONSE_READOUT_VALIDATOR_IMPLEMENTATION_SHA256
+
+
+PROVIDER_READOUT_RESPONSE_VALIDATOR_REGISTRY = ProviderResponseValidatorRegistry(
+    registrations=(
+        ProviderResponseValidatorRegistration(
+            validator_id=PROVIDER_RESPONSE_VALIDATOR_ID,
+            validator_version=PROVIDER_RESPONSE_READOUT_VALIDATOR_VERSION,
+            implementation_sha256=(
+                PROVIDER_RESPONSE_READOUT_VALIDATOR_IMPLEMENTATION_SHA256
+            ),
+            factory=_provider_readout_response_contract_from_request,
+        ),
+    )
+)

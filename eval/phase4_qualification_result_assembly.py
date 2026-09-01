@@ -213,10 +213,12 @@ def _carried_observations(
     return observations
 
 
-def _new_observations(
+def build_new_qualification_observations(
     plan: TwoDeploymentQualificationExecutionPlan,
     candidate_states: Sequence[TwoDeploymentCandidateExecutionState],
 ) -> list[QualificationCallObservation]:
+    """Rebuild new-call observations from exact candidate audit states."""
+
     calls = _plan_calls_by_id(plan)
     observations: list[QualificationCallObservation] = []
     for state in candidate_states:
@@ -365,7 +367,7 @@ def build_result_sources_and_observations(
     )
     observations = [
         *_carried_observations(plan, carry, source_states),
-        *_new_observations(plan, candidate_states),
+        *build_new_qualification_observations(plan, candidate_states),
     ]
     observations.sort(key=lambda item: item.source_manifest_ordinal)
     if len({item.call_id for item in observations}) != len(observations):

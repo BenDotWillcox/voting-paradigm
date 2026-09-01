@@ -10,10 +10,15 @@ content, or network client.
 
 from __future__ import annotations
 
+import ast
+import inspect
+import json
+import math
+import textwrap
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Annotated, Callable, Literal, Protocol, Self
+from typing import Annotated, Callable, Literal, Protocol, Self, cast
 
 from pydantic import (
     Field,
@@ -392,6 +397,120 @@ class ProviderResponseSelectionError(ValueError):
         super().__init__("provider response selected an unavailable value")
 
 
+class ProviderResponseJSONError(ValueError):
+    """Content-free error for an unsafe structured-response JSON shape."""
+
+    def __init__(
+        self,
+        error_type: Literal[
+            "duplicate_object_key",
+            "nonfinite_json_number",
+        ] = "duplicate_object_key",
+    ) -> None:
+        self.path: tuple[str | int, ...] = ()
+        self.error_type = error_type
+        super().__init__("provider response JSON is invalid")
+
+
+def _reject_duplicate_json_object_keys(
+    pairs: list[tuple[str, object]],
+) -> dict[str, object]:
+    decoded: dict[str, object] = {}
+    for key, value in pairs:
+        if key in decoded:
+            raise ProviderResponseJSONError()
+        decoded[key] = value
+    return decoded
+
+
+def _reject_nonfinite_json_number(_value: str) -> object:
+    raise ProviderResponseJSONError("nonfinite_json_number")
+
+
+def _decode_finite_json_float(value: str) -> float:
+    decoded = float(value)
+    if not math.isfinite(decoded):
+        raise ProviderResponseJSONError("nonfinite_json_number")
+    return decoded
+
+
+def decode_provider_response_json(value: str) -> JsonValue:
+    """Decode strict provider-authored JSON without lossy object collapse."""
+
+    return cast(
+        JsonValue,
+        json.loads(
+            value,
+            object_pairs_hook=_reject_duplicate_json_object_keys,
+            parse_constant=_reject_nonfinite_json_number,
+            parse_float=_decode_finite_json_float,
+        ),
+    )
+
+
+class ProviderResponseJSONDecoderPolicy(ContractModel):
+    """Versioned fail-closed policy at the raw provider JSON boundary."""
+
+    record_version: Literal["phase4_provider_json_decoder_policy.v1"] = (
+        "phase4_provider_json_decoder_policy.v1"
+    )
+    decoder_id: Literal["phase4_provider_response_json_decoder"] = (
+        "phase4_provider_response_json_decoder"
+    )
+    decoder_version: Literal[1] = 1
+    duplicate_object_keys_rejected_recursively: Literal[True] = True
+    malformed_json_rejected: Literal[True] = True
+    nonfinite_json_numbers_rejected: Literal[True] = True
+    raw_provider_text_retained: Literal[False] = False
+    duplicate_error_path_is_root_only: Literal[True] = True
+    duplicate_error_type: Literal["duplicate_object_key"] = (
+        "duplicate_object_key"
+    )
+    nonfinite_error_path_is_root_only: Literal[True] = True
+    nonfinite_error_type: Literal["nonfinite_json_number"] = (
+        "nonfinite_json_number"
+    )
+    implementation_sha256: Sha256Digest
+
+
+def _provider_json_decoder_implementation_payload() -> dict[str, str]:
+    callables = {
+        "ProviderResponseJSONError": ProviderResponseJSONError,
+        "_reject_duplicate_json_object_keys": (
+            _reject_duplicate_json_object_keys
+        ),
+        "_reject_nonfinite_json_number": _reject_nonfinite_json_number,
+        "_decode_finite_json_float": _decode_finite_json_float,
+        "decode_provider_response_json": decode_provider_response_json,
+    }
+    return {
+        name: content_sha256(
+            ast.dump(
+                ast.parse(textwrap.dedent(inspect.getsource(value))),
+                include_attributes=False,
+            )
+        )
+        for name, value in sorted(callables.items())
+    }
+
+
+PROVIDER_RESPONSE_JSON_DECODER_IMPLEMENTATION_SHA256 = content_sha256(
+    _provider_json_decoder_implementation_payload()
+)
+
+PROVIDER_RESPONSE_JSON_DECODER_POLICY = ProviderResponseJSONDecoderPolicy(
+    implementation_sha256=(
+        PROVIDER_RESPONSE_JSON_DECODER_IMPLEMENTATION_SHA256
+    )
+)
+
+
+def provider_response_json_decoder_implementation_sha256() -> str:
+    """Return the exact raw-JSON decoder implementation identity."""
+
+    return PROVIDER_RESPONSE_JSON_DECODER_IMPLEMENTATION_SHA256
+
+
 class ProviderResponseContextError(ValueError):
     """Content-free harness error while resolving a provider wire response."""
 
@@ -671,10 +790,32 @@ def _resolve_installed_provider_response_contract(
     # Import lazily to avoid the provider/semantics module cycle while making
     # the trusted registry impossible for a runtime caller to pre-install.
     from .phase4_provider_semantics import (
+        PROVIDER_READOUT_RESPONSE_VALIDATOR_REGISTRY,
         PROVIDER_RESPONSE_VALIDATOR_REGISTRY,
     )
 
-    return PROVIDER_RESPONSE_VALIDATOR_REGISTRY.resolve(request)
+    artifact = request.response_validator
+    if artifact is None:
+        raise ValueError("provider response-validator registry requires a binding")
+    identity = (
+        artifact.validator_id,
+        artifact.validator_version,
+        artifact.implementation_sha256,
+    )
+    matching_registries = [
+        registry
+        for registry in (
+            PROVIDER_RESPONSE_VALIDATOR_REGISTRY,
+            PROVIDER_READOUT_RESPONSE_VALIDATOR_REGISTRY,
+        )
+        if any(
+            registration.identity == identity
+            for registration in registry.registrations
+        )
+    ]
+    if len(matching_registries) != 1:
+        raise ValueError("provider response-validator implementation is untrusted")
+    return matching_registries[0].resolve(request)
 
 
 class ProviderHTTPErrorMetadata(ContractModel):
@@ -720,11 +861,13 @@ class ProviderTransportResult(ContractModel):
         "phase4_provider_transport_result.v1",
         "phase4_provider_transport_result.v2",
         "phase4_provider_transport_result.v3",
+        "phase4_provider_transport_result.v4",
     ] = (
         "phase4_provider_transport_result.v1"
     )
     outcome: Literal[
         ProviderCallOutcome.SUCCESS,
+        ProviderCallOutcome.INVALID_OUTPUT,
         ProviderCallOutcome.PROVIDER_ERROR,
         ProviderCallOutcome.TRANSPORT_ERROR,
     ]
@@ -742,6 +885,10 @@ class ProviderTransportResult(ContractModel):
         default=None,
         exclude_if=lambda value: value is None,
     )
+    response_validation_error_type: Literal[
+        "duplicate_object_key",
+        "nonfinite_json_number",
+    ] | None = Field(default=None, exclude_if=lambda value: value is None)
     input_tokens: NonNegativeCount
     output_tokens: NonNegativeCount
     provider_request_id: NonEmptyText | None = None
@@ -771,23 +918,39 @@ class ProviderTransportResult(ContractModel):
         ):
             raise ValueError("provider response validation context hash differs")
         http_error_bound = self.provider_http_error_metadata is not None
+        validation_error_bound = self.response_validation_error_type is not None
         expected_version = (
             "phase4_provider_transport_result.v2"
             if context_bound
             else (
-                "phase4_provider_transport_result.v3"
-                if http_error_bound
-                else "phase4_provider_transport_result.v1"
+                "phase4_provider_transport_result.v4"
+                if validation_error_bound
+                else (
+                    "phase4_provider_transport_result.v3"
+                    if http_error_bound
+                    else "phase4_provider_transport_result.v1"
+                )
             )
         )
         if self.record_version != expected_version:
             raise ValueError("provider transport-result version differs")
-        if context_bound and http_error_bound:
+        if sum((context_bound, http_error_bound, validation_error_bound)) > 1:
             raise ValueError("provider transport result mixes response contexts")
         if context_bound and self.outcome is not ProviderCallOutcome.SUCCESS:
             raise ValueError("failed transport result cannot carry response context")
         if http_error_bound and self.outcome is not ProviderCallOutcome.PROVIDER_ERROR:
             raise ValueError("HTTP error metadata requires a provider error")
+        if validation_error_bound != (
+            self.outcome is ProviderCallOutcome.INVALID_OUTPUT
+        ):
+            raise ValueError("invalid output must bind a response validation error")
+        if validation_error_bound:
+            expected_failure_code = {
+                "duplicate_object_key": "duplicate_json_object_key",
+                "nonfinite_json_number": "nonfinite_json_number",
+            }[self.response_validation_error_type]
+            if self.failure_code != expected_failure_code:
+                raise ValueError("response validation failure code differs")
         if self.tool_call_failure_count > self.tool_call_count:
             raise ValueError("tool-call failures cannot exceed tool calls")
         if self.outcome is ProviderCallOutcome.SUCCESS:
@@ -1083,7 +1246,8 @@ def _structured_output_diagnostic(
     request: PrivateStructuredProviderRequest,
     finalization: ProviderCallFinalization,
     error: (
-        ProviderResponseSelectionError
+        ProviderResponseJSONError
+        | ProviderResponseSelectionError
         | ValidationError
         | TypeError
         | ValueError
@@ -1092,7 +1256,10 @@ def _structured_output_diagnostic(
     property_names = _response_schema_property_names(
         request.response_json_schema
     )
-    if isinstance(error, ProviderResponseSelectionError):
+    if isinstance(
+        error,
+        (ProviderResponseJSONError, ProviderResponseSelectionError),
+    ):
         issues = [
             ProviderStructuredOutputValidationIssue(
                 path=[
@@ -2048,9 +2215,21 @@ class ProviderBudgetRuntime:
                 if transport_result.provider_http_error_metadata is not None
                 else None
             )
+            validation_diagnostic = (
+                _structured_output_diagnostic(
+                    request,
+                    finalization,
+                    ProviderResponseJSONError(
+                        transport_result.response_validation_error_type
+                    ),
+                )
+                if transport_result.response_validation_error_type is not None
+                else None
+            )
             return ProviderExecutionResult(
                 None,
                 finalization,
+                validation_diagnostic=validation_diagnostic,
                 provider_error_diagnostic=http_diagnostic,
             )
         try:

@@ -40,8 +40,8 @@ from eval.phase4_robustness import BudgetSegment, LLMRole
 from eval.phase4_robustness import load_phase4_robustness_profile
 from eval.phase4_semantic import load_authored_semantic_map
 from eval.phase4_together import (
-    build_default_together_suite,
     build_together_suite_v4,
+    build_together_suite_v5,
     load_together_suite,
 )
 from eval.prequential import load_session_script
@@ -284,7 +284,7 @@ def test_v4_capability_plan_remains_exact_and_v5_advances_identity() -> None:
         CAPABILITY_PLAN_V3_CREATED_AT,
     )
 
-    current_suite = build_default_together_suite(robustness_profile)
+    current_suite = build_together_suite_v5(robustness_profile)
     assert capability_plan_version_and_time(current_suite.suite_version) == (
         4,
         CAPABILITY_PLAN_V4_CREATED_AT,

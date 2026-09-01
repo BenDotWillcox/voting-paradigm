@@ -73,6 +73,7 @@ CAPTURED_AT = datetime(2026, 8, 20, 12, 0, tzinfo=timezone.utc)
 SUITE_V3_CREATED_AT = datetime(2026, 8, 21, 18, 0, tzinfo=timezone.utc)
 SUITE_V4_CREATED_AT = datetime(2026, 8, 22, 5, 0, tzinfo=timezone.utc)
 SUITE_V5_CREATED_AT = datetime(2026, 8, 26, 20, 0, tzinfo=timezone.utc)
+SUITE_V6_CREATED_AT = datetime(2026, 8, 28, 20, 30, tzinfo=timezone.utc)
 
 EVIDENCE_EXTRACTOR_PROMPT_V1 = (
     "Extract only preference claims explicitly supported by the supplied "
@@ -986,6 +987,13 @@ def _role_contracts(*, suite_version: int) -> list[SharedRoleContract]:
         LLMRole.EVIDENCE_EXTRACTOR,
         LLMRole.ONTOLOGY_PROPOSER,
     }
+    if suite_version >= 6:
+        v2_schema_roles.update(
+            {
+                LLMRole.DIRECT_READOUT,
+                LLMRole.HYBRID_READOUT,
+            }
+        )
     for role in sorted(LLMRole, key=lambda item: item.value):
         prompt, response_contract_id = definitions[role]
         interviewer_selector = (
@@ -1113,7 +1121,7 @@ def _workload_plan() -> TogetherWorkloadPlan:
 def _build_together_suite(
     profile: Phase4ERobustnessProfile,
     *,
-    suite_version: Literal[3, 4, 5],
+    suite_version: Literal[3, 4, 5, 6],
 ) -> Phase4TogetherSuite:
     """Build one exact no-network Together suite version."""
 
@@ -1176,6 +1184,7 @@ def _build_together_suite(
             3: SUITE_V3_CREATED_AT,
             4: SUITE_V4_CREATED_AT,
             5: SUITE_V5_CREATED_AT,
+            6: SUITE_V6_CREATED_AT,
         }[suite_version],
         robustness_profile_id=profile.profile_id,
         robustness_profile_version=profile.profile_version,
@@ -1206,9 +1215,17 @@ def build_together_suite_v4(
     return _build_together_suite(profile, suite_version=4)
 
 
+def build_together_suite_v5(
+    profile: Phase4ERobustnessProfile,
+) -> Phase4TogetherSuite:
+    """Rebuild the preserved v5 interviewer-selector audit artifact."""
+
+    return _build_together_suite(profile, suite_version=5)
+
+
 def build_default_together_suite(
     profile: Phase4ERobustnessProfile,
 ) -> Phase4TogetherSuite:
-    """Build suite v5 with trusted local interviewer-question hydration."""
+    """Build suite v6 with a locally normalized readout wire contract."""
 
-    return _build_together_suite(profile, suite_version=5)
+    return _build_together_suite(profile, suite_version=6)

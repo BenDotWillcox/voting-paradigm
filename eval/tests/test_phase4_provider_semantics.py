@@ -12,14 +12,20 @@ from eval.fixture_io import content_sha256
 from eval.phase4_provider_semantics import (
     PROVIDER_RESPONSE_BEHAVIOR_SPEC,
     PROVIDER_RESPONSE_BEHAVIOR_SPEC_V2,
+    PROVIDER_RESPONSE_BEHAVIOR_SPEC_V3,
     PROVIDER_RESPONSE_INVARIANT_MANIFEST,
     PROVIDER_RESPONSE_INVARIANT_MANIFEST_V2,
+    PROVIDER_RESPONSE_INVARIANT_MANIFEST_V3,
+    PROVIDER_RESPONSE_READOUT_VALIDATOR_IMPLEMENTATION_SHA256,
+    PROVIDER_RESPONSE_READOUT_VALIDATOR_VERSION,
     PROVIDER_RESPONSE_SELECTOR_VALIDATOR_IMPLEMENTATION_SHA256,
     PROVIDER_RESPONSE_VALIDATOR_IMPLEMENTATION_SHA256,
     InterviewerQuestionSelectionContext,
+    ProviderLLMReadoutResponseV2,
     ProviderInvariantDisposition,
     build_public_capability_question,
     provider_invariant_prompt_suffix,
+    provider_readout_response_adapter_for_role,
     provider_response_adapter_for_role,
     provider_response_schema_for_role,
     validate_provider_response_semantic_runtime,
@@ -34,6 +40,7 @@ from eval.phase4_provider import (
     ProviderResponseContextError,
     ProviderResponseSelectionError,
 )
+from eval.phase4_llm_readout import LLMReadoutResponseDraft
 from eval.phase4_robustness import LLMRole
 from eval.phase4_together import load_together_suite
 
@@ -167,11 +174,30 @@ def test_v2_manifest_adds_selector_grounding_and_local_materialization() -> None
     )
 
 
+def test_v3_manifest_advances_only_the_two_readout_schemas() -> None:
+    manifest = PROVIDER_RESPONSE_INVARIANT_MANIFEST_V3
+
+    assert manifest.record_version == "phase4_provider_response_invariants.v3"
+    assert manifest.response_schema_versions == {
+        LLMRole.INTERVIEWER: 3,
+        LLMRole.EVIDENCE_EXTRACTOR: 2,
+        LLMRole.ONTOLOGY_PROPOSER: 2,
+        LLMRole.DIRECT_READOUT: 2,
+        LLMRole.HYBRID_READOUT: 2,
+    }
+    assert manifest.invariants == PROVIDER_RESPONSE_INVARIANT_MANIFEST_V2.invariants
+    assert {
+        item.invariant_id for item in PROVIDER_RESPONSE_BEHAVIOR_SPEC_V3.probes
+    } == {item.invariant_id for item in manifest.invariants}
+
+
 def test_provider_response_behavior_identity_is_frozen() -> None:
     assert PROVIDER_RESPONSE_VALIDATOR_IMPLEMENTATION_SHA256 == (
         "f077e2713b7ba0e6735f07e0ee367cc6d2203074841f78afda86ca450c009a09"
     )
     assert len(PROVIDER_RESPONSE_SELECTOR_VALIDATOR_IMPLEMENTATION_SHA256) == 64
+    assert PROVIDER_RESPONSE_READOUT_VALIDATOR_VERSION == 3
+    assert len(PROVIDER_RESPONSE_READOUT_VALIDATOR_IMPLEMENTATION_SHA256) == 64
 
 
 def test_behavior_identity_binds_conformance_field(monkeypatch) -> None:
@@ -672,6 +698,153 @@ def test_readout_adapter_requires_exact_options_and_eligible_citation(
                 "unsupported_assumptions": [],
             }
         )
+
+
+def _readout_v2_adapter(role: LLMRole = LLMRole.DIRECT_READOUT):
+    return provider_readout_response_adapter_for_role(
+        role,
+        input_payload={
+            "canonical_option_ids": ["option_a", "option_b"],
+            "eligible_evidence_event_ids": ["evidence_one"],
+        },
+    )
+
+
+def _readout_v2_payload() -> dict[str, object]:
+    return {
+        "option_probabilities": {"option_a": 0.4, "option_b": 0.6},
+        "settled_probability": 0.6,
+        "supporting_evidence_event_ids": ["evidence_one"],
+        "unsupported_assumptions": [],
+    }
+
+
+@pytest.mark.parametrize(
+    "role",
+    [LLMRole.DIRECT_READOUT, LLMRole.HYBRID_READOUT],
+)
+def test_readout_v2_materializes_the_canonical_v1_response(role: LLMRole) -> None:
+    adapter = _readout_v2_adapter(role)
+    payload = _readout_v2_payload()
+    payload["option_probabilities"] = {
+        "option_a": 0.4,
+        "option_b": 0.6000000005,
+    }
+    payload["supporting_evidence_event_ids"] = [
+        "evidence_one",
+        "evidence_one",
+    ]
+    assumption = {
+        "assumption_id": "scope_assumption",
+        "description": "The scope is uncertain.",
+        "affected_option_ids": ["option_b", "option_a", "option_b"],
+    }
+    payload["unsupported_assumptions"] = [assumption, deepcopy(assumption)]
+
+    accepted = adapter.validate_python(payload)
+
+    assert isinstance(accepted, LLMReadoutResponseDraft)
+    assert accepted.record_version == "phase4_llm_readout_response.v1"
+    assert sum(accepted.option_probabilities.values()) == pytest.approx(1.0)
+    assert accepted.supporting_evidence_event_ids == ["evidence_one"]
+    assert len(accepted.unsupported_assumptions) == 1
+    assert accepted.unsupported_assumptions[0].affected_option_ids == [
+        "option_a",
+        "option_b",
+    ]
+    assert adapter.artifact is not None
+    assert adapter.artifact.validator_version == (
+        PROVIDER_RESPONSE_READOUT_VALIDATOR_VERSION
+    )
+    assert adapter.artifact.implementation_sha256 == (
+        PROVIDER_RESPONSE_READOUT_VALIDATOR_IMPLEMENTATION_SHA256
+    )
+    assert adapter.json_schema() == provider_response_schema_for_role(role, 2)
+
+
+def test_readout_v2_rejects_probability_drift_outside_the_historical_window() -> None:
+    payload = _readout_v2_payload()
+    payload["option_probabilities"] = {
+        "option_a": 0.4,
+        "option_b": 0.600000002,
+    }
+
+    with pytest.raises(ValidationError) as caught:
+        _readout_v2_adapter().validate_python(payload)
+
+    issue = caught.value.errors(include_input=False)[0]
+    assert issue["loc"] == ("option_probabilities",)
+    assert issue["type"] == "probability_simplex_violation"
+
+
+def test_readout_v2_localizes_conflicting_assumption_ids() -> None:
+    payload = _readout_v2_payload()
+    payload["unsupported_assumptions"] = [
+        {
+            "assumption_id": "scope_assumption",
+            "description": "The first interpretation.",
+            "affected_option_ids": ["option_a"],
+        },
+        {
+            "assumption_id": "scope_assumption",
+            "description": "A conflicting interpretation.",
+            "affected_option_ids": ["option_b"],
+        },
+    ]
+
+    with pytest.raises(ValidationError) as caught:
+        _readout_v2_adapter().validate_python(payload)
+
+    issue = caught.value.errors(include_input=False)[0]
+    assert issue["loc"] == ("unsupported_assumptions",)
+    assert issue["type"] == "unsupported_assumption_id_conflict"
+
+
+@pytest.mark.parametrize(
+    ("payload_update", "expected_path", "expected_error_type"),
+    [
+        (
+            {"option_probabilities": {"option_a": 0.4, "option_c": 0.6}},
+            ("option_probabilities",),
+            "option_coverage_mismatch",
+        ),
+        (
+            {"supporting_evidence_event_ids": ["evidence_two"]},
+            ("supporting_evidence_event_ids",),
+            "ineligible_evidence_reference",
+        ),
+        (
+            {"supporting_evidence_event_ids": []},
+            ("supporting_evidence_event_ids",),
+            "eligible_evidence_reference_required",
+        ),
+        (
+            {
+                "unsupported_assumptions": [
+                    {
+                        "assumption_id": "scope_assumption",
+                        "description": "The scope is uncertain.",
+                        "affected_option_ids": ["option_c"],
+                    }
+                ]
+            },
+            ("unsupported_assumptions", 0, "affected_option_ids"),
+            "unknown_affected_option_reference",
+        ),
+    ],
+)
+def test_readout_v2_localizes_request_relative_semantic_failures(
+    payload_update: dict[str, object],
+    expected_path: tuple[str | int, ...],
+    expected_error_type: str,
+) -> None:
+    payload = {**_readout_v2_payload(), **payload_update}
+
+    with pytest.raises(ProviderResponseSelectionError) as caught:
+        _readout_v2_adapter().validate_python(payload)
+
+    assert caught.value.path == expected_path
+    assert caught.value.error_type == expected_error_type
 
 
 def _interviewer_probe_adapter():

@@ -15,14 +15,17 @@ provider request text.
 
 from __future__ import annotations
 
+import ast
+import inspect
 import json
 import os
+import textwrap
 import time
-from hashlib import sha256
 from collections.abc import Callable, Mapping
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 from enum import Enum
+from hashlib import sha256
 from pathlib import Path
 from typing import Annotated, Literal, Protocol, Self
 
@@ -64,8 +67,10 @@ from .phase4_provider import (
     ProviderHTTPErrorMetadata,
     ProviderHTTPErrorType,
     ProviderRejectedRequestField,
+    ProviderResponseJSONError,
     ProviderSeedStatus,
     ProviderTransportResult,
+    decode_provider_response_json,
     provider_request_content_sha256,
     price_provider_tokens,
 )
@@ -1534,6 +1539,31 @@ class _TogetherInvocationCore:
         allowed_tool_names = {
             str(item["name"]) for item in request.tool_definitions
         }
+
+        def invalid_json_result(
+            error: ProviderResponseJSONError,
+        ) -> ProviderTransportResult:
+            failure_code = {
+                "duplicate_object_key": "duplicate_json_object_key",
+                "nonfinite_json_number": "nonfinite_json_number",
+            }[error.error_type]
+            return ProviderTransportResult(
+                record_version="phase4_provider_transport_result.v4",
+                outcome=ProviderCallOutcome.INVALID_OUTPUT,
+                output_payload=None,
+                response_validation_error_type=error.error_type,
+                input_tokens=total_input,
+                output_tokens=total_output,
+                provider_request_id="|".join(request_ids),
+                provider_request_sent=True,
+                provider_seed_status=_seed_status(request, choices_seen),
+                tool_call_count=tool_call_count,
+                tool_call_failure_count=tool_call_failure_count,
+                latency_ms=(time.perf_counter() - started) * 1000,
+                failure_code=failure_code,
+                completed_at=self._clock(),
+            )
+
         for tool_round in range(self._max_tool_rounds + 1):
             local_count = self._count_payload(request, payload)
             cumulative_local_input_tokens += local_count.input_token_count
@@ -1605,9 +1635,16 @@ class _TogetherInvocationCore:
                     completed_at=self._clock(),
                 )
             try:
-                raw_payload = response.json()
+                raw_payload = decode_provider_response_json(
+                    response.content.decode("utf-8", errors="strict")
+                )
                 parsed = _TogetherChatResponse.model_validate(raw_payload)
-            except (json.JSONDecodeError, ValidationError, ValueError) as error:
+            except (
+                UnicodeDecodeError,
+                json.JSONDecodeError,
+                ValidationError,
+                ValueError,
+            ) as error:
                 raise TogetherAmbiguousDeliveryError(
                     request.binding.call_id,
                     "together_response_unverifiable",
@@ -1643,7 +1680,9 @@ class _TogetherInvocationCore:
                     )
                 output: JsonValue = choice.message.content or ""
                 try:
-                    output = json.loads(output)
+                    output = decode_provider_response_json(output)
+                except ProviderResponseJSONError as error:
+                    return invalid_json_result(error)
                 except json.JSONDecodeError:
                     pass
                 latency_ms = (time.perf_counter() - started) * 1000
@@ -1721,7 +1760,9 @@ class _TogetherInvocationCore:
                         or tool_call.function.name not in allowed_tool_names
                     ):
                         raise ValueError("Together tool call is not authorized")
-                    arguments = json.loads(tool_call.function.arguments)
+                    arguments = decode_provider_response_json(
+                        tool_call.function.arguments
+                    )
                     result = self._tool_executor.execute(
                         tool_call.function.name,
                         arguments,
@@ -1732,6 +1773,9 @@ class _TogetherInvocationCore:
                         == _CANDIDATE_QUESTION_TOOL_NAME
                     ):
                         candidate_question_results.append(result)
+                except ProviderResponseJSONError as error:
+                    tool_call_failure_count += 1
+                    return invalid_json_result(error)
                 except (json.JSONDecodeError, ValidationError, ValueError):
                     tool_call_failure_count += 1
                     return ProviderTransportResult(
@@ -1775,6 +1819,30 @@ class _TogetherInvocationCore:
                     payload,
                 )
         raise AssertionError("Together tool loop did not terminate")
+
+
+def _together_json_decoder_integration_source_sha256() -> str:
+    """Hash the live method containing both provider JSON decode call sites."""
+
+    return content_sha256(
+        ast.dump(
+            ast.parse(
+                textwrap.dedent(inspect.getsource(_TogetherInvocationCore.invoke))
+            ),
+            include_attributes=False,
+        )
+    )
+
+
+TOGETHER_JSON_DECODER_INTEGRATION_SHA256 = (
+    _together_json_decoder_integration_source_sha256()
+)
+
+
+def together_json_decoder_integration_sha256() -> str:
+    """Return the exact live response/tool-argument decoder integration hash."""
+
+    return TOGETHER_JSON_DECODER_INTEGRATION_SHA256
 
 
 def _build_together_invocation_core(
