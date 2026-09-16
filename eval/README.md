@@ -10,12 +10,36 @@ under fixed-sequence, random, and max-variance acquisition policies. Synthetic
 personas have known latent utilities, and held-out pairs never enter
 acquisition.
 
+The probability metrics target the sign of each persona's latent utility gap,
+not a separately sampled held-out response. Both model families are read
+through the same evaluation-only tie-split posterior direction probability,
+`P(u_a > u_b) + 0.5 P(u_a = u_b)`, then scored with mean log probability,
+direction accuracy, a one-coordinate binary Brier score, and latent-direction
+reliability bins. The log score floors probabilities at `1e-9`. Latent gaps at
+or below the configured tie tolerance are excluded, and each trial records
+both the raw holdout count and the effective scored denominator. Exact
+posterior probability ties receive half accuracy credit. Kendall tau uses
+tau-b, with an all-tied posterior ranking assigned `0.0` to represent no rank
+information; the question-efficiency marker is the first question count at
+which that score reaches the configured threshold, not a claim of sustained
+convergence.
+
+This track evaluates latent-order recovery. It does not evaluate calibration
+of either model family's production `predict_preference` readout; doing that
+would require separately sampled held-out responses and a distinct response-
+prediction estimand.
+
+The `gaussian_gap`, `logistic_choice`, and `sloppy` response models are distinct
+synthetic stress scenarios. None is claimed to reproduce either fitted
+model's likelihood exactly.
+
 ```bash
 python -m eval.run_preference_eval
 ```
 
-Use this track for model misspecification, response-noise, acquisition-policy,
-and parameter-sweep development. It does not establish human-voter validity.
+Use this track for response-process sensitivity, response-noise,
+acquisition-policy, and parameter-sweep development. It does not establish
+human-voter validity.
 
 ## Standardized Human-Measure Track
 

@@ -277,8 +277,9 @@ All LLM calls live in Python. One framework for prompts, Pydantic output schemas
 Proper ML evaluation, reproducible seeds, held-out splits. Each demo contributes its own metrics:
 
 - **Demo 1 — voting methods:** social welfare metrics (e.g., Borda-score of winner, Condorcet efficiency across simulated elections), and sensitivity of outcome to method choice given a fixed electorate.
-- **Demo 2 — synthetic preference models:** held-out pairwise log-likelihood,
-  Kendall τ, Brier score, calibration, and questions-to-convergence curves.
+- **Demo 2 — synthetic preference models:** held-out latent-direction log
+  score, accuracy, one-coordinate binary Brier score, reliability, Kendall
+  tau-b curves, and first-threshold-attainment summaries.
 - **Demo 2 — human measure prediction:** prequential option log loss,
   high-confidence delegated error with risk/coverage, calibration,
   generalization gaps, test-retest stability, and secondary ballot-format

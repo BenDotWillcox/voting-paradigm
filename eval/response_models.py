@@ -1,19 +1,19 @@
 """
-Response models: how a persona turns a true utility gap into slider evidence.
+Response scenarios: how a persona turns a true utility gap into slider evidence.
 
-The original harness had exactly one response model — Gaussian noise on the
-continuous gap — which is the Gaussian linear model's own likelihood. Any
-comparison run under it alone hands the Gaussian model a rigged game. These
-simulators make the generative assumption an explicit, swept-over choice so
-the model comparison becomes a misspecification study:
+The simulators make the response process an explicit, swept-over sensitivity
+axis. They resemble assumptions made by the fitted models without claiming an
+exact generative match:
 
-- ``gaussian_gap``    matches GaussianLinearUtilityModel's likelihood.
-- ``logistic_choice`` matches BradleyTerryLaplaceModel's likelihood: only the
-  *direction* is stochastic (Bernoulli through a logistic link); the reported
-  magnitude carries no extra signal.
-- ``sloppy``          matches neither: occasional lapses (random answers),
-  tanh compression of perceived gaps, and integer slider ticks — a stylized
-  "real human on a slider" model.
+- ``gaussian_gap`` adds Gaussian noise to the latent gap before scaling and
+  clipping it onto the slider. Its scale, clipping, and constant generative
+  noise differ from the Gaussian model's normalized, strength-weighted
+  observation likelihood.
+- ``logistic_choice`` samples a temperature-scaled binary choice and reports a
+  fixed slider magnitude. Its temperature and fixed evidence weight differ
+  from the Bradley-Terry model's fitted likelihood.
+- ``sloppy`` adds occasional random responses, tanh compression, and integer
+  slider ticks as a deliberately stylized stress condition.
 
 All randomness flows through the injected numpy Generator; a response model
 instance is stateless, so trials stay byte-deterministic given the seed.
@@ -47,9 +47,10 @@ class GaussianGapResponseModel:
 
     value = clip((gap + N(0, noise_std^2)) * response_scale, -10, 10)
 
-    This is exactly the observation model the Gaussian linear utility model
-    assumes, so under this simulator that model is correctly specified.
-    ``response_scale = 5`` maps the full [-2, 2] gap range onto the slider.
+    This resembles a continuous Gaussian observation, but it is not an exact
+    match for the fitted Gaussian model because scaling, clipping, and noise
+    weighting differ. ``response_scale = 5`` maps the full [-2, 2] gap range
+    onto the slider.
     """
 
     noise_std: float = 0.3
@@ -77,10 +78,10 @@ class LogisticChoiceResponseModel:
 
     P(prefer a) = sigmoid(gap / temperature); value = +/- magnitude.
 
-    This is Bradley-Terry's generative assumption, so under this simulator
-    the BT model is correctly specified and the Gaussian model is fitting a
-    continuous observation that never varies in size. Lower temperature =
-    more deterministic choices.
+    This resembles a Bradley-Terry response process, but it is not an exact
+    match for the fitted model because its temperature and fixed-magnitude
+    evidence weight differ. Lower temperature means more deterministic
+    choices.
     """
 
     temperature: float = 0.5
@@ -111,8 +112,8 @@ class SloppyResponseModel:
     moderate preferences cluster mid-slider and only extreme gaps reach the
     ends — then rounded to integer slider ticks.
 
-    Neither model's likelihood matches this; it measures graceful
-    degradation under realistic misspecification.
+    This is a stylized stress condition rather than a validated model of human
+    response behavior.
     """
 
     noise_std: float = 0.3
