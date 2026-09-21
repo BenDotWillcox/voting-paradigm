@@ -1,0 +1,5 @@
+# Optional offline-benchmark/plotting environment; no provider packages needed.
+# Python 3.11.3 was used for the published reference run.
+numpy==2.4.6
+scipy==1.17.1
+matplotlib==3.10.8

@@ -21,6 +21,16 @@ the author cares about.
 
 Demos share infrastructure (one repo, one Next.js shell, one FastAPI service, one DB) but are conceptually independent — each is a self-contained answer to one objection against electoral reform.
 
+### Preference-model evidence
+
+The [synthetic benchmark](eval/benchmarks/synthetic_v1/README.md) compares two
+preference models, three question-selection policies, and three response
+scenarios across 1,080 seeded trials. It includes reproducible learning curves,
+endpoint distributions, paired method comparisons, reliability plots, full
+trial data, and exact settings.
+It measures recovery of known synthetic latent orderings within a fixed item
+bank—not human ballot accuracy or calibrated production vote predictions.
+
 ## Architecture
 
 Two processes. Next.js owns UI, routing, forms, and DB writes. A single FastAPI service owns numerical modeling, voting resolution, LLM orchestration, and simulation — with one router per demo.

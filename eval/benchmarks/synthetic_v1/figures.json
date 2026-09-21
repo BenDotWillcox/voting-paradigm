@@ -1,0 +1,21 @@
+{
+  "environment": {
+    "matplotlib": "3.10.8",
+    "numpy": "2.4.6",
+    "python": "3.11.3"
+  },
+  "figure_manifest_version": 1,
+  "input_sha256": {
+    "gaussian_gap.json.gz": "3dfc3c99b042e577e5a20e321073f56c66635ff06875708ea910da11362f7a19",
+    "logistic_choice.json.gz": "3b6ed12e611ac130912996d856a7fdb4f16c2ac7d93ba824aa7047fc202cbd9d",
+    "sloppy.json.gz": "121f3e8b194196418dd7b51069d638253fe8ded15d2b8bdc0d538576ef098a25"
+  },
+  "png_sha256": {
+    "final_reliability.png": "8e4a711afcaae8a02730ed1f77157e26e502d1203d95411a7c872424d3fbfa4e",
+    "final_spread.png": "627d10d2361b1ecd84c3cf8f49838d90c07111ddb3513ae7ebb93a2d8a09ac88",
+    "learning_curves.png": "20f0844514a1a1cedc5c6df319e8901282bdac54a1b1ce85a5394c22cdf9edba"
+  },
+  "source_sha256": {
+    "eval/plot_synthetic_benchmark.py": "b58d7af81a153ff36eb07cd19d19734354e6cedf3793492507a218ec068dc1f2"
+  }
+}

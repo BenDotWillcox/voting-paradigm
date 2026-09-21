@@ -1,0 +1,43 @@
+{
+  "benchmark_id": "synthetic_latent_order_v1",
+  "evaluation": {
+    "base_seed": 42,
+    "holdout_fraction": 0.2,
+    "model_names": [
+      "gaussian_linear",
+      "bradley_terry"
+    ],
+    "model_params": {},
+    "n_questions": 25,
+    "n_reliability_bins": 10,
+    "n_seeds": 3,
+    "policy_names": [
+      "fixed_sequence",
+      "random",
+      "max_variance"
+    ],
+    "tau_threshold": 0.7,
+    "tie_epsilon": 1e-09
+  },
+  "persona_generator": {
+    "concentration": 0.5,
+    "jitter_std": 0.15,
+    "n": 20,
+    "seed": 20260916
+  },
+  "response_scenarios": {
+    "gaussian_gap": {
+      "noise_std": 0.3,
+      "response_scale": 5.0
+    },
+    "logistic_choice": {
+      "magnitude": 5.0,
+      "temperature": 0.5
+    },
+    "sloppy": {
+      "gain": 1.5,
+      "lapse_rate": 0.1,
+      "noise_std": 0.3
+    }
+  }
+}

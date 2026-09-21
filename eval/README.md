@@ -41,6 +41,27 @@ Use this track for response-process sensitivity, response-noise,
 acquisition-policy, and parameter-sweep development. It does not establish
 human-voter validity.
 
+### Bounded reference benchmark
+
+See [the synthetic benchmark](benchmarks/synthetic_v1/README.md) for the
+1,080-trial, 18-cell comparison: 20 generated profiles, three seeds, and
+25 questions per trial. The package includes the executed configuration,
+generated utilities, compressed full results, CSVs, and reproducible PNG
+curves with a separate figure-hash manifest. Paired endpoint differences compare
+methods on the same profile/seed blocks. Between-trial and paired spread are
+descriptive, not confidence intervals; the existing simulator shares each
+seed's noise stream across profiles.
+The optional plotting environment is `eval/requirements-benchmark.txt`.
+
+```bash
+python -m eval.run_synthetic_benchmark --output-dir .cache/synthetic-v1 --workers 3
+python -m eval.plot_synthetic_benchmark .cache/synthetic-v1
+```
+
+Scratch runs under `eval/results/` remain ignored. Only this explicitly
+synthetic, curated reference directory is intended for version control;
+the private human-study paths and their publication rules are unchanged.
+
 ## Standardized Human-Measure Track
 
 The human track will evaluate pre-answer predictions on independent civic

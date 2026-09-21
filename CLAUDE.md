@@ -447,6 +447,13 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 - Phase 4E qualification attempt v2 in `eval/phase4_qualification_attempt.py`: the completed v1 result remains immutable no-winner history after two unlocalized root-level readout failures; suite/readiness v6 bind field-local readout validation and strict UTF-8 plus duplicate/nonfinite raw-JSON decoding without widening the `1e-9` probability acceptance rule, including a separate hash over the live Together envelope/content/tool-argument integration; absent historical raw bodies cannot prove the new compliance boundary, so none of the prior successes carries and all 304 GLM/GPT-OSS coordinates are fresh; four paired direct/hybrid conformance calls are included within the 304-call plan, and pair-first candidate position alternates within each stage, while the roster, hard gates, equal-weight metric, and banded selection remain unchanged and any winner remains empirical; the tracked suite/readiness/proof/plan hashes are `fa610e67...a77b`, `6dbd9c47...643e`, `1a332c67...f86a3`, and `af3501c9...3dc5`, with 1,500,351 microusd projected, 2,384,400 microusd newly reservable, 97,287 microusd already spent, 2,481,687 microusd cumulative worst case, and 2,376,962 microusd sequential headroom; the public aggregate-only validator cannot rebuild the ignored private-source proof, and this slice creates no authorization, inference call, or spend
 - Phase 4E qualification-attempt-v2 paid boundary and result assembly in `eval/phase4_qualification_attempt_runtime.py` and `eval/phase4_qualification_attempt_result.py`: the zero-network authorizer binds the exact reviewed scope, a fresh v6 catalog preflight, and at most two-hour manual approval to all 304 exact requests under the reviewed 2,384,400-microusd new maximum, 97,287-microusd prior actual spend, and 2,481,687-microusd cumulative worst case; the paid runner repeats those gates before file access, validates every request rebuild and approval-window send time, and fsyncs a one-shot claim before credential loading or client construction; candidate hard failures stay local while provider/transport/ambiguous/harness conditions stop the comparison globally; after both exact terminal states and their merged chronology validate, the separate no-spend assembler requires the scope/catalog/authorization/claim chain, rebuilds all 304 dispositions and frozen metrics, selects a qualified sibling after one candidate-local failure when warranted, forbids selection on a global pause, and writes only an ignored private result plus a model-output-free aggregate receipt; this implementation makes no provider call and spends nothing
 - Fixed-bank eval harness: 4 authored synthetic personas + seeded Dirichlet-mixture persona generator (`eval/personas.py`), three distinct synthetic response-process stress scenarios (`gaussian_gap`, `logistic_choice`, and `sloppy` — none claimed to match a fitted likelihood exactly), held-out latent-direction log-score/accuracy/one-coordinate-Brier/reliability curves under a common posterior readout, Kendall tau-b and first-threshold-attainment curves, explicit raw and scored holdout denominators, models × policies comparison (`python -m eval.run_preference_eval --response-model ...`), grid sweeps for notebooks (`eval/sweeps.py`)
+- Bounded synthetic reference benchmark: 1,080 trials across two models,
+  three acquisition policies, and three response scenarios; full generated
+  utilities/results, learning curves, endpoint spread, paired method differences,
+  and latent-direction reliability in `eval/benchmarks/synthetic_v1/`, with
+  numerical and figure provenance from `eval/run_synthetic_benchmark.py` and
+  `eval/plot_synthetic_benchmark.py`. This is fixed-item latent-
+  ordering evidence, not human ballot accuracy or production calibration.
 - API: `/sessions/evidence` endpoint (replaces `/sessions/respond`), model + selection-policy params on session start
 - TS hygiene: Zod-validated JSONB boundaries (`lib/validations/preferences-schemas.ts`); `startPreferenceSession` race fixed via server-generated UUID + single insert
 - Human-measure evaluation contracts (`eval/contracts.py`): standardized
@@ -488,21 +495,22 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
   round remains in the restricted audit trail
 
 **Next, in order:**
-1. Independently review and merge the complete qualification-attempt-v2
-   request/readiness/proof/plan, paid boundary, and result assembler
-2. Reissue the zero-inference catalog preflight, obtain fresh short-lived user
-   approval, and run the paired candidate-interleaved GLM/GPT-OSS attempt
-3. Validate both terminal states, assemble all 304 dispositions, and apply the
-   unchanged frozen gates; select only if a candidate empirically qualifies
-4. Freeze the selected deployment, prompts, seeds, remaining policy values,
-   and calibrated robustness thresholds before Ben's held-out case study
-5. Keep OpenRouter deferred as a separately reviewed, endpoint-pinned,
-   no-fallback deployment diagnostic unless the provider distinction becomes
-   necessary to the research claim
-6. Build separate blind evaluation and future-facing showcase modes
-7. Schedule and execute the six blinded waves and 7-14 day retests only after
-   the remaining model/evaluation freeze is complete
-8. *(Deferred)* LLM-generated vote rationales and personas
+1. Review and publish the synthetic reference benchmark in
+   `eval/benchmarks/synthetic_v1/`: 1,080 trials, reproducible curves, and full
+   generated data. The metric-correction commit is `d47f605`. This measures
+   fixed-item latent ordering, not human ballots or production calibration.
+2. Connect one real fixed-posterior-to-ballot user journey using public
+   development material, then attach conversational evidence confirmation.
+   Keep the illustrative web scoring distinct from the research posterior.
+3. Before another paid qualification, declare and review any bounded-repair
+   or scored-robustness amendment. These are proposals, not implemented rules.
+   Attempt v2 completed with no winner (25/304 observed); preserve its receipt
+   at `eval/review_summaries/qualification_attempt_receipt_v2.json`.
+4. Finish deployment/model/evaluation freezing before the held-out case study;
+   keep blind evaluation separate from target-aware companion consultation.
+5. Execute the six blinded waves and 7-14 day retests only after that freeze.
+   The 48-measure bank, retests, and semantic map are already reviewed.
+6. *(Deferred)* LLM-generated vote rationales and personas
 
 ### Demo 3: Algorithmic districting
 
