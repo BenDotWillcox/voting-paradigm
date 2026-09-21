@@ -390,6 +390,13 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 - `GaussianLinearUtilityModel` and `BradleyTerryLaplaceModel`
 - Random and max-variance acquisition policies
 - Fixed-bank synthetic model/acquisition evaluation
+- Bounded synthetic reference benchmark: 1,080 trials across two models,
+  three acquisition policies, and three response scenarios; full generated
+  utilities/results, learning curves, endpoint spread, paired method differences,
+  and latent-direction reliability in `eval/benchmarks/synthetic_v1/`, with
+  numerical and figure provenance from `eval/run_synthetic_benchmark.py` and
+  `eval/plot_synthetic_benchmark.py`. This is fixed-item latent-
+  ordering evidence, not human ballot accuracy or production calibration.
 - Pydantic contracts for standardized jurisdiction, measures, evidence,
   predictions, participant responses, ontology versions, and evaluation runs
 - Eight-domain non-held-out development fixture plus deterministic manifest CLI
@@ -428,16 +435,20 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
   approved-mapper provenance, and participant-safe aggregate summaries
 
 **Next, in order:**
-1. Author and independently review the restricted 48-measure semantic map
-2. Add prompt, option-order/label, and stochastic robustness diagnostics;
-   freeze inputs, models, prompts, seeds, weights, and metrics before Ben's
-   held-out case study
-3. Build separate blind evaluation and future-facing showcase modes
-4. Schedule and execute the six blinded waves and 7-14 day retests. Run
-   validation enforces wave order, presentation seeds, retest independence,
-   and timing.
-5. *(Deferred)* LLM-generated vote rationales
-6. *(Deferred)* LLM-generated personas
+1. Review and publish the synthetic reference benchmark and its reproducible
+   curves. The metric-correction commit is `d47f605`.
+2. Connect one real fixed-posterior-to-ballot user journey using public
+   development material, then attach conversational evidence confirmation.
+   Keep the illustrative web scoring distinct from the research posterior.
+3. Before another paid qualification, declare and review any bounded-repair
+   or scored-robustness amendment. These are proposals, not implemented rules.
+   Preserve the existing no-winner outcome in
+   `eval/review_summaries/qualification_attempt_receipt_v2.json`.
+4. Finish deployment/model/evaluation freezing before the held-out case study;
+   keep blind evaluation separate from target-aware companion consultation.
+5. Execute the six blinded waves and 7-14 day retests only after that freeze.
+   The 48-measure bank, retests, and semantic map are already reviewed.
+6. *(Deferred)* LLM-generated vote rationales and personas
 
 ### Demo 3: Algorithmic districting
 

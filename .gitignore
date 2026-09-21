@@ -44,6 +44,7 @@ __pycache__/
 .pytest_cache/
 *.pyc
 .cache/
+.figures.json.tmp
 
 # Keep machine-local Claude state ignored while publishing project review skills.
 .claude/*

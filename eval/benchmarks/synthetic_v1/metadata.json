@@ -1,0 +1,60 @@
+{
+  "artifact_sha256": {
+    "curves.csv": "00db40470b2e6fe1869f6a0e9eaa564b70724e069df3cd57620b513b3a2662a5",
+    "gaussian_gap.json.gz": "3dfc3c99b042e577e5a20e321073f56c66635ff06875708ea910da11362f7a19",
+    "logistic_choice.json.gz": "3b6ed12e611ac130912996d856a7fdb4f16c2ac7d93ba824aa7047fc202cbd9d",
+    "paired_differences.csv": "1a8994c3f4304deecff34346762d0f2d13cbdfa9389c691328bace8511ffdb79",
+    "personas.json": "6cfcc6377f8cb77b1819178ecdc9c46a31abe606495954bbff4adbf8b9d87d35",
+    "reliability.csv": "0f983ecd8ce2e97b56fb8a8112f16b2725a0a644690eb684dd5551e044d5e50f",
+    "run_config.json": "2aae33c390c30ca508fdc4161f2cc1f33dba8d73bf2ee98a4f8cf6e08f8df47b",
+    "sloppy.json.gz": "121f3e8b194196418dd7b51069d638253fe8ded15d2b8bdc0d538576ef098a25",
+    "summary.csv": "816f31c9fc22eb11d34d46122697d9b4b55a88b2c8a635dbdb771123c9f34819"
+  },
+  "benchmark_id": "synthetic_latent_order_v1",
+  "cell_count": 18,
+  "environment": {
+    "numpy": "2.4.6",
+    "platform": "Windows-10-10.0.19045-SP0",
+    "python": "3.11.3",
+    "scipy": "1.17.1"
+  },
+  "estimand": "fixed_item_held_out_latent_direction_recovery",
+  "inference_provider_calls": 0,
+  "paired_differences": "endpoint left minus right; one-factor contrasts",
+  "pairing": "same persona/seed blocks; noise streams shared across personas",
+  "participant_data": false,
+  "resolved_model_parameters": {
+    "bradley_terry": {
+      "max_newton_iters": 50,
+      "min_strength_weight": 0.05,
+      "newton_tol": 1e-08,
+      "prior_variance": 1.0
+    },
+    "gaussian_linear": {
+      "base_noise_variance": 0.25,
+      "min_strength_weight": 0.05,
+      "prior_variance": 1.0
+    }
+  },
+  "source_sha256_lf_normalized": {
+    "eval/personas.py": "4bb3fb2e81cd4bf88bf786829b3c7d7b47fd851abe6900bb557834aaca0cc213",
+    "eval/preference_eval.py": "20a248449ad158fc5e71398f20450a8939ea25e9d2dfacdb624be4d1535ab69c",
+    "eval/response_models.py": "c181868c1c554fbce175584e64e5bec231c32215ebf88325d34d87cf20adc104",
+    "eval/run_synthetic_benchmark.py": "05b5758ca13fb24bbc10dd8a73ded3bcff43df76bc8530c9757f335e117d114c",
+    "preferences/__init__.py": "7a5686c56244c57fbfb966cd497d0034f26b2c0d2e345dae40b2915f9f4e0976",
+    "preferences/acquisition.py": "5a324b03e5a3e4c70813735c9e1aa746dec6ed49c604289e62276dcc3d73fe12",
+    "preferences/engine.py": "e7bd447b6eebbaef73bd693acc22643ba9393cb80cf70d0b33fd1f25a80f1c92",
+    "preferences/model/__init__.py": "a25fc6ba5ff2fac648512371910e4c8ad0dc98642765e8460a32bf319d11c244",
+    "preferences/model/base.py": "a384de1314eab5677845da6522b817b2a2d503932f2db5f0e9109b59134ef343",
+    "preferences/model/bradley_terry.py": "d9d50db6ae0350bc0358a2a9fa9061bd82103a0d5beec4fa9ef3e908cf5831d5",
+    "preferences/model/common.py": "adede533fbca4ff52edb23d90c339f0cbfba4465aae26f17b6e447faf8ea644c",
+    "preferences/model/gaussian_linear.py": "b2855eb06827dcb2e2fb7071c83f92cdfac8f3efb650cf124968d56d50b83f01",
+    "preferences/questions/__init__.py": "4cb0ad4fe9b52db50a2c6393e11b0cd72029fe80f201090815b931cc50dc0177",
+    "preferences/questions/bank.py": "eb6a26bc3ae9143e64a379a4874181f87e396471883f2588cb821c285697f3f6",
+    "preferences/questions/seed_items.json": "32f211fbd0e6bc0304722b9e15162051750a596aa4068dc8caa20d9cd1713361",
+    "preferences/serialization.py": "f42023763ba349c7eecde9573ddb043d7728c9829d76104e9b38e7749c30276b",
+    "preferences/types.py": "316107026ffdf19b48105f877181c5071fa7ef7650114e10e15b76dc64fda8fa"
+  },
+  "trial_count": 1080,
+  "uncertainty_description": "descriptive trial spread, not confidence intervals"
+}

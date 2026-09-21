@@ -1,0 +1,5 @@
+# Preserve reference bytes when core.autocrlf is enabled on Windows.
+*.json text eol=lf
+*.csv text eol=lf
+*.gz -text
+*.png -text
