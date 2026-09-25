@@ -1,0 +1,5 @@
+# Full-resolution district pipeline sources (~300 MB). Only the manual
+# `npm run build:map-display` step reads them; deploys use the simplified
+# artifacts in public/data/district-plans. Without this, Vercel bundles them
+# into the Python function and exceeds the 500 MB function limit.
+/data/
