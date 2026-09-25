@@ -3,154 +3,241 @@
 import * as React from "react";
 import { geoPath } from "d3-geo";
 import { feature as topoFeature } from "topojson-client";
-import type { FeatureCollection, Geometry } from "geojson";
+import type { Feature, FeatureCollection, Geometry } from "geojson";
 
+import {
+  districtColor,
+  projectPlanCenters,
+  tractName,
+} from "@/lib/district-plans";
+import { fetchDistrictPlanLayer } from "@/lib/fetch-district-plan";
+import type { StateFeature } from "@/lib/load-states-geojson";
 import {
   STATE_DETAIL_VIEWBOX,
   stateFittedAlbers,
 } from "@/lib/state-projection";
-import type { StateFeature } from "@/lib/load-states-geojson";
 import type {
-  CachedDistrictPlan,
-  DistrictPlanFeatureProperties,
+  DistrictPlan,
+  DistrictProperties,
+  TractProperties,
 } from "@/types/districting";
+
+import { TractCanvasFigure, type TractFeature } from "./tract-canvas";
 
 interface DistrictPlanMapProps {
   state: StateFeature;
-  plan: CachedDistrictPlan;
+  /** Plan metrics and centers; geometry layers are fetched as static assets. */
+  plan: DistrictPlan;
 }
 
+type DistrictFeature = Feature<Geometry, DistrictProperties>;
+
+interface HoveredTract {
+  tract: TractProperties;
+  point: [number, number];
+}
+
+/**
+ * Cached district plan map. Paints the state outline and solver centers on
+ * the server render, fills in dissolved district outlines (~10-20 KB gz)
+ * as soon as they arrive, then streams tract detail onto a canvas layer for
+ * hover inspection.
+ */
 export function DistrictPlanMap({ state, plan }: DistrictPlanMapProps) {
+  const [districts, setDistricts] = React.useState<DistrictFeature[] | null>(null);
+  const [tracts, setTracts] = React.useState<TractFeature[] | null>(null);
+  const [failed, setFailed] = React.useState(false);
+  const [hovered, setHovered] = React.useState<HoveredTract | null>(null);
+
+  const { state_fips: fips, cap, seats } = plan;
+  React.useEffect(() => {
+    let cancelled = false;
+    setDistricts(null);
+    setTracts(null);
+    setFailed(false);
+    setHovered(null);
+    fetchDistrictPlanLayer(fips, cap, seats, "districts")
+      .then((topology) => {
+        if (cancelled) return;
+        setDistricts(toFeatures(topology, topology.objects.districts));
+        return fetchDistrictPlanLayer(fips, cap, seats, "tracts");
+      })
+      .then((topology) => {
+        if (cancelled || !topology) return;
+        setTracts(toFeatures(topology, topology.objects.tracts));
+      })
+      .catch(() => {
+        if (!cancelled) setFailed(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [fips, cap, seats]);
+
   const projection = React.useMemo(
-    () =>
-      stateFittedAlbers(
-        state,
-        STATE_DETAIL_VIEWBOX.width,
-        STATE_DETAIL_VIEWBOX.height
-      ),
+    () => stateFittedAlbers(state, STATE_DETAIL_VIEWBOX.width, STATE_DETAIL_VIEWBOX.height),
     [state]
   );
   const path = React.useMemo(() => geoPath(projection), [projection]);
-  const featureCollection = React.useMemo(() => {
-    if (plan.display_topology) {
-      return topoFeature(
-        plan.display_topology,
-        plan.display_topology.objects.districts
-      ) as FeatureCollection<Geometry, DistrictPlanFeatureProperties>;
-    }
-    return plan.feature_collection ?? null;
-  }, [plan.display_topology, plan.feature_collection]);
-  const features = featureCollection?.features ?? [];
-  const centers = React.useMemo(
-    () => {
-      const projectionMeta = plan.projection;
-      if (!projectionMeta || !plan.centers) return [];
-      return plan.centers
-        .map((center) => {
-          const lonLat = unprojectEquirectangular(
-            center.x,
-            center.y,
-            projectionMeta.lon0,
-            projectionMeta.lat0
-          );
-          const point = projection(lonLat);
-          // Round to 0.01px: transcendental math (Math.cos) can differ in
-          // the last float digits between Node and the browser, which would
-          // otherwise trip React hydration on SSR'd cx/cy attributes.
-          return point
-            ? { ...center, point: [roundCoord(point[0]), roundCoord(point[1])] as [number, number] }
-            : null;
-        })
-        .filter((center) => center !== null);
+  const statePath = React.useMemo(() => path(state) ?? "", [path, state]);
+  const districtPaths = React.useMemo(
+    () =>
+      (districts ?? []).map((district) => ({
+        id: district.properties.district_id,
+        d: path(district) ?? "",
+      })),
+    [districts, path]
+  );
+  const centers = React.useMemo(() => projectPlanCenters(plan, projection), [plan, projection]);
+  const maxAbsWeight = Math.max(1, ...centers.map((center) => Math.abs(center.weight)));
+
+  const tractFill = React.useCallback(
+    (tract: TractProperties) => districtColor(tract.district_id, seats),
+    [seats]
+  );
+  const handleHover = React.useCallback(
+    (tract: TractProperties | null, point: [number, number] | null) => {
+      setHovered(tract && point ? { tract, point } : null);
     },
-    [plan.centers, plan.projection, projection]
+    []
   );
-  const maxAbsWeight = Math.max(
-    1,
-    ...(plan.centers ?? []).map((center) => Math.abs(center.weight))
-  );
+
+  const showTracts = tracts !== null && tracts.length > 0;
+  const hoveredDistrictPath = hovered
+    ? districtPaths.find((district) => district.id === hovered.tract.district_id)?.d
+    : undefined;
+  const status = failed
+    ? "District geometry could not be loaded."
+    : districts === null
+      ? "Loading district outlines…"
+      : !showTracts
+        ? "Streaming tract-level detail…"
+        : `${tracts.length.toLocaleString()} census tracts. Hover a tract for its assignment.`;
 
   return (
     <div className="space-y-3">
-      <svg
-        viewBox={`0 0 ${STATE_DETAIL_VIEWBOX.width} ${STATE_DETAIL_VIEWBOX.height}`}
-        className="w-full h-auto"
-        role="img"
-        aria-label={`${plan.state_name} tract-level balanced power district plan`}
-      >
-        <g>
-          {features.map((feature) => {
-            const districtId = feature.properties.district_id;
-            const title =
-              plan.display_unit === "district"
-                ? `${feature.properties.name}: ${feature.properties.population.toLocaleString()} people`
-                : `${feature.properties.name}: District ${districtId + 1}, ${feature.properties.population.toLocaleString()} people`;
-            return (
+      <div className="relative">
+        <TractCanvasFigure
+          tracts={tracts ?? EMPTY_TRACTS}
+          projection={projection}
+          viewBox={STATE_DETAIL_VIEWBOX}
+          fill={tractFill}
+          stroke="--background"
+          strokeWidth={0.35}
+          onHover={showTracts ? handleHover : undefined}
+          ariaLabel={`${plan.state_name} tract-level balanced power district plan`}
+          underlay={
+            districts === null ? (
               <path
-                key={feature.properties.geoid}
-                d={path(feature) ?? ""}
-                fill={districtColor(districtId, plan.seats)}
-                stroke="var(--background)"
-                strokeWidth={0.35}
-              >
-                <title>{title}</title>
-              </path>
-            );
-          })}
-        </g>
-        <g aria-label="Balanced power centers">
-          {centers.map((center) => {
-            const [cx, cy] = center.point;
-            const districtPopulation =
-              plan.district_populations[String(center.district_id)] ?? 0;
-            const weightShare = Math.abs(center.weight) / maxAbsWeight;
-            const radius = plan.seats > 24 ? 3.25 : 4.75;
-            const haloRadius = radius + 2.5 + weightShare * 5;
-
-            return (
-              <g key={center.district_id}>
-                <circle
-                  cx={cx}
-                  cy={cy}
-                  r={haloRadius}
-                  fill="none"
-                  stroke="hsl(var(--foreground))"
-                  strokeOpacity={0.36}
-                  strokeWidth={1.1}
-                />
-                <circle
-                  cx={cx}
-                  cy={cy}
-                  r={radius}
-                  fill="hsl(var(--background))"
-                  stroke="hsl(var(--foreground))"
-                  strokeWidth={1.5}
-                />
-                <circle
-                  cx={cx}
-                  cy={cy}
-                  r={Math.max(1.5, radius - 1.75)}
-                  fill={districtColor(center.district_id, plan.seats)}
-                >
-                  <title>
-                    {`District ${center.district_id + 1} center: ${districtPopulation.toLocaleString()} people, weight ${formatWeight(center.weight)}`}
-                  </title>
-                </circle>
-              </g>
-            );
-          })}
-        </g>
-      </svg>
-      <DistrictLegend seats={plan.seats} />
+                d={statePath}
+                style={{ fill: "var(--muted)", stroke: "var(--border)" }}
+                strokeWidth={1}
+              />
+            ) : null
+          }
+        >
+          <g pointerEvents="none">
+            {districtPaths.map((district) => (
+              <path
+                key={district.id}
+                d={district.d}
+                fill={showTracts ? "none" : districtColor(district.id, seats)}
+                style={{ stroke: showTracts ? "var(--foreground)" : "var(--background)" }}
+                strokeOpacity={showTracts ? 0.55 : 1}
+                strokeWidth={showTracts ? 0.9 : 0.6}
+              />
+            ))}
+            {hoveredDistrictPath ? (
+              <path
+                d={hoveredDistrictPath}
+                fill="none"
+                style={{ stroke: "var(--foreground)" }}
+                strokeWidth={2}
+              />
+            ) : null}
+          </g>
+          <g aria-label="Balanced power centers" pointerEvents="none">
+            {centers.map((center) => {
+              const [cx, cy] = center.point;
+              const weightShare = Math.abs(center.weight) / maxAbsWeight;
+              const radius = seats > 24 ? 3.25 : 4.75;
+              const haloRadius = radius + 2.5 + weightShare * 5;
+              return (
+                <g key={center.districtId}>
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={haloRadius}
+                    fill="none"
+                    style={{ stroke: "var(--foreground)" }}
+                    strokeOpacity={0.36}
+                    strokeWidth={1.1}
+                  />
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={radius}
+                    style={{ fill: "var(--background)", stroke: "var(--foreground)" }}
+                    strokeWidth={1.5}
+                  />
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={Math.max(1.5, radius - 1.75)}
+                    fill={districtColor(center.districtId, seats)}
+                  />
+                </g>
+              );
+            })}
+          </g>
+        </TractCanvasFigure>
+        {hovered ? <TractTooltip hovered={hovered} plan={plan} /> : null}
+      </div>
+      <DistrictLegend seats={seats} />
+      <p
+        className="text-[11px] leading-snug text-muted-foreground"
+        role="status"
+        aria-live="polite"
+      >
+        {status}
+      </p>
     </div>
   );
 }
 
-function districtColor(districtId: number, seats: number): string {
-  const hue = (districtId * 137.508) % 360;
-  const lightness = seats > 24 ? 0.72 : 0.66;
-  const chroma = seats > 24 ? 0.11 : 0.14;
-  return `oklch(${lightness} ${chroma} ${hue.toFixed(1)})`;
+const EMPTY_TRACTS: TractFeature[] = [];
+
+function toFeatures<P>(
+  topology: Parameters<typeof topoFeature>[0],
+  object: Parameters<typeof topoFeature>[1]
+): Array<Feature<Geometry, P>> {
+  return (topoFeature(topology, object) as FeatureCollection<Geometry, P>).features;
+}
+
+function TractTooltip({ hovered, plan }: { hovered: HoveredTract; plan: DistrictPlan }) {
+  const { tract, point } = hovered;
+  const districtPopulation = plan.district_populations[String(tract.district_id)] ?? 0;
+  const left = (point[0] / STATE_DETAIL_VIEWBOX.width) * 100;
+  const top = (point[1] / STATE_DETAIL_VIEWBOX.height) * 100;
+  const flip = left > 60;
+  return (
+    <div
+      className="pointer-events-none absolute z-10 w-max max-w-56 rounded-md border bg-popover px-2.5 py-1.5 text-xs text-popover-foreground shadow-md"
+      style={{
+        left: `${left}%`,
+        top: `${top}%`,
+        transform: `translate(${flip ? "calc(-100% - 12px)" : "12px"}, -50%)`,
+      }}
+    >
+      <div className="font-medium">{tractName(tract.geoid)}</div>
+      <div className="tabular-nums text-muted-foreground">
+        {tract.population.toLocaleString()} people
+      </div>
+      <div className="tabular-nums">
+        District {tract.district_id + 1} · {districtPopulation.toLocaleString()} people
+      </div>
+    </div>
+  );
 }
 
 function DistrictLegend({ seats }: { seats: number }) {
@@ -174,39 +261,4 @@ function DistrictLegend({ seats }: { seats: number }) {
       </span>
     </div>
   );
-}
-
-function unprojectEquirectangular(
-  x: number,
-  y: number,
-  lon0: number,
-  lat0: number
-): [number, number] {
-  const earthRadiusM = 6_371_000;
-  const lat = lat0 + radiansToDegrees(y / earthRadiusM);
-  const lon =
-    lon0 +
-    radiansToDegrees(
-      x / (earthRadiusM * Math.cos(degreesToRadians(lat0)))
-    );
-  return [lon, lat];
-}
-
-function degreesToRadians(value: number): number {
-  return (value * Math.PI) / 180;
-}
-
-function radiansToDegrees(value: number): number {
-  return (value * 180) / Math.PI;
-}
-
-function roundCoord(value: number): number {
-  return Math.round(value * 100) / 100;
-}
-
-function formatWeight(weight: number): string {
-  const abs = Math.abs(weight);
-  if (abs >= 1_000_000_000) return `${(weight / 1_000_000_000).toFixed(2)}B`;
-  if (abs >= 1_000_000) return `${(weight / 1_000_000).toFixed(2)}M`;
-  return Math.round(weight).toLocaleString();
 }

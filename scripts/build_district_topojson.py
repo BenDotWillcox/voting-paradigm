@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
-"""Build compact display artifacts from cached district GeoJSON plans.
+"""Convert cached district GeoJSON plans into full-resolution tract topology.
 
-The full cached plans remain the algorithm artifacts. Two display files are
-derived per plan:
-
-- `districting-topo/.../*.topo.json` — tract-level geometry as quantized
-  TopoJSON. Fetched lazily by the browser for tract-level hover detail.
-- `districting-summary/.../*.summary.json` — the same metrics plus tract
-  polygons dissolved into one outline per district. Small enough to render
-  the plan map server-side immediately.
+The full cached plans remain the algorithm artifacts. This step writes one
+lossless-at-quantization tract TopoJSON per plan to
+`data/districting/tract-topo/` — the source for the browser display build,
+`node scripts/build-district-display.mjs`, which simplifies it, dissolves
+district outlines, and writes the served files under
+`public/data/district-plans/`. Nothing written here is served directly.
 """
 
 from __future__ import annotations
@@ -18,14 +16,9 @@ import json
 from pathlib import Path
 from typing import Any
 
-from shapely.geometry import mapping, shape
-from shapely.ops import unary_union
-
-
 ROOT = Path(__file__).resolve().parents[1]
 INPUT_ROOT = ROOT / "public" / "data" / "districting"
-OUTPUT_ROOT = ROOT / "public" / "data" / "districting-topo"
-SUMMARY_ROOT = ROOT / "public" / "data" / "districting-summary"
+OUTPUT_ROOT = ROOT / "data" / "districting" / "tract-topo"
 
 
 def main() -> int:
@@ -37,21 +30,18 @@ def main() -> int:
     for path in paths:
         plan = json.loads(path.read_text(encoding="utf-8"))
 
-        outputs = [
-            (output_path_for(path), build_topo_plan(plan, quantization=args.quantization)),
-            (
-                summary_path_for(path),
-                build_summary_plan(plan, quantization=args.summary_quantization),
-            ),
-        ]
-        for output_path, payload_plan in outputs:
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            payload = json.dumps(payload_plan, separators=(",", ":"))
-            output_path.write_text(payload, encoding="utf-8")
-            print(
-                f"{path.relative_to(ROOT)} -> {output_path.relative_to(ROOT)} "
-                f"({path.stat().st_size / 1024:.1f} KB -> {output_path.stat().st_size / 1024:.1f} KB)"
-            )
+        output_path = output_path_for(path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        payload = json.dumps(
+            build_topo_plan(plan, quantization=args.quantization),
+            separators=(",", ":"),
+        )
+        output_path.write_text(payload, encoding="utf-8")
+        print(
+            f"{path.relative_to(ROOT)} -> {output_path.relative_to(ROOT)} "
+            f"({path.stat().st_size / 1024:.1f} KB -> {output_path.stat().st_size / 1024:.1f} KB)"
+        )
+    print("Next: node scripts/build-district-display.mjs")
     return 0
 
 
@@ -73,16 +63,6 @@ def parse_args() -> argparse.Namespace:
         default=100_000,
         help="Integer grid size for TopoJSON quantization.",
     )
-    parser.add_argument(
-        "--summary-quantization",
-        type=int,
-        default=50_000,
-        help=(
-            "Integer grid size for the dissolved district summary. Shared "
-            "district edges snap to the same grid, so quantization never "
-            "opens gaps between districts."
-        ),
-    )
     return parser.parse_args()
 
 
@@ -98,11 +78,6 @@ def find_input_paths(state_fips: str | None, cap: int) -> list[Path]:
 def output_path_for(input_path: Path) -> Path:
     state_fips = input_path.parent.name
     return OUTPUT_ROOT / state_fips / f"{input_path.stem}.topo.json"
-
-
-def summary_path_for(input_path: Path) -> Path:
-    state_fips = input_path.parent.name
-    return SUMMARY_ROOT / state_fips / f"{input_path.stem}.summary.json"
 
 
 def plan_metadata(plan: dict[str, Any]) -> dict[str, Any]:
@@ -137,54 +112,6 @@ def build_topo_plan(plan: dict[str, Any], *, quantization: int) -> dict[str, Any
             "Display geometry is quantized TopoJSON derived from the cached tract GeoJSON artifact.",
         ],
     }
-
-
-def build_summary_plan(plan: dict[str, Any], *, quantization: int) -> dict[str, Any]:
-    features = dissolve_districts(plan)
-    return {
-        **plan_metadata(plan),
-        "display_unit": "district",
-        "display_topology": build_topology(features, quantization),
-        "notes": [
-            *plan.get("notes", []),
-            "Display geometry is tract polygons dissolved into per-district outlines, quantized TopoJSON.",
-        ],
-    }
-
-
-def dissolve_districts(plan: dict[str, Any]) -> list[dict[str, Any]]:
-    """Union each district's tract polygons into a single display outline."""
-    grouped: dict[int, list[Any]] = {}
-    for feature in plan["feature_collection"]["features"]:
-        district_id = feature["properties"]["district_id"]
-        grouped.setdefault(district_id, []).append(shape(feature["geometry"]))
-
-    district_populations = plan["district_populations"]
-    features: list[dict[str, Any]] = []
-    for district_id in sorted(grouped):
-        merged = unary_union(grouped[district_id])
-        geometry = mapping(polygonal_only(merged))
-        features.append(
-            {
-                "geometry": geometry,
-                "id": f"district-{district_id}",
-                "properties": {
-                    "geoid": f"district-{district_id}",
-                    "name": f"District {district_id + 1}",
-                    "population": district_populations.get(str(district_id), 0),
-                    "district_id": district_id,
-                },
-            }
-        )
-    return features
-
-
-def polygonal_only(geometry: Any) -> Any:
-    """Drop stray points/lines a union can leave behind in a collection."""
-    if geometry.geom_type != "GeometryCollection":
-        return geometry
-    polygons = [g for g in geometry.geoms if g.geom_type in ("Polygon", "MultiPolygon")]
-    return unary_union(polygons)
 
 
 def build_topology(features: list[dict[str, Any]], quantization: int) -> dict[str, Any]:
@@ -232,7 +159,7 @@ def compute_bbox(features: list[dict[str, Any]]) -> list[float]:
 
 
 def iter_positions(coordinates: Any):
-    # Tuples included: shapely's mapping() emits coordinates as tuples.
+    # Tuples accepted so callers may pass shapely mapping() output.
     if (
         isinstance(coordinates, (list, tuple))
         and coordinates

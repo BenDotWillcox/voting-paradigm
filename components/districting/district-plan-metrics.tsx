@@ -1,7 +1,7 @@
-import type { CachedDistrictPlan } from "@/types/districting";
+import type { DistrictPlan } from "@/types/districting";
 
 interface DistrictPlanMetricsProps {
-  plan: CachedDistrictPlan;
+  plan: DistrictPlan;
 }
 
 export function DistrictPlanMetrics({ plan }: DistrictPlanMetricsProps) {

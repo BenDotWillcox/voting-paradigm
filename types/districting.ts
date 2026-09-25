@@ -1,4 +1,3 @@
-import type { FeatureCollection, Geometry } from "geojson";
 import type { GeometryCollection, Topology } from "topojson-specification";
 
 // TypeScript types mirroring the Python districting package responses.
@@ -27,12 +26,27 @@ export interface CapAnchor {
   description: string;
 }
 
-export interface DistrictPlanFeatureProperties {
+/** Tract properties in a plan's `tracts.topo.json` display layer. */
+export interface TractProperties {
+  /** 11-digit census tract GEOID (state + county + tract code). */
   geoid: string;
-  name: string;
-  population: number;
   district_id: number;
+  population: number;
 }
+
+/** District properties in a plan's `districts.topo.json` display layer. */
+export interface DistrictProperties {
+  district_id: number;
+  population: number;
+}
+
+export type TractTopology = Topology<{
+  tracts: GeometryCollection<TractProperties>;
+}>;
+
+export type DistrictTopology = Topology<{
+  districts: GeometryCollection<DistrictProperties>;
+}>;
 
 export interface DistrictPlanCenter {
   district_id: number;
@@ -47,23 +61,31 @@ export interface DistrictPlanProjection {
   lat0: number;
 }
 
-export type DistrictPlanTopology = Topology<{
-  districts: GeometryCollection<DistrictPlanFeatureProperties>;
-}>;
+/** Provenance of the simplified display geometry for a plan. */
+export interface DistrictPlanDisplay {
+  artifact_version: number;
+  /** SHA-256 of the full-resolution tract topology the display was built from. */
+  source_sha256: string;
+  /** mapshaper `-simplify` options applied to the shared-arc topology. */
+  simplify: string;
+  quantization: number;
+  tract_count: number;
+  district_count: number;
+}
 
-export interface CachedDistrictPlan {
+/**
+ * A cached district plan's metrics and centers (`plan.json`). Geometry is
+ * never embedded: fetch the district and tract layers from
+ * `districtPlanLayerUrl`.
+ */
+export interface DistrictPlan {
   type: "KansasDistrictPlan" | "StateDistrictPlan";
   state_fips: string;
   state_name: string;
   source_year: number;
   unit: "tract";
   /** Number of source units (tracts) the plan was solved over. */
-  unit_count?: number;
-  /**
-   * Granularity of `display_topology` features: per-tract detail or
-   * dissolved per-district outlines (the compact summary artifact).
-   */
-  display_unit?: "tract" | "district";
+  unit_count: number;
   cap: number;
   seats: number;
   target_population: number;
@@ -74,7 +96,6 @@ export interface CachedDistrictPlan {
   converged: boolean;
   centers?: DistrictPlanCenter[];
   projection?: DistrictPlanProjection;
-  feature_collection?: FeatureCollection<Geometry, DistrictPlanFeatureProperties>;
-  display_topology?: DistrictPlanTopology;
   notes: string[];
+  display: DistrictPlanDisplay;
 }
