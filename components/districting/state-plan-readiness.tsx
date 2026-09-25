@@ -1,9 +1,9 @@
 import { Binary, Database, Focus, Orbit, Waypoints } from "lucide-react";
 
-import type { CachedDistrictPlan } from "@/types/districting";
+import type { DistrictPlan } from "@/types/districting";
 
 interface StatePlanReadinessProps {
-  plan?: CachedDistrictPlan | null;
+  plan?: DistrictPlan | null;
   seats: number;
   population: number;
 }
@@ -14,14 +14,7 @@ export function StatePlanReadiness({
   population,
 }: StatePlanReadinessProps) {
   const targetPopulation = seats > 0 ? Math.round(population / seats) : 0;
-  const unitCount =
-    plan?.unit_count ??
-    plan?.feature_collection?.features.length ??
-    // Summary artifacts carry dissolved district outlines, so their
-    // geometry count is seats, not source tracts — don't fall back to it.
-    (plan?.display_unit === "district"
-      ? null
-      : plan?.display_topology?.objects.districts.geometries.length ?? null);
+  const unitCount = plan?.unit_count ?? null;
   const pctDeviation =
     plan && plan.target_population > 0
       ? (plan.max_population_imbalance / plan.target_population) * 100

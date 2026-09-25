@@ -1,7 +1,6 @@
-import { AlertCircle } from "lucide-react";
 import Link from "next/link";
+import { preload } from "react-dom";
 
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Card,
   CardContent,
@@ -10,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { AlgorithmPlaybackPanel } from "@/components/districting/algorithm-playback-panel";
-import { DistrictPlanMapLoader } from "@/components/districting/district-plan-map-loader";
+import { DistrictPlanMap } from "@/components/districting/district-plan-map";
 import { DistrictPlanMetrics } from "@/components/districting/district-plan-metrics";
 import { DistrictsExplorer } from "@/components/districting/districts-explorer";
 import { DistrictingMethodPanel } from "@/components/districting/districting-method-panel";
@@ -19,32 +18,35 @@ import { StateDistrictSidebar } from "@/components/districting/state-district-si
 import { StateDetailMap } from "@/components/districting/state-detail-map";
 import { StatePlanReadiness } from "@/components/districting/state-plan-readiness";
 import { getSeatCountsAfter } from "@/lib/apportionment-sequence";
-import { getApportionment } from "@/lib/districting-api";
 import { CAP_MAX, CAP_MIN } from "@/lib/districting-cap-scale";
+import { districtPlanLayerUrl } from "@/lib/district-plans";
+import { loadDistrictPlan } from "@/lib/load-district-plan";
 import {
-  getDistrictPlanTopoUrl,
-  loadDistrictPlanSummary,
-} from "@/lib/load-district-plan";
-import { loadStatesGeoJSON } from "@/lib/load-states-geojson";
+  loadStatesGeoJSON,
+  type StatesGeoJSON,
+} from "@/lib/load-states-geojson";
 import { US_2020_APPORTIONMENT_POPULATIONS } from "@/lib/us-state-populations";
 import { getStateByFips, isStateFips } from "@/lib/us-states";
-
-export const dynamic = "force-dynamic";
 
 interface DistrictsPageProps {
   searchParams: Promise<{ cap?: string; state?: string; tab?: string }>;
 }
 
+const MICHIGAN_FIPS = "26";
+
+/**
+ * Both tabs are self-contained: the deterministic local apportionment
+ * sequence plus prebuilt static artifacts. No Python API round-trip, and no
+ * plan geometry in the server payload — maps fetch it as static assets.
+ */
 export default async function DistrictsPage({ searchParams }: DistrictsPageProps) {
   const { cap: capParam, state: stateParam, tab: tabParam } = await searchParams;
   const initialCap = parseCapParam(capParam);
   const activeTab = tabParam === "districting" ? "districting" : "apportionment";
   const selectedStateFips = parseStateParam(stateParam);
+  const states = await loadStatesGeoJSON();
 
-  // The districting tab is fully self-contained: cached artifacts on disk
-  // plus the local apportionment sequence. No Python API round-trip.
   if (activeTab === "districting") {
-    const states = await loadStatesGeoJSON();
     return (
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="space-y-6">
@@ -63,58 +65,31 @@ export default async function DistrictsPage({ searchParams }: DistrictsPageProps
     );
   }
 
-  try {
-    const [states, apportionment] = await Promise.all([
-      loadStatesGeoJSON(),
-      getApportionment(initialCap),
-    ]);
-
-    return (
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="space-y-6">
-          <TabIntro
-            title="Apportionment"
-            body="Increasing the size of the House lowers the number of people represented by each member and reduces the representation gap between large and small states. The current 435-seat cap locks in unusually large districts; a larger House would make representatives closer to their constituents. This demo shows how added seats would be assigned under the existing apportionment logic: one seat at a time, by the Method of Equal Proportions."
-          />
-          <TopLevelTabs
-            activeTab={activeTab}
-            initialCap={initialCap}
-            selectedStateFips={selectedStateFips}
-          />
-          <DistrictsExplorer
-            initialApportionment={apportionment}
-            initialCap={initialCap}
-            states={states}
-          />
-        </div>
+  return (
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="space-y-6">
+        <TabIntro
+          title="Apportionment"
+          body="Increasing the size of the House lowers the number of people represented by each member and reduces the representation gap between large and small states. The current 435-seat cap locks in unusually large districts; a larger House would make representatives closer to their constituents. This demo shows how added seats would be assigned under the existing apportionment logic: one seat at a time, by the Method of Equal Proportions."
+        />
+        <TopLevelTabs
+          activeTab={activeTab}
+          initialCap={initialCap}
+          selectedStateFips={selectedStateFips}
+        />
+        <DistrictsExplorer
+          initialCap={initialCap}
+          states={states}
+          totalPopulation={TOTAL_APPORTIONMENT_POPULATION}
+        />
       </div>
-    );
-  } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Unknown error reaching the API.";
-    return (
-      <div className="container mx-auto px-4 py-8 max-w-5xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">Algorithmic districting</h1>
-        </div>
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Districting API unavailable</AlertTitle>
-          <AlertDescription>
-            <p>
-              Could not load the demo. The most common cause is that the Python
-              API is not running:
-            </p>
-            <code className="block mt-2 p-2 bg-muted rounded text-sm">
-              npm run api:dev
-            </code>
-            <p className="mt-2 text-xs opacity-80">Underlying error: {message}</p>
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
+    </div>
+  );
 }
+
+const TOTAL_APPORTIONMENT_POPULATION = Object.values(
+  US_2020_APPORTIONMENT_POPULATIONS
+).reduce((sum, population) => sum + population, 0);
 
 function TabIntro({ body, title }: { body: string; title: string }) {
   return (
@@ -167,25 +142,31 @@ async function DistrictingTab({
   states,
 }: {
   stateFips: string;
-  states: Awaited<ReturnType<typeof loadStatesGeoJSON>>;
+  states: StatesGeoJSON;
 }) {
   const state = getStateByFips(stateFips) ?? getStateByFips("20");
   const fips = state?.fips ?? "20";
-  // Seat counts come from the deterministic local priority sequence — same
-  // numbers as the API, none of the latency.
   const seatCounts = getSeatCountsAfter(CAP_MIN);
   const seats = seatCounts[fips] ?? 0;
   const population = US_2020_APPORTIONMENT_POPULATIONS[fips] ?? 0;
-  const michiganSeats = seatCounts["26"] ?? 13;
-  const [summaryPlan, topoUrl, michiganSummary, michiganTopoUrl] =
-    await Promise.all([
-      loadDistrictPlanSummary(fips, CAP_MIN, seats),
-      getDistrictPlanTopoUrl(fips, CAP_MIN, seats),
-      loadDistrictPlanSummary("26", CAP_MIN, michiganSeats),
-      getDistrictPlanTopoUrl("26", CAP_MIN, michiganSeats),
-    ]);
+  const michiganSeats = seatCounts[MICHIGAN_FIPS] ?? 13;
+  const [plan, michiganPlan] = await Promise.all([
+    loadDistrictPlan(fips, CAP_MIN, seats),
+    loadDistrictPlan(MICHIGAN_FIPS, CAP_MIN, michiganSeats),
+  ]);
   const stateFeature = states.features.find((feature) => String(feature.id ?? "") === fips);
-  const michiganFeature = states.features.find((feature) => String(feature.id ?? "") === "26");
+  const michiganFeature = states.features.find(
+    (feature) => String(feature.id ?? "") === MICHIGAN_FIPS
+  );
+
+  // Start the small outline fetch alongside the HTML instead of after
+  // hydration. `as: "fetch"` + anonymous CORS matches a same-origin fetch().
+  if (plan) {
+    preload(districtPlanLayerUrl(fips, CAP_MIN, seats, "districts"), {
+      as: "fetch",
+      crossOrigin: "anonymous",
+    });
+  }
 
   return (
     <>
@@ -204,15 +185,14 @@ async function DistrictingTab({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {summaryPlan && stateFeature ? (
-                <DistrictPlanMapLoader
-                  state={stateFeature}
-                  summary={summaryPlan}
-                  topoUrl={topoUrl}
+              {plan && stateFeature ? (
+                <DistrictPlanMap state={stateFeature} plan={plan} />
+              ) : stateFeature ? (
+                <StateDetailMap
+                  states={{ type: "FeatureCollection", features: [stateFeature] }}
+                  stateFips={fips}
                 />
-              ) : (
-                <StateDetailMap states={states} stateFips={fips} />
-              )}
+              ) : null}
             </CardContent>
           </Card>
 
@@ -222,8 +202,8 @@ async function DistrictingTab({
               <CardDescription>Current 435-seat plan.</CardDescription>
             </CardHeader>
             <CardContent>
-              {summaryPlan ? (
-                <DistrictPlanMetrics plan={summaryPlan} />
+              {plan ? (
+                <DistrictPlanMetrics plan={plan} />
               ) : (
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                   <dt className="text-muted-foreground">Seats</dt>
@@ -247,7 +227,7 @@ async function DistrictingTab({
           </CardHeader>
           <CardContent>
             <StatePlanReadiness
-              plan={summaryPlan}
+              plan={plan}
               seats={seats}
               population={population}
             />
@@ -255,12 +235,8 @@ async function DistrictingTab({
         </Card>
       </DistrictingStateLayout>
 
-      {michiganFeature && michiganSummary ? (
-        <AlgorithmPlaybackPanel
-          michigan={michiganFeature}
-          summary={michiganSummary}
-          topoUrl={michiganTopoUrl}
-        />
+      {michiganFeature && michiganPlan ? (
+        <AlgorithmPlaybackPanel michigan={michiganFeature} plan={michiganPlan} />
       ) : null}
       <DistrictingMethodPanel />
     </>

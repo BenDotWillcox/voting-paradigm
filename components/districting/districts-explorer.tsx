@@ -9,7 +9,6 @@ import {
 } from "@/lib/apportionment-sequence";
 import { CAP_MAX, CAP_MIN } from "@/lib/districting-cap-scale";
 import type { StatesGeoJSON } from "@/lib/load-states-geojson";
-import type { ApportionmentDto } from "@/types/districting";
 
 import { AllocationExplainer } from "./allocation-explainer";
 import { CapPicker } from "./cap-picker";
@@ -17,10 +16,10 @@ import { NationalMap } from "./national-map";
 import { RepresentationMetrics } from "./representation-metrics";
 
 interface DistrictsExplorerProps {
-  /** Initial apportionment fetched on the server (cap = `initialCap`). */
-  initialApportionment: ApportionmentDto;
-  /** Cap value behind `initialApportionment`. Drives picker initial state. */
+  /** House size from `?cap=`. Drives picker initial state. */
   initialCap: number;
+  /** 2020 census apportionment population summed across the 50 states. */
+  totalPopulation: number;
   /** GeoJSON of all 50 states, loaded once on the server. */
   states: StatesGeoJSON;
 }
@@ -32,9 +31,9 @@ interface DistrictsExplorerProps {
  * apportionment locally from the deterministic priority sequence.
  */
 export function DistrictsExplorer({
-  initialApportionment,
   initialCap,
   states,
+  totalPopulation,
 }: DistrictsExplorerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -102,7 +101,7 @@ export function DistrictsExplorer({
           cap={cap}
           apportionment={displayedApportionment}
           baselineApportionment={baselineApportionment}
-          totalPopulation={initialApportionment.total_apportionment_population}
+          totalPopulation={totalPopulation}
         />
 
         <div className="rounded-xl border bg-card p-2 shadow-sm">

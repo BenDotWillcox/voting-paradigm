@@ -6,23 +6,25 @@ import { feature as topoFeature } from "topojson-client";
 import type { FeatureCollection, Geometry } from "geojson";
 import { Binary, Database, Focus, MapPinned, Orbit, Waypoints } from "lucide-react";
 
-import { fetchDistrictPlan } from "@/lib/fetch-district-plan";
+import {
+  districtColor,
+  projectPlanCenters,
+  tractName,
+} from "@/lib/district-plans";
+import { fetchDistrictPlanLayer } from "@/lib/fetch-district-plan";
 import type { StateFeature } from "@/lib/load-states-geojson";
 import {
   STATE_DETAIL_VIEWBOX,
   stateFittedAlbers,
 } from "@/lib/state-projection";
-import type {
-  CachedDistrictPlan,
-  DistrictPlanFeatureProperties,
-} from "@/types/districting";
+import type { DistrictPlan, TractProperties } from "@/types/districting";
+
+import { TractCanvasFigure, type TractFeature } from "./tract-canvas";
 
 interface AlgorithmPlaybackPanelProps {
   michigan: StateFeature;
-  /** Compact summary plan: scalar metrics and centers, no tract geometry. */
-  summary: CachedDistrictPlan;
-  /** Tract-level topo asset, fetched lazily when the panel scrolls into view. */
-  topoUrl: string | null;
+  /** Plan metrics and centers; tract geometry is fetched when scrolled near. */
+  plan: DistrictPlan;
 }
 
 const steps = [
@@ -71,35 +73,38 @@ const seedOffsets: Array<[number, number]> = [
 
 export function AlgorithmPlaybackPanel({
   michigan,
-  summary,
-  topoUrl,
+  plan,
 }: AlgorithmPlaybackPanelProps) {
   const [activeStep, setActiveStep] = React.useState(0);
-  const [tractPlan, setTractPlan] = React.useState<CachedDistrictPlan | null>(
-    null
-  );
+  const [tracts, setTracts] = React.useState<TractFeature[] | null>(null);
   const sectionRef = React.useRef<HTMLElement | null>(null);
-  // Scalar metrics are identical between summary and tract artifacts; the
-  // fetched plan only contributes geometry.
-  const plan = summary;
 
+  const { state_fips: fips, cap, seats } = plan;
+  // Tracts load when the panel nears the viewport, or immediately once a
+  // step that needs them is selected.
+  const needsTracts = activeStep >= 1;
   React.useEffect(() => {
-    if (!topoUrl || tractPlan) return;
+    if (tracts) return;
     const node = sectionRef.current;
     if (!node) return;
 
     let cancelled = false;
     const load = () => {
-      fetchDistrictPlan(topoUrl)
-        .then((fetched) => {
-          if (!cancelled) setTractPlan(fetched);
+      fetchDistrictPlanLayer(fips, cap, seats, "tracts")
+        .then((topology) => {
+          if (cancelled) return;
+          const collection = topoFeature(
+            topology,
+            topology.objects.tracts
+          ) as FeatureCollection<Geometry, TractProperties>;
+          setTracts(collection.features);
         })
         .catch(() => {
           // Panel stays usable without the tract layer.
         });
     };
 
-    if (typeof IntersectionObserver === "undefined") {
+    if (needsTracts || typeof IntersectionObserver === "undefined") {
       load();
       return () => {
         cancelled = true;
@@ -119,7 +124,7 @@ export function AlgorithmPlaybackPanel({
       cancelled = true;
       observer.disconnect();
     };
-  }, [topoUrl, tractPlan]);
+  }, [fips, cap, seats, tracts, needsTracts]);
 
   const projection = React.useMemo(
     () =>
@@ -131,30 +136,7 @@ export function AlgorithmPlaybackPanel({
     [michigan]
   );
   const path = React.useMemo(() => geoPath(projection), [projection]);
-  const featureCollection = React.useMemo(() => {
-    if (!tractPlan) return null;
-    if (tractPlan.display_topology) {
-      return topoFeature(
-        tractPlan.display_topology,
-        tractPlan.display_topology.objects.districts
-      ) as FeatureCollection<Geometry, DistrictPlanFeatureProperties>;
-    }
-    return tractPlan.feature_collection ?? null;
-  }, [tractPlan]);
-  const tractFeatures = React.useMemo(
-    () => featureCollection?.features ?? [],
-    [featureCollection]
-  );
-  // Project every tract once. Step clicks only restyle the layer; without
-  // this, each click re-derived ~3k SVG path strings from raw geometry.
-  const tractPaths = React.useMemo(
-    () =>
-      tractFeatures.map((feature) => ({
-        d: path(feature) ?? "",
-        properties: feature.properties,
-      })),
-    [tractFeatures, path]
-  );
+  const tractFeatures = tracts ?? EMPTY_TRACTS;
   const statePath = React.useMemo(() => path(michigan) ?? "", [path, michigan]);
   const highlightedTract = React.useMemo(
     () =>
@@ -171,39 +153,44 @@ export function AlgorithmPlaybackPanel({
     () => (highlightedTract ? path(highlightedTract) ?? "" : ""),
     [highlightedTract, path]
   );
-  const centerPoints = React.useMemo(() => {
-    const projectionMeta = plan.projection;
-    if (!projectionMeta || !plan.centers) return [];
-
-    return plan.centers
-      .map((center, index) => {
-        const lonLat = unprojectEquirectangular(
-          center.x,
-          center.y,
-          projectionMeta.lon0,
-          projectionMeta.lat0
-        );
-        const point = projection(lonLat);
-        if (!point) return null;
-        // Rounded to 0.01px so SSR and client markup agree (Math.cos can
-        // drift in the last float digits between Node and the browser).
-        const final: [number, number] = [
-          roundCoord(point[0]),
-          roundCoord(point[1]),
-        ];
+  const centerPoints = React.useMemo(
+    () =>
+      // Illustrative seed positions: final centers offset by a fixed jitter.
+      // Phase 3 of prompts/storytelling-redesign.md replaces this with the
+      // solver's recorded iteration snapshots.
+      projectPlanCenters(plan, projection).map((center, index) => {
         const [dx, dy] = seedOffsets[index % seedOffsets.length];
         return {
-          districtId: center.district_id,
-          final,
-          seed: [final[0] + dx, final[1] + dy] as [number, number],
+          districtId: center.districtId,
+          final: center.point,
+          seed: [center.point[0] + dx, center.point[1] + dy] as [number, number],
           weight: center.weight,
         };
-      })
-      .filter((center) => center !== null);
-  }, [plan.centers, plan.projection, projection]);
+      }),
+    [plan, projection]
+  );
 
   const showTracts = activeStep >= 1;
   const showAssignments = activeStep >= 3;
+  const tractMode: TractMode = !showTracts
+    ? "hidden"
+    : activeStep === 1
+      ? "outline"
+      : showAssignments
+        ? "district"
+        : "population";
+  const maxPopulation = highlightedTract?.properties.population ?? 1;
+  const tractFill = React.useCallback(
+    (tract: TractProperties) =>
+      tractMode === "population"
+        ? tractPopulationFill(tract.population, maxPopulation)
+        : tractMode === "district"
+          ? districtColor(tract.district_id, seats)
+          : tractMode === "outline"
+            ? "--background"
+            : null,
+    [tractMode, maxPopulation, seats]
+  );
   const centerMode = activeStep >= 4 ? "final" : "seed";
   const populationDeviation =
     plan.target_population > 0
@@ -225,18 +212,31 @@ export function AlgorithmPlaybackPanel({
             the same tract-level inputs used by the cached Michigan plan.
           </p>
 
-          <svg
-            viewBox={`0 0 ${STATE_DETAIL_VIEWBOX.width} ${STATE_DETAIL_VIEWBOX.height}`}
-            className="mt-4 h-auto w-full"
-            role="img"
-            aria-label="Michigan districting algorithm walkthrough"
+          <div className="mt-4">
+          <TractCanvasFigure
+            tracts={tractFeatures}
+            projection={projection}
+            viewBox={STATE_DETAIL_VIEWBOX}
+            fill={tractFill}
+            stroke={
+              tractMode === "outline"
+                ? "--border"
+                : tractMode === "hidden"
+                  ? null
+                  : "--background"
+            }
+            strokeWidth={tractMode === "outline" ? 0.55 : 0.25}
+            opacity={tractMode === "outline" ? 0.85 : 0.58}
+            ariaLabel="Michigan districting algorithm walkthrough"
+            underlay={
+              <path
+                d={statePath}
+                style={{ fill: "var(--muted)", stroke: "var(--border)" }}
+                strokeWidth={1.2}
+              />
+            }
           >
-            <path
-              d={statePath}
-              style={{ fill: "var(--muted)", stroke: "var(--border)" }}
-              strokeWidth={1.2}
-            />
-            {showTracts && tractFeatures.length === 0 ? (
+            {showTracts && tracts === null ? (
               <text
                 x={STATE_DETAIL_VIEWBOX.width / 2}
                 y={STATE_DETAIL_VIEWBOX.height / 2}
@@ -246,22 +246,6 @@ export function AlgorithmPlaybackPanel({
               >
                 Loading tract geometry…
               </text>
-            ) : null}
-            {tractPaths.length > 0 ? (
-              <TractLayer
-                tracts={tractPaths}
-                mode={
-                  !showTracts
-                    ? "hidden"
-                    : activeStep === 1
-                      ? "outline"
-                      : showAssignments
-                        ? "district"
-                        : "population"
-                }
-                seats={plan.seats}
-                maxPopulation={highlightedTract?.properties.population ?? 1}
-              />
             ) : null}
             {activeStep === 1 && highlightedTract && highlightedTractCentroid ? (
               <g aria-label="Highlighted census tract">
@@ -429,7 +413,8 @@ export function AlgorithmPlaybackPanel({
                 })}
               </g>
             ) : null}
-          </svg>
+          </TractCanvasFigure>
+          </div>
 
           <div className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
             <div className="rounded-md border bg-background p-3">
@@ -473,7 +458,7 @@ export function AlgorithmPlaybackPanel({
                   A tract is one census geography record, not a district. The
                   solver keeps it intact and uses its boundary, centroid, ID,
                   and population; this example is{" "}
-                  {highlightedTract.properties.name} with{" "}
+                  {tractName(highlightedTract.properties.geoid)} with{" "}
                   {highlightedTract.properties.population.toLocaleString()}{" "}
                   people.
                 </>
@@ -542,111 +527,11 @@ export function AlgorithmPlaybackPanel({
   );
 }
 
-interface TractLayerProps {
-  tracts: Array<{ d: string; properties: DistrictPlanFeatureProperties }>;
-  /**
-   * hidden: step 1 (layer stays mounted so later steps don't pay a ~3k-node
-   * remount); outline: step 2; population: step 3; district: steps 4-5.
-   */
-  mode: "hidden" | "outline" | "population" | "district";
-  seats: number;
-  maxPopulation: number;
-}
+type TractMode = "hidden" | "outline" | "population" | "district";
 
-/**
- * The ~3k tract paths. Each path carries its population and district fills
- * as CSS custom properties; the active `mode` on the wrapper <g> selects
- * which applies. A step click therefore changes one DOM attribute instead
- * of reconciling ~3k inline styles.
- */
-function TractLayer({ tracts, mode, seats, maxPopulation }: TractLayerProps) {
-  return (
-    <g className="walkthrough-tracts" data-mode={mode}>
-      <TractPaths tracts={tracts} seats={seats} maxPopulation={maxPopulation} />
-    </g>
-  );
-}
-
-const TRACT_LAYER_CSS = `
-.walkthrough-tracts { opacity: 0.58; }
-.walkthrough-tracts[data-mode="hidden"] { display: none; }
-.walkthrough-tracts path { fill: var(--background); stroke: var(--background); stroke-width: 0.25; }
-.walkthrough-tracts[data-mode="outline"] { opacity: 0.85; }
-.walkthrough-tracts[data-mode="outline"] path { stroke: var(--border); stroke-width: 0.55; }
-.walkthrough-tracts[data-mode="population"] path { fill: var(--tract-fill-population); }
-.walkthrough-tracts[data-mode="district"] path { fill: var(--tract-fill-district); }
-`;
-
-const TractPaths = React.memo(function TractPaths({
-  tracts,
-  seats,
-  maxPopulation,
-}: Omit<TractLayerProps, "mode">) {
-  return (
-    <>
-      <style>{TRACT_LAYER_CSS}</style>
-      {tracts.map((tract) => (
-        <path
-          key={tract.properties.geoid}
-          d={tract.d}
-          style={
-            {
-              "--tract-fill-population": tractPopulationFill(
-                tract.properties.population,
-                maxPopulation
-              ),
-              "--tract-fill-district": districtColor(
-                tract.properties.district_id,
-                seats
-              ),
-            } as React.CSSProperties
-          }
-        >
-          <title>
-            {`${tract.properties.name}: ${tract.properties.population.toLocaleString()} people`}
-          </title>
-        </path>
-      ))}
-    </>
-  );
-});
-
-function districtColor(districtId: number, seats: number): string {
-  const hue = (districtId * 137.508) % 360;
-  const lightness = seats > 24 ? 0.72 : 0.66;
-  const chroma = seats > 24 ? 0.11 : 0.14;
-  return `oklch(${lightness} ${chroma} ${hue.toFixed(1)})`;
-}
-
-function roundCoord(value: number): number {
-  return Math.round(value * 100) / 100;
-}
+const EMPTY_TRACTS: TractFeature[] = [];
 
 function tractPopulationFill(population: number, maxPopulation: number): string {
   const share = Math.max(0.08, Math.min(1, population / maxPopulation));
   return `oklch(${0.96 - share * 0.16} ${0.03 + share * 0.1} 222)`;
-}
-
-function unprojectEquirectangular(
-  x: number,
-  y: number,
-  lon0: number,
-  lat0: number
-): [number, number] {
-  const earthRadiusM = 6_371_000;
-  const lat = lat0 + radiansToDegrees(y / earthRadiusM);
-  const lon =
-    lon0 +
-    radiansToDegrees(
-      x / (earthRadiusM * Math.cos(degreesToRadians(lat0)))
-    );
-  return [lon, lat];
-}
-
-function degreesToRadians(value: number): number {
-  return (value * Math.PI) / 180;
-}
-
-function radiansToDegrees(value: number): number {
-  return (value * 180) / Math.PI;
 }
