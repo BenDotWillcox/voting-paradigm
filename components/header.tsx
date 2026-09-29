@@ -5,6 +5,7 @@ const navItems = [
   { href: "/methods", label: "Methods" },
   { href: "/preferences", label: "Preferences" },
   { href: "/districts", label: "Districts" },
+  { href: "/apportionment", label: "Apportionment" },
   { href: "/liquid", label: "Liquid" },
 ];
 
@@ -17,7 +18,7 @@ export default function Header() {
           className="flex items-center space-x-2 transition-opacity hover:opacity-80"
         >
           <CheckSquare className="h-6 w-6" />
-          <h1 className="text-xl font-bold">Nebula Civitas</h1>
+          <span className="text-xl font-bold">Nebula Civitas</span>
         </Link>
         <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-medium">
           {navItems.map((item) => (

@@ -12,6 +12,36 @@ const nextConfig: NextConfig = {
       "./public/data/us-states.json",
     ],
   },
+  async redirects() {
+    // /districts used to hold both explorers behind ?tab=; apportionment is
+    // now its own demo. Keep old shared links working (first match wins;
+    // query strings pass through).
+    return [
+      {
+        source: "/districts/:stateFips(\\d{2})",
+        destination: "/apportionment/explore/:stateFips",
+        permanent: false,
+      },
+      {
+        source: "/districts",
+        has: [{ type: "query", key: "tab", value: "districting" }],
+        destination: "/districts/explore",
+        permanent: false,
+      },
+      {
+        source: "/districts",
+        has: [{ type: "query", key: "tab" }],
+        destination: "/apportionment/explore",
+        permanent: false,
+      },
+      {
+        source: "/districts",
+        has: [{ type: "query", key: "cap" }],
+        destination: "/apportionment/explore",
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     return [
       {

@@ -142,7 +142,7 @@ function QueueItem({ item }: { item: QueueFlowItem }) {
             <>
               <div className="allocation-flow-main flex items-center justify-between gap-3">
                 <Link
-                  href={`/districts/${stateFips}`}
+                  href={`/apportionment/explore/${stateFips}`}
                   className="font-semibold hover:underline"
                 >
                   {stateName}

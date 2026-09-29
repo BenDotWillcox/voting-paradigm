@@ -10,8 +10,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { StatePriorityChart } from "@/components/districting/state-priority-chart";
-import { StateSeatLadder } from "@/components/districting/state-seat-ladder";
+import { StatePriorityChart } from "@/components/apportionment/state-priority-chart";
+import { StateSeatLadder } from "@/components/apportionment/state-seat-ladder";
 import {
   buildStatePriorityCurve,
   getNextCandidates,
@@ -56,7 +56,7 @@ export default async function StateDetailPage({
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl">
       <Link
-        href="/districts"
+        href="/apportionment/explore"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -72,6 +72,12 @@ export default async function StateDetailPage({
             <p className="text-muted-foreground text-sm">
               FIPS {state.fips} &middot; {state.abbr}
             </p>
+            <Link
+              href={`/districts/explore?state=${state.fips}`}
+              className="mt-1 inline-block text-sm underline underline-offset-4 hover:text-foreground"
+            >
+              See its algorithmic district plan
+            </Link>
           </div>
           <Badge variant="secondary" className="text-sm">
             Current 435-seat House
