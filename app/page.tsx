@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Bot, Map, Network, Vote } from "lucide-react";
+import { ArrowRight, Bot, Landmark, Map, Network, Vote } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -55,7 +55,7 @@ const demos: Demo[] = [
     title: "Algorithmic districting",
     tagline: "Fair, transparent district maps under explicit constraints.",
     description:
-      "Generate and evaluate redistricting plans against population balance, compactness, and partisan-fairness targets — using ensemble methods that make trade-offs visible.",
+      "Draw population-balanced congressional districts for every state with a reproducible balanced power-diagram algorithm over census tracts — no party data, no incumbents, one explicit rule.",
     showcase: [
       "Optimization",
       "Graph algorithms",
@@ -68,6 +68,17 @@ const demos: Demo[] = [
   },
   {
     number: 4,
+    title: "Apportionment",
+    tagline: "How big would the House need to be for equal districts?",
+    description:
+      "Resize the House seat by seat under the Method of Equal Proportions and see how unequal district sizes between states are at 435 seats, and how large the House must grow before the gap closes.",
+    showcase: ["Apportionment math", "Data storytelling", "Reproducibility"],
+    href: "/apportionment",
+    status: "live",
+    Icon: Landmark,
+  },
+  {
+    number: 5,
     title: "Liquid democracy",
     tagline: "Delegate per topic to whomever you trust — transitively.",
     description:

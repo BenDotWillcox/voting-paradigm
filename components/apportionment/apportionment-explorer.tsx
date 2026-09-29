@@ -15,7 +15,7 @@ import { CapPicker } from "./cap-picker";
 import { NationalMap } from "./national-map";
 import { RepresentationMetrics } from "./representation-metrics";
 
-interface DistrictsExplorerProps {
+interface ApportionmentExplorerProps {
   /** House size from `?cap=`. Drives picker initial state. */
   initialCap: number;
   /** 2020 census apportionment population summed across the 50 states. */
@@ -30,11 +30,11 @@ interface DistrictsExplorerProps {
  * Owns the selected House size, mirrors it to `?cap=`, and derives the
  * apportionment locally from the deterministic priority sequence.
  */
-export function DistrictsExplorer({
+export function ApportionmentExplorer({
   initialCap,
   states,
   totalPopulation,
-}: DistrictsExplorerProps) {
+}: ApportionmentExplorerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -78,7 +78,7 @@ export function DistrictsExplorer({
         params.set("cap", String(cap));
       }
       router.replace(
-        `/districts${params.size ? `?${params.toString()}` : ""}`,
+        `/apportionment/explore${params.size ? `?${params.toString()}` : ""}`,
         { scroll: false }
       );
     }, 250);
@@ -116,7 +116,8 @@ export function DistrictsExplorer({
         <p className="text-[11px] leading-snug text-muted-foreground">
           State outlines are colored by the seat count each state would receive
           at the selected House size. The outlined state received the selected
-          seat. Click a state to inspect its current 435-seat districting plan.
+          seat. Click a state to see the national seat numbers at which it
+          earned each representative.
         </p>
       </div>
 

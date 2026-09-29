@@ -1,7 +1,7 @@
 # Storytelling redesign: methods + districting
 
-Status: Phase 1 in progress. Decisions below were confirmed with Ben on
-2026-09-25.
+Status: Phase 1 merged (PR #46). Phase 0 (story kit) in review. Decisions
+below were confirmed with Ben on 2026-09-25.
 
 ## Why
 
@@ -36,8 +36,31 @@ annotated numbers, and restrained color.
 4. **Explorers move out.** Current explorers move to `/methods/lab` and
    `/districts/explore`; the story pages ship without them. Revisit embedding a
    compact explorer at the bottom after reviewing the stories.
+5. **Apportionment is its own demo (2026-09-29).** It answers a different
+   question from districting (seats per state vs. lines within a state), with
+   different evidence. It becomes demo 4 at `/apportionment` +
+   `/apportionment/explore`, listed last among built demos because its
+   technical surface is the lightest; liquid democracy becomes demo 5. An
+   apportionment-methods comparison (divisor methods, paradoxes,
+   Balinski–Young) is a possible later deepening, not planned.
 
 ## Phase 0 — Story kit (one PR)
+
+Built: `components/story/` (`StoryRoot`, `StoryHeader`, `Prose`,
+`SectionHeading`, `BigNumber`, `Scrolly` + `ScrollyStep` with
+`useScrollyStep` / `useScrollyProgress`, `StoryFigure` + `DataTable`, chart
+primitives `AxisX`, `AxisY`, `Annotation`, `ChartTooltip`, `useElementWidth`,
+`useReducedMotion`), `.story` tokens in `app/globals.css`, and the
+`/story-kit` reference page. Explorers moved to `/methods/lab`,
+`/districts/explore`, and `/apportionment/explore` with redirects from old
+URLs; `/methods`, `/districts`, and `/apportionment` are story covers until
+their stories land.
+
+Finding from the reference page (feeds Phase 3b): modest House growth barely
+changes interstate inequality. The largest/smallest district ratio is 1.83×
+at 435, 1.76× at 574 (Wyoming Rule), and 1.75× at 692 (Cube Root). It only
+collapses past ~1,000 seats (1.35×) and reaches 1.04× at 11,037, because
+states with one or two seats dominate the rounding error.
 
 - `components/story/`: sticky-figure scrollytelling section driven by
   `IntersectionObserver` (no new dependency), prose step, big-number callout,
@@ -95,19 +118,29 @@ Story beats:
 7. Simulation-at-scale results.
 8. Link to `/methods/lab` (live API, resolves on slider commit, cache-first).
 
-## Phase 3 — Districting story
+## Phase 3a — Districting story (`/districts`)
+
+1. One-line bridge: apportionment fixes the number of districts per state
+   (link to `/apportionment`).
+2. Michigan balanced power diagram driven by **recorded** solver snapshots
+   (precompute stores centers/weights/populations every k iterations; removes
+   the jitter placeholder).
+3. Algorithmic vs. enacted maps: compactness and population deviation.
+4. Link to `/districts/explore`.
+
+Implication of the split: the enacted-map comparison only exists at 435
+seats, so precomputing district maps across other House sizes is no longer
+needed for this story.
+
+## Phase 3b — Apportionment story (`/apportionment`)
 
 1. People per representative, 1790–2020, marking the 1929 freeze and the
    Article I 30,000 ratio.
 2. Dot plot of people per seat by state at 435 seats.
-3. Scroll-driven House growth 435 → 574 → 692 → 11,037 on a hex-tile
-   cartogram; disparity shrinks.
+3. Scroll-driven House growth 435 → 574 → 1,000 → 11,037 (the `/story-kit`
+   beeswarm is the prototype): the extremes barely move until ~1,000 seats.
 4. Equal Proportions as an animated priority queue.
-5. Michigan balanced power diagram driven by **recorded** solver snapshots
-   (precompute stores centers/weights/populations every k iterations; removes
-   the jitter placeholder).
-6. Algorithmic vs. enacted maps: compactness and population deviation.
-7. Link to `/districts/explore`.
+5. Link to `/apportionment/explore`.
 
 ## Phase 4 — Stretch
 

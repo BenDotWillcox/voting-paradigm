@@ -106,7 +106,7 @@ export function ApportionmentSummary({
             {topFive.map(({ fips, name, n }) => (
               <li key={fips} className="flex items-center justify-between text-sm">
                 <Link
-                  href={`/districts/${fips}?cap=${cap}`}
+                  href={`/apportionment/explore/${fips}?cap=${cap}`}
                   className="hover:underline"
                 >
                   {name}

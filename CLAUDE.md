@@ -23,10 +23,19 @@ Each demo is a top-level route in the web app and a domain package on the Python
 
 | # | Demo | Route | Status | Core showcase |
 |---|------|-------|--------|---------------|
-| 1 | **Voting methods comparison** — same ballots, multiple resolution methods, side-by-side winners | `/methods` | Voting package complete; UI in progress | Voting theory rigor, electoral criteria, reproducibility |
+| 1 | **Voting methods comparison** — same ballots, multiple resolution methods, side-by-side winners | `/methods` (story), `/methods/lab` | Voting package complete; UI in progress | Voting theory rigor, electoral criteria, reproducibility |
 | 2 | **Agent voting via preference models** — LLM-elicited preference posterior; agent casts a ballot under uncertainty | `/preferences` | In progress | Bayesian inference, embeddings, active learning, LLM orchestration |
-| 3 | **Algorithmic districting** — fair, transparent district maps under explicit constraints | `/districts` | Apportionment slice live; district polygons planned | Optimization, graph algorithms, geo data, fairness metrics |
-| 4 | **Liquid democracy** — delegation graphs, transitive trust, topic-conditional delegates | `/delegation` | Planned | Network analysis, simulation, dynamics on graphs |
+| 3 | **Algorithmic districting** — fair, transparent district maps under explicit constraints | `/districts` (story), `/districts/explore` | Tract-level plans for all 50 states live; enacted-map comparison planned | Optimization, graph algorithms, geo data, fairness metrics |
+| 4 | **Apportionment** — how many seats each state gets, and how House size drives interstate district inequality | `/apportionment` (story), `/apportionment/explore` | Live; methods comparison deferred | Apportionment math, data storytelling, reproducibility |
+| 5 | **Liquid democracy** — delegation graphs, transitive trust, topic-conditional delegates | `/delegation` | Planned | Network analysis, simulation, dynamics on graphs |
+
+Apportionment was split out of districting (2026-09-29): it answers a
+different question (seats per state, not lines within a state) with
+different evidence. It is intentionally listed last among built demos
+because its technical surface is the lightest; comparing apportionment
+methods (Hamilton, Jefferson/D'Hondt, Webster/Sainte-Laguë,
+Huntington–Hill) and their paradoxes is a candidate deepening, not yet
+planned. Its Python code still lives in `districting/apportionment.py`.
 
 The list is open — additional demos can be added as peer packages without disturbing existing ones. New demos must justify themselves by isolating a *distinct* friction with a *distinct* technical showcase; otherwise they're noise.
 
@@ -84,8 +93,9 @@ Two processes. One web app, one Python service.
 
 ```
 .claude/skills/              Versioned project review checklists
-app/                        Next.js App Router pages (incl. /methods demo explorer)
+app/                        Next.js App Router pages (demo stories + /methods/lab, /districts/explore)
 components/                 React components (domain subfolders + ui/ for shadcn)
+  story/                    Scrollytelling kit: layout, Scrolly, figures, chart primitives
 actions/                    Server Actions — "use server", return ActionResult<T>
 db/
   schema/                   Drizzle table definitions (one file per domain)
@@ -100,7 +110,7 @@ preferences/                Python: preference modeling                       [d
 personas/                   Python: simulated voter generation               (future) [demo 2]
 agents/                     Python: agent voting policies                    (future) [demo 2]
 districting/                Python: redistricting algorithms                 (future) [demo 3]
-delegation/                 Python: liquid democracy delegation graphs       (future) [demo 4]
+delegation/                 Python: liquid democracy delegation graphs       (future) [demo 5]
 eval/                       Python: synthetic + human-measure evaluation       [cross-demo]
 api/                        Python: FastAPI app, one router per demo
 prompts/                    Project scope + documentation
@@ -119,8 +129,8 @@ The schema grows per-demo. Each demo owns its own tables, namespaced by clear pr
 ### Shared (used by ≥2 demos)
 
 - **`user`** — actors (simulated personas authored by one real user). Used everywhere voters appear.
-- **`domain`, `program`** — two-level topic taxonomy. Used for measure filtering (demo 1) and will be reused for topic-conditional delegation (demo 4).
-- **`electorate`** — a named simulated population with generation parameters and a seed. Reproducible. Used by demos 1, 2, 3, and 4 — different demos populate it from different sources (synthetic preference distributions, geo-grounded sampling, etc).
+- **`domain`, `program`** — two-level topic taxonomy. Used for measure filtering (demo 1) and will be reused for topic-conditional delegation (demo 5).
+- **`electorate`** — a named simulated population with generation parameters and a seed. Reproducible. Used by demos 1, 2, 3, and 5 — different demos populate it from different sources (synthetic preference distributions, geo-grounded sampling, etc).
 
 ### Demos 1 + 2 (methods comparison + agent voting)
 
@@ -137,7 +147,7 @@ These two demos share the ballot-measure backbone because demo 2 is structurally
 
 Anticipated: tables for jurisdictions, units (e.g. census blocks), proposed district maps, and run records of districting algorithms with their parameters and fairness metrics. Geo data lives in PostGIS columns or referenced shapefiles — to be decided when demo 3 is scoped.
 
-### Demo 4 (liquid democracy) — schema TBD
+### Demo 5 (liquid democracy) — schema TBD
 
 Anticipated: a delegation graph (edges with topic + weight), per-topic effective vote weights, and snapshots of the resolved graph at the time of each `resolution_run`. Reuses `user` and `ballot_measure`; the resolution-run cache key extends to include the delegation snapshot id.
 
@@ -291,7 +301,21 @@ All LLM calls live in Python. One framework for prompts, Pydantic output schemas
 
 **Scope locked in.** Specific algorithm: Cohen-Addad / Klein / Young **balanced power diagrams** (arXiv 1710.03358). Full design — interaction model, schema, precompute strategy, build sequence — is in [`prompts/demo-3-districting.md`](prompts/demo-3-districting.md). Headline decisions: 2020 census, tract resolution, House-size slider over **[435, 11037]** (logarithmic scale) with anchors at Wyoming Rule (~574), Cube Root Rule (~692), and Article I §2 1-per-30K ratio (11,037 — the constitutional minimum-district-size that the 1929 cap abandoned). Single canonical seed, 50 states only (DC + territories deferred). Precompute per-state results across the apportionment range; runtime path is apportionment (live, sub-ms) plus DB lookup of cached district maps.
 
-## Demo 4: Liquid democracy (planned)
+## Demo 4: Apportionment
+
+**Friction it dissolves:** the House has been capped at 435 seats since
+1929, so districts are large and, because seats are whole numbers, unequal
+between states (Delaware's are about 1.83× Montana's). The fix is a
+legislative number, but its consequences are rarely shown concretely.
+
+**Current surface:** Method of Equal Proportions as a deterministic local
+priority sequence (`lib/apportionment-sequence.ts`, matching
+`districting/apportionment.py`), a House-size explorer over [435, 11037],
+per-state seat ladders, and the representation-gap finding: the
+largest/smallest district ratio barely moves at the Wyoming Rule (1.76×)
+or Cube Root Rule (1.75×) and only collapses past ~1,000 seats (1.35×).
+
+## Demo 5: Liquid democracy (planned)
 
 **Friction it dissolves:** direct democracy doesn't scale (voters can't research every issue) and representative democracy alienates (one elected agent represents your views on everything). Liquid democracy lets each voter delegate per-topic to whomever they trust, with delegation transitive and revocable. The technology — a maintained delegation graph and a vote-flow algorithm — is straightforward; what's missing is a credible demonstration that it produces sensible outcomes and resists pathologies (cycles, super-delegate concentration, low-participation collapse).
 
@@ -301,9 +325,9 @@ All LLM calls live in Python. One framework for prompts, Pydantic output schemas
 - **Vote-flow algorithm.** Given a delegation graph and a measure on a given topic, compute effective vote weights. This is a topic-conditional reachability + weight propagation problem.
 - **Resolution.** Effective weights feed into `voting/` — every existing resolution method works on weighted ballots with minor adapter code. This is the natural cross-demo composition: liquid democracy is "demo 1 with a delegation layer in front."
 - **Simulation surface.** Generate synthetic populations with varying delegation strategies (apathetic, expert-trusting, partisan, etc.) and show how outcomes differ from direct voting. Investigate pathologies: super-delegates, partisan cascades, participation cliffs.
-- **AI angle.** A delegate-recommendation agent that, given a user's stated preferences (from demo 2's posterior!) and observed delegate voting records, suggests delegates per topic. This is the only natural cross-demo composition between demos 2 and 4 — and the most interesting portfolio synthesis.
+- **AI angle.** A delegate-recommendation agent that, given a user's stated preferences (from demo 2's posterior!) and observed delegate voting records, suggests delegates per topic. This is the only natural cross-demo composition between demos 2 and 5 — and the most interesting portfolio synthesis.
 
-**Open scoping questions:** Topic granularity — fixed taxonomy or learned topic embeddings? How realistic should the simulated populations be (synthetic strategies vs. data-grounded)? Is the demo focused on showing *outcomes differ* from direct democracy, or on *characterizing* the dynamics of the graph? Defer answering until demo 4 reaches the top of the build queue.
+**Open scoping questions:** Topic granularity — fixed taxonomy or learned topic embeddings? How realistic should the simulated populations be (synthetic strategies vs. data-grounded)? Is the demo focused on showing *outcomes differ* from direct democracy, or on *characterizing* the dynamics of the graph? Defer answering until demo 5 reaches the top of the build queue.
 
 ## Cross-demo: Evaluation harness (`eval/`)
 
@@ -318,7 +342,7 @@ Proper ML evaluation, reproducible seeds, held-out splits. Each demo contributes
   generalization gaps, test-retest stability, and secondary ballot-format
   fidelity.
 - **Demo 3 — districting:** ensemble-based fairness comparisons (where does a proposed map sit in the distribution of ensemble maps?), efficiency gap, compactness scores.
-- **Demo 4 — delegation dynamics:** participation rates, super-delegate concentration (Gini on effective weights), outcome divergence vs. direct democracy, robustness to delegation churn.
+- **Demo 5 — delegation dynamics:** participation rates, super-delegate concentration (Gini on effective weights), outcome divergence vs. direct democracy, robustness to delegation churn.
 
 ## Reproducibility (first-class invariant, applies to every demo)
 
@@ -326,11 +350,11 @@ Every demo must be verifiable by anyone who clicks. Every stochastic operation i
 
 - **Voting method tiebreaks** — each method takes an injectable tiebreak; default is `random_tiebreak(seed)`, not unseeded `random.choice`.
 - **Electorate generation** — sampling from preference distributions uses a seed stored on the `electorate` row. Regenerating the same electorate_id produces byte-identical voters.
-- **Resolution runs** — `(measure_id, electorate_id, method, seed)` is the cache key. Given the tuple, the result is deterministic. Demos that introduce additional state (e.g. demo 4's delegation snapshot) extend the cache key accordingly.
+- **Resolution runs** — `(measure_id, electorate_id, method, seed)` is the cache key. Given the tuple, the result is deterministic. Demos that introduce additional state (e.g. demo 5's delegation snapshot) extend the cache key accordingly.
 - **LLM calls** — `temperature=0` for rationales and structured outputs; use the `seed` parameter where supported (OpenAI). Cache responses keyed on the full prompt.
 - **Preference model inference** — RNG for MCMC / variational fits is seeded and recorded.
 - **Districting ensembles (demo 3, when built)** — the MCMC chain seed and parameter set are part of every reported result; an ensemble run is identified by `(jurisdiction_id, params_hash, seed, n_steps)`.
-- **Delegation-graph simulations (demo 4, when built)** — graph generation seed and any random delegation-strategy seeds are recorded on the run.
+- **Delegation-graph simulations (demo 5, when built)** — graph generation seed and any random delegation-strategy seeds are recorded on the run.
 
 If a change breaks determinism (e.g., switching to an ungrounded LLM call), document the non-determinism explicitly and justify it.
 
@@ -353,6 +377,15 @@ The API is visible in the portfolio; treat it as product surface.
 - **JSONB columns** — always Zod-validate on read. Drizzle types JSONB as `unknown`; don't cast away with `as unknown as T`.
 - **Path alias:** `@/*` maps to project root.
 - **Style:** Tailwind CSS 4, shadcn/ui (new-york), dark mode via class strategy.
+- **Story pages** (`/methods`, `/districts`, `/apportionment`): editorial scrollytelling built from
+  `components/story/` inside `<StoryRoot>`, which scopes the `.story` tokens in
+  `app/globals.css` (serif prose, warm surfaces, validated chart palette in
+  `lib/story/palette.ts`). Stories are static-first: data comes from
+  build-time artifacts or deterministic local code, never a live Python call.
+  Charts use sans text and ink tokens (never a series color for text), and
+  every `StoryFigure` ships a data table. `/story-kit` is the living reference
+  page (hidden on the production deployment). Plan and phases:
+  `prompts/storytelling-redesign.md`.
 
 ## Commands
 
@@ -398,7 +431,7 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 
 **Next:**
 - Seed-plumb all stochastic operations for the reproducibility invariant
-- Extend `eval/` with one baseline metric for demos 1/3/4 as they mature
+- Extend `eval/` with one baseline metric for demos 1/3/5 as they mature
 - Add a top-level navigation surfacing the demo set (`/methods`, `/preferences`, future `/districts`, `/delegation`)
 
 ### Demo 1: Voting methods comparison
@@ -514,7 +547,7 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 
 ### Demo 3: Algorithmic districting
 
-**Status:** Apportionment + map shell implemented. Design doc at [`prompts/demo-3-districting.md`](prompts/demo-3-districting.md). The current slice ships Method-of-Equal-Proportions apportionment, a FastAPI route, a national/state map UI, and tests. Real district polygons, metrics, and precomputed district maps are still planned.
+**Status:** Tract-level 435-seat plans for all 50 states implemented (apportionment now lives in demo 4). Design doc at [`prompts/demo-3-districting.md`](prompts/demo-3-districting.md). The current slice ships simplified display artifacts, a canvas tract map with hover inspection, per-plan population-balance metrics, and the Michigan algorithm walkthrough. The enacted-map comparison, recorded solver snapshots, and block-level plans are still planned.
 
 **Next, in order:**
 1. Add methodology writeup page explaining the algorithm, constraints, seed policy, and limits of geometric fairness.
@@ -523,8 +556,14 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 4. State detail page with real district polygons + metrics (Polsby-Popper, population deviation, edge count).
 5. *(Deferred)* Live seed regeneration, block-group resolution, DC/territories, cross-demo composition with methods.
 
-### Demo 4: Liquid democracy
+### Demo 4: Apportionment
 
-**Status:** Not started. Scope before building. Open questions in the demo 4 section above.
+**Status:** Explorer and story cover live at `/apportionment`; the full
+scrollytelling story follows the districting story. Deferred: apportionment
+methods comparison and paradoxes.
+
+### Demo 5: Liquid democracy
+
+**Status:** Not started. Scope before building. Open questions in the demo 5 section above.
 
 The most interesting cross-demo synthesis is "delegate recommendations driven by demo 2's preference posterior" — flag for design attention when both demos are mature.

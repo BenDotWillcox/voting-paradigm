@@ -1,63 +1,42 @@
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
-import { MethodsLab } from "@/components/methods/methods-lab";
-import { fetchDemoScenarios, resolveDemoScenario } from "@/lib/methods-api";
+import type { Metadata } from "next";
+import Link from "next/link";
 
-export const dynamic = "force-dynamic";
+import { Prose, StoryHeader, StoryRoot } from "@/components/story/story-layout";
 
-export default async function MethodsPage() {
-  try {
-    const scenarios = await fetchDemoScenarios();
-    const firstScenario = scenarios[0];
-    if (!firstScenario) {
-      throw new Error("No methods demo scenarios are configured.");
-    }
-    const initialResolution = await resolveDemoScenario(
-      firstScenario.id,
-      firstScenario.default_controls
-    );
+export const metadata: Metadata = {
+  title: "Voting methods · Nebula Civitas",
+  description:
+    "Same voters, different winners: how the choice of voting method decides elections.",
+};
 
-    return (
-      <div className="container mx-auto max-w-7xl px-4 py-8">
-        <div className="mb-8">
-          <p className="text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">
-            Voting methods lab
-          </p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
-            Same electorate, different democracy.
-          </h1>
-          <p className="mt-3 max-w-3xl text-muted-foreground">
-            Explore how plurality, approval, IRV, Borda, Ranked Pairs, score,
-            and quadratic voting transform the same voter blocs into different
-            winners, explanations, and failure modes.
-          </p>
-        </div>
-
-        <MethodsLab
-          scenarios={scenarios}
-          initialResolution={initialResolution}
-        />
-      </div>
-    );
-  } catch {
-    return (
-      <div className="container mx-auto max-w-5xl px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">Compare Voting Methods</h1>
-        </div>
-
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Python API Unavailable</AlertTitle>
-          <AlertDescription>
-            Could not connect to the voting API. Make sure the Python server is
-            running:
-            <code className="block mt-2 p-2 bg-muted rounded text-sm">
-              npm run api:dev
-            </code>
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
+/**
+ * Story cover for demo 1. The full scrollytelling story (Condorcet cycle
+ * first) replaces the body in Phase 2 of prompts/storytelling-redesign.md;
+ * the interactive explorer lives at /methods/lab.
+ */
+export default function MethodsStoryPage() {
+  return (
+    <StoryRoot>
+      <StoryHeader
+        kicker="Voting methods"
+        title="When the majority can’t make up its mind"
+        dek="Three voters, three options, and every option loses a head-to-head vote. Majority rule has no answer, so every voting method invents one, and they don’t agree."
+      />
+      <Prose>
+        <p>
+          The same ballots can elect different winners depending on how they
+          are counted. Plurality, instant-runoff, Borda, Ranked Pairs, score,
+          approval, and quadratic voting each resolve disagreement in their own
+          way, and each fails a different fairness criterion.
+        </p>
+        <p>
+          This page is becoming a scrolling story that starts from a Condorcet
+          cycle and works outward. Until then, the{" "}
+          <Link href="/methods/lab">methods lab</Link> runs every method on the
+          same electorates, with controls for polarization, strategy, and
+          turnout.
+        </p>
+      </Prose>
+    </StoryRoot>
+  );
 }

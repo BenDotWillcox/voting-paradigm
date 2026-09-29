@@ -315,3 +315,89 @@
     }
   }
 }
+
+/* ------------------------------------------------------------------------
+ * Story kit tokens (components/story). Scoped to `.story` so editorial
+ * pages can use a warm, typographic palette without re-theming the app.
+ *
+ * Chart colors are the dataviz reference palette, validated with
+ * validate_palette.js against these surfaces: light passes every gate
+ * (three slots sit under 3:1, so figures ship a table view); dark passes
+ * every gate. Keep the categorical ORDER — it is the CVD-safety mechanism.
+ * Chart text always uses ink tokens, never a series color.
+ * --------------------------------------------------------------------- */
+@theme inline {
+  --color-story-page: var(--story-page);
+  --color-story-surface: var(--story-surface);
+  --color-story-ink: var(--story-ink);
+  --color-story-ink-2: var(--story-ink-2);
+  --color-story-muted: var(--story-muted);
+  --color-story-grid: var(--story-grid);
+  --color-story-axis: var(--story-axis);
+  --color-story-rule: var(--story-rule);
+  --color-story-accent: var(--story-accent);
+  --font-story-serif: var(--font-newsreader), Georgia, "Times New Roman", serif;
+}
+
+.story {
+  color-scheme: light;
+  --story-page: #f8f7f3;
+  --story-surface: #fcfcfb;
+  --story-ink: #1c1b19;
+  --story-ink-2: #52514e;
+  --story-muted: #6b6964;
+  --story-grid: #e1e0d9;
+  --story-axis: #c3c2b7;
+  --story-rule: rgb(11 11 11 / 0.1);
+  --story-accent: #a94d25;
+
+  --story-series-1: #2a78d6;
+  --story-series-2: #eb6834;
+  --story-series-3: #1baf7a;
+  --story-series-4: #eda100;
+  --story-series-5: #e87ba4;
+  --story-series-6: #008300;
+  --story-series-7: #4a3aa7;
+  --story-series-8: #e34948;
+
+  --story-seq-100: #cde2fb;
+  --story-seq-200: #9ec5f4;
+  --story-seq-300: #6da7ec;
+  --story-seq-400: #3987e5;
+  --story-seq-500: #256abf;
+  --story-seq-600: #184f95;
+  --story-seq-700: #0d366b;
+
+  --story-div-neg: #e34948;
+  --story-div-mid: #f0efec;
+  --story-div-pos: #2a78d6;
+
+  background: var(--story-page);
+  color: var(--story-ink);
+}
+
+.dark .story {
+  color-scheme: dark;
+  --story-page: #121211;
+  --story-surface: #1a1a19;
+  --story-ink: #f3f2ee;
+  --story-ink-2: #c3c2b7;
+  --story-muted: #9a9892;
+  --story-grid: #2c2c2a;
+  --story-axis: #383835;
+  --story-rule: rgb(255 255 255 / 0.1);
+  --story-accent: #e2875c;
+
+  --story-series-1: #3987e5;
+  --story-series-2: #d95926;
+  --story-series-3: #199e70;
+  --story-series-4: #c98500;
+  --story-series-5: #d55181;
+  --story-series-6: #008300;
+  --story-series-7: #9085e9;
+  --story-series-8: #e66767;
+
+  --story-div-neg: #e66767;
+  --story-div-mid: #383835;
+  --story-div-pos: #3987e5;
+}

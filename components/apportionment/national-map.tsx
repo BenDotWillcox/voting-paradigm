@@ -87,7 +87,7 @@ export function NationalMap({
                   minSeats={minSeats}
                   maxSeats={maxSeats}
                   cap={cap}
-                  routerPush={(fips) => router.push(`/districts/${fips}`)}
+                  routerPush={(fips) => router.push(`/apportionment/explore/${fips}`)}
                 />
               ))}
             {highlightedFeature && (
@@ -97,7 +97,7 @@ export function NationalMap({
                 pathGen={pathGen}
                 seats={apportionment[highlightedFips ?? ""] ?? 0}
                 cap={cap}
-                routerPush={(fips) => router.push(`/districts/${fips}`)}
+                routerPush={(fips) => router.push(`/apportionment/explore/${fips}`)}
               />
             )}
           </g>
