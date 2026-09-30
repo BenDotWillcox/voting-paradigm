@@ -9,7 +9,8 @@ function as a parameter rather than importing it.
 
 Boundary rules (per CLAUDE.md):
   - Pure Python; no DB writes, no HTTP, no I/O at import time.
-  - May import from the foundational primitives voting/ and apportionment/.
+  - May import from the foundational primitives voting/ and apportionment/
+    (precompute derives its House-size anchors from apportionment/).
     Does NOT import from preferences/, delegation/, or other demo packages.
 """
 

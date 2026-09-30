@@ -11,7 +11,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Mapping
 
-CAP_ANCHORS: tuple[int, ...] = (435, 574, 692, 1000, 11037)
+from apportionment import US_2020_APPORTIONMENT_POPULATIONS
+from apportionment.analysis import house_size_rules
+
+# Rule-defined House sizes (current, Wyoming Rule, cube root, 1,000, Article I
+# limit), computed from 2020 apportionment populations: (435, 573, 692, 1000,
+# 11036). apportionment/ is a foundational primitive districting may import.
+CAP_ANCHORS: tuple[int, ...] = tuple(
+    rule.seats for rule in house_size_rules(US_2020_APPORTIONMENT_POPULATIONS)
+)
 
 # States likely to be inspected during demos because they are large,
 # politically salient, or useful edge cases for expanded apportionment.

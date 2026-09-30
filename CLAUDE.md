@@ -300,7 +300,7 @@ All LLM calls live in Python. One framework for prompts, Pydantic output schemas
 - **Fairness metrics surface.** The portfolio payoff is making the trade-offs *visible*: same units, different fairness objectives, visibly different maps, with metric tables next to each.
 - **Reproducibility.** Same seed + same parameters = same map. Ensemble runs report distributional summaries, not single draws.
 
-**Scope locked in.** Specific algorithm: Cohen-Addad / Klein / Young **balanced power diagrams** (arXiv 1710.03358). Full design — interaction model, schema, precompute strategy, build sequence — is in [`prompts/demo-3-districting.md`](prompts/demo-3-districting.md). Headline decisions: 2020 census, tract resolution, House-size slider over **[435, 11037]** (logarithmic scale) with anchors at Wyoming Rule (~574), Cube Root Rule (~692), and Article I §2 1-per-30K ratio (11,037 — the constitutional minimum-district-size that the 1929 cap abandoned). Single canonical seed, 50 states only (DC + territories deferred). Precompute per-state results across the apportionment range; runtime path is apportionment (live, sub-ms) plus DB lookup of cached district maps.
+**Scope locked in.** Specific algorithm: Cohen-Addad / Klein / Young **balanced power diagrams** (arXiv 1710.03358). Full design — interaction model, schema, precompute strategy, build sequence — is in [`prompts/demo-3-districting.md`](prompts/demo-3-districting.md). Headline decisions: 2020 census, tract resolution, House-size range **[435, 11036]** with anchors at the Wyoming Rule (573), Cube Root Rule (692), and the Article I §2 limit of one representative per 30,000 (11,036, the largest House the Constitution allows). Anchor values are computed from 2020 apportionment populations (`apportionment.analysis.house_size_rules`), not typed. Single canonical seed, 50 states only (DC + territories deferred). Precompute per-state results across the apportionment range; runtime path is apportionment (live, sub-ms) plus DB lookup of cached district maps.
 
 ## Demo 4: Apportionment
 
@@ -329,8 +329,10 @@ The essay may cite only `verified` or `derived` facts.
 **Rule-defined House sizes are computed, not typed:** with populations
 measured consistently the 2020 Wyoming Rule gives 573 (the commonly
 reported 574 mixes apportionment and resident populations), and Article
-I's one-per-30,000 limit allows at most 11,036 seats. The explorer's
-`CAP_ANCHORS` still use 574 and 11,037 pending a decision.
+I's one-per-30,000 limit allows at most 11,036 seats. The explorer, the
+API bounds, and districting's precompute anchors all derive these values
+(`lib/districting-cap-scale.ts` mirrors the Python rules; the parity
+script compares them).
 
 ## Demo 5: Liquid democracy (planned)
 

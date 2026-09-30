@@ -9,12 +9,34 @@
  * doesn't let users pick something we don't plan to render.
  */
 
+import { US_2020_APPORTIONMENT_POPULATIONS } from "@/lib/us-state-populations";
 import type { CapAnchor } from "@/types/districting";
+
+// Rule-defined House sizes are computed from the 2020 apportionment
+// populations, never typed in, and mirror apportionment/analysis.py (the
+// parity script compares them). Every rule uses apportionment populations
+// consistently; mixing in resident populations is how the commonly quoted
+// "574" arises.
+const POPULATIONS = Object.values(US_2020_APPORTIONMENT_POPULATIONS);
+const TOTAL_POPULATION = POPULATIONS.reduce((sum, population) => sum + population, 0);
+const SMALLEST_STATE = Math.min(...POPULATIONS);
+
+/** Wyoming Rule: the House whose average district is closest to the smallest state. */
+export const WYOMING_RULE_SEATS = Math.round(TOTAL_POPULATION / SMALLEST_STATE);
+/** Taagepera's cube-root law. */
+export const CUBE_ROOT_SEATS = Math.round(Math.cbrt(TOTAL_POPULATION));
+/**
+ * Article I §2: "The Number of Representatives shall not exceed one for every
+ * thirty Thousand." The largest compliant House rounds down.
+ */
+export const ARTICLE_ONE_MAX_SEATS = Math.floor(TOTAL_POPULATION / 30_000);
 
 /** Inclusive lower bound — current US House size, set by the 1929 cap. */
 export const CAP_MIN = 435;
-/** Inclusive upper bound — Article I §2 ratio of 1 representative per 30,000. */
-export const CAP_MAX = 11_037;
+/** Inclusive upper bound — the largest House Article I §2 allows. */
+export const CAP_MAX = ARTICLE_ONE_MAX_SEATS;
+
+const formatInt = (value: number) => value.toLocaleString("en-US");
 
 /**
  * Anchor values shown in the picker.
@@ -30,18 +52,19 @@ export const CAP_ANCHORS: readonly CapAnchor[] = [
       "The current US House size, set by the Reapportionment Act of 1929.",
   },
   {
-    cap: 574,
+    cap: WYOMING_RULE_SEATS,
     label: "Wyoming Rule",
     description:
-      "Smallest state's population sets the average district size. " +
-      "≈ 331.1M / 576,851 ≈ 574 seats.",
+      "Average district size matches the smallest state's population: " +
+      `${formatInt(TOTAL_POPULATION)} / ${formatInt(SMALLEST_STATE)} ≈ ` +
+      `${formatInt(WYOMING_RULE_SEATS)} seats.`,
   },
   {
-    cap: 692,
+    cap: CUBE_ROOT_SEATS,
     label: "Cube Root",
     description:
-      "Cube root of the apportionment population. ∛331.1M ≈ 692. " +
-      "An empirical regularity observed across many democracies.",
+      `Cube root of the apportionment population: ∛${formatInt(TOTAL_POPULATION)} ≈ ` +
+      `${formatInt(CUBE_ROOT_SEATS)}. An empirical regularity across many democracies.`,
   },
   {
     cap: 1_000,
@@ -51,11 +74,12 @@ export const CAP_ANCHORS: readonly CapAnchor[] = [
       "and the constitutional ceiling.",
   },
   {
-    cap: 11_037,
+    cap: ARTICLE_ONE_MAX_SEATS,
     label: "Article I §2",
     description:
-      "One representative per 30,000 people — the original constitutional " +
-      "minimum-district-size that the 1929 cap abandoned.",
+      "The largest House the Constitution allows, at most one representative " +
+      `per 30,000 people: ⌊${formatInt(TOTAL_POPULATION)} / 30,000⌋ = ` +
+      `${formatInt(ARTICLE_ONE_MAX_SEATS)} seats.`,
   },
 ] as const;
 

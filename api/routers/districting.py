@@ -16,6 +16,7 @@ from apportionment import (
     US_2020_TOTAL_APPORTIONMENT_POPULATION,
     apportion_us_2020,
 )
+from apportionment.analysis import article_one_max_size
 from districting import (
     CAP_ANCHORS,
     CACHE_VERSION,
@@ -28,12 +29,14 @@ router = APIRouter(prefix="/api/districting", tags=["districting"])
 
 
 # ---------------------------------------------------------------------------
-# Slider bounds for the demo. Pinned in code (not a runtime parameter) so
-# the API contract matches the design doc and the UI can rely on them.
+# Slider bounds for the demo, fixed at import (not a runtime parameter) so
+# the UI can rely on them. The maximum is computed, not typed: Article I §2
+# allows at most one representative per 30,000 people, so floor(total /
+# 30,000) = 11,036 for the 2020 apportionment population.
 # ---------------------------------------------------------------------------
 
 CAP_MIN: int = 435  # Current US House size, set by the Reapportionment Act of 1929.
-CAP_MAX: int = 11_037  # Article I §2 ratio: 1 representative per 30,000 people.
+CAP_MAX: int = article_one_max_size(US_2020_APPORTIONMENT_POPULATIONS)
 
 
 # ---------------------------------------------------------------------------
@@ -46,7 +49,7 @@ class ApportionmentResponse(BaseModel):
 
     cap: int = Field(
         description="Total number of House seats requested.",
-        examples=[435, 692, 11037],
+        examples=[435, 692, 11036],
     )
     apportionment: dict[str, int] = Field(
         description=(

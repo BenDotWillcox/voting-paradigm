@@ -47,7 +47,7 @@ class TestAwardOrder:
         order = award_order(POPULATIONS, 435)
         assert seats_at(order, POPULATIONS, 435) == US_2020_KNOWN_APPORTIONMENT
 
-    @pytest.mark.parametrize("size", [51, 574, 692, 1_000, 5_000])
+    @pytest.mark.parametrize("size", [51, 573, 692, 1_000, 5_000])
     def test_prefix_matches_direct_apportionment(self, size):
         order = award_order(POPULATIONS, 5_000)
         assert seats_at(order, POPULATIONS, size) == apportion(POPULATIONS, size)
