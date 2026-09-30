@@ -12,6 +12,7 @@ import {
   StoryRoot,
 } from "@/components/story/story-layout";
 import { StoryFigure } from "@/components/story/story-figure";
+import { ARTICLE_ONE_MAX_SEATS, WYOMING_RULE_SEATS } from "@/lib/districting-cap-scale";
 import { houseSizeSnapshot } from "@/lib/story/representation-gap";
 
 export const metadata: Metadata = {
@@ -21,9 +22,9 @@ export const metadata: Metadata = {
 
 const STEPS = [
   { cap: 435, label: "Today" },
-  { cap: 574, label: "Wyoming Rule" },
+  { cap: WYOMING_RULE_SEATS, label: "Wyoming Rule" },
   { cap: 1_000, label: "A thousand seats" },
-  { cap: 11_037, label: "Article I ratio" },
+  { cap: ARTICLE_ONE_MAX_SEATS, label: "Article I limit" },
 ] as const;
 
 /**

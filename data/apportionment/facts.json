@@ -1,0 +1,309 @@
+{
+  "version": 1,
+  "description": "Every historical or sourced claim the apportionment essay may make. The essay may cite only facts with status 'verified' (read in the primary or authoritative source text) or 'derived' (computed from vendored data and verified facts; see 'derivation'). 'unverified' entries are research leads and must not appear in the essay.",
+  "retrieved": "2026-09-30",
+  "facts": [
+    {
+      "id": "constitution-apportionment-clause",
+      "status": "verified",
+      "claim": "Article I, Section 2 apportions Representatives by population, caps the House at one Representative per thirty thousand, guarantees each state one, and sets the first House at 65 seats until the first census.",
+      "quote": "The Number of Representatives shall not exceed one for every thirty Thousand, but each State shall have at Least one Representative; and until such enumeration shall be made, the State of New Hampshire shall be entitled to chuse three, Massachusetts eight, Rhode-Island and Providence Plantations one, Connecticut five, New-York six, New Jersey four, Pennsylvania eight, Delaware one, Maryland six, Virginia ten, North Carolina five, South Carolina five, and Georgia three.",
+      "sources": [
+        {
+          "title": "The Constitution of the United States: A Transcription",
+          "publisher": "U.S. National Archives",
+          "url": "https://www.archives.gov/founding-docs/constitution-transcript",
+          "locator": "Article I, Section 2, Clause 3"
+        }
+      ]
+    },
+    {
+      "id": "three-fifths-clause",
+      "status": "verified",
+      "claim": "Until the Fourteenth Amendment, apportionment counted three fifths of enslaved people and excluded 'Indians not taxed', so early apportionment populations differ from resident population.",
+      "quote": "according to their respective Numbers, which shall be determined by adding to the whole Number of free Persons, including those bound to Service for a Term of Years, and excluding Indians not taxed, three fifths of all other Persons.",
+      "sources": [
+        {
+          "title": "The Constitution of the United States: A Transcription",
+          "publisher": "U.S. National Archives",
+          "url": "https://www.archives.gov/founding-docs/constitution-transcript",
+          "locator": "Article I, Section 2, Clause 3"
+        }
+      ]
+    },
+    {
+      "id": "article-the-first-text",
+      "status": "verified",
+      "claim": "The first of twelve amendments Congress proposed in 1789 would have regulated the size of the House. Its final clause reads 'nor more than one Representative for every fifty thousand persons', reversing the 'nor less than' of the clause before it.",
+      "quote": "After the first enumeration required by the first article of the Constitution, there shall be one Representative for every thirty thousand, until the number shall amount to one hundred, after which the proportion shall be so regulated by Congress, that there shall be not less than one hundred Representatives, nor less than one Representative for every forty thousand persons, until the number of Representatives shall amount to two hundred; after which the proportion shall be so regulated by Congress, that there shall not be less than two hundred Representatives, nor more than one Representative for every fifty thousand persons.",
+      "sources": [
+        {
+          "title": "The Bill of Rights: A Transcription",
+          "publisher": "U.S. National Archives",
+          "url": "https://www.archives.gov/founding-docs/bill-of-rights-transcript",
+          "locator": "Article the first; Joint Resolution of September 25, 1789"
+        }
+      ]
+    },
+    {
+      "id": "article-the-first-not-ratified",
+      "status": "verified",
+      "claim": "Congress approved the House-size amendment on September 24-25, 1789; it was not ratified by a sufficient number of states and is one of six amendments Congress approved that were never ratified.",
+      "sources": [
+        {
+          "title": "Proposals to Amend the U.S. Constitution: Fact Sheet (R47959)",
+          "publisher": "Congressional Research Service (Ben Leubsdorf), March 14, 2024",
+          "url": "https://www.everycrsreport.com/files/2024-03-14_R47959_7f6ba85e0261d2536020ae6527bf9fb893aac905.html",
+          "locator": "Table 1, 'Size of the U.S. House'"
+        }
+      ]
+    },
+    {
+      "id": "article-the-first-pending",
+      "status": "unverified",
+      "claim": "Because Congress set no ratification deadline, the amendment technically remains pending before the states.",
+      "note": "Widely stated (e.g. Constitution Annotated) but not yet read in a primary text; constitution.congress.gov blocked automated retrieval. Do not use until verified.",
+      "sources": []
+    },
+    {
+      "id": "article-the-first-today",
+      "status": "derived",
+      "claim": "Read as enacted, the amendment's final clause would allow any House between 200 seats and one per 50,000 people. Today's 435-seat House would satisfy it.",
+      "derivation": "Upper bound = floor(2020 apportionment population / 50,000) from anchors.json total_population; lower bound 200 from article-the-first-text.",
+      "sources": []
+    },
+    {
+      "id": "house-growth-1790-1910",
+      "status": "derived",
+      "claim": "The House grew at almost every apportionment from 65 seats (1787) to 435 (1910), shrinking only after the 1840 census (240 to 223).",
+      "derivation": "house_size in public/data/apportionment-story/history.json, from the House Historian table (cross-checked against the Senate Manual).",
+      "sources": [
+        {
+          "title": "Representatives Apportioned to Each State (1st to 24th Census, 1790-2020)",
+          "publisher": "Office of the Historian, U.S. House of Representatives",
+          "url": "https://history.house.gov/Institution/Apportionment/state_apportionment_pdf_2021/",
+          "locator": "Total row"
+        }
+      ]
+    },
+    {
+      "id": "apportionment-methods-by-era",
+      "status": "verified",
+      "claim": "The first six apportionments used fixed ratios of persons per Representative (33,000 rising to 70,680); 1850-1900 used the Vinton method; 1910 and 1930 used major fractions; 1940 onward used equal proportions.",
+      "quote": "Subsequent apportionments based on the 1st Census through the 6th Census were as follows (number of census, date of act, and ratio of persons per Representative): 1st, Apr. 14, 1792, 33,000; 2d, Jan. 14, 1802, 33,000; 3d, Dec. 21, 1811, 35,000; 4th, Mar. 7, 1822, 40,000; 5th, May 22, 1832, 47,700; 6th, June 25, 1842, 70,680. Apportionment based on the 7th Census (1850) through the 12th Census (1900) was determined by the Vinton method, and for the 13th Census (1910) and 15th Census (1930) the method of major fractions was employed, there being no reapportionment in 1920. Apportionment based on the 16th Census (1940), through the 21st Census (1990), was determined by the method of equal proportions",
+      "sources": [
+        {
+          "title": "United States Senate Manual, 113th Congress (S. Doc. 113-1)",
+          "publisher": "U.S. Government Publishing Office",
+          "url": "https://www.govinfo.gov/content/pkg/SMAN-113/html/SMAN-113-pg1415.htm",
+          "locator": "Apportionments of Representatives, note, p. 1416"
+        }
+      ]
+    },
+    {
+      "id": "no-reapportionment-1920",
+      "status": "verified",
+      "claim": "After the 1920 census a battle between rural and urban factions caused the House, for the only time in its history, to fail to reapportion itself.",
+      "quote": "A battle erupted between rural and urban factions, causing the House (for the only time in its history) to fail to reapportion itself following the 1920 Census",
+      "sources": [
+        {
+          "title": "The Permanent Apportionment Act of 1929",
+          "publisher": "Office of the Historian, U.S. House of Representatives",
+          "url": "https://history.house.gov/Historical-Highlights/1901-1950/The-Permanent-Apportionment-Act-of-1929/"
+        },
+        {
+          "title": "Representatives Apportioned to Each State (1st to 24th Census, 1790-2020)",
+          "publisher": "Office of the Historian, U.S. House of Representatives",
+          "url": "https://history.house.gov/Institution/Apportionment/state_apportionment_pdf_2021/",
+          "locator": "Footnote 2: 'No change was made after the 14th Census (1920), as Congress could not agree on a method for apportionment.'"
+        }
+      ]
+    },
+    {
+      "id": "urban-majority-1920",
+      "status": "verified",
+      "claim": "The 1920 census was the first in which more Americans lived in urban than rural areas: 51.2 percent urban, up from 45.6 percent in 1910.",
+      "sources": [
+        {
+          "title": "Measuring America: Our Changing Landscape",
+          "publisher": "U.S. Census Bureau (2016)",
+          "url": "https://www.census.gov/content/dam/Census/library/visualizations/2016/comm/acs-rural-urban-text.pdf",
+          "locator": "Urban and rural population table, 1910 and 1920 rows"
+        }
+      ]
+    },
+    {
+      "id": "permanent-apportionment-act-1929",
+      "status": "verified",
+      "claim": "The Permanent Apportionment Act, signed June 18, 1929, fixed the House at 435 Representatives and created a procedure for automatically reapportioning seats after every census.",
+      "quote": "fixing the number of Representatives at 435 ... created a procedure for automatically reapportioning House seats after every decennial census",
+      "sources": [
+        {
+          "title": "The Permanent Apportionment Act of 1929",
+          "publisher": "Office of the Historian, U.S. House of Representatives",
+          "url": "https://history.house.gov/Historical-Highlights/1901-1950/The-Permanent-Apportionment-Act-of-1929/"
+        },
+        {
+          "title": "2 U.S.C. 2a",
+          "publisher": "Office of the Law Revision Counsel, U.S. House of Representatives",
+          "url": "https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title2-section2a&num=0&edition=prelim",
+          "locator": "Source credit: June 18, 1929, ch. 28, 46 Stat. 26"
+        }
+      ]
+    },
+    {
+      "id": "equal-proportions-1941",
+      "status": "verified",
+      "claim": "In 1941 Congress adopted the method of equal proportions (Huntington-Hill) for apportioning the House, the method still in law.",
+      "quote": "by the method known as the method of equal proportions",
+      "sources": [
+        {
+          "title": "2 U.S.C. 2a(a)",
+          "publisher": "Office of the Law Revision Counsel, U.S. House of Representatives",
+          "url": "https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title2-section2a&num=0&edition=prelim",
+          "locator": "Amended Nov. 15, 1941, 55 Stat. 761"
+        }
+      ]
+    },
+    {
+      "id": "temporary-437",
+      "status": "verified",
+      "claim": "When Alaska (1959) and Hawaii (1959) were admitted, the House temporarily grew to 437 seats without changing the apportionment of other states, returning to 435 after the 1960 census.",
+      "sources": [
+        {
+          "title": "2 U.S.C. 2a, statutory notes",
+          "publisher": "Office of the Law Revision Counsel, U.S. House of Representatives",
+          "url": "https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title2-section2a&num=0&edition=prelim",
+          "locator": "Pub. L. 85-508 (July 7, 1958); Pub. L. 86-3 (Mar. 18, 1959)"
+        },
+        {
+          "title": "United States Senate Manual, 113th Congress (S. Doc. 113-1)",
+          "publisher": "U.S. Government Publishing Office",
+          "url": "https://www.govinfo.gov/content/pkg/SMAN-113/html/SMAN-113-pg1415.htm",
+          "locator": "1950 column total, 437"
+        }
+      ]
+    },
+    {
+      "id": "montana-v-commerce",
+      "status": "verified",
+      "claim": "Montana lost its second seat after the 1990 census and sued, arguing its single district deviated too far from the ideal size. In U.S. Department of Commerce v. Montana (1992) a unanimous Supreme Court held that Congress had acted within its constitutional authority in choosing the method of equal proportions.",
+      "quote": "Congress exercised its apportionment authority within the limits dictated by the Constitution.",
+      "sources": [
+        {
+          "title": "United States Department of Commerce v. Montana, 503 U.S. 442 (1992)",
+          "publisher": "Legal Information Institute, Cornell Law School",
+          "url": "https://www.law.cornell.edu/supremecourt/text/503/442",
+          "locator": "Decided March 31, 1992; Stevens, J., for a unanimous Court"
+        }
+      ]
+    },
+    {
+      "id": "montana-seat-history",
+      "status": "derived",
+      "claim": "Montana had one seat after the 1990, 2000 and 2010 censuses and regained a second seat after 2020.",
+      "derivation": "state_seats['30'] in history.json (House Historian table; Census CSV agrees 1930-2020).",
+      "sources": []
+    },
+    {
+      "id": "seat-435-2020",
+      "status": "derived",
+      "claim": "In the 2020 apportionment the 435th and final seat went to Minnesota (its eighth); New York and Ohio held the next-highest priority values.",
+      "derivation": "Last step of race-2020.json, computed with the Method of Equal Proportions from 2020 apportionment populations; the result reproduces the published 2020 apportionment exactly.",
+      "sources": []
+    },
+    {
+      "id": "federalist-55",
+      "status": "verified",
+      "claim": "Federalist No. 55 warns that very large assemblies are ruled by passion rather than reason.",
+      "quote": "In all very numerous assemblies, of whatever character composed, passion never fails to wrest the sceptre from reason. Had every Athenian citizen been a Socrates, every Athenian assembly would still have been a mob.",
+      "sources": [
+        {
+          "title": "Federalist Papers: Primary Documents in American History, Federalist Nos. 51-60",
+          "publisher": "Library of Congress",
+          "url": "https://guides.loc.gov/federalist-papers/text-51-60",
+          "locator": "Federalist No. 55 (attributed to Hamilton or Madison)"
+        }
+      ]
+    },
+    {
+      "id": "federalist-58",
+      "status": "verified",
+      "claim": "Federalist No. 58, by Madison, argues that the more numerous an assembly, the greater the ascendancy of passion over reason.",
+      "quote": "In the first place, the more numerous an assembly may be, of whatever characters composed, the greater is known to be the ascendency of passion over reason.",
+      "sources": [
+        {
+          "title": "Federalist Papers: Primary Documents in American History, Federalist Nos. 51-60",
+          "publisher": "Library of Congress",
+          "url": "https://guides.loc.gov/federalist-papers/text-51-60",
+          "locator": "Federalist No. 58 (Madison)"
+        }
+      ]
+    },
+    {
+      "id": "cube-root-law",
+      "status": "verified",
+      "claim": "The cube-root law, proposed by Rein Taagepera in 1972, observes that lower-house size tends to track the cube root of population. It is an empirical regularity, not a rule, and has been challenged: a 2021 analysis argues its classic derivation is flawed and that an unrestricted fit does not support it.",
+      "sources": [
+        {
+          "title": "The size of national assemblies",
+          "publisher": "Rein Taagepera, Social Science Research 1(4) (December 1972): 385-401",
+          "url": "https://doi.org/10.1016/0049-089X(72)90084-1",
+          "locator": "Metadata confirmed via Crossref"
+        },
+        {
+          "title": "Size of National Assemblies: The Classic Derivation of the Cube-Root Law is Conceptually Flawed",
+          "publisher": "G. Margaritondo, Frontiers in Physics 8 (2021): 614596",
+          "url": "https://www.frontiersin.org/journals/physics/articles/10.3389/fphy.2020.614596/full"
+        }
+      ]
+    },
+    {
+      "id": "wyoming-rule",
+      "status": "verified",
+      "claim": "The Wyoming Rule would size the House so the average district matches the population of the least populous state (Wyoming).",
+      "quote": "The Wyoming Rule calls for increasing the size of the House to bring the average representative-to-constituent ratio as close as possible to that of the least populous state, which is currently Wyoming.",
+      "sources": [
+        {
+          "title": "The Case for Enlarging the House of Representatives, Part IV: Alternative Proposals for House Enlargement",
+          "publisher": "American Academy of Arts & Sciences",
+          "url": "https://amacad.org/ourcommonpurpose/enlarging-the-house/section/5"
+        }
+      ]
+    },
+    {
+      "id": "wyoming-rule-2020-size",
+      "status": "derived",
+      "claim": "With populations measured consistently, the 2020 Wyoming Rule gives 573 seats. The widely reported 574 divides the apportionment-population total by Wyoming's resident population, mixing two measures.",
+      "derivation": "331,108,434 / 577,719 = 573.1 (apportionment populations); 330,759,736 / 576,851 = 573.4 (resident populations, 50 states); 331,108,434 / 576,851 = 574.0 (mixed). See apportionment.analysis.wyoming_rule_size and anchors.json.",
+      "sources": []
+    },
+    {
+      "id": "article-one-limit-2020",
+      "status": "derived",
+      "claim": "Article I's one-per-thirty-thousand limit allows at most 11,036 Representatives for the 2020 apportionment population; 11,037 would exceed the ratio.",
+      "derivation": "floor(331,108,434 / 30,000) = 11,036 (anchors.json).",
+      "sources": []
+    },
+    {
+      "id": "apportionment-population-2020",
+      "status": "verified",
+      "claim": "The 2020 apportionment population is the resident population of the 50 states plus U.S. military and federal civilian employees living abroad (and dependents living with them) who can be allocated to a home state.",
+      "quote": "The 2020 Census apportionment population includes the resident population of the 50 states, plus a count of the U.S. military personnel and federal civilian employees living outside the United States (and their dependents living with them) who can be allocated to a home state.",
+      "sources": [
+        {
+          "title": "2020 Census Apportionment Results",
+          "publisher": "U.S. Census Bureau",
+          "url": "https://www.census.gov/data/tables/2020/dec/2020-apportionment-data.html"
+        }
+      ]
+    },
+    {
+      "id": "senate-manual-maine-1860",
+      "status": "derived",
+      "claim": "The Senate Manual's apportionment table prints Maine's 1860 apportionment as 3; the House Historian table gives 5, and only 5 makes the 1860 column sum to the standard 241-seat House.",
+      "derivation": "apportionment/tests/test_history.py::TestSenateManualCrossCheck.",
+      "sources": []
+    }
+  ]
+}

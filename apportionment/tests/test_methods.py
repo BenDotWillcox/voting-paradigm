@@ -13,7 +13,7 @@ import math
 
 import pytest
 
-from districting import (
+from apportionment import (
     InvalidApportionmentError,
     US_2020_APPORTIONMENT_POPULATIONS,
     US_2020_KNOWN_APPORTIONMENT,
@@ -41,7 +41,7 @@ class TestRegression2020Apportionment:
 
     def test_2020_total_population_known_value(self):
         """Sanity check on the population data file itself."""
-        from districting import US_2020_TOTAL_APPORTIONMENT_POPULATION
+        from apportionment import US_2020_TOTAL_APPORTIONMENT_POPULATION
 
         # Census Bureau's published total for the 50-state apportionment
         # population. If this drifts, our population data has been edited.
@@ -60,13 +60,13 @@ class TestRegression2020Apportionment:
 class TestInvariants:
     def test_seats_sum_to_total(self):
         """Sum of seats equals the requested total, for any valid cap."""
-        for cap in [50, 100, 435, 575, 692, 1000, 5000, 11037]:
+        for cap in [50, 100, 435, 573, 692, 1000, 5000, 11036]:
             result = apportion_us_2020(total_seats=cap)
             assert sum(result.values()) == cap, f"Failed at cap={cap}"
 
     def test_every_state_gets_at_least_one_seat(self):
         """Constitutional minimum is honored at all valid caps."""
-        for cap in [50, 100, 435, 11037]:
+        for cap in [50, 100, 435, 11036]:
             result = apportion_us_2020(total_seats=cap)
             for fips, seats in result.items():
                 assert seats >= 1, f"State {fips} got {seats} seats at cap={cap}"
@@ -143,7 +143,7 @@ class TestMethodOfEqualProportionsProperties:
             US_2020_APPORTIONMENT_POPULATIONS.items(),
             key=lambda kv: kv[1],
         )
-        for cap in [435, 575, 1000, 11037]:
+        for cap in [435, 573, 1000, 11036]:
             seats = apportion_us_2020(total_seats=cap)
             prev_seats = -1
             for fips, _pop in states_by_pop:

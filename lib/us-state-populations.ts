@@ -1,7 +1,7 @@
 /**
  * 2020 census apportionment populations, FIPS-keyed.
  *
- * Mirror of `districting/data/apportionment_2020.py` for the TS side.
+ * Mirror of `apportionment/data/apportionment_2020.py` for the TS side.
  * Used by the state detail page to show "avg. district size" without
  * round-tripping to the Python API for static reference data.
  *
@@ -9,8 +9,10 @@
  * Representatives by State: 2020 Census" (released April 26, 2021).
  *
  * If these numbers ever drift, the regression test on the Python side
- * (`districting.tests.test_apportionment.TestRegression2020Apportionment`)
+ * (`apportionment/tests/test_methods.py::TestRegression2020Apportionment`)
  * is the source of truth — keep this dict in sync with the Python file.
+ * `scripts/check-apportionment-parity.mjs` (run by the apportionment pytest
+ * suite) fails if the TS and Python seat counts ever diverge.
  */
 
 export const US_2020_APPORTIONMENT_POPULATIONS: Readonly<Record<string, number>> = {

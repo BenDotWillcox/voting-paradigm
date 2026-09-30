@@ -22,7 +22,8 @@ import shapefile
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from districting import CAP_ANCHORS, Unit, apportion_us_2020, balanced_power_diagram
+from apportionment import apportion_us_2020
+from districting import CAP_ANCHORS, Unit, balanced_power_diagram
 
 SOURCE_YEAR = 2020
 CENSUS_POP_URL = "https://api.census.gov/data/2020/dec/pl"

@@ -58,8 +58,8 @@ their stories land.
 
 Finding from the reference page (feeds Phase 3b): modest House growth barely
 changes interstate inequality. The largest/smallest district ratio is 1.83×
-at 435, 1.76× at 574 (Wyoming Rule), and 1.75× at 692 (Cube Root). It only
-collapses past ~1,000 seats (1.35×) and reaches 1.04× at 11,037, because
+at 435, 1.76× at 573 (Wyoming Rule), and 1.75× at 692 (Cube Root). It only
+collapses past ~1,000 seats (1.35×) and reaches 1.04× at 11,036, because
 states with one or two seats dominate the rounding error.
 
 - `components/story/`: sticky-figure scrollytelling section driven by
@@ -134,10 +134,13 @@ needed for this story.
 
 ## Phase 3b — Apportionment story (`/apportionment`)
 
+Superseded by the fuller plan in `prompts/demo-4-apportionment-essay.md`
+(2026-09-30); the outline below is the original sketch.
+
 1. People per representative, 1790–2020, marking the 1929 freeze and the
    Article I 30,000 ratio.
 2. Dot plot of people per seat by state at 435 seats.
-3. Scroll-driven House growth 435 → 574 → 1,000 → 11,037 (the `/story-kit`
+3. Scroll-driven House growth 435 → 573 → 1,000 → 11,036 (the `/story-kit`
    beeswarm is the prototype): the extremes barely move until ~1,000 seats.
 4. Equal Proportions as an animated priority queue.
 5. Link to `/apportionment/explore`.

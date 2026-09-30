@@ -42,12 +42,12 @@ These omissions are honest: the demo is *"here's what pure geometric fairness lo
 
 1. **Census vintage:** 2020 decennial. Authoritative, matches the current apportionment, frozen reference point.
 2. **Geographic unit:** census tracts (~85K nationwide). Bump to block groups (~240K) only if tract-level looks too coarse in state detail view.
-3. **House size picker:** discrete toggle group over five educational anchors. The Python API still accepts any integer in **[435, 11037]** for flexibility, but the UI deliberately exposes only the values we plan to render. Anchors (computed from the 2020 apportionment population, 331,108,434):
+3. **House size picker:** discrete toggle group over five educational anchors. The Python API still accepts any integer in **[435, 11036]** for flexibility, but the UI deliberately exposes only the values we plan to render. Anchors (computed from the 2020 apportionment population, 331,108,434):
    - **435** — current size, set by the Reapportionment Act of 1929
-   - **574** — Wyoming Rule (smallest-state population sets district size; 331.1M / 576,851 ≈ 574)
+   - **573** — Wyoming Rule (smallest-state population sets district size; 331,108,434 / 577,719 ≈ 573, using apportionment populations throughout. The widely quoted 574 divides the apportionment total by Wyoming's resident population, mixing two measures; corrected 2026-09-30)
    - **692** — Cube Root Rule (∛apportionment pop; ∛331.1M ≈ 692)
    - **1,000** — round-number "expanded" anchor for orientation
-   - **11,037** — *Article I §2* ratio: one representative per 30,000 people, the constitutional minimum-district-size that the Reapportionment Act of 1929 abandoned
+   - **11,036** — *Article I §2* limit: at most one representative per 30,000 people, so ⌊331,108,434 / 30,000⌋ = 11,036 is the largest House the Constitution allows (11,037 would exceed the ratio; corrected 2026-09-30)
    - We do not let the user go below 435; the user has no interest in shrinking the House.
 
    **Why a picker, not a slider.** Earlier drafts of this doc proposed a logarithmic-scale slider over the full [435, 11037] range. We switched to a five-button toggle group at step 2 implementation: the precompute story has us computing maps at exactly five caps, not 10,600, and a continuous control would imply commitments we don't keep. URL params (`?cap=574`) still work and are snapped to the nearest anchor, so old links survive.
@@ -154,17 +154,17 @@ A state's district map at a given seat count depends ONLY on `(state_fips, n_dis
 
 ### Sizing the precompute job
 
-For cap range [435, 11037], we enumerate apportionment at each integer cap value and collect the set of `(state_fips, n_districts)` pairs that appear. The total seat count across all 50 states equals the cap, so the sum of distinct seat counts per state across the range is bounded above by `(11037 − 435) + 50 ≈ 10,650` distinct `(state_fips, n_districts)` pairs.
+For cap range [435, 11036], we enumerate apportionment at each integer cap value and collect the set of `(state_fips, n_districts)` pairs that appear. The total seat count across all 50 states equals the cap, so the sum of distinct seat counts per state across the range is bounded above by `(11037 − 435) + 50 ≈ 10,650` distinct `(state_fips, n_districts)` pairs.
 
-Per-state ranges across [435, 11037]:
-- Wyoming: 1 → ~19 districts (576,851 / 30,000)
-- California: ~52 → ~1,316 districts (39.5M / 30,000)
+Per-state ranges across [435, 11036]:
+- Wyoming: 1 → 19 districts
+- California: 52 → 1,319 districts
 - Texas: ~38 → ~967 districts
 - Median state: a range of ~150–300 distinct values
 
 **Total expected: ~9,000–11,000 distinct precompute jobs.**
 
-Cost per job scales roughly as O(units × n_districts × iterations). California at 1,316 districts on ~9K tracts is the worst case — each Lloyd iteration is ~12M (unit, center) ops, with 50–200 iterations to converge. That's tens of seconds to a few minutes per worst-case job.
+Cost per job scales roughly as O(units × n_districts × iterations). California at 1,319 districts on ~9K tracts is the worst case — each Lloyd iteration is ~12M (unit, center) ops, with 50–200 iterations to converge. That's tens of seconds to a few minutes per worst-case job.
 
 **Wall-clock estimate, parallelized across cores: 10–30 hours of one-time precompute.** Tractable but no longer "a few hours" — it's an overnight batch job. Worth running on a beefier machine than a laptop. If it bites, we can:
 - Cap precompute at, say, 3,000 districts/state and fall back to live computation for higher counts (the user is unlikely to linger at the extreme end of the slider — the visualization is mostly a pixel mush there anyway).
@@ -175,9 +175,9 @@ Decide at step 5 based on actual measured costs from step 4.
 
 ### Visualization at high cap values
 
-At cap=11,037, the average district has ~30,000 people. On a national map, individual districts are sub-pixel almost everywhere — California with 1,316 cells looks like uniform color. This is fine for the *story* the slider tells (the user is meant to feel the absurdity at the extreme), but the UI should:
+At cap=11,036, the average district has ~30,000 people. On a national map, individual districts are sub-pixel almost everywhere — California with 1,319 cells looks like uniform color. This is fine for the *story* the slider tells (the user is meant to feel the absurdity at the extreme), but the UI should:
 - Render district *counts per state* as the primary signal at high cap values (color/label rather than polygon detail)
-- Defer detailed polygon rendering to the state-detail view, where 1,316 California districts at state-level zoom *is* a meaningful visualization
+- Defer detailed polygon rendering to the state-detail view, where 1,319 California districts at state-level zoom *is* a meaningful visualization
 - Possibly switch the national map to a choropleth of seat-count-change-vs-baseline at high caps, since individual polygons stop carrying information
 
 This is a UI decision for step 5/6, not an algorithmic one.
@@ -211,10 +211,10 @@ Click a state → navigate to `/districts/{fips}?cap=N`. The single-state map is
 - **Top:** title, one-paragraph framing, "How this is computed" disclosure.
 - **Cap picker:** five-button toggle group, default 435 selected. Anchors:
   - 435 — Current (1929 cap)
-  - 574 — Wyoming Rule
+  - 573 — Wyoming Rule
   - 692 — Cube Root Rule
   - 1000 — "Expanded" round-number anchor
-  - 11,037 — Article I §2 ratio (1 per 30,000)
+  - 11,036 — Article I §2 limit (at most 1 per 30,000)
   Each button shows the cap number prominently with the anchor's label below; hover reveals a one-sentence explanation. URL `?cap=` query param is snapped to the nearest anchor for compatibility.
 - **Map:** US albers projection, 50 states with district polygons overlaid, lightly tinted by district. Hover shows state + seat count. Click navigates to state detail.
 - **Sidebar (right):** at the current cap, show: total seats, top-5 states by seat count, total state-level seat changes vs current 435 baseline, link to methodology writeup.

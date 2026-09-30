@@ -17,7 +17,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api.main import app
-from districting import US_2020_KNOWN_APPORTIONMENT
+from apportionment import US_2020_KNOWN_APPORTIONMENT
 
 
 @pytest.fixture(scope="module")
@@ -44,7 +44,7 @@ class TestApportionmentEndpoint:
         assert resp.json()["apportionment"] == US_2020_KNOWN_APPORTIONMENT
 
     def test_seats_sum_to_cap_at_anchor_values(self, client: TestClient):
-        for cap in [435, 574, 692, 1000, 11037]:
+        for cap in [435, 573, 692, 1000, 11036]:
             resp = client.get(f"/api/districting/apportionment?cap={cap}")
             assert resp.status_code == 200, f"cap={cap}: {resp.text}"
             body = resp.json()
@@ -57,8 +57,9 @@ class TestApportionmentEndpoint:
         assert resp.status_code == 422
 
     def test_cap_above_max_rejected(self, client: TestClient):
-        """The slider ceiling of 11,037 is enforced at the API boundary."""
-        resp = client.get("/api/districting/apportionment?cap=11038")
+        """Article I's ceiling of 11,036 (floor of total / 30,000) is enforced."""
+        assert client.get("/api/districting/apportionment?cap=11036").status_code == 200
+        resp = client.get("/api/districting/apportionment?cap=11037")
         assert resp.status_code == 422
 
     def test_non_integer_cap_rejected(self, client: TestClient):
@@ -73,7 +74,7 @@ class TestPrecomputeManifestEndpoint:
         body = resp.json()
 
         assert body["cache_version"] == "bpd-v1"
-        assert body["cap_anchors"] == [435, 574, 692, 1000, 11037]
+        assert body["cap_anchors"] == [435, 573, 692, 1000, 11036]
         assert len(body["priority_state_fips"]) == 10
         assert len(body["jobs"]) == 50
         assert body["priority_state_fips"][0] == "20"
