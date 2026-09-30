@@ -20,7 +20,8 @@ import shapefile
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from districting import CAP_ANCHORS, Unit, apportion_us_2020, balanced_power_diagram
+from apportionment import apportion_us_2020
+from districting import CAP_ANCHORS, Unit, balanced_power_diagram
 
 STATE_FIPS = "20"
 STATE_NAME = "Kansas"

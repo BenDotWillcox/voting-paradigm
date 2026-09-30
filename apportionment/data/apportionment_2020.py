@@ -15,8 +15,8 @@ State keys are 2-character FIPS codes (with leading zeros) to match the
 Census Bureau's standard identifier and the TIGER/Line shapefiles we will
 load later for geometry. The District of Columbia and US territories are
 intentionally omitted: they receive no voting House representation under
-current law and are out of scope for v1 of the districting demo (see
-prompts/demo-3-districting.md, decision #5).
+current law and are out of scope (see prompts/demo-3-districting.md,
+decision #5).
 
 KNOWN_APPORTIONMENT below is the actual 435-seat apportionment that
 resulted from the 2020 census. It serves as the regression test for our

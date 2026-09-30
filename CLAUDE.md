@@ -35,7 +35,7 @@ different evidence. It is intentionally listed last among built demos
 because its technical surface is the lightest; comparing apportionment
 methods (Hamilton, Jefferson/D'Hondt, Webster/Sainte-Laguë,
 Huntington–Hill) and their paradoxes is a candidate deepening, not yet
-planned. Its Python code still lives in `districting/apportionment.py`.
+planned. Its Python code lives in the `apportionment/` package.
 
 The list is open — additional demos can be added as peer packages without disturbing existing ones. New demos must justify themselves by isolating a *distinct* friction with a *distinct* technical showcase; otherwise they're noise.
 
@@ -109,7 +109,8 @@ voting/                     Python: pure voting methods + ballot types       [de
 preferences/                Python: preference modeling                       [demo 2]
 personas/                   Python: simulated voter generation               (future) [demo 2]
 agents/                     Python: agent voting policies                    (future) [demo 2]
-districting/                Python: redistricting algorithms                 (future) [demo 3]
+districting/                Python: redistricting algorithms                          [demo 3]
+apportionment/              Python: House apportionment + essay analyses              [demo 4]
 delegation/                 Python: liquid democracy delegation graphs       (future) [demo 5]
 eval/                       Python: synthetic + human-measure evaluation       [cross-demo]
 api/                        Python: FastAPI app, one router per demo
@@ -118,7 +119,7 @@ prompts/                    Project scope + documentation
 
 **Domain packages are import-isolated.** `voting/` does not import `preferences/`; `districting/` does not import `delegation/`. `api/` imports every domain but domains do not import `api/`. No circular deps; every package is testable without the HTTP layer.
 
-**`voting/` is a foundational primitive, not a demo-specific package.** Other demo packages MAY import `voting/` (liquid democracy resolves delegated tallies; districting may simulate within-district elections; agent voting casts ballots that are tallied by voting methods). This is the only such cross-demo dependency that's allowed by default — everything else is independent.
+**`voting/` and `apportionment/` are foundational primitives, not demo-specific packages.** Other demo packages MAY import them: liquid democracy resolves delegated tallies with `voting/`; districting may simulate within-district elections; agent voting casts ballots tallied by voting methods; districting needs seat counts per state from `apportionment/`. These are the only cross-demo dependencies allowed by default — everything else is independent, and the primitives themselves import no demo package.
 
 **All other demo packages are mutually isolated.** `preferences/` does not import `districting/`; `delegation/` does not import `preferences/`. If a demo's *UI* wants to compose another demo's results, it does so at the API or Server Action layer, not by reaching into another demo's Python package. Shared types that genuinely belong to multiple demos (e.g. an `Electorate` definition) get lifted into a small, clearly-named shared package rather than living inside one demo's namespace.
 
@@ -308,12 +309,28 @@ All LLM calls live in Python. One framework for prompts, Pydantic output schemas
 between states (Delaware's are about 1.83× Montana's). The fix is a
 legislative number, but its consequences are rarely shown concretely.
 
-**Current surface:** Method of Equal Proportions as a deterministic local
-priority sequence (`lib/apportionment-sequence.ts`, matching
-`districting/apportionment.py`), a House-size explorer over [435, 11037],
-per-state seat ladders, and the representation-gap finding: the
-largest/smallest district ratio barely moves at the Wyoming Rule (1.76×)
-or Cube Root Rule (1.75×) and only collapses past ~1,000 seats (1.35×).
+**Current surface:** Method of Equal Proportions in the `apportionment/`
+package, mirrored by `lib/apportionment-sequence.ts` for the explorer (a
+parity script fails if they diverge), a House-size explorer, per-state seat
+ladders, and the representation-gap finding: the largest/smallest district
+ratio barely moves at the Wyoming Rule (1.76× at 573 seats) or Cube Root
+Rule (1.75× at 692) and only collapses past ~1,000 seats (1.35×).
+
+**Presentation: a scrolling essay** (investigative stance, history
+1789–1941, pick-your-state personalization, seat-hemicycle motif). Plan:
+[`prompts/demo-4-apportionment-essay.md`](prompts/demo-4-apportionment-essay.md).
+Data is static-first: `scripts/fetch_apportionment_sources.py` vendors the
+primary sources into `data/apportionment/sources/`,
+`scripts/build_apportionment_story.py` writes hash-manifested JSON to
+`public/data/apportionment-story/`, and `data/apportionment/facts.json`
+registers every historical claim with its source and verification status.
+The essay may cite only `verified` or `derived` facts.
+
+**Rule-defined House sizes are computed, not typed:** with populations
+measured consistently the 2020 Wyoming Rule gives 573 (the commonly
+reported 574 mixes apportionment and resident populations), and Article
+I's one-per-30,000 limit allows at most 11,036 seats. The explorer's
+`CAP_ANCHORS` still use 574 and 11,037 pending a decision.
 
 ## Demo 5: Liquid democracy (planned)
 
@@ -558,9 +575,26 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 
 ### Demo 4: Apportionment
 
-**Status:** Explorer and story cover live at `/apportionment`; the full
-scrollytelling story follows the districting story. Deferred: apportionment
-methods comparison and paradoxes.
+**Status:** Explorer and story cover live at `/apportionment`; the scrolling
+essay is being built in four slices (`prompts/demo-4-apportionment-essay.md`).
+
+**Done:**
+- `apportionment/` package lifted out of `districting/` (a foundational
+  primitive); the API route `/api/districting/apportionment` is unchanged.
+- Research data pipeline: vendored House Historian, Senate Manual and Census
+  sources with SHA-256 manifest; history 1787–2020, the 2020 seat race,
+  inequality at every House size 435–11,036, and rule-defined anchors; a
+  verified fact register. Tests cross-check the three sources (only three
+  documented, explained differences, including a Senate Manual erratum for
+  Maine 1860), check every derived claim, confirm the build is byte-identical,
+  and check TS/Python parity.
+
+**Next, in order:**
+1. Story-kit extensions (theme hook, Motion, hemicycle layout, canvas dot
+   field, number ticker, sidenotes, state focus) + cold open + Act I.
+2. Acts II–III: the freeze and the seat race.
+3. Act IV + coda + Methods & Sources.
+4. *(Deferred)* Apportionment methods comparison and paradoxes.
 
 ### Demo 5: Liquid democracy
 

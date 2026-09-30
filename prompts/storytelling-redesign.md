@@ -134,6 +134,9 @@ needed for this story.
 
 ## Phase 3b — Apportionment story (`/apportionment`)
 
+Superseded by the fuller plan in `prompts/demo-4-apportionment-essay.md`
+(2026-09-30); the outline below is the original sketch.
+
 1. People per representative, 1790–2020, marking the 1929 freeze and the
    Article I 30,000 ratio.
 2. Dot plot of people per seat by state at 435 seats.

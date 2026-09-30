@@ -17,7 +17,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api.main import app
-from districting import US_2020_KNOWN_APPORTIONMENT
+from apportionment import US_2020_KNOWN_APPORTIONMENT
 
 
 @pytest.fixture(scope="module")

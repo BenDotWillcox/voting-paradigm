@@ -1,0 +1,5 @@
+# Hash-verified research data: keep bytes exactly as fetched/built so the
+# SHA-256 values in public/data/apportionment-story/manifest.json hold on
+# every platform (no CRLF conversion).
+data/apportionment/sources/** -text
+public/data/apportionment-story/** -text

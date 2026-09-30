@@ -10,14 +10,16 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from districting import (
-    CAP_ANCHORS,
-    CACHE_VERSION,
+from apportionment import (
     InvalidApportionmentError,
-    POPULAR_STATE_FIPS,
     US_2020_APPORTIONMENT_POPULATIONS,
     US_2020_TOTAL_APPORTIONMENT_POPULATION,
     apportion_us_2020,
+)
+from districting import (
+    CAP_ANCHORS,
+    CACHE_VERSION,
+    POPULAR_STATE_FIPS,
     build_precompute_manifest,
 )
 

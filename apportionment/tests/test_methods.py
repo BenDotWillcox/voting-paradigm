@@ -13,7 +13,7 @@ import math
 
 import pytest
 
-from districting import (
+from apportionment import (
     InvalidApportionmentError,
     US_2020_APPORTIONMENT_POPULATIONS,
     US_2020_KNOWN_APPORTIONMENT,
@@ -41,7 +41,7 @@ class TestRegression2020Apportionment:
 
     def test_2020_total_population_known_value(self):
         """Sanity check on the population data file itself."""
-        from districting import US_2020_TOTAL_APPORTIONMENT_POPULATION
+        from apportionment import US_2020_TOTAL_APPORTIONMENT_POPULATION
 
         # Census Bureau's published total for the 50-state apportionment
         # population. If this drifts, our population data has been edited.
