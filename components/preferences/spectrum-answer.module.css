@@ -1,0 +1,129 @@
+/* Signal colors are stable across questions and values, never judgments about
+   an answer. Keep this palette local to the instrument, not the app shell. */
+.instrument {
+  --surface: #f7f5f0;
+  --ink: #303c3e;
+  --muted-ink: #646863;
+  --clay: #a54f36;
+  --clay-fill: #a54f3617;
+  --teal: #27686a;
+  --teal-fill: #27686a12;
+  --grid: #deded5;
+  --pending-ink: #795310;
+  --pending-fill: #fff8e8;
+  --pending-border: #dbc593;
+  --clear-ink: #a12f35;
+  --clear-fill: #fff2f1;
+  --clear-hover: #ffe5e3;
+  --clear-border: #e4bbbb;
+}
+.surface {
+  color: var(--ink);
+  background: var(--surface);
+  border-color: var(--grid);
+}
+
+:global(.dark) .instrument {
+  --surface: #202725;
+  --ink: #ece9df;
+  --muted-ink: #b4b8ad;
+  --clay: #eda58b;
+  --clay-fill: #eda58b1f;
+  --teal: #8ec7c2;
+  --teal-fill: #8ec7c21a;
+  --grid: #414944;
+  --pending-ink: #e9c67b;
+  --pending-fill: #332c1d;
+  --pending-border: #786640;
+  --clear-ink: #ffb6b5;
+  --clear-fill: #392427;
+  --clear-hover: #4d2a2e;
+  --clear-border: #8c5559;
+}
+
+.gridLine { border-color: var(--grid); }
+.axisLine { background: var(--ink); }
+.positionGuide { border-color: var(--muted-ink); }
+.acceptableBand { background: var(--teal-fill); border-color: var(--teal); }
+.boundLine { border-color: var(--teal); }
+.acceptableBand[data-preview="true"] { background: color-mix(in srgb, var(--pending-ink) 6%, transparent); border-color: var(--pending-ink); }
+.boundLine[data-preview="true"] { border-color: var(--pending-ink); }
+.curveLine { stroke: var(--clay); }
+.curveFill { fill: var(--clay-fill); }
+.curveLine[data-preview="true"] { stroke: var(--muted-ink); }
+.curveFill[data-preview="true"] { opacity: 0.4; }
+
+.knob {
+  --signal: var(--ink);
+  background: var(--surface);
+  color: var(--signal);
+  border-color: var(--signal);
+}
+.positionKnob { background: var(--ink); color: var(--surface); }
+.positionKnob[data-preview="true"] { background: var(--surface); color: var(--ink); }
+.peakKnob { --signal: var(--clay); }
+.boundKnob { --signal: var(--teal); }
+.boundKnob[data-preview="true"] { --signal: var(--pending-ink); }
+.handle:focus-visible { outline-color: var(--ink); }
+.handle:hover .knob,
+.handle:focus-visible .knob,
+.handle[data-active="true"] .knob {
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--signal) 16%, transparent);
+}
+
+.peakValue,
+.boundValue,
+.positionValue {
+  position: absolute;
+  z-index: 21;
+  pointer-events: none;
+  background: var(--surface);
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+.labelRight { transform: translate(27px, -50%); }
+.labelLeft { transform: translate(calc(-100% - 27px), -50%); }
+.labelAbove { transform: translate(-50%, -100%); text-align: center; }
+.peakValue { color: var(--clay); padding: 3px 5px; }
+.labelCaption { display: block; font-size: 0.6875rem; margin-bottom: 2px; }
+.boundValue { color: var(--teal); padding: 2px 5px; }
+.boundValue[data-preview="true"] { color: var(--pending-ink); }
+.previewText { color: var(--muted-ink); font-weight: normal; }
+.positionValue {
+  transform: translateX(-50%);
+  min-width: 7rem;
+  text-align: center;
+  font-weight: 600;
+}
+.positionStem {
+  position: absolute;
+  pointer-events: none;
+  height: 8px;
+  border-left: 1px solid var(--ink);
+}
+.axisTicks { color: var(--muted-ink); font-size: 0.6875rem; }
+.tickMark {
+  position: absolute;
+  top: 3px;
+  height: 5px;
+  border-left: 1px solid var(--muted-ink);
+}
+.tickMark[data-major="true"] { height: 9px; }
+.tickLabel { position: absolute; top: 64px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.axisUnit { position: absolute; top: 89px; left: 0; text-transform: capitalize; }
+.help { color: var(--muted-ink); }
+
+/* Status colors describe inclusion/omission, never the preference's content. */
+.optionalDetail { padding: 0.75rem; border: 1px solid transparent; border-radius: 0.5rem; }
+.optionalDetail[data-unanswered="true"] { background: var(--pending-fill); border-color: var(--pending-border); }
+.unansweredNotice { color: var(--pending-ink); }
+.clearAnswer { color: var(--clear-ink); border-color: var(--clear-border); background: var(--clear-fill); white-space: normal; height: auto; }
+.clearAnswer:hover { color: var(--clear-ink); background: var(--clear-hover); }
+
+@media (forced-colors: active) {
+  .instrument { --surface: Canvas; --ink: CanvasText; --muted-ink: CanvasText; --clay: CanvasText; --teal: CanvasText; --grid: GrayText; --pending-ink: CanvasText; --pending-fill: Canvas; --pending-border: GrayText; --clear-ink: ButtonText; --clear-fill: ButtonFace; --clear-hover: ButtonFace; --clear-border: ButtonBorder; }
+  .curveFill, .acceptableBand { background: transparent; fill: transparent; }
+  .knob { forced-color-adjust: none; }
+}

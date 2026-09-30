@@ -15,7 +15,7 @@ the author cares about.
 | # | Demo | Route | Status | Core showcase |
 |---|------|-------|--------|---------------|
 | 1 | **Voting methods comparison** — same ballots, multiple resolution methods, side-by-side winners | `/methods` | Voting package complete; UI in progress | Voting theory rigor, electoral criteria, reproducibility |
-| 2 | **Agent voting via preference models** — LLM-elicited preference posterior; agent casts a ballot under uncertainty | `/preferences` | In progress | Bayesian inference, embeddings, active learning, LLM orchestration |
+| 2 | **Agent voting via preference models** — building toward an LLM-elicited preference posterior | `/preferences` | Spectrum self-report prototype; model integration next | Bayesian inference, active learning, uncertainty |
 | 3 | **Algorithmic districting** — fair, transparent district maps under explicit constraints | `/districts` | Apportionment slice live; district polygons planned | Optimization, graph algorithms, geo data, fairness metrics |
 | 4 | **Liquid democracy** — delegation graphs, transitive trust, topic-conditional delegates | `/delegation` | Planned | Network analysis, simulation, dynamics on graphs |
 
@@ -30,6 +30,71 @@ endpoint distributions, paired method comparisons, reliability plots, full
 trial data, and exact settings.
 It measures recovery of known synthetic latent orderings within a fixed item
 bank—not human ballot accuracy or calibrated production vote predictions.
+
+### Interactive preference elicitation
+
+`/preferences` is a four-question spectrum **self-report prototype**, not a
+prediction interface. The public hypothetical questions each vary one
+quantitative axis. A position, optional reported uncertainty, and an optional
+acceptable interval are recorded separately. The curve is an illustrative,
+normalized display of reported uncertainty, not a posterior or calibrated
+probability; its width mapping is a UI convention. The acceptance band never
+truncates the curve or changes the position.
+
+One custom graph combines the position thumb on the axis, a vertically
+draggable curve peak, and movable Min/Max acceptability bars. Width is numeric,
+not three certainty categories: the UI adjusts the kernel's standard deviation
+in 0.1 percentage-point steps relative to the scale span. Keyboard controls
+and optional numeric fine adjustment operate the same values.
+Clock fine adjustments show clock-labeled choices rather than integer hours;
+the stored values are unchanged.
+Regular numeric ticks preserve each scale's spacing; live position, width,
+and bound values sit beside their handles. The graph uses charcoal for position,
+clay for uncertainty, and teal for acceptability, with responsive labels and
+no color judgment about the selected answer. The public-comment question
+accepts every whole day; thinning axis labels never coarsens the response step.
+
+The initial controls do not silently submit a middle position, uncertainty,
+or full-scale acceptable range. Participants explicitly choose a position;
+optional details can remain null. Full-width bounds appear as a preview by
+default; editing either bound includes the range, and “Use this range” includes
+unchanged bounds. Amber text and an icon mark the optional, unanswered preview.
+Leaving the range unanswered preserves the preview; hiding omits it, and
+showing restores the last bounds for editing or inclusion. The persistent
+uncertainty toggle similarly restores the last local width. Centered controls
+show included values, with red/X omission buttons and keyboard/tap help.
+**Skip** and **depends / hard to place** are
+distinct non-numeric responses. At any point, “What you told us” shows recorded
+answers and unanswered questions. It does not claim the model learned anything.
+Previous/Next and summary Edit links preserve drafts and later recorded
+responses. Recording an edit updates only that question; unrecorded changes
+stay out of the summary. Nothing persists beyond the current browser session.
+
+The API validates the exact public bank/version, fixed question order, finite
+on-step positions and range endpoints, and response counts. It returns only
+the public questions and the accepted self-reports. The earlier pairwise
+models and synthetic benchmark remain unchanged: absolute spectrum positions
+must not be relabeled as utility-difference evidence. One explicit position
+model is a separate follow-up after a comprehension walkthrough.
+
+See [interaction semantics and checks](prompts/demo-2-spectrum-elicitation.md).
+
+This route needs Next.js and FastAPI, **not a database, account, or LLM key**:
+
+```bash
+# In an activated Python environment
+python -m uvicorn api.main:app --host 127.0.0.1 --port 8000
+# In a second terminal
+npm run dev
+```
+
+`PREFERENCES_API_URL` defaults to `http://localhost:8000` (with
+`NEBULA_API_URL` retained as a fallback). Responses live in browser memory and
+are sent to the application's Python service for validation. The new endpoint
+does not persist or log them; refresh/restart clears the browser session. A
+deployed host's telemetry remains a separate privacy consideration. There is
+no ballot readout or study-data collection in this slice, and no restricted
+fixture is loaded. It does not run or change the frozen evaluation protocol.
 
 ## Architecture
 
@@ -109,6 +174,7 @@ npm run api:dev      # FastAPI only
 pytest                          # all Python tests
 pytest voting/tests -v          # voting package only
 npm run lint                    # Next.js + TypeScript checks
+node --test tests/elicitation-route.test.mjs  # No-network web-boundary tests
 
 # Validate and hash the non-held-out preference-evaluation fixture
 python -m eval.validate_fixture eval/fixtures/preference_eval_dev_v1.json

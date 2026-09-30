@@ -420,6 +420,30 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 
 **Done:**
 - Preferences package: question bank + elicitation engine + pytest suite
+- Public no-save spectrum UI on `/preferences`: four hypothetical quantitative
+  questions, explicit position plus optional reported uncertainty and a separate
+  acceptable interval, distinct skip/depends responses, and an anytime
+  self-report summary. No posterior is updated; the curve is illustrative,
+  not calibrated confidence. Pairwise models and benchmarks stay unchanged.
+  No DB, LLM, ballot readout, or study-data retention. See
+  `prompts/demo-2-spectrum-elicitation.md`.
+  The integrated graph has an axis thumb, vertically draggable uncertainty
+  peak, and independent Min/Max bars. Width is continuous numeric
+  `{sd_fraction}`, not a three-category response; keyboard and fine numeric
+  controls remain available.
+  The graph's local clay/teal palette distinguishes uncertainty from acceptance;
+  regular numeric ticks and responsive on-handle readouts replace duplicate
+  anchor labels. Display styling does not alter answer or model semantics.
+  Full-width bounds are an amber, unconfirmed preview; editing either graph or
+  fine-input bound includes the range, while “Use this range” includes unchanged
+  bounds. Untouched defaults remain unanswered. Omission preserves the preview;
+  Hide/Show restores it without including it. Persistent uncertainty toggles
+  restore the last local width. Centered controls show included values, red/X
+  omission buttons, and keyboard/tap help. Clock fine adjustments display times;
+  the public-comment scale accepts each whole day independent of tick labels.
+  Previous/Next and summary Edit preserve drafts and later recorded responses;
+  recording an update replaces only that question. Summaries omit unrecorded
+  edits, and everything remains unsaved local session state.
 - Typed `Evidence` contract with durable event IDs and typed confirmation: pairwise/slider are direct; confirmed free-text/correction share the pairwise likelihood; override never trains; legacy `responses`/`thurstone_v1` states upgrade transparently in `preferences/serialization.py`
 - `GaussianLinearUtilityModel` (renamed from `ThurstonePairwiseModel`, docstrings corrected) + `BradleyTerryLaplaceModel`; model registry with `model_for_version` state routing
 - Fixed-sequence, random, and max-variance acquisition in `preferences/acquisition.py`
@@ -495,13 +519,15 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
   round remains in the restricted audit trail
 
 **Next, in order:**
-1. Review and publish the synthetic reference benchmark in
-   `eval/benchmarks/synthetic_v1/`: 1,080 trials, reproducible curves, and full
-   generated data. The metric-correction commit is `d47f605`. This measures
-   fixed-item latent ordering, not human ballots or production calibration.
-2. Connect one real fixed-posterior-to-ballot user journey using public
-   development material, then attach conversational evidence confirmation.
-   Keep the illustrative web scoring distinct from the research posterior.
+1. Review the no-save spectrum UI and do the short comprehension walkthrough
+   in `prompts/demo-2-spectrum-elicitation.md`. The synthetic pairwise benchmark
+   remains published in `eval/benchmarks/synthetic_v1/`.
+2. Add one explicit per-axis position model only after that walkthrough;
+   keep self-reported uncertainty, acceptance, and model confidence distinct.
+   Concrete proposal comparisons and conversational elicitation follow.
+   Public prediction evaluation remains a separate future slice with an
+   independent answer before prediction disclosure, not a silent reuse of
+   these axes or the frozen blinded study.
 3. Before another paid qualification, declare and review any bounded-repair
    or scored-robustness amendment. These are proposals, not implemented rules.
    Attempt v2 completed with no winner (25/304 observed); preserve its receipt

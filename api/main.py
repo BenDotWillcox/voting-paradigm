@@ -8,8 +8,11 @@ Single service, multiple routers:
 Run with: uvicorn api.main:app --reload --port 8000
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from .routers.districting import router as districting_router
 from .routers.voting import router as voting_router
@@ -30,8 +33,9 @@ tags_metadata = [
     {
         "name": "preferences",
         "description": (
-            "Bayesian preference elicitation. Stateless: every request carries "
-            "the full PreferenceState; every response returns the updated state."
+            "Stateless preference exploration. The public spectrum route "
+            "validates and echoes unsaved answers without inference. Legacy "
+            "pairwise sessions carry and update a full PreferenceState."
         ),
     },
     {
@@ -53,6 +57,21 @@ app = FastAPI(
     version="0.2.0",
     openapi_tags=tags_metadata,
 )
+
+
+@app.exception_handler(RequestValidationError)
+async def handle_request_validation(
+    request: Request, error: RequestValidationError
+) -> JSONResponse:
+    """Omit response contents from the unsaved elicitation error boundary."""
+    if request.method == "POST" and request.url.path == "/api/preferences/elicitation":
+        return JSONResponse(
+            status_code=422,
+            content={"detail": "Invalid elicitation request."},
+            headers={"Cache-Control": "no-store"},
+        )
+    return await request_validation_exception_handler(request, error)
+
 
 # CORS — allow the Next.js dev server.
 app.add_middleware(

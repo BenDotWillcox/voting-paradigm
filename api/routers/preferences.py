@@ -9,7 +9,7 @@ request. The model that owns a state is recovered from its `model_version`,
 so a session started with one model is always resumed by the same family.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 
 from preferences.engine import ElicitationEngine, EngineConfig
 from preferences.model import create_model, model_for_version
@@ -17,6 +17,7 @@ from preferences.questions.bank import QuestionBank
 from preferences.serialization import state_from_dict, state_to_dict
 from preferences.types import Evidence, EvidenceSource, UnsupportedEvidenceError
 
+from ..schemas.elicitation import ElicitationRequest, ElicitationResponse
 from ..schemas.preferences import (
     EvidenceSchema,
     ItemSchema,
@@ -32,6 +33,7 @@ from ..schemas.preferences import (
     SummaryRequest,
     SummaryResponse,
 )
+from ..services.elicitation import InvalidElicitationHistory, run_elicitation
 
 router = APIRouter(prefix="/api/preferences", tags=["preferences"])
 
@@ -107,6 +109,30 @@ def _evidence_from_schema(schema: EvidenceSchema) -> Evidence:
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/elicitation",
+    response_model=ElicitationResponse,
+    summary="Review four unsaved spectrum questions",
+)
+def elicitation(req: ElicitationRequest, response: Response) -> ElicitationResponse:
+    """Validate a fixed public question prefix without saving participant data.
+
+    Position, optional reported uncertainty, and optional acceptable range are
+    returned separately, without inferring a preference model. Skip and depends
+    remain distinct non-answers. All four questions and the answer summary are
+    available before completion. No ballot readout or external model call occurs.
+    """
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return run_elicitation(req)
+    except InvalidElicitationHistory as error:
+        raise HTTPException(
+            status_code=400,
+            detail=str(error),
+            headers={"Cache-Control": "no-store"},
+        ) from None
 
 
 @router.post(

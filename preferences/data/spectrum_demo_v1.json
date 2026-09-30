@@ -1,0 +1,81 @@
+{
+  "bank_version": "spectrum_demo_v1",
+  "questions": [
+    {
+      "id": "library_closing_hour",
+      "version": 1,
+      "title": "Library closing time",
+      "prompt": "At what time should the library close on weekdays?",
+      "context": "Imagine a library with eight staffed hours each weekday. A later closing time means a later opening time by the same amount: closing at 5 pm means opening at 9 am, and closing at 10 pm means opening at 2 pm. Staffing, total daily hours, services, and the budget stay the same. Choose the closing time you prefer for this hypothetical schedule.",
+      "scale": {
+        "min": 17,
+        "max": 22,
+        "step": 1,
+        "unit": "local time",
+        "format": "clock_hour",
+        "anchors": [
+          {"value": 17, "label": "5 pm"},
+          {"value": 20, "label": "8 pm"},
+          {"value": 22, "label": "10 pm"}
+        ]
+      }
+    },
+    {
+      "id": "field_booking_share",
+      "version": 1,
+      "title": "Bookable field time",
+      "prompt": "What percentage of the field's weekly open hours should be available for advance booking?",
+      "context": "Imagine a public playing field with a fixed weekly schedule. Advance-booked hours give a group exclusive use; the remaining hours are shared, unreserved drop-in time. Both are free. Total open hours, staffing, and the budget stay the same. Choose the share available for booking in this hypothetical arrangement.",
+      "scale": {
+        "min": 0,
+        "max": 100,
+        "step": 10,
+        "unit": "%",
+        "format": "number",
+        "anchors": [
+          {"value": 0, "label": "All drop-in"},
+          {"value": 50, "label": "Half bookable"},
+          {"value": 100, "label": "All bookable"}
+        ]
+      }
+    },
+    {
+      "id": "public_comment_days",
+      "version": 1,
+      "title": "Time for public comments",
+      "prompt": "For how many days should comments stay open before a decision can be made?",
+      "context": "Imagine a routine, non-urgent proposal with all supporting information published on day one. Comments are accepted until the deadline, and a decision cannot be made before it. Extending the comment period delays that earliest decision date by the same number of days. Access to information and ways to comment stay the same. This is a hypothetical process, not a description of a legal requirement.",
+      "scale": {
+        "min": 7,
+        "max": 56,
+        "step": 1,
+        "unit": "days",
+        "format": "number",
+        "anchors": [
+          {"value": 7, "label": "1 week"},
+          {"value": 28, "label": "4 weeks"},
+          {"value": 56, "label": "8 weeks"}
+        ]
+      }
+    },
+    {
+      "id": "facility_booking_weeks",
+      "version": 1,
+      "title": "How far ahead bookings open",
+      "prompt": "How many weeks before a date should bookings for that date open?",
+      "context": "Imagine a shared community room whose bookings open to everyone at the same time, first come, first served. Opening earlier lets people secure plans further ahead; opening later releases the same slots closer to use. Fees, opening hours, booking limits, and cancellation rules stay the same. Choose the advance-booking window for this hypothetical room.",
+      "scale": {
+        "min": 1,
+        "max": 12,
+        "step": 1,
+        "unit": "weeks",
+        "format": "number",
+        "anchors": [
+          {"value": 1, "label": "1 week ahead"},
+          {"value": 6, "label": "6 weeks ahead"},
+          {"value": 12, "label": "12 weeks ahead"}
+        ]
+      }
+    }
+  ]
+}
