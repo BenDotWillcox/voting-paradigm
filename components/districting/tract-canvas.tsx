@@ -4,6 +4,7 @@ import * as React from "react";
 import { geoPath, type GeoProjection } from "d3-geo";
 import type { Feature, Geometry } from "geojson";
 
+import { observeThemeChanges, resolveCssColor } from "@/lib/canvas-color";
 import type { TractProperties } from "@/types/districting";
 
 export type TractFeature = Feature<Geometry, TractProperties>;
@@ -81,14 +82,7 @@ export function TractCanvasFigure({
   }, []);
 
   // Theme switches (class strategy) change the custom properties we resolve.
-  React.useEffect(() => {
-    const observer = new MutationObserver(() => setThemeTick((tick) => tick + 1));
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class", "data-theme"],
-    });
-    return () => observer.disconnect();
-  }, []);
+  React.useEffect(() => observeThemeChanges(() => setThemeTick((tick) => tick + 1)), []);
 
   React.useEffect(() => {
     const canvas = canvasRef.current;
@@ -106,14 +100,14 @@ export function TractCanvasFigure({
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
     ctx.globalAlpha = opacity;
     ctx.lineJoin = "round";
-    const strokeColor = stroke ? resolveColor(canvas, stroke) : null;
+    const strokeColor = stroke ? resolveCssColor(canvas, stroke) : null;
     const fillCache = new Map<string, string>();
     for (const tract of prepared) {
       const tractFill = fill(tract.properties);
       if (tractFill) {
         let resolved = fillCache.get(tractFill);
         if (resolved === undefined) {
-          resolved = resolveColor(canvas, tractFill);
+          resolved = resolveCssColor(canvas, tractFill);
           fillCache.set(tractFill, resolved);
         }
         ctx.fillStyle = resolved;
@@ -238,11 +232,4 @@ function cellOf(
     clamp(Math.floor((x / viewBox.width) * GRID)),
     clamp(Math.floor((y / viewBox.height) * GRID)),
   ];
-}
-
-/** Canvas can't read CSS custom properties; resolve `--name` / `var(--name)`. */
-function resolveColor(element: Element, color: string): string {
-  const match = /^(?:var\()?(--[\w-]+)\)?$/.exec(color.trim());
-  if (!match) return color;
-  return getComputedStyle(element).getPropertyValue(match[1]).trim() || "transparent";
 }

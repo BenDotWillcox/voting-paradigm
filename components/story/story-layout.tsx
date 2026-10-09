@@ -11,12 +11,25 @@ import { cn } from "@/lib/utils";
 export function StoryRoot({
   children,
   className,
+  theme,
 }: {
   children: React.ReactNode;
   className?: string;
+  /**
+   * Per-demo visual identity: selects the `[data-story-theme]` token
+   * overrides in app/globals.css. Omit for the shared default.
+   */
+  theme?: "apportionment";
 }) {
   return (
-    <div className={cn("story min-h-screen pb-32", storySerif.variable, className)}>
+    <div
+      data-story-theme={theme}
+      className={cn(
+        "story min-h-screen pb-32 [counter-reset:sidenote]",
+        storySerif.variable,
+        className
+      )}
+    >
       {children}
     </div>
   );

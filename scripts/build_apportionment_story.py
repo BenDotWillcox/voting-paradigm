@@ -10,6 +10,8 @@ apportionment package, and writes JSON to public/data/apportionment-story/:
 - house-sizes.json  inequality statistics at every House size up to the
                     Article I limit, plus the full award order (columnar)
 - anchors.json      the rule-defined House sizes and seats at each
+- states-2020.json  per-state 2020 populations, seats, and the official
+                    average per seat (the essay's person-to-seat figures)
 - manifest.json     source and output SHA-256 hashes
 
 Deterministic: the same sources produce byte-identical outputs.
@@ -188,6 +190,28 @@ def build_artifacts() -> dict[str, Any]:
             "median_abs_deviation": [_round(s.median_abs_deviation, 6) for s in sweep],
             # Seat recipients for seats 51..stop, as indexes into `states`.
             "award_order": [index[fips] for fips in order],
+        },
+        "states-2020.json": {
+            "source": "U.S. Census Bureau, 2020 Census apportionment results (historical apportionment CSV)",
+            "notes": [
+                "resident_population is the 2020 census resident population of the state. For a state "
+                "with one seat this is also the population of its at-large congressional district.",
+                "average_per_seat is the Census Bureau's average apportionment population per "
+                "representative for the state: a state average, not the population of any one district.",
+            ],
+            "states": [
+                {
+                    "fips": fips,
+                    "abbr": STATE_ABBRS[fips],
+                    "name": STATE_NAMES[fips],
+                    "seats": census[2020].state_seats[fips],
+                    "apportionment_population": populations[fips],
+                    "resident_population": census[2020].state_population[fips],
+                    "average_per_seat": census[2020].state_average_per_seat[fips],
+                    "at_large": census[2020].state_seats[fips] == 1,
+                }
+                for fips in fips_list
+            ],
         },
         "anchors.json": {
             "total_population": sum(populations.values()),
