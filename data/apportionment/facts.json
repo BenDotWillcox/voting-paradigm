@@ -55,6 +55,11 @@
           "publisher": "Congressional Research Service (Ben Leubsdorf), March 14, 2024",
           "url": "https://www.everycrsreport.com/files/2024-03-14_R47959_7f6ba85e0261d2536020ae6527bf9fb893aac905.html",
           "locator": "Table 1, 'Size of the U.S. House'"
+        },
+        {
+          "title": "National Archives Presents the Original Bill of Rights, with 12 Amendments!",
+          "publisher": "U.S. National Archives press release, December 7, 2010",
+          "url": "https://www.archives.gov/press/press-releases/2011/nr11-21"
         }
       ]
     },
@@ -89,9 +94,15 @@
     {
       "id": "apportionment-methods-by-era",
       "status": "verified",
-      "claim": "The first six apportionments used fixed ratios of persons per Representative (33,000 rising to 70,680); 1850-1900 used the Vinton method; 1910 and 1930 used major fractions; 1940 onward used equal proportions.",
+      "claim": "The House was apportioned by Jefferson's method (a fixed ratio, fractions dropped) from 1790 to 1830; by Webster's method (a fixed ratio, major fractions kept) in 1840; by the Vinton, or Hamilton, method from 1850 to 1900; by major fractions in 1910 and 1930; and by equal proportions from 1940. The first six acts fixed ratios of persons per Representative from 33,000 to 70,680.",
       "quote": "Subsequent apportionments based on the 1st Census through the 6th Census were as follows (number of census, date of act, and ratio of persons per Representative): 1st, Apr. 14, 1792, 33,000; 2d, Jan. 14, 1802, 33,000; 3d, Dec. 21, 1811, 35,000; 4th, Mar. 7, 1822, 40,000; 5th, May 22, 1832, 47,700; 6th, June 25, 1842, 70,680. Apportionment based on the 7th Census (1850) through the 12th Census (1900) was determined by the Vinton method, and for the 13th Census (1910) and 15th Census (1930) the method of major fractions was employed, there being no reapportionment in 1920. Apportionment based on the 16th Census (1940), through the 21st Census (1990), was determined by the method of equal proportions",
       "sources": [
+        {
+          "title": "Congressional Apportionment: Historical Perspective",
+          "publisher": "U.S. Census Bureau",
+          "url": "https://www.census.gov/topics/public-sector/congressional-apportionment/about/historical-perspective.html",
+          "locator": "'1790 to 1830 The \"Jefferson method\" ... 1840 The \"Webster method\" of major fractions ... 1850 to 1900 The \"Vinton\" or \"Hamilton\" method ... 1940 to Present The method of equal proportions'"
+        },
         {
           "title": "United States Senate Manual, 113th Congress (S. Doc. 113-1)",
           "publisher": "U.S. Government Publishing Office",
@@ -281,7 +292,7 @@
     {
       "id": "article-one-limit-2020",
       "status": "derived",
-      "claim": "Article I's one-per-thirty-thousand limit allows at most 11,036 Representatives for the 2020 apportionment population; 11,037 would exceed the ratio.",
+      "claim": "Read as a national ratio, Article I's cap of one Representative per thirty thousand allows at most 11,036 Representatives for the 2020 apportionment population; 11,037 would exceed it. Read state by state, as in Washington's 1792 veto, the most it allows is lower.",
       "derivation": "floor(331,108,434 / 30,000) = 11,036 (anchors.json).",
       "sources": []
     },
@@ -304,6 +315,404 @@
       "claim": "The Senate Manual's apportionment table prints Maine's 1860 apportionment as 3; the House Historian table gives 5, and only 5 makes the 1860 column sum to the standard 241-seat House.",
       "derivation": "apportionment/tests/test_history.py::TestSenateManualCrossCheck.",
       "sources": []
+    },
+    {
+      "id": "federalist-58-growth",
+      "status": "verified",
+      "claim": "In Federalist No. 58, Madison answers the objection that the House would not grow with the population, and warns that the larger a legislative assembly, the fewer the people who actually direct its proceedings.",
+      "quote": "THE remaining charge against the House of Representatives, which I am to examine, is grounded on a supposition that the number of members will not be augmented from time to time, as the progress of population may demand. ... In all legislative assemblies the greater the number composing them may be, the fewer will be the men who will in fact direct their proceedings.",
+      "sources": [
+        {
+          "title": "Federalist Papers: Primary Documents in American History, Federalist Nos. 51-60",
+          "publisher": "Library of Congress",
+          "url": "https://guides.loc.gov/federalist-papers/text-51-60",
+          "locator": "Federalist No. 58 (Madison)"
+        }
+      ]
+    },
+    {
+      "id": "first-congress-65",
+      "status": "derived",
+      "claim": "The First Congress, which began on March 4, 1789, had a 65-seat House: the Constitution's allocation until the first census.",
+      "derivation": "Seat count from constitution-apportionment-clause; the date the First Congress began from the Joint Resolution of September 25, 1789 ('begun and held at the City of New-York, on Wednesday the fourth of March, one thousand seven hundred and eighty nine').",
+      "sources": [
+        {
+          "title": "The Bill of Rights: A Transcription",
+          "publisher": "U.S. National Archives",
+          "url": "https://www.archives.gov/founding-docs/bill-of-rights-transcript",
+          "locator": "Preamble of the Joint Resolution"
+        }
+      ]
+    },
+    {
+      "id": "twelve-amendments-ten-ratified",
+      "status": "verified",
+      "claim": "Congress proposed twelve articles of amendment in 1789. The latter ten were ratified as the Bill of Rights; the first, on representation, was not.",
+      "quote": "When the final votes were counted, only the latter ten of the 12 articles were ratified.",
+      "sources": [
+        {
+          "title": "National Archives Presents the Original Bill of Rights, with 12 Amendments!",
+          "publisher": "U.S. National Archives press release, December 7, 2010",
+          "url": "https://www.archives.gov/press/press-releases/2011/nr11-21"
+        }
+      ]
+    },
+    {
+      "id": "apportionment-act-1911",
+      "status": "verified",
+      "claim": "The Act of August 8, 1911 set the House at 433 Representatives, with two more to be added when Arizona and New Mexico were admitted.",
+      "quote": "In 1911, Congress designated the number of Representatives to be 433, with provisions made for two additional Members when Arizona and New Mexico were admitted to the Union (see Act of August 8, 1911, ch. 5, 37 Stat 13).",
+      "sources": [
+        {
+          "title": "Apportionment: Determining Apportionment",
+          "publisher": "Office of the Historian, U.S. House of Representatives",
+          "url": "https://history.house.gov/Institution/Apportionment/Determining-Apportionment/"
+        }
+      ]
+    },
+    {
+      "id": "house-435-from-1913",
+      "status": "verified",
+      "claim": "The 63rd Congress (1913-1915) was the first with 435 Members.",
+      "quote": "The 63rd Congress (1913–1915) was the first to have 435 Members.",
+      "sources": [
+        {
+          "title": "Apportionment: Determining Apportionment",
+          "publisher": "Office of the Historian, U.S. House of Representatives",
+          "url": "https://history.house.gov/Institution/Apportionment/Determining-Apportionment/"
+        }
+      ]
+    },
+    {
+      "id": "at-large-district-population-2020",
+      "status": "derived",
+      "claim": "In a state with one House seat, the at-large congressional district is the whole state, so its 2020 population is the state's 2020 census resident population.",
+      "derivation": "resident_population for states with at_large = true in public/data/apportionment-story/states-2020.json (Census Bureau historical apportionment CSV, 2020 rows).",
+      "sources": [
+        {
+          "title": "Historical Apportionment Data (1910-2020)",
+          "publisher": "U.S. Census Bureau",
+          "url": "https://www.census.gov/data/tables/time-series/dec/apportionment-data-text.html",
+          "locator": "2020 resident population by state"
+        }
+      ]
+    },
+    {
+      "id": "state-average-per-seat-2020",
+      "status": "verified",
+      "claim": "The Census Bureau publishes each state's 2020 average apportionment population per representative: the state's apportionment population divided by its seats. It is a state average, not the population of any particular district.",
+      "sources": [
+        {
+          "title": "Historical Apportionment Data (1910-2020)",
+          "publisher": "U.S. Census Bureau",
+          "url": "https://www.census.gov/data/tables/time-series/dec/apportionment-data-text.html",
+          "locator": "'Average Apportionment Population Per Representative', 2020"
+        }
+      ]
+    },
+    {
+      "id": "national-average-per-seat-2020",
+      "status": "verified",
+      "claim": "The 2020 apportionment gave an average of 761,169 people per representative (2020 apportionment population divided by 435).",
+      "sources": [
+        {
+          "title": "Historical Apportionment Data (1910-2020)",
+          "publisher": "U.S. Census Bureau",
+          "url": "https://www.census.gov/data/tables/time-series/dec/apportionment-data-text.html",
+          "locator": "United States, 2020: 'Average Apportionment Population Per Representative'"
+        }
+      ]
+    },
+    {
+      "id": "population-1910-1920",
+      "status": "derived",
+      "claim": "The census counted 92,228,531 residents in 1910 and 106,021,568 in 1920, while the House stayed at 435 seats.",
+      "derivation": "resident_population for 1910 and 1920 in history.json (Census Bureau historical apportionment CSV, Nation rows); house_size 435 in both years.",
+      "sources": [
+        {
+          "title": "Historical Apportionment Data (1910-2020)",
+          "publisher": "U.S. Census Bureau",
+          "url": "https://www.census.gov/data/tables/time-series/dec/apportionment-data-text.html",
+          "locator": "United States, 1910 and 1920 resident population"
+        }
+      ]
+    },
+    {
+      "id": "rural-urban-apportionment-shift",
+      "status": "verified",
+      "claim": "Over time the method for calculating apportionment shifted representation from smaller rural states to larger urbanized states, which set rural and urban factions against each other after the 1920 census.",
+      "quote": "Gradually, however, the method for calculating apportionment caused smaller rural states to lose representation to larger urbanized states.",
+      "sources": [
+        {
+          "title": "The Permanent Apportionment Act of 1929",
+          "publisher": "Office of the Historian, U.S. House of Representatives",
+          "url": "https://history.house.gov/Historical-Highlights/1901-1950/The-Permanent-Apportionment-Act-of-1929/"
+        }
+      ]
+    },
+    {
+      "id": "permanent-apportionment-act-1929-text",
+      "status": "verified",
+      "claim": "Section 22 of the Act of June 18, 1929 names no House size: after each census the President reports an apportionment of 'the then existing number of Representatives', and if Congress fails to enact an apportionment law, each state is entitled to the seats in that statement (by the method last used).",
+      "quote": "Sec. 22. (a) On the first day, or within one week thereafter, of the second regular session of the Seventy-first Congress and of each fifth Congress thereafter, the President shall transmit to the Congress a statement showing the whole number of persons in each State, excluding Indians not taxed, as ascertained under the fifteenth and each subsequent decennial census of the population, and the number of Representatives to which each State would be entitled under an apportionment of the then existing number of Representatives ... (b) If the Congress to which the statement required by subdivision (a) of this section is transmitted, fails to enact a law apportioning Representatives among the several States, then each State shall be entitled, in the second succeeding Congress and in each Congress thereafter until the taking effect of a reapportionment under this Act or subsequent statute, to the number of Representatives shown in the statement based upon the method used in the last preceding apportionment.",
+      "sources": [
+        {
+          "title": "Act of June 18, 1929, ch. 28, sec. 22 (46 Stat. 26)",
+          "publisher": "United States Statutes at Large, vol. 46 (GovInfo scan)",
+          "url": "https://www.govinfo.gov/content/pkg/STATUTE-46/pdf/STATUTE-46-Pg21.pdf",
+          "locator": "Ch. 28, sec. 22(a)-(b), pp. 26-27; read against the page images"
+        }
+      ]
+    },
+    {
+      "id": "per-seat-1920-2020",
+      "status": "derived",
+      "claim": "The Census Bureau's average apportionment population per representative rose from 241,864 after the 1920 census to 761,169 after the 2020 census, more than three times as many people per seat.",
+      "derivation": "apportionment_per_seat for 1920 and 2020 in history.json (Census Bureau historical apportionment CSV, United States rows); 761,169 / 241,864 = 3.15.",
+      "sources": [
+        {
+          "title": "Historical Apportionment Data (1910-2020)",
+          "publisher": "U.S. Census Bureau",
+          "url": "https://www.census.gov/data/tables/time-series/dec/apportionment-data-text.html",
+          "locator": "United States, 1920 and 2020: 'Average Apportionment Population Per Representative'"
+        }
+      ]
+    },
+    {
+      "id": "priority-values",
+      "status": "verified",
+      "claim": "Under the method of equal proportions every state first receives one seat; each further seat, from the 51st to the 435th, goes to the state with the highest priority value, its population times 1/sqrt(n(n-1)), where n is the number of seats it would have with that seat (the reciprocal of the geometric mean of n-1 and n).",
+      "quote": "Each of the 50 states is given one seat out of the current total of 435. The next, or 51st seat, goes to the state with the highest priority value and becomes that state's second seat. This continues until all 435 seats have been assigned to a state.",
+      "sources": [
+        {
+          "title": "Computing Apportionment",
+          "publisher": "U.S. Census Bureau",
+          "url": "https://www.census.gov/topics/public-sector/congressional-apportionment/about/computing.html",
+          "locator": "Equal Proportions Method: the multiplier, 'the reciprocal of the geometric mean'"
+        }
+      ]
+    },
+    {
+      "id": "montana-v-commerce-text",
+      "status": "verified",
+      "claim": "In U.S. Department of Commerce v. Montana (1992) the Court noted that under the method of equal proportions Montana's single district would hold 803,655 people, and that whether Montana had one district or two its variance from the ideal would exceed 40 percent; it held that the one-seat guarantee and indivisible seats make equal districts across states virtually impossible.",
+      "quote": "In this case, however, whether Montana has one district or two, its variance from the ideal will exceed 40 percent. The constitutional guarantee of a minimum of one Representative for each State inexorably compels a significant departure from the ideal. ... Moreover, the need to allocate a fixed number of indivisible Representatives among 50 States of varying populations makes it virtually impossible to have the same size district in any pair of States, let alone in all 50.",
+      "sources": [
+        {
+          "title": "503 U.S. 442, United States Reports",
+          "publisher": "Library of Congress scan of United States Reports, vol. 503",
+          "url": "https://tile.loc.gov/storage-services/service/ll/usrep/usrep503/usrep503442/usrep503442.pdf",
+          "locator": "p. 463; Hill-method district sizes in the opinion's footnote table (Montana 803,655); the passage matches the Legal Information Institute text"
+        }
+      ]
+    },
+    {
+      "id": "per-seat-spread-2020",
+      "status": "derived",
+      "claim": "After the 2020 census Montana's two seats averaged 542,704 people each, the fewest per seat of any state, and Delaware's single seat 990,837, the most: 83 percent more.",
+      "derivation": "average_per_seat in states-2020.json (the Census Bureau's 2020 average apportionment population per representative, by state): the minimum is Montana (2 seats) and the maximum Delaware (1 seat). 990,837 / 542,704 = 1.826.",
+      "sources": [
+        {
+          "title": "Historical Apportionment Data (1910-2020)",
+          "publisher": "U.S. Census Bureau",
+          "url": "https://www.census.gov/data/tables/time-series/dec/apportionment-data-text.html",
+          "locator": "2020 rows: 'Average Apportionment Population Per Representative'"
+        }
+      ]
+    },
+    {
+      "id": "member-salary-2026",
+      "status": "verified",
+      "claim": "Representatives are paid $174,000 a year, a level unchanged since 2009.",
+      "quote": "The compensation for most Senators, Representatives, Delegates, and the Resident Commissioner from Puerto Rico is $174,000.",
+      "sources": [
+        {
+          "title": "Congressional Salaries and Allowances: In Brief (RL30064), updated September 10, 2026",
+          "publisher": "Congressional Research Service (via EveryCRSReport)",
+          "url": "https://www.everycrsreport.com/files/2026-09-10_RL30064_c40290c4e11425f06a8f0e7264352e42e645018c.html",
+          "locator": "Compensation"
+        }
+      ]
+    },
+    {
+      "id": "mra-2026",
+      "status": "verified",
+      "claim": "Each Representative's office runs on a Members' Representational Allowance (staff, travel, mail, district offices); since 2023 the allowances have averaged $1,928,107, and the House account that funds them was $850.0 million in FY2025 and FY2026.",
+      "quote": "MRAs since 2023 have ranged from $1,849,149 to $2,088,499, with an average of $1,928,107",
+      "sources": [
+        {
+          "title": "Congressional Salaries and Allowances: In Brief (RL30064), updated September 10, 2026",
+          "publisher": "Congressional Research Service (via EveryCRSReport)",
+          "url": "https://www.everycrsreport.com/files/2026-09-10_RL30064_c40290c4e11425f06a8f0e7264352e42e645018c.html",
+          "locator": "The Members' Representational Allowance (MRA); MRA Appropriations"
+        }
+      ]
+    },
+    {
+      "id": "mra-staff-limit",
+      "status": "verified",
+      "claim": "Each Representative may employ no more than 18 permanent staff from the allowance, plus up to four part-time, shared, intern or temporary employees.",
+      "quote": "Each Member may use the MRA to employ no more than 18 permanent employees, a level that has remained unchanged since 1975.",
+      "sources": [
+        {
+          "title": "Congressional Salaries and Allowances: In Brief (RL30064), updated September 10, 2026",
+          "publisher": "Congressional Research Service (via EveryCRSReport)",
+          "url": "https://www.everycrsreport.com/files/2026-09-10_RL30064_c40290c4e11425f06a8f0e7264352e42e645018c.html",
+          "locator": "Limitation on Number of Employees Hired by the MRA"
+        }
+      ]
+    },
+    {
+      "id": "house-chamber-1857",
+      "status": "verified",
+      "claim": "The House has met in its current chamber since December 16, 1857, the opening of the 35th Congress.",
+      "quote": "On this date, the House of Representatives met in its current chamber for the first time at the opening of the 35th Congress (1857–1859)",
+      "sources": [
+        {
+          "title": "The opening of the current House Chamber",
+          "publisher": "Office of the Historian, U.S. House of Representatives",
+          "url": "https://history.house.gov/Historical-Highlights/1851-1900/The-opening-of-the-current-House-Chamber/"
+        }
+      ]
+    },
+    {
+      "id": "oecd-ratio-2018",
+      "status": "verified",
+      "claim": "In 2018 Pew Research Center found the U.S. House had one voting member for about every 747,000 people, the highest ratio of the 35 OECD countries; Japan (272,108) and Mexico (247,965) were next, and Iceland lowest (about 5,500). Eight OECD countries had larger lower chambers than the House, Germany's Bundestag the largest with 709 members.",
+      "quote": "Our research finds that the U.S. ratio is the highest among the 35 nations in the Organization for Economic Cooperation and Development ... After the U.S., the two countries with the highest representation ratios are Japan (one lawmaker for every 272,108 Japanese) and Mexico (one for every 247,965 Mexicans). Iceland had the lowest ratio: one member of the Althing for every 5,500 or so Icelanders. ... Eight OECD countries have larger lower chambers than the U.S. House, with Germany’s Bundestag topping the league table with 709 members.",
+      "sources": [
+        {
+          "title": "U.S. population keeps growing, but House of Representatives is same size as in Taft era",
+          "publisher": "Pew Research Center (Drew DeSilver), May 31, 2018",
+          "url": "https://www.pewresearch.org/short-reads/2018/05/31/u-s-population-keeps-growing-but-house-of-representatives-is-same-size-as-in-taft-era/"
+        }
+      ]
+    },
+    {
+      "id": "add-seats-extremes",
+      "status": "derived",
+      "claim": "With 2020 populations, the largest district divided by the smallest is 1.83 at 435 seats, 1.76 at 573 (Wyoming Rule), 1.75 at 692 (cube root), 1.80 at 810, 1.35 at 1,000 and 1.04 at 11,036, first falling below 1.5 at 917 seats. The largest district is 30% above the national average at 435 seats and 35% above at 573 and 692.",
+      "derivation": "ratio, largest and smallest in house-sizes.json (method of equal proportions at every size from the 2020 apportionment populations), checked in Python and against the TypeScript sweep.",
+      "sources": [
+        {
+          "title": "Historical Apportionment Data (1910-2020)",
+          "publisher": "U.S. Census Bureau",
+          "url": "https://www.census.gov/data/tables/time-series/dec/apportionment-data-text.html",
+          "locator": "2020 apportionment populations, the input; every House size from 435 to 11,036 computed with the method of equal proportions (house-sizes.json)"
+        }
+      ]
+    },
+    {
+      "id": "extremes-small-states",
+      "status": "derived",
+      "claim": "From 435 to 1,000 seats, the largest and smallest districts are always in states with five or fewer seats; at 435, 573, 692, 810 and 1,000 seats they are in states with one or two.",
+      "derivation": "Seat counts of the largest and smallest people-per-seat states at every size from 435 to 1,000, from the award order in house-sizes.json.",
+      "sources": [
+        {
+          "title": "Historical Apportionment Data (1910-2020)",
+          "publisher": "U.S. Census Bureau",
+          "url": "https://www.census.gov/data/tables/time-series/dec/apportionment-data-text.html",
+          "locator": "2020 apportionment populations, the input; every House size from 435 to 11,036 computed with the method of equal proportions (house-sizes.json)"
+        }
+      ]
+    },
+    {
+      "id": "typical-gap",
+      "status": "derived",
+      "claim": "The median state's people per seat differs from the national average by 3.4% at 435 seats, 2.6% at 692, 1.4% at 1,000 and 0.17% at 11,036. It falls overall but not steadily: of the 565 single-seat additions from 435 to 1,000 seats, 303 widen it.",
+      "derivation": "median_abs_deviation in house-sizes.json: the median over states of |people per seat / national average - 1|; counted increases from each House size to the next, 435 to 1,000.",
+      "sources": [
+        {
+          "title": "Historical Apportionment Data (1910-2020)",
+          "publisher": "U.S. Census Bureau",
+          "url": "https://www.census.gov/data/tables/time-series/dec/apportionment-data-text.html",
+          "locator": "2020 apportionment populations, the input; every House size from 435 to 11,036 computed with the method of equal proportions (house-sizes.json)"
+        }
+      ]
+    },
+    {
+      "id": "member-cost",
+      "status": "derived",
+      "claim": "Salary plus the average office allowance comes to $2,102,107 per Representative per year. At that rate a House of 1,000 would cost about $1.19 billion a year more than today's, and one of 11,036 about $23.2 billion a year in all ($22.3 billion more), before benefits, office space or a larger chamber; 11,036 members could employ up to 198,648 permanent staff.",
+      "derivation": "$174,000 + $1,928,107 = $2,102,107; (1,000 - 435) x $2,102,107 = $1,187,690,455; 11,036 x $2,102,107 = $23,198,852,852; (11,036 - 435) x $2,102,107 = $22,284,436,307; 11,036 x 18 = 198,648.",
+      "sources": [
+        {
+          "title": "Congressional Salaries and Allowances: In Brief (RL30064), updated September 10, 2026",
+          "publisher": "Congressional Research Service (via EveryCRSReport)",
+          "url": "https://www.everycrsreport.com/files/2026-09-10_RL30064_c40290c4e11425f06a8f0e7264352e42e645018c.html",
+          "locator": "Compensation; The Members' Representational Allowance (MRA); Limitation on Number of Employees"
+        }
+      ]
+    },
+    {
+      "id": "washington-veto-1792",
+      "status": "verified",
+      "claim": "In the first presidential veto, April 5, 1792, George Washington rejected an apportionment bill partly because it gave eight states more than one Representative per thirty thousand of their own people, applying the cap state by state.",
+      "quote": "Second—The Constitution has also provided that the number of Representatives shall not exceed one for every thirty thousand; which restriction is, by the context, and by fair and obvious construction, to be applied to the separate and respective numbers of the States: and the bill has allotted to eight of the States, more than one for thirty thousand.",
+      "sources": [
+        {
+          "title": "The 1790 Census and the First Veto",
+          "publisher": "U.S. National Archives, Prologue: Pieces of History (April 4, 2022)",
+          "url": "https://prologue.blogs.archives.gov/2022/04/04/the-1790-census-and-the-first-veto/",
+          "locator": "Washington's veto message, House Journal, 2nd Congress, 1st Session"
+        }
+      ]
+    },
+    {
+      "id": "house-size-statutory",
+      "status": "verified",
+      "claim": "The size of the House is set by federal statute (2 U.S.C. 2a), not by the Constitution, which caps it at one Representative per thirty thousand and gives each state at least one; for the 2020 population CRS puts the possible range at 50 to about 11,000 seats. Bills to enlarge the House were introduced in the 118th Congress (H.R. 622 and H.R. 643).",
+      "quote": "The size of the U.S. House of Representatives is set by federal statute at 435 Representatives ... Within these constitutional parameters, the House could in theory be as small as 50 Representatives or as large as about 11,000 Representatives, based on the 2020 census apportionment population.",
+      "sources": [
+        {
+          "title": "Size of the U.S. House of Representatives (IN11547), updated January 8, 2025",
+          "publisher": "Congressional Research Service (via EveryCRSReport)",
+          "url": "https://www.everycrsreport.com/files/2025-01-08_IN11547_8839a67ea107dc1503950a4aaf59527b6470f9b2.html",
+          "locator": "Requirements Affecting House Size; Recent Legislative Proposals Addressing House Size"
+        }
+      ]
+    },
+    {
+      "id": "thirty-thousand-per-state-2020",
+      "status": "derived",
+      "claim": "At 11,036 seats, apportioned by equal proportions, 23 states would average fewer than 30,000 people per seat: more than one Representative per thirty thousand of their own people.",
+      "derivation": "Apportionment population divided by seats at 11,036 for each state (award order in house-sizes.json): 23 states fall below 30,000.",
+      "sources": [
+        {
+          "title": "Historical Apportionment Data (1910-2020)",
+          "publisher": "U.S. Census Bureau",
+          "url": "https://www.census.gov/data/tables/time-series/dec/apportionment-data-text.html",
+          "locator": "2020 apportionment populations, the input; every House size from 435 to 11,036 computed with the method of equal proportions (house-sizes.json)"
+        }
+      ]
+    },
+    {
+      "id": "two-percent-threshold",
+      "status": "derived",
+      "claim": "Every state's people per seat first falls within 2% of the national average at 6,279 seats, but the improvement is uneven: at 3,301 larger sizes some state is again more than 2% away, and at 11,036 the highest state average is 2.13% above it.",
+      "derivation": "Largest absolute deviation from the national average per seat at every size from 435 to 11,036 (house-sizes.json award order).",
+      "sources": [
+        {
+          "title": "Historical Apportionment Data (1910-2020)",
+          "publisher": "U.S. Census Bureau",
+          "url": "https://www.census.gov/data/tables/time-series/dec/apportionment-data-text.html",
+          "locator": "2020 apportionment populations, the input; every House size from 435 to 11,036 computed with the method of equal proportions (house-sizes.json)"
+        }
+      ]
+    },
+    {
+      "id": "constituency-shrink",
+      "status": "derived",
+      "claim": "Using 2020 apportionment populations, the average per seat would be 577,851 at 573 seats (24% fewer people per seat than at 435), 478,480 at 692 (37% fewer), 331,108 at 1,000 (57% fewer) and 30,003 at 11,036 (96% fewer).",
+      "derivation": "331,108,434 apportionment population divided by each House size; change relative to 761,169 at 435 seats.",
+      "sources": [
+        {
+          "title": "Historical Apportionment Data (1910-2020)",
+          "publisher": "U.S. Census Bureau",
+          "url": "https://www.census.gov/data/tables/time-series/dec/apportionment-data-text.html",
+          "locator": "2020 apportionment populations, the input; every House size from 435 to 11,036 computed with the method of equal proportions (house-sizes.json)"
+        }
+      ]
     }
   ]
 }

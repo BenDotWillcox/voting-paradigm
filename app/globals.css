@@ -350,6 +350,10 @@
   --story-axis: #c3c2b7;
   --story-rule: rgb(11 11 11 / 0.1);
   --story-accent: #a94d25;
+  --story-seat: #8d8678;
+  --story-seat-focus: #2a78d6;
+  /* A quieter highlight between the two (40% focus over the page). */
+  --story-seat-added: #a6c4e7;
 
   --story-series-1: #2a78d6;
   --story-series-2: #eb6834;
@@ -387,6 +391,9 @@
   --story-axis: #383835;
   --story-rule: rgb(255 255 255 / 0.1);
   --story-accent: #e2875c;
+  --story-seat: #6f6a60;
+  --story-seat-focus: #3987e5;
+  --story-seat-added: #224166;
 
   --story-series-1: #3987e5;
   --story-series-2: #d95926;
@@ -400,4 +407,158 @@
   --story-div-neg: #e66767;
   --story-div-mid: #383835;
   --story-div-pos: #3987e5;
+}
+
+/* Text-only reading (the essay's Contents menu sets data-reading on <html>):
+ * the pinned figures go, every step's words run as one column, and hints
+ * about scrolling disappear. */
+[data-reading="text"] [data-scrolly-graphic],
+[data-reading="text"] [data-scrolly-spacer],
+[data-reading="text"] [data-scroll-hint] {
+  display: none !important;
+}
+[data-reading="text"] [data-scrolly-steps] {
+  width: auto !important;
+  max-width: 40rem;
+  margin: 0 auto !important;
+  padding: 1rem 0 2rem !important;
+}
+[data-reading="text"] [data-scrolly-content] {
+  position: static !important;
+  opacity: 1 !important;
+  margin-bottom: 1.75rem;
+}
+[data-reading="text"] [data-scrolly-reveal] {
+  opacity: 1 !important;
+  translate: none !important;
+}
+
+/* A figure's unit label changing: a brief tint so the change is noticed. */
+@keyframes story-flash {
+  from {
+    background-color: color-mix(in srgb, var(--story-seat-focus) 28%, var(--story-surface));
+  }
+  to {
+    background-color: var(--story-surface);
+  }
+}
+
+/* A figure layer arriving in a pinned stage (the essay's charts). */
+@keyframes story-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* SlideSwap (components/story/slide-swap.tsx): text that changes moves the
+ * way scrolling text does, old up and out, new up into place. */
+@keyframes story-swap-in {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes story-swap-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+}
+
+/* The House's lock settling shut (apportionment stage). */
+@keyframes story-lock-click {
+  0% {
+    scale: 1;
+  }
+  35% {
+    scale: 1.1;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
+/* A soft call-to-action pulse (the intro's Begin button). */
+@keyframes story-pulse {
+  0% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(1.35, 1.6);
+  }
+}
+
+/* Apportionment essay ("civic almanac"): warmer paper, ink-blue accent.
+ * Seats: neutral warm gray (3.2:1 on paper) vs. the reader's state in ink
+ * blue (7.2:1), separated by lightness as well as hue so the highlight
+ * survives color-vision deficiency. */
+.story[data-story-theme="apportionment"] {
+  --story-page: #f5f1e8;
+  --story-surface: #faf7f0;
+  --story-accent: #1d4f91;
+  --story-seat: #8d8678;
+  --story-seat-focus: #1d4f91;
+  --story-seat-added: #9fb0c5;
+  --story-rule: rgb(29 79 145 / 0.14);
+
+  /* People per seat against the national average (state picker): a
+   * diverging teal <-> clay scale, three classes per arm around a neutral
+   * band for states within 3% of the average. Teal/clay rather than
+   * blue/red so a US map never reads as partisan. Each fill carries its own
+   * label ink; every pair is >= 4.5:1. */
+  --gap-neutral: #e2ddd2;
+  --gap-neutral-ink: #1c1b19;
+  --gap-fewer-3: #1f6f69;
+  --gap-fewer-2: #6fb5ac;
+  --gap-fewer-1: #c9e5e0;
+  --gap-more-1: #f1d6c4;
+  --gap-more-2: #df9670;
+  --gap-more-3: #a84e26;
+  --gap-fewer-3-ink: #faf7f0;
+  --gap-fewer-2-ink: #1c1b19;
+  --gap-fewer-1-ink: #1c1b19;
+  --gap-more-1-ink: #1c1b19;
+  --gap-more-2-ink: #1c1b19;
+  --gap-more-3-ink: #faf7f0;
+}
+
+.dark .story[data-story-theme="apportionment"] {
+  --story-page: #141312;
+  --story-surface: #1b1a18;
+  --story-accent: #8fb4ea;
+  --story-seat: #6f6a60;
+  --story-seat-focus: #8fb4ea;
+  --story-seat-added: #455368;
+  --story-rule: rgb(143 180 234 / 0.16);
+
+  /* Dark mode is its own ramp: near-average states recede, extremes glow. */
+  --gap-neutral: #2b2926;
+  --gap-neutral-ink: #f3f2ee;
+  --gap-fewer-3: #5fc0b6;
+  --gap-fewer-2: #2a716b;
+  --gap-fewer-1: #203f3b;
+  --gap-more-1: #4a2e20;
+  --gap-more-2: #a1552f;
+  --gap-more-3: #e08a5c;
+  --gap-fewer-3-ink: #1c1b19;
+  --gap-fewer-2-ink: #f3f2ee;
+  --gap-fewer-1-ink: #f3f2ee;
+  --gap-more-1-ink: #f3f2ee;
+  --gap-more-2-ink: #f3f2ee;
+  --gap-more-3-ink: #1c1b19;
 }

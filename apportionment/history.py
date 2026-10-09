@@ -52,10 +52,15 @@ SENATE_MANUAL_STATE_FIPS: dict[str, str] = {
     "Wisconsin": "55", "Wyoming": "56",
 }
 
-#: How each apportionment was computed (Senate Manual note; 2020 per Census).
+#: How each apportionment was computed. Census Bureau, "Congressional
+#: Apportionment: Historical Perspective": Jefferson 1790-1830 (fixed ratio,
+#: fractions dropped), Webster 1840 (fixed ratio, major fractions kept),
+#: Vinton/Hamilton 1850-1900, equal proportions 1940 onward; the Senate
+#: Manual note adds major fractions for 1910 and 1930.
 APPORTIONMENT_METHODS: dict[int, str] = {
     1787: "Constitution (Art. I, sec. 2)",
-    **{year: "Fixed ratio (Jefferson)" for year in range(1790, 1850, 10)},
+    **{year: "Fixed ratio, fractions dropped (Jefferson)" for year in range(1790, 1840, 10)},
+    1840: "Fixed ratio, major fractions kept (Webster)",
     **{year: "Vinton (Hamilton)" for year in range(1850, 1910, 10)},
     1910: "Major fractions (Webster)",
     1920: "None (no reapportionment)",
@@ -189,6 +194,8 @@ class CensusCsvYear:
     state_seats: dict[str, int]
     #: fips -> resident population
     state_population: dict[str, int]
+    #: fips -> official average apportionment population per representative
+    state_average_per_seat: dict[str, int] = field(default_factory=dict)
 
 
 @dataclass
@@ -196,6 +203,7 @@ class _CsvYearBuilder:
     nation: tuple[int, int, int] | None = None
     state_seats: dict[str, int] = field(default_factory=dict)
     state_population: dict[str, int] = field(default_factory=dict)
+    state_average_per_seat: dict[str, int] = field(default_factory=dict)
 
 
 def parse_census_csv(text: str, name_to_fips: dict[str, str]) -> dict[int, CensusCsvYear]:
@@ -217,6 +225,10 @@ def parse_census_csv(text: str, name_to_fips: dict[str, str]) -> dict[int, Censu
             builder.state_population[fips] = _int(row["Resident Population"])
             if row["Number of Representatives"]:
                 builder.state_seats[fips] = _int(row["Number of Representatives"])
+            if row["Average Apportionment Population Per Representative"]:
+                builder.state_average_per_seat[fips] = _int(
+                    row["Average Apportionment Population Per Representative"]
+                )
 
     result: dict[int, CensusCsvYear] = {}
     for year, builder in sorted(builders.items()):
@@ -230,6 +242,7 @@ def parse_census_csv(text: str, name_to_fips: dict[str, str]) -> dict[int, Censu
             apportionment_per_seat=per_seat,
             state_seats=builder.state_seats,
             state_population=builder.state_population,
+            state_average_per_seat=builder.state_average_per_seat,
         )
     return result
 

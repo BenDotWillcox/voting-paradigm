@@ -46,3 +46,10 @@ export const INK = {
   axis: "var(--story-axis)",
   surface: "var(--story-surface)",
 } as const;
+
+/** Seat marks in dot-per-seat figures (hemicycles). */
+export const SEAT = {
+  neutral: "var(--story-seat)",
+  added: "var(--story-seat-added)",
+  focus: "var(--story-seat-focus)",
+} as const;

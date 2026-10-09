@@ -3,8 +3,11 @@
  * Check that the TypeScript apportionment sequence (lib/apportionment-sequence.ts,
  * used by /apportionment/explore) produces the same seat counts as the Python
  * package that generates the essay's artifacts, at every rule-defined House
- * size in public/data/apportionment-story/anchors.json, and that the rule-
- * defined House sizes in lib/districting-cap-scale.ts equal the Python ones.
+ * size in public/data/apportionment-story/anchors.json, that the rule-
+ * defined House sizes in lib/districting-cap-scale.ts equal the Python ones,
+ * and that the essay's sweep (lib/apportionment-sweep.ts) reproduces
+ * house-sizes.json: the award order and, at every House size, the extremes,
+ * their ratio and the median deviation.
  *
  * The project has no TS test runner, so this transpiles these source
  * files with the installed TypeScript compiler into a temp directory and
@@ -22,6 +25,7 @@ import ts from "typescript";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const MODULES = [
   "apportionment-sequence",
+  "apportionment-sweep",
   "districting-cap-scale",
   "us-state-populations",
   "us-states",
@@ -67,6 +71,38 @@ try {
     console.error(`anchor sizes differ: TypeScript ${tsAnchors} vs Python ${pyAnchors}`);
   } else {
     console.log(`anchor sizes agree: ${tsAnchors.join(", ")}`);
+  }
+
+  // The essay's sweep against house-sizes.json.
+  const sweepModule = await import(pathToFileURL(join(dir, "apportionment-sweep.mjs")).href);
+  const { US_2020_APPORTIONMENT_POPULATIONS: populations } = await import(
+    pathToFileURL(join(dir, "us-state-populations.mjs")).href
+  );
+  const sizes = JSON.parse(
+    await readFile(join(ROOT, "public/data/apportionment-story/house-sizes.json"), "utf8")
+  );
+  const fipsAt = sizes.states.map((state) => state.fips);
+  const samePopulations = sizes.states.every((state) => populations[state.fips] === state.population);
+  const order = sweepModule.awardOrder(populations, sizes.stop);
+  const pyOrder = sizes.award_order.map((index) => fipsAt[index]);
+  const sameOrder = order.length === pyOrder.length && order.every((fips, i) => fips === pyOrder[i]);
+  const sweep = sweepModule.sizeSweep(populations, order, sizes.start, sizes.stop);
+  const round = (value, digits) => Number(value.toFixed(digits));
+  const badSizes = sweep.filter(
+    (row, i) =>
+      round(row.ratio, 5) !== sizes.ratio[i] ||
+      round(row.typical, 6) !== sizes.median_abs_deviation[i] ||
+      row.largest.fips !== fipsAt[sizes.largest[i]] ||
+      row.smallest.fips !== fipsAt[sizes.smallest[i]]
+  );
+  if (!samePopulations || !sameOrder || badSizes.length > 0 || sweep.length !== sizes.ratio.length) {
+    failures += 1;
+    console.error(
+      `sweep: populations ${samePopulations ? "agree" : "differ"}, award order ${sameOrder ? "agrees" : "differs"}, ` +
+        `${badSizes.length} House sizes differ${badSizes.length ? ` (first ${badSizes[0].size})` : ""}`
+    );
+  } else {
+    console.log(`sweep (${sizes.start}-${sizes.stop}): TypeScript and Python agree at every House size`);
   }
   process.exitCode = failures > 0 ? 1 : 0;
 } finally {
