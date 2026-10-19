@@ -1,6 +1,6 @@
 # Demo 4: Apportionment as a scrolling essay
 
-Status: slice A merged (PR #48); Acts I–IV and the coda built, in review.
+Status: the essay merged (PR #49); the companion explorer rebuilt (slice E).
 Decisions made with Ben on 2026-09-30 and as each act was built.
 
 ## Why an essay
@@ -315,6 +315,44 @@ sources.
 | B | Story-kit extensions + cold open + Act I | cover, picker, growth timeline |
 | C | Acts II–III | + the freeze and the seat race |
 | D | Act IV + coda + Methods & Sources | complete essay |
+| E | Explorer rebuilt as the essay's companion | + `/apportionment/explore` |
+
+## The explorer (slice E)
+
+`/apportionment/explore` is the essay's companion, not a second essay: it
+answers "what about a size the essay didn't pick?" with the essay's own
+figures, vocabulary and numbers.
+
+- **One calculation.** `lib/apportionment/house-sizes.ts` holds the sweep,
+  seats at any size, the named sizes (built from the computed rule sizes),
+  the member cost, and the next-seat claims; the essay and the explorer
+  both import it. The parity script checks the named sizes, the seats at
+  each, the full sweep, and that the strongest next claim and the last
+  winning claim follow the award order at every size.
+- **Page.** A pinned column on desktop with the size (log slider over
+  435–11,036, a seat at a time, typed, or the five named sizes) and four
+  numbers: average people per seat, highest ÷ lowest state average, the
+  typical state's gap, and pay and allowances at today's rates. Beside it:
+  every state as the essay's dot chart (click a dot to choose its state) or
+  tile map; the reader's state (seats, people per seat, the size at which it
+  wins its next seat, and its claims against the line set by the last seat
+  dealt); who gets the next seat, with a button that adds it; the every-size
+  envelope with the current size marked (click to choose a size); and the
+  named sizes table. Phones get a pinned −/size/+ bar once the control
+  scrolls away.
+- **State and links.** `?size=` and the essay's `?state=` (with its stored
+  state); old `?cap=` links still load, and the old per-state pages redirect
+  to `?state=`. The essay links in from three places: "Try any House size"
+  below the chapters in the table of contents (rail and phone menu), the
+  named sizes in Act IV (and a mouse click on its envelope), and a closing
+  card in "What it would take" about the reader's state. Leaving the essay
+  saves its scroll position for the tab; the explorer's back link then
+  returns the reader to where they left off (the browser's back button
+  already does). A drawer over the essay was considered and rejected: it
+  would cover the pinned figure and offer the tool before Acts III–IV
+  explain it.
+- **Dropped:** the old explorer's play button (the essay's race does it
+  better) and its priority-curve chart (the claim ladder replaces it).
 
 ## Data pipeline (slice A)
 

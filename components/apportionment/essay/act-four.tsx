@@ -2,17 +2,19 @@ import * as React from "react";
 
 import { ScrollyReveal } from "@/components/story/scrolly-reveal";
 import { ScrollyStep } from "@/components/story/scrolly-step";
-import { SWEEP_START, SWEEP_STOP, awardOrder, sizeSweep } from "@/lib/apportionment-sweep";
 import { citableFact } from "@/lib/apportionment/facts";
-import { US_2020_APPORTIONMENT_POPULATIONS as POPULATIONS } from "@/lib/us-state-populations";
+import {
+  COST_PER_MEMBER,
+  SWEEP_START,
+  SWEEP_STOP,
+  TOTAL_POPULATION as TOTAL,
+  spreadAt,
+} from "@/lib/apportionment/house-sizes";
 
 import { clipOf } from "./clip";
+import { ExploreLink } from "./explore-link";
 import { FactSources } from "./fact-note";
 import type { HouseStep } from "./house-stage";
-
-/** Salary plus the average office allowance (CRS, 2026); see fact member-cost. */
-const COST_PER_MEMBER = 2_102_107;
-const TOTAL = Object.values(POPULATIONS).reduce((sum, n) => sum + n, 0);
 
 /**
  * Act IV, "Just add seats?": the same states at each proposed House size,
@@ -58,9 +60,7 @@ export function actFourHouseSteps(): HouseStep[] {
 
 /** Act IV's words, one <ScrollyStep> per entry of `actFourHouseSteps`. */
 export function ActFourSteps() {
-  const order = awardOrder(POPULATIONS, SWEEP_STOP);
-  const sweep = sizeSweep(POPULATIONS, order, SWEEP_START, SWEEP_STOP);
-  const at = (size: number) => sweep[size - SWEEP_START];
+  const at = spreadAt;
   const pct = (share: number) => Math.round(Math.abs(share) * 100);
   // How much smaller the average constituency is than at 435 seats (1,000
   // seats is exactly 56.5%, which floating point puts a hair under: round
@@ -110,6 +110,7 @@ export function ActFourSteps() {
             {pct(wyoming.high)} percent above the national one, further out than today.
           </p>
           <FactSources ids={["wyoming-rule", "wyoming-rule-2020-size", "constituency-shrink", "add-seats-extremes"]} />
+          <ExploreLink size={573} />
         </ScrollyReveal>
       </ScrollyStep>
       <ScrollyStep hold={0.6}>
@@ -125,6 +126,7 @@ export function ActFourSteps() {
             {cube.ratio.toFixed(2)} times, against {today.ratio.toFixed(2)} today.
           </p>
           <FactSources ids={["cube-root-law", "constituency-shrink", "add-seats-extremes"]} />
+          <ExploreLink size={692} />
         </ScrollyReveal>
       </ScrollyStep>
       <ScrollyStep hold={0.6}>
@@ -134,6 +136,7 @@ export function ActFourSteps() {
           above the national one, the lowest {pct(thousand.low)} percent below.
         </p>
         <FactSources ids={["constituency-shrink", "add-seats-extremes"]} />
+        <ExploreLink size={1000} />
       </ScrollyStep>
       <ScrollyStep hold={0.9}>
         <p>
@@ -158,6 +161,7 @@ export function ActFourSteps() {
               "two-percent-threshold",
             ]}
           />
+          <ExploreLink size={SWEEP_STOP} />
         </ScrollyReveal>
       </ScrollyStep>
 
@@ -184,6 +188,7 @@ export function ActFourSteps() {
             produces a jagged trade-off, not a smooth curve.
           </p>
           <FactSources ids={["add-seats-extremes", "extremes-small-states", "typical-gap"]} />
+          <ExploreLink>Try any size in the explorer</ExploreLink>
         </ScrollyReveal>
       </ScrollyStep>
 

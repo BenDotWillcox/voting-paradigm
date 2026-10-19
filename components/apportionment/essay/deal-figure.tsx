@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import type { EssayState } from "@/lib/apportionment/essay-data";
+import { claimFor, type Claim } from "@/lib/apportionment/house-sizes";
 import { INK } from "@/lib/story/palette";
 
 import { useStateFocus } from "./state-focus";
@@ -18,18 +19,6 @@ export const HOUSE_SIZE = 435;
 /** The state used when the reader has not chosen one: it won seat 435. */
 export const DEFAULT_LADDER_FIPS = "27";
 const LEADERS = 8;
-
-/** A state's claim to its `seat`-th seat (the Census Bureau's priority value). */
-export function claimFor(population: number, seat: number): number {
-  return population / Math.sqrt(seat * (seat - 1));
-}
-
-export interface Claim {
-  fips: string;
-  /** The seat claimed: the state's next one. */
-  seat: number;
-  priority: number;
-}
 
 /** One award of seats 51–435: the contest for it and who won. */
 export interface Award {

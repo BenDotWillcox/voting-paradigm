@@ -3,15 +3,13 @@
 import * as React from "react";
 
 import { useElementWidth } from "@/components/story/chart";
-import { SWEEP_START, SWEEP_STOP } from "@/lib/apportionment-sweep";
+import { NAMED_SIZES, SWEEP_START, SWEEP_STOP, averageAt, seatsFor, sweepData } from "@/lib/apportionment/house-sizes";
 import { ROLES, districtLabel } from "@/lib/apportionment/persona";
 import { INK } from "@/lib/story/palette";
 
-import { NAMED_SIZES } from "./bigger-figure";
 import { RUSH_STEPS, PersonFigure } from "./person-figure";
 import { usePersona } from "./persona";
 import { useStateFocus } from "./state-focus";
-import { averageAt, seatsFor, sweepData } from "./state-swarm";
 
 const about = (n: number) => (Math.round(n / 1000) * 1000).toLocaleString("en-US");
 

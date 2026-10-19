@@ -16,16 +16,6 @@ export interface ApportionmentDto {
   total_apportionment_population: number;
 }
 
-/** A single anchor on the cap slider. */
-export interface CapAnchor {
-  /** The cap value the anchor sits at. */
-  cap: number;
-  /** Short label shown on the slider rail. */
-  label: string;
-  /** One-sentence tooltip explanation. */
-  description: string;
-}
-
 /** Tract properties in a plan's `tracts.topo.json` display layer. */
 export interface TractProperties {
   /** 11-digit census tract GEOID (state + county + tract code). */

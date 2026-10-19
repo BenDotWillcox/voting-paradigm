@@ -16,7 +16,7 @@ import { DistrictingStateLayout } from "@/components/districting/districting-sta
 import { StateDistrictSidebar } from "@/components/districting/state-district-sidebar";
 import { StateDetailMap } from "@/components/districting/state-detail-map";
 import { StatePlanReadiness } from "@/components/districting/state-plan-readiness";
-import { getSeatCountsAfter } from "@/lib/apportionment-sequence";
+import { seatsFor } from "@/lib/apportionment/house-sizes";
 import { CAP_MIN } from "@/lib/districting-cap-scale";
 import { districtPlanLayerUrl } from "@/lib/district-plans";
 import { loadDistrictPlan } from "@/lib/load-district-plan";
@@ -75,7 +75,7 @@ async function DistrictingView({
 }) {
   const state = getStateByFips(stateFips) ?? getStateByFips("20");
   const fips = state?.fips ?? "20";
-  const seatCounts = getSeatCountsAfter(CAP_MIN);
+  const seatCounts = seatsFor(CAP_MIN);
   const seats = seatCounts[fips] ?? 0;
   const population = US_2020_APPORTIONMENT_POPULATIONS[fips] ?? 0;
   const michiganSeats = seatCounts[MICHIGAN_FIPS] ?? 13;

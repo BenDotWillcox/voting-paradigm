@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 
 import { useReducedMotion } from "@/components/story/chart";
 import { NumberTicker } from "@/components/story/number-ticker";
@@ -13,6 +14,7 @@ import {
 import { SlideSwap } from "@/components/story/slide-swap";
 import { DataTable } from "@/components/story/story-figure";
 import type { EssayApportionment } from "@/lib/apportionment/essay-data";
+import { COST_PER_MEMBER, NAMED_SIZES, averageAt, seatsFor, spreadAt } from "@/lib/apportionment/house-sizes";
 import { ROLES, hash, mulberry32, type PieceCategory } from "@/lib/apportionment/persona";
 import { observeThemeChanges, resolveCssColor } from "@/lib/canvas-color";
 import { assignSeats, hemicycleLayout } from "@/lib/story/hemicycle";
@@ -30,12 +32,13 @@ import {
   racePace,
   seatsAfter,
 } from "./deal-figure";
-import { COST_PER_MEMBER, EnvelopeChart, NAMED_SIZES, PeersChart, SizeStrip, sizeStripHeight } from "./bigger-figure";
+import { EnvelopeChart, PeersChart, SizeStrip, sizeStripHeight } from "./bigger-figure";
 import { FREEZE_YEAR, PER_SEAT_NOTE, PerSeatChart, perSeatLayout, perSeatSeries } from "./freeze-chart";
-import { StateSwarm, averageAt, seatsFor, spreadAt } from "./state-swarm";
+import { StateSwarm } from "./state-swarm";
 import { Hemicycle } from "./hemicycle";
 import { PIECE_COLORS, VIEW, drawPerson } from "./person-figure";
 import { usePersona } from "./persona";
+import { saveReturnPoint } from "./return-point";
 import { useStateFocus } from "./state-focus";
 import { TearText } from "./tear-text";
 
@@ -162,6 +165,7 @@ export function HouseStageFigure({
 }: HouseStageProps) {
   const constituency = useConstituency(nationalAverage);
   const { focus, states } = useStateFocus();
+  const router = useRouter();
   const { persona, personAt } = usePersona();
   const reducedMotion = useReducedMotion();
   const { step } = useScrollyStep();
@@ -1136,6 +1140,14 @@ export function HouseStageFigure({
               area={visualArea}
               height={size.height}
               reveal={snap ? 1 : segment(stepProgress, 0.04, 0.6)}
+              // A mouse click opens that size in the explorer; a tap only
+              // inspects it, as scrolling past would otherwise misfire.
+              onPick={(picked, pointerType) => {
+                if (pointerType !== "mouse") return;
+                saveReturnPoint();
+                router.push(exploreHref(picked, focus?.abbr));
+              }}
+              pickHint="Click to open this size in the explorer"
             />
           </div>
         ) : null}
@@ -1278,6 +1290,13 @@ function houseView(entry: HouseStep, progress: number): HouseView {
     lock: entry.lock,
     clip: entry.clip,
   };
+}
+
+/** The explorer at a House size, keeping the reader's state. */
+function exploreHref(size: number, abbr: string | undefined): string {
+  const params = new URLSearchParams({ size: String(size) });
+  if (abbr) params.set("state", abbr.toLowerCase());
+  return `/apportionment/explore?${params.toString()}`;
 }
 
 /** "$914 million", "$2.10 billion", "$23.2 billion". */
