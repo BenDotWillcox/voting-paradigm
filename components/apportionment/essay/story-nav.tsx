@@ -190,7 +190,7 @@ export function StoryNav() {
           <SlidersHorizontal aria-hidden="true" className="size-4" />
           <span
             aria-hidden="true"
-            className="invisible absolute left-full ml-1 whitespace-nowrap text-story-ink-2 group-focus-within/rail:visible group-hover/rail:visible hover:text-story-ink min-[1680px]:visible"
+            className="invisible absolute left-full ml-1 whitespace-nowrap text-story-ink-2 group-focus-within/rail:visible group-hover/rail:visible hover:text-story-ink min-[1760px]:visible"
           >
             Try any House size →
           </span>
