@@ -1,6 +1,6 @@
-import Link from "next/link";
 import * as React from "react";
 
+import { ExplorerCallout } from "./explorer-callout";
 import { FactSources } from "./fact-note";
 
 /**
@@ -47,16 +47,7 @@ export function WhatItTakes() {
           "cube-root-law",
         ]}
       />
-      <p className="mt-10 text-lg">
-        Try any House size yourself: the{" "}
-        <Link
-          href="/apportionment/explore"
-          className="underline decoration-story-axis underline-offset-4 hover:decoration-story-ink"
-        >
-          apportionment explorer
-        </Link>{" "}
-        resizes the House and assigns every seat.
-      </p>
+      <ExplorerCallout />
     </section>
   );
 }

@@ -2,44 +2,14 @@
 
 import * as React from "react";
 
-import { SWEEP_START, SWEEP_STOP, awardOrder, seatsAtSize, sizeSweep, type SizeSpread } from "@/lib/apportionment-sweep";
+import { averageAt, seatsFor } from "@/lib/apportionment/house-sizes";
 import { INK } from "@/lib/story/palette";
-import { US_2020_APPORTIONMENT_POPULATIONS as POPULATIONS } from "@/lib/us-state-populations";
 
 import { useStateFocus } from "./state-focus";
 import { gapClassFor } from "./state-map";
 
-const TOTAL = Object.values(POPULATIONS).reduce((sum, n) => sum + n, 0);
-
-let sweepCache: { order: string[]; sweep: SizeSpread[] } | null = null;
-/**
- * Every House size from 435 to 11,036 (computed once, on first use): the
- * award order and the inequality at each size. Matches house-sizes.json
- * exactly (scripts/check-apportionment-parity.mjs).
- */
-export function sweepData(): { order: string[]; sweep: SizeSpread[] } {
-  if (!sweepCache) {
-    const order = awardOrder(POPULATIONS, SWEEP_STOP);
-    sweepCache = { order, sweep: sizeSweep(POPULATIONS, order, SWEEP_START, SWEEP_STOP) };
-  }
-  return sweepCache;
-}
-
-export function spreadAt(size: number): SizeSpread {
-  return sweepData().sweep[size - SWEEP_START];
-}
-
-export function seatsFor(size: number): Record<string, number> {
-  return seatsAtSize(POPULATIONS, sweepData().order, size);
-}
-
-/** People per seat on average across the country at a House size. */
-export function averageAt(size: number): number {
-  return TOTAL / size;
-}
-
 /** "+30%", and one decimal under 10% ("+2.1%", "−0.2%") so near-ties still read. */
-const signedPercent = (share: number) => {
+export const signedPercent = (share: number) => {
   const percent = Math.abs(share) * 100;
   const digits = percent < 10 ? 1 : 0;
   if (Number(percent.toFixed(digits)) === 0) return "0%";
@@ -61,6 +31,7 @@ export function StateSwarm({
   nationalAverage,
   dim,
   spotlight,
+  pickable = false,
 }: {
   area: { left: number; width: number };
   height: number;
@@ -72,8 +43,10 @@ export function StateSwarm({
   dim: boolean;
   /** Ring one state, e.g. Montana while its 1992 case is told. */
   spotlight?: string;
+  /** Clicking a dot chooses its state (the explorer); the essay's figure is display only. */
+  pickable?: boolean;
 }) {
-  const { states, focus } = useStateFocus();
+  const { states, focus, setFocus } = useStateFocus();
   const compact = area.width < 560;
   const left = area.left + (compact ? 20 : 28);
   const right = area.left + area.width - (compact ? 20 : 28);
@@ -199,12 +172,21 @@ export function StateSwarm({
             fillOpacity={packed ? 0.7 : 1}
             stroke={ringed ? INK.primary : INK.surface}
             strokeWidth={ringed ? 2.5 : 1.5}
+            onClick={pickable ? () => setFocus(state.fips === focus?.fips ? null : state.fips) : undefined}
             style={{
               transform: entered ? `translate(${px.toFixed(1)}px, ${py.toFixed(1)}px)` : `translate(${zeroX.toFixed(1)}px, ${center.toFixed(1)}px)`,
               opacity: entered ? 1 : 0,
               transition: `${move} ${entered ? 0 : i * 8}ms, opacity 400ms ease ${i * 8}ms, fill 500ms ease`,
+              ...(pickable ? { pointerEvents: "all" as const, cursor: "pointer" } : null),
             }}
-          />
+          >
+            {pickable ? (
+              <title>
+                {state.name}: {Math.round(perSeat).toLocaleString("en-US")} people per seat
+                {relative ? ` (${signedPercent(value)})` : ""}
+              </title>
+            ) : null}
+          </circle>
         );
       })}
       {placed

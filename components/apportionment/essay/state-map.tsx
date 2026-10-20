@@ -50,10 +50,12 @@ export function gapClassFor(perSeat: number, nationalAverage: number) {
 }
 
 interface StateTileMapProps {
-  /** 2020 seats per state (FIPS -> seats), shown in each tile's label. */
+  /** Seats per state (FIPS -> seats): 2020's, or the explorer's at any House size. */
   seats: Readonly<Record<string, number>>;
-  /** 2020 national average apportionment population per seat. */
+  /** The national average apportionment population per seat for those seats. */
   nationalAverage: number;
+  /** The House size, when it isn't 2020's 435 (the legend says which). */
+  size?: number;
   className?: string;
 }
 
@@ -63,10 +65,15 @@ interface StateTileMapProps {
  * Choosing a state highlights its seats in every figure of the essay;
  * choosing it again clears it.
  */
-export function StateTileMap({ seats, nationalAverage, className }: StateTileMapProps) {
+export function StateTileMap({ seats, nationalAverage, size, className }: StateTileMapProps) {
   const { states, focus, setFocus } = useStateFocus();
   const [hovered, setHovered] = React.useState<EssayState | null>(null);
   const shown = hovered ?? focus;
+  // The Census Bureau's own average where the seats are 2020's; otherwise
+  // population over seats.
+  const countOf = (state: EssayState) => seats[state.fips] ?? state.seats;
+  const perSeatOf = (state: EssayState) =>
+    countOf(state) === state.seats ? state.averagePerSeat : state.population / countOf(state);
 
   return (
     <div className={className}>
@@ -96,14 +103,14 @@ export function StateTileMap({ seats, nationalAverage, className }: StateTileMap
           const tile = TILES[state.abbr];
           if (!tile) return null;
           const selected = focus?.fips === state.fips;
-          const count = seats[state.fips] ?? 0;
-          const { token } = gapClassFor(state.averagePerSeat, nationalAverage);
+          const count = countOf(state);
+          const { token } = gapClassFor(perSeatOf(state), nationalAverage);
           return (
             <button
               key={state.fips}
               type="button"
               aria-pressed={selected}
-              aria-label={`${state.name}: ${count} ${count === 1 ? "seat" : "seats"}, ${formatCount(state.averagePerSeat)} people per seat`}
+              aria-label={`${state.name}: ${count} ${count === 1 ? "seat" : "seats"}, ${formatCount(perSeatOf(state))} people per seat`}
               onClick={() => setFocus(selected ? null : state.fips)}
               onPointerEnter={() => setHovered(state)}
               onFocus={() => setHovered(state)}
@@ -134,9 +141,9 @@ export function StateTileMap({ seats, nationalAverage, className }: StateTileMap
           <>
             <span className="font-semibold text-story-ink">{shown.name}</span>
             {" · "}
-            {shown.seats} {shown.seats === 1 ? "seat" : "seats"}
+            {countOf(shown)} {countOf(shown) === 1 ? "seat" : "seats"}
             {" · "}
-            <span className="tabular-nums">{formatCount(shown.averagePerSeat)}</span> people per seat
+            <span className="tabular-nums">{formatCount(perSeatOf(shown))}</span> people per seat
           </>
         ) : (
           <span className="text-story-muted">Hover over a state, or select one.</span>
@@ -163,18 +170,19 @@ export function StateTileMap({ seats, nationalAverage, className }: StateTileMap
         </select>
       </label>
 
-      <GapLegend nationalAverage={nationalAverage} />
+      <GapLegend nationalAverage={nationalAverage} size={size} />
     </div>
   );
 }
 
 /** Seven classes in one bar, labeled at their percentage breaks. */
-function GapLegend({ nationalAverage }: { nationalAverage: number }) {
+function GapLegend({ nationalAverage, size }: { nationalAverage: number; size?: number }) {
   return (
     <figure className="mt-3 font-sans text-xs text-story-muted">
       <figcaption className="mb-1.5 text-story-ink-2">
-        Average people per House seat by state, 2020 census, compared with the U.S. average of{" "}
-        <span className="tabular-nums">{formatCount(nationalAverage)}</span>
+        Average people per House seat by state
+        {size !== undefined && size !== 435 ? ` with ${size.toLocaleString("en-US")} seats` : ""}, 2020 census,
+        compared with the U.S. average of <span className="tabular-nums">{formatCount(nationalAverage)}</span>
       </figcaption>
       <div className="flex gap-[2px]" role="list">
         {CLASSES.map((cls) => (

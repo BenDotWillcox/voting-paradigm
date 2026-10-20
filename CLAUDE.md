@@ -310,11 +310,15 @@ between states (Delaware's are about 1.83× Montana's). The fix is a
 legislative number, but its consequences are rarely shown concretely.
 
 **Current surface:** Method of Equal Proportions in the `apportionment/`
-package, mirrored by `lib/apportionment-sequence.ts` for the explorer (a
-parity script fails if they diverge), a House-size explorer, per-state seat
-ladders, and the representation-gap finding: the largest/smallest district
-ratio barely moves at the Wyoming Rule (1.76× at 573 seats) or Cube Root
-Rule (1.75× at 692) and only collapses past ~1,000 seats (1.35×).
+package, mirrored in TypeScript by `lib/apportionment-sweep.ts` and
+`lib/apportionment/house-sizes.ts` (one module for the essay and the
+explorer: seats, both gaps and next-seat claims at every size 435–11,036;
+a parity script fails if they diverge from the Python build). The essay at
+`/apportionment` and its companion explorer at `/apportionment/explore`
+(any House size, with the essay's figures and vocabulary) carry the
+representation-gap finding: the highest/lowest state-average ratio barely
+moves at the Wyoming Rule (1.76× at 573 seats) or cube-root rule (1.75× at
+692) and only collapses past ~1,000 seats (1.35×).
 
 **Presentation: a scrolling essay** (investigative stance, history
 1789–1941, pick-your-state personalization, seat-hemicycle motif). Plan:
@@ -329,10 +333,11 @@ The essay may cite only `verified` or `derived` facts.
 **Rule-defined House sizes are computed, not typed:** with populations
 measured consistently the 2020 Wyoming Rule gives 573 (the commonly
 reported 574 mixes apportionment and resident populations), and Article
-I's one-per-30,000 limit allows at most 11,036 seats. The explorer, the
-API bounds, and districting's precompute anchors all derive these values
-(`lib/districting-cap-scale.ts` mirrors the Python rules; the parity
-script compares them).
+I's one-per-30,000 limit allows at most 11,036 seats. The essay's named
+sizes, the API bounds, and districting's precompute anchors all derive these
+values (`lib/districting-cap-scale.ts` mirrors the Python rules and
+`NAMED_SIZES` in `lib/apportionment/house-sizes.ts` is built from it; the
+parity script compares them).
 
 ## Demo 5: Liquid democracy (planned)
 
@@ -577,8 +582,9 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 
 ### Demo 4: Apportionment
 
-**Status:** Explorer and story cover live at `/apportionment`; the scrolling
-essay is being built in four slices (`prompts/demo-4-apportionment-essay.md`).
+**Status:** The essay is live at `/apportionment` (PR #49), with its
+companion explorer at `/apportionment/explore`
+(`prompts/demo-4-apportionment-essay.md`).
 
 **Done:**
 - `apportionment/` package lifted out of `districting/` (a foundational
@@ -591,12 +597,19 @@ essay is being built in four slices (`prompts/demo-4-apportionment-essay.md`).
   Maine 1860), check every derived claim, confirm the build is byte-identical,
   and check TS/Python parity.
 
+- "The Representation Gap" essay: cold open and Acts I–IV on one pinned
+  stage, coda, "What it would take", Methods & Sources, side table of
+  contents and text-only mode; every cited number resolves to the fact
+  register.
+- Companion explorer rebuilt on the essay's shared module and figures: any
+  size 435–11,036 (log slider, a seat at a time, named sizes), both gaps and
+  cost, the state dot chart or tile map, the reader's state with its claim
+  ladder, the next-seat race, and the every-size envelope. The old
+  per-state pages redirect to `?state=`; the old `apportionment-sequence`
+  mirror is gone.
+
 **Next, in order:**
-1. Story-kit extensions (theme hook, Motion, hemicycle layout, canvas dot
-   field, number ticker, sidenotes, state focus) + cold open + Act I.
-2. Acts II–III: the freeze and the seat race.
-3. Act IV + coda + Methods & Sources.
-4. *(Deferred)* Apportionment methods comparison and paradoxes.
+1. *(Deferred)* Apportionment methods comparison and paradoxes.
 
 ### Demo 5: Liquid democracy
 
