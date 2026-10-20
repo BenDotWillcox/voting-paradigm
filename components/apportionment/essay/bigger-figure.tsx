@@ -2,30 +2,25 @@
 
 import * as React from "react";
 
-import { SWEEP_START, SWEEP_STOP } from "@/lib/apportionment-sweep";
+import {
+  NAMED_SIZES,
+  SWEEP_START,
+  SWEEP_STOP,
+  averageAt,
+  spreadAt,
+  sweepData,
+} from "@/lib/apportionment/house-sizes";
 import { INK } from "@/lib/story/palette";
 
 import { useStateFocus } from "./state-focus";
-import { averageAt, spreadAt, sweepData } from "./state-swarm";
 
 /**
  * Act IV's charts: how far state averages stray from the national average at
  * every House size, the two gaps side by side at each proposed size, and how
  * other democracies compare. The sweep is computed in the
- * browser and matches the build's house-sizes.json at every size.
+ * browser and matches the build's house-sizes.json at every size. The
+ * explorer reuses the envelope and the comparison strip.
  */
-
-/** The House sizes the act stops at, with the rule behind each. */
-export const NAMED_SIZES = [
-  { size: 435, label: "Today’s House" },
-  { size: 573, label: "The Wyoming Rule" },
-  { size: 692, label: "The cube-root rule" },
-  { size: 1000, label: "A round thousand" },
-  { size: 11_036, label: "The 30,000-person benchmark" },
-] as const;
-
-/** Salary plus the average Members' Representational Allowance (CRS, 2026). */
-export const COST_PER_MEMBER = 174_000 + 1_928_107;
 
 const percent = (share: number) => {
   if (share === 0) return "avg";
@@ -38,16 +33,27 @@ const percent = (share: number) => {
  * lowest state average to the highest (each as a share of the national
  * average), and inside it ± the median state's gap, the band that holds
  * half the states. Drawn left to right through `reveal`; once drawn, a
- * cursor names the states setting each extreme at any size.
+ * cursor names the states setting each extreme at any size. With `onPick`,
+ * a click (or, where the caller accepts it, a tap) passes the size on; a
+ * `marker` holds one size in view.
  */
 export function EnvelopeChart({
   area,
   height,
   reveal,
+  marker,
+  onPick,
+  pickHint,
 }: {
   area: { left: number; width: number };
   height: number;
   reveal: number;
+  /** A size to mark on the chart (the explorer's current one). */
+  marker?: number;
+  /** Called with the size under a click or tap, and the pointer that made it. */
+  onPick?: (size: number, pointerType: string) => void;
+  /** A last tooltip line for mouse users, saying what a click does. */
+  pickHint?: string;
 }) {
   const { states } = useStateFocus();
   const compact = area.width < 560;
@@ -110,13 +116,23 @@ export function EnvelopeChart({
   const drawn = reveal > 0.95;
   const nameOf = (fips: string) => states.find((s) => s.fips === fips)?.name ?? fips;
   const inspected = hover !== null ? sweep[hover - SWEEP_START] : null;
+  const marked = marker !== undefined ? sweep[marker - SWEEP_START] : null;
+  const [pointer, setPointer] = React.useState("mouse");
 
-  const inspect = (event: React.PointerEvent<SVGRectElement>) => {
+  const sizeAt = (event: React.MouseEvent<SVGRectElement>) => {
     const box = event.currentTarget.ownerSVGElement?.getBoundingClientRect();
-    if (!box) return;
+    if (!box) return null;
     const px = event.clientX - box.left;
     const t = Math.max(0, Math.min(1, (px - plot.left) / (plot.right - plot.left)));
-    setHover(Math.round(Math.exp(logStart + t * (logStop - logStart))));
+    return Math.round(Math.exp(logStart + t * (logStop - logStart)));
+  };
+  const inspect = (event: React.PointerEvent<SVGRectElement>) => {
+    setPointer(event.pointerType);
+    setHover(sizeAt(event));
+  };
+  const pick = (event: React.MouseEvent<SVGRectElement>) => {
+    const size = sizeAt(event);
+    if (size !== null) onPick?.(size, pointer);
   };
 
   return (
@@ -195,7 +211,8 @@ export function EnvelopeChart({
               Half the states lie inside it
             </text>
           ) : null}
-          {!compact ? (
+          {/* The essay's 810-seat spike; with a marker (the explorer) it would crowd the marker's label. */}
+          {!compact && marker === undefined ? (
             <g>
               <circle cx={x(810)} cy={y(spike.high)} r={4} fill="var(--gap-more-3)" stroke={INK.surface} strokeWidth={2} />
               <text x={x(810) + 8} y={y(spike.high) - 6} fill={INK.primary} fontWeight={600}>
@@ -204,6 +221,24 @@ export function EnvelopeChart({
             </g>
           ) : null}
         </g>
+        {marked ? (
+          <g style={{ transform: `translateX(${x(marked.size).toFixed(1)}px)`, transition: "transform 250ms ease-out" }}>
+            <line x1={0} x2={0} y1={plot.top - 4} y2={plot.bottom} stroke="var(--story-accent)" strokeWidth={2} />
+            <circle cx={0} cy={y(marked.high)} r={4.5} fill="var(--gap-more-3)" stroke={INK.surface} strokeWidth={2} />
+            <circle cx={0} cy={y(marked.low)} r={4.5} fill="var(--gap-fewer-3)" stroke={INK.surface} strokeWidth={2} />
+            <text
+              x={0}
+              y={plot.top - 8}
+              textAnchor={x(marked.size) > (plot.left + plot.right) / 2 ? "end" : "start"}
+              fontSize={12}
+              fontWeight={700}
+              fill="var(--story-accent)"
+              className="tabular-nums"
+            >
+              {marked.size.toLocaleString("en-US")} seats
+            </text>
+          </g>
+        ) : null}
         {inspected ? (
           <g>
             <line x1={x(inspected.size)} x2={x(inspected.size)} y1={plot.top} y2={plot.bottom} stroke={INK.primary} strokeWidth={1} />
@@ -219,10 +254,11 @@ export function EnvelopeChart({
             width={plot.right - plot.left}
             height={plot.bottom - plot.top}
             fill="transparent"
-            style={{ pointerEvents: "all", cursor: "crosshair" }}
+            style={{ pointerEvents: "all", cursor: onPick ? "pointer" : "crosshair" }}
             onPointerMove={inspect}
             onPointerDown={inspect}
             onPointerLeave={() => setHover(null)}
+            onClick={onPick ? pick : undefined}
           />
         ) : null}
       </svg>
@@ -246,6 +282,7 @@ export function EnvelopeChart({
             {inspected.smallest.seats === 1 ? "" : "s"}
           </p>
           <p className="text-story-ink-2 tabular-nums">Median state’s gap: ±{(inspected.typical * 100).toFixed(1)}%</p>
+          {pickHint && pointer === "mouse" ? <p className="mt-1 text-story-muted">{pickHint}</p> : null}
         </div>
       ) : null}
     </>
@@ -316,23 +353,37 @@ export function sizeStripHeight(compact: boolean): number {
  * Both gaps at every proposed size, kept on screen while the swarm moves:
  * the average people per seat (and its change from 435), the typical
  * state's gap, and the highest ÷ lowest state average. Phones show today's
- * House and the current size.
+ * House and the current size. A current size that isn't one of the named
+ * ones (the explorer) gets a row of its own, in order. In the essay the
+ * strip sits at the bottom of the stage; `inline` lays it out in the flow.
  */
 export function SizeStrip({
   area,
   current,
   compact,
+  inline = false,
+  everyRow = false,
 }: {
   area: { left: number; width: number };
   current: number;
   compact: boolean;
+  inline?: boolean;
+  /** Keep every size on phones too (the explorer has the room to scroll). */
+  everyRow?: boolean;
 }) {
-  const rows = compact ? NAMED_SIZES.filter(({ size }) => size === 435 || size === current) : NAMED_SIZES;
-  const base = averageAt(435);
+  const sizes = NAMED_SIZES.some(({ size }) => size === current)
+    ? NAMED_SIZES
+    : [...NAMED_SIZES, { size: current, label: "Your size" }].sort((a, b) => a.size - b.size);
+  const rows = compact && !everyRow ? sizes.filter(({ size }) => size === SWEEP_START || size === current) : sizes;
+  const base = averageAt(SWEEP_START);
   return (
     <table
-      className="absolute bottom-0 font-sans text-[11px] leading-tight tabular-nums sm:text-xs"
-      style={{ left: area.left, width: area.width }}
+      className={
+        inline
+          ? "w-full font-sans text-[11px] leading-tight tabular-nums sm:text-xs"
+          : "absolute bottom-0 font-sans text-[11px] leading-tight tabular-nums sm:text-xs"
+      }
+      style={inline ? undefined : { left: area.left, width: area.width }}
       aria-label="The two gaps at each proposed House size, 2020 census"
     >
       <thead>

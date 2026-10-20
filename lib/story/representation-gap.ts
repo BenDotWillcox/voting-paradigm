@@ -1,4 +1,4 @@
-import { getSeatCountsAfter } from "@/lib/apportionment-sequence";
+import { seatsFor } from "@/lib/apportionment/house-sizes";
 import { US_2020_APPORTIONMENT_POPULATIONS } from "@/lib/us-state-populations";
 import { US_STATES } from "@/lib/us-states";
 
@@ -32,10 +32,10 @@ const TOTAL_POPULATION = Object.values(US_2020_APPORTIONMENT_POPULATIONS).reduce
 
 /**
  * District-size inequality across states at a given House size, from the
- * deterministic Method of Equal Proportions sequence and 2020 counts.
+ * shared method-of-equal-proportions sweep and 2020 counts.
  */
 export function houseSizeSnapshot(cap: number): HouseSizeSnapshot {
-  const seatCounts = getSeatCountsAfter(cap);
+  const seatCounts = seatsFor(cap);
   const average = TOTAL_POPULATION / cap;
   const states = US_STATES.map((state) => {
     const seats = seatCounts[state.fips] ?? 0;

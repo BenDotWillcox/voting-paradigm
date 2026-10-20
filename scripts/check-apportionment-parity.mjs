@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * Check that the TypeScript apportionment sequence (lib/apportionment-sequence.ts,
- * used by /apportionment/explore) produces the same seat counts as the Python
- * package that generates the essay's artifacts, at every rule-defined House
- * size in public/data/apportionment-story/anchors.json, that the rule-
- * defined House sizes in lib/districting-cap-scale.ts equal the Python ones,
- * and that the essay's sweep (lib/apportionment-sweep.ts) reproduces
- * house-sizes.json: the award order and, at every House size, the extremes,
- * their ratio and the median deviation.
+ * Check that the TypeScript House sizes shared by the essay and the explorer
+ * (lib/apportionment/house-sizes.ts, over lib/apportionment-sweep.ts) agree
+ * with the Python package that generates the essay's artifacts: the seat
+ * counts at every rule-defined House size in
+ * public/data/apportionment-story/anchors.json, the named sizes themselves,
+ * and house-sizes.json's award order and, at every House size, the
+ * extremes, their ratio and the median deviation. Also checks that the
+ * explorer's next-seat claims pick the state the award order gives.
  *
  * The project has no TS test runner, so this transpiles these source
  * files with the installed TypeScript compiler into a temp directory and
@@ -24,12 +24,14 @@ import ts from "typescript";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const MODULES = [
-  "apportionment-sequence",
+  "apportionment/house-sizes",
   "apportionment-sweep",
   "districting-cap-scale",
   "us-state-populations",
   "us-states",
 ];
+// Modules in subfolders are flattened into the temp directory.
+const flat = (name) => name.replace(/\//g, "__");
 
 const dir = await mkdtemp(join(tmpdir(), "apportionment-parity-"));
 try {
@@ -39,21 +41,18 @@ try {
       compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
     });
     await writeFile(
-      join(dir, `${name}.mjs`),
-      outputText.replace(/from "@\/lib\/([\w-]+)"/g, 'from "./$1.mjs"')
+      join(dir, `${flat(name)}.mjs`),
+      outputText.replace(/from "@\/lib\/([\w/-]+)"/g, (_, path) => `from "./${flat(path)}.mjs"`)
     );
   }
-  const { getSeatCountsAfter } = await import(
-    pathToFileURL(join(dir, "apportionment-sequence.mjs")).href
-  );
-  const capScale = await import(pathToFileURL(join(dir, "districting-cap-scale.mjs")).href);
+  const houseSizes = await import(pathToFileURL(join(dir, `${flat("apportionment/house-sizes")}.mjs`)).href);
   const anchors = JSON.parse(
     await readFile(join(ROOT, "public/data/apportionment-story/anchors.json"), "utf8")
   );
 
   let failures = 0;
   for (const rule of anchors.rules) {
-    const tsSeats = getSeatCountsAfter(rule.seats);
+    const tsSeats = houseSizes.seatsFor(rule.seats);
     const mismatched = Object.keys(rule.state_seats).filter(
       (fips) => tsSeats[fips] !== rule.state_seats[fips]
     );
@@ -64,13 +63,13 @@ try {
       console.log(`${rule.key} (${rule.seats}): TypeScript and Python agree`);
     }
   }
-  const tsAnchors = capScale.CAP_ANCHORS.map((anchor) => anchor.cap);
+  const tsAnchors = houseSizes.NAMED_SIZES.map((entry) => entry.size);
   const pyAnchors = anchors.rules.map((rule) => rule.seats);
   if (JSON.stringify(tsAnchors) !== JSON.stringify(pyAnchors)) {
     failures += 1;
-    console.error(`anchor sizes differ: TypeScript ${tsAnchors} vs Python ${pyAnchors}`);
+    console.error(`named sizes differ: TypeScript ${tsAnchors} vs Python ${pyAnchors}`);
   } else {
-    console.log(`anchor sizes agree: ${tsAnchors.join(", ")}`);
+    console.log(`named sizes agree: ${tsAnchors.join(", ")}`);
   }
 
   // The essay's sweep against house-sizes.json.
@@ -103,6 +102,22 @@ try {
     );
   } else {
     console.log(`sweep (${sizes.start}-${sizes.stop}): TypeScript and Python agree at every House size`);
+  }
+
+  // The explorer's claims: at every size, the strongest next claim is the
+  // state the award order gives the next seat, and the claim that won the
+  // last seat is that seat's recipient.
+  const stateCount = fipsAt.length;
+  let badClaims = 0;
+  for (let size = sizes.start; size < sizes.stop; size++) {
+    if (houseSizes.nextClaims(size)[0].fips !== order[size - stateCount]) badClaims++;
+    if (houseSizes.winningClaim(size).fips !== order[size - stateCount - 1]) badClaims++;
+  }
+  if (badClaims > 0) {
+    failures += 1;
+    console.error(`claims: ${badClaims} disagreements with the award order`);
+  } else {
+    console.log(`claims (${sizes.start}-${sizes.stop - 1}): next and winning claims follow the award order`);
   }
   process.exitCode = failures > 0 ? 1 : 0;
 } finally {

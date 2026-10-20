@@ -1,9 +1,12 @@
 "use client";
 
-import { List, X } from "lucide-react";
+import { List, SlidersHorizontal, X } from "lucide-react";
+import Link from "next/link";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
+
+import { clearReturnPoint, readReturnPoint, saveReturnPoint } from "./return-point";
 
 const CHAPTERS = [
   { id: "top", label: "Start" },
@@ -21,8 +24,10 @@ const MODE_KEY = "nebula-civitas.apportionment.reading";
 /**
  * The essay's way around: a progress line across the top, a table of
  * contents (a rail in the left margin on wide screens, a Contents menu on
- * phones) that jumps to any chapter, and text-only reading (no pinned
- * figures, every step's words in one column; see app/globals.css).
+ * phones) that jumps to any chapter, a way out to the explorer from
+ * anywhere, and text-only reading (no pinned figures, every step's words in
+ * one column; see app/globals.css). Back from the explorer, it returns the
+ * reader to where they left.
  */
 export function StoryNav() {
   const [open, setOpen] = React.useState(false);
@@ -51,6 +56,19 @@ export function StoryNav() {
     window.dispatchEvent(new Event("resize"));
     return () => root.removeAttribute("data-reading");
   }, [textOnly]);
+
+  // Back from the explorer: return to where the reader left, once the
+  // reading mode and the pinned figures have settled. Cleared only when it
+  // runs, so a remount (React's development double effects) still restores.
+  React.useEffect(() => {
+    const point = readReturnPoint();
+    if (!point?.returning) return;
+    const timer = window.setTimeout(() => {
+      clearReturnPoint();
+      window.scrollTo({ top: point.y, behavior: "instant" });
+    }, 150);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   React.useEffect(() => {
     let frame = 0;
@@ -159,6 +177,24 @@ export function StoryNav() {
             </li>
           ))}
         </ol>
+        {/* The explorer, set apart below the chapters. */}
+        <Link
+          href="/apportionment/explore"
+          onClick={(event) => {
+            saveReturnPoint();
+            if (event.detail > 0) event.currentTarget.blur();
+          }}
+          aria-label="Try any House size, in the explorer"
+          className="relative mt-2 flex h-7 w-10 items-center pl-2 text-story-muted hover:text-story-ink"
+        >
+          <SlidersHorizontal aria-hidden="true" className="size-4" />
+          <span
+            aria-hidden="true"
+            className="invisible absolute left-full ml-1 whitespace-nowrap text-story-ink-2 group-focus-within/rail:visible group-hover/rail:visible hover:text-story-ink min-[1680px]:visible"
+          >
+            Try any House size →
+          </span>
+        </Link>
         <div className="invisible absolute top-full left-2.5 mt-3 w-64 border-t border-story-rule pt-2 group-focus-within/rail:visible group-hover/rail:visible">
           {textToggle}
         </div>
@@ -185,7 +221,15 @@ export function StoryNav() {
                 </li>
               ))}
             </ol>
-            <div className="mt-2 border-t border-story-rule px-3 pt-2.5 pb-1">{textToggle}</div>
+            <Link
+              href="/apportionment/explore"
+              onClick={saveReturnPoint}
+              className="mt-2 flex items-center gap-2 rounded-md border-t border-story-rule px-3 pt-2.5 pb-1.5 text-story-ink hover:text-story-accent"
+            >
+              <SlidersHorizontal aria-hidden="true" className="size-4" />
+              Try any House size →
+            </Link>
+            <div className="mt-1 border-t border-story-rule px-3 pt-2.5 pb-1">{textToggle}</div>
           </div>
         ) : null}
         <button
