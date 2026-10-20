@@ -31,6 +31,9 @@ export function HouseStory({ data }: { data: EssayData }) {
     <Scrolly
       label="From one person to one seat in the House, the House across its history, its freeze at 435 seats, how those seats are dealt, and what a bigger House would change"
       layout="stage"
+      // Clear the chapter rail (StoryNav, 3.5rem at the left edge) where the
+      // margin beside this max-w-7xl section is narrower than the rail.
+      className="lg:pl-[clamp(1rem,calc(3.5rem_-_(100%_-_80rem)_/_2),3.5rem)]"
       graphic={
         <HouseStageFigure
           seats={present.stateSeats}
