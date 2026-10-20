@@ -111,9 +111,11 @@ export function StoryNav() {
 
       {/* Wide screens: a rail of ticks in the left margin, one per chapter,
           the current one longer and in ink. Hovering or tabbing in opens
-          the names beside it (always shown where the margin has room). Only
-          the tick column takes clicks until it opens, so it never covers
-          the page. */}
+          the names beside it (always shown where the margin has room: from
+          1760px, the longest name clears the max-w-7xl stage). Only the tick
+          column takes clicks until it opens, so it never covers the page.
+          Wide sections inset themselves by the rail's 3.5rem where the margin
+          is narrower (house-story.tsx, intro-scene.tsx). */}
       <nav
         aria-label="Chapters"
         className="group/rail fixed top-1/2 left-2 z-40 hidden -translate-y-1/2 font-sans text-sm lg:block"
@@ -147,7 +149,7 @@ export function StoryNav() {
                 <span
                   aria-hidden="true"
                   className={cn(
-                    "invisible absolute left-full ml-1 whitespace-nowrap group-focus-within/rail:visible group-hover/rail:visible min-[1680px]:visible",
+                    "invisible absolute left-full ml-1 whitespace-nowrap group-focus-within/rail:visible group-hover/rail:visible min-[1760px]:visible",
                     i === current ? "font-semibold text-story-ink" : "text-story-ink-2 hover:text-story-ink"
                   )}
                 >

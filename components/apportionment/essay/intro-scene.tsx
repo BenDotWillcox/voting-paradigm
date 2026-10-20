@@ -178,7 +178,9 @@ export function IntroScene({ seats, nationalAverage }: IntroSceneProps) {
   return (
     <section
       aria-label="Select a state and meet an imagined person there"
-      className="mx-auto grid max-w-6xl items-start gap-8 px-4 pt-2 pb-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-12"
+      // The lg:pl clamp clears the chapter rail (StoryNav) where the margin
+      // beside this max-w-6xl section is narrower than the rail's 3.5rem.
+      className="mx-auto grid max-w-6xl items-start gap-8 px-4 pt-2 pb-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-12 lg:pl-[clamp(1rem,calc(3.5rem_-_(100%_-_72rem)_/_2),3.5rem)]"
     >
       <StateTileMap seats={seats} nationalAverage={nationalAverage} className="mx-auto w-full max-w-xl lg:pt-6" />
 
