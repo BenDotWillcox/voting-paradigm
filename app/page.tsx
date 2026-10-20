@@ -1,3 +1,4 @@
+import type * as React from "react";
 import Link from "next/link";
 import { ArrowRight, Bot, Landmark, Map, Network, Vote } from "lucide-react";
 import {
@@ -8,18 +9,21 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ApportionmentCard } from "@/components/home/apportionment-card";
+import {
+  showcaseData,
+  statusLabel,
+  type Demo,
+  type DemoStatus,
+  type ShowcaseDemo,
+} from "@/components/home/demo-types";
 
-type DemoStatus = "live" | "in-progress" | "planned";
-
-type Demo = {
-  number: number;
-  title: string;
-  tagline: string;
-  description: string;
-  showcase: string[];
-  href: string | null;
-  status: DemoStatus;
-  Icon: typeof Vote;
+/**
+ * Demos with their own animated card in the demo's visual identity; the
+ * rest use the shared neutral card until theirs is built.
+ */
+const showcaseCards: Partial<Record<number, React.ComponentType<{ demo: ShowcaseDemo }>>> = {
+  4: ApportionmentCard,
 };
 
 const demos: Demo[] = [
@@ -69,10 +73,10 @@ const demos: Demo[] = [
   {
     number: 4,
     title: "Apportionment",
-    tagline: "How big would the House need to be for equal districts?",
+    tagline: "A data essay on the case for a bigger House.",
     description:
-      "Resize the House seat by seat under the Method of Equal Proportions and see how unequal district sizes between states are at 435 seats, and how large the House must grow before the gap closes.",
-    showcase: ["Apportionment math", "Data storytelling", "Reproducibility"],
+      "The House grew with the country for more than a century, then froze at 435 seats. This scrolling essay follows the evidence behind calls to expand it: how large districts have grown, how unequal they are between states, what the popular proposals would actually change, and what a larger House would cost.",
+    showcase: ["Data storytelling", "Historical research", "Apportionment math"],
     href: "/apportionment",
     status: "live",
     Icon: Landmark,
@@ -93,12 +97,6 @@ const demos: Demo[] = [
     Icon: Network,
   },
 ];
-
-const statusLabel: Record<DemoStatus, string> = {
-  live: "Live",
-  "in-progress": "In progress",
-  planned: "Planned",
-};
 
 const statusVariant: Record<
   DemoStatus,
@@ -131,9 +129,14 @@ export default function LandingPage() {
       </header>
 
       <div className="grid gap-6 sm:grid-cols-2">
-        {demos.map((demo) => (
-          <DemoCard key={demo.number} demo={demo} />
-        ))}
+        {demos.map((demo) => {
+          const ShowcaseCard = showcaseCards[demo.number];
+          return ShowcaseCard ? (
+            <ShowcaseCard key={demo.number} demo={showcaseData(demo)} />
+          ) : (
+            <DemoCard key={demo.number} demo={demo} />
+          );
+        })}
       </div>
     </div>
   );
