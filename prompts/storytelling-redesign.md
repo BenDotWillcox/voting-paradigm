@@ -92,6 +92,10 @@ Goal: every districting page under ~500 KB on first load, no Python needed.
 
 ## Phase 2 — Methods, static-first story
 
+Superseded by `prompts/demo-1-methods-instrument.md` (2026-10-21): the methods
+demo becomes an instrument with a paradox gallery rather than a scrolling
+story. The outline below is the original sketch.
+
 Python build script (`scripts/build_methods_story.py`) writes seeded, hashed
 artifacts to `public/data/methods-story/`:
 

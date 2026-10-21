@@ -470,8 +470,9 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 - Demo 3 districting shell with apportionment-driven seat counts
 
 **Next:**
-1. Replace curated method scenarios with persisted `resolution_run` rows when the demo needs saved runs
-2. Add ballot-measure queries/actions only when a portfolio demo has a concrete persisted workflow for them
+1. Rebuild `/methods` as an instrument with a paradox gallery, following the slices in `prompts/demo-1-methods-instrument.md`. Slice A comes first: Ranked Pairs currently orders equal-strength victories with an unseeded shuffle (ignoring the injected tiebreak) and flags every majority cycle as tiebroken, and the default `random_tiebreak` is unseeded.
+2. Replace curated method scenarios with persisted `resolution_run` rows when the demo needs saved runs
+3. Add ballot-measure queries/actions only when a portfolio demo has a concrete persisted workflow for them
 
 ### Demo 2: Agent voting via preference models
 
