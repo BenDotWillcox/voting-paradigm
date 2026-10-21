@@ -79,7 +79,7 @@ def _advance_to_active_choice(
 def resolve_irv(
     candidates: list[Candidate],
     ballots: list[RankedChoiceBallot],
-    tiebreak: TiebreakFunction = random_tiebreak,
+    tiebreak: TiebreakFunction | None = None,
 ) -> IRVResult:
     """
     Resolve an election using Instant Runoff Voting.
@@ -87,11 +87,15 @@ def resolve_irv(
     Args:
         candidates: All candidates in the election
         ballots: All cast ballots
-        tiebreak: Function to break ties when elimination would leave no candidates
+        tiebreak: Function to break ties when elimination would leave no
+            candidates (defaults to random_tiebreak())
 
     Returns:
         IRV result with winner, round-by-round data, and metadata
     """
+    if tiebreak is None:
+        tiebreak = random_tiebreak()
+
     # Filter out abstentions
     active_ballots = [b for b in ballots if not is_abstention(b)]
     abstention_count = len(ballots) - len(active_ballots)

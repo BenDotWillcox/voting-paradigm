@@ -48,6 +48,8 @@ export interface RankedPairsResult extends ElectionResult {
   had_condorcet_winner: boolean;
   locked_victories: [string, string, number][];
   skipped_victories: [string, string, number][];
+  /** Candidate priority that ordered equal-strength victories; empty if unused. */
+  tiebreak_priority: string[];
 }
 
 export interface ScoreResult extends ElectionResult {

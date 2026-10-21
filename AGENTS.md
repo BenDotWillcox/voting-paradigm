@@ -373,13 +373,14 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 - Voting package: plurality, approval, IRV, Borda, Ranked Pairs, Score, Quadratic — all with injectable tiebreak, abstention support, typed result classes, full test coverage. Review changes with `.claude/skills/voting-package-conventions/` and `.claude/skills/voting-method-correctness/`.
 - Ballot-measure schema: tables `ballot_measure`, `measure_option`, `measure_topic`, `electorate`, `resolution_run` (cache key `(measure_id, electorate_id, method, seed)`); enums `ballot_type`, `measure_status`, `measure_source`. Migration `0005_green_mandrill.sql`. Schema only — no queries/actions/UI persisting yet.
 - User-facing rename: demo route `/elections` → `/methods`; corresponding `lib/`, `components/`, `actions/`, `types/` renames. TS types `ElectionMethod`/`ElectionScenario`/`ElectionDemo` → `VotingMethod`/`MethodScenario`/`MethodDemo`. Voting-result type names (`ElectionResult`, `IRVResult`, etc.) kept — they are the canonical voting-theory term.
+- Instrument slice A (`prompts/demo-1-methods-instrument.md`): methods default to a seeded `random_tiebreak()`; Ranked Pairs orders equal-strength victories by a candidate priority drawn from the injected tiebreak, only when their order could change what locks, and sets `tiebreak_applied` only then (recording `tiebreak_priority`); canonical anonymous `RankedProfile`; single-profile criteria (`pairwise_counts`, `majority_winner`, `condorcet_winner`, `condorcet_loser`) in `voting/criteria/`.
 
 **In progress (this branch):**
 - Portfolio-facing methods comparison explorer
 - Demo 3 districting shell with apportionment-driven seat counts
 
 **Next:**
-1. Rebuild `/methods` as an instrument with a paradox gallery, following the slices in `prompts/demo-1-methods-instrument.md`. Slice A comes first: Ranked Pairs currently orders equal-strength victories with an unseeded shuffle (ignoring the injected tiebreak) and flags every majority cycle as tiebroken, and the default `random_tiebreak` is unseeded.
+1. Continue the `/methods` instrument with slices B–I of `prompts/demo-1-methods-instrument.md`, starting with the three-candidate paradox search and its specimen artifacts.
 2. Replace curated method scenarios with persisted `resolution_run` rows when the demo needs saved runs
 3. Add ballot-measure queries/actions only when a portfolio demo has a concrete persisted workflow for them
 

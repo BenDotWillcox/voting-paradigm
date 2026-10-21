@@ -39,8 +39,8 @@ Every method under `voting/methods/` must:
 - keep tally logic out of ballot modules;
 - accept the ballot types it documents;
 - handle abstention and all-abstain inputs without crashing;
-- accept an injectable tiebreak function and default to
-  `voting.types.random_tiebreak`;
+- accept an optional injectable tiebreak function and default to a fresh
+  `voting.types.random_tiebreak()`;
 - return `ElectionResult` or a method-specific subclass; and
 - document the criteria it satisfies or violates.
 

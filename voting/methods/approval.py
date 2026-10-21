@@ -34,7 +34,7 @@ class ApprovalResult(ElectionResult):
 def resolve_approval(
     candidates: list[Candidate],
     ballots: list[ApprovalBallot],
-    tiebreak: TiebreakFunction = random_tiebreak,
+    tiebreak: TiebreakFunction | None = None,
 ) -> ApprovalResult:
     """
     Resolve an election using approval voting.
@@ -42,11 +42,14 @@ def resolve_approval(
     Args:
         candidates: All candidates in the election
         ballots: All cast ballots
-        tiebreak: Function to break ties (defaults to random selection)
+        tiebreak: Function to break ties (defaults to random_tiebreak())
 
     Returns:
         Approval result with winner, vote counts, rates, and metadata
     """
+    if tiebreak is None:
+        tiebreak = random_tiebreak()
+
     # Initialize approval counts for all candidates to 0
     vote_counts: VoteCounts = {candidate.id: 0 for candidate in candidates}
 

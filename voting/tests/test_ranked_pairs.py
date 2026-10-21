@@ -19,6 +19,30 @@ def candidate_ids(candidates: list[Candidate]) -> list[str]:
     return [c.id for c in candidates]
 
 
+def ballots_from(profile: list[tuple[int, list[str]]], ids: list[str]):
+    """Expand (count, ranking) rows into ranked ballots."""
+    ballots = []
+    for count, ranking in profile:
+        for _ in range(count):
+            ballots.append(
+                create_ranked_choice_ballot(f"v{len(ballots) + 1}", ranking, ids)
+            )
+    return ballots
+
+
+def refuse_tiebreak(tied: list[str]) -> str:
+    """A tiebreak for cases that must not need one."""
+    raise AssertionError(f"tiebreak consulted for {tied}")
+
+
+def first_alphabetical(tied: list[str]) -> str:
+    return min(tied)
+
+
+def last_alphabetical(tied: list[str]) -> str:
+    return max(tied)
+
+
 class TestPairwiseMatrix:
     """Tests for pairwise comparison matrix building."""
 
@@ -159,7 +183,7 @@ class TestCondorcetCycle:
             create_ranked_choice_ballot("v7", ["carol", "alice", "bob"], ids),
         ]
 
-        result = resolve_ranked_pairs(candidates, ballots)
+        result = resolve_ranked_pairs(candidates, ballots, tiebreak=refuse_tiebreak)
 
         # Pairwise results:
         # A vs B: 3+2=5 for A, 2 for B => A wins 5-2, margin 3
@@ -167,19 +191,15 @@ class TestCondorcetCycle:
         # A vs C: 3 for A, 2+2=4 for C => C wins 4-3, margin 1
 
         # Cycle: A>B, B>C, C>A
-        # Sorted by margin: A>B (margin 3), B>C (margin 3), C>A (margin 1)
-        # If A>B and B>C tied on margin, use winning votes (both 5)
-        # Then random tiebreak between them
-
-        # Lock strongest first, skip if creates cycle
-        # If we lock A>B first, then B>C, then C>A would create cycle - skip it
-        # Result: A has no incoming edges, A wins
-
+        # A>B and B>C are equally strong (margin 3, 5 winning votes), but both
+        # lock in either order, so the tiebreak is never consulted.
+        # C>A would then close the cycle and is skipped: A wins.
         assert result.had_condorcet_winner is False
-        # With these margins, Alice should win
-        # (A>B margin 3, B>C margin 3, C>A margin 1)
-        # Lock A>B and B>C (no cycle), skip C>A (would create cycle)
-        assert len(result.skipped_victories) >= 0  # At least one skipped
+        assert result.winners == ["alice"]
+        assert result.locked_victories == [("alice", "bob", 3), ("bob", "carol", 3)]
+        assert result.skipped_victories == [("carol", "alice", 1)]
+        assert result.tiebreak_applied is False
+        assert result.tiebreak_priority == []
 
 
 class TestRankedPairsLocking:
@@ -278,6 +298,104 @@ class TestRankedPairsTiebreak:
 
         # With alphabetical tiebreak, alice should win
         assert result.winners == ["alice"]
+
+
+class TestRankedPairsEqualStrength:
+    """Equal-strength victories are ordered by the injected tiebreak."""
+
+    # 2 A>C>B, 4 B>A>C, 2 C>A>B, 1 C>B>A
+    # A beats C 6-3 (margin 3); B beats A 5-4 and C beats B 5-4 (margin 1 each).
+    # After A>C locks, the two margin-1 victories cannot both lock, so their
+    # order decides the winner.
+    TIED_ORDER_PROFILE = [
+        (2, ["alice", "carol", "bob"]),
+        (4, ["bob", "alice", "carol"]),
+        (2, ["carol", "alice", "bob"]),
+        (1, ["carol", "bob", "alice"]),
+    ]
+
+    def resolve(self, tiebreak=None):
+        candidates = make_candidates("Alice", "Bob", "Carol")
+        ballots = ballots_from(self.TIED_ORDER_PROFILE, candidate_ids(candidates))
+        return resolve_ranked_pairs(candidates, ballots, tiebreak=tiebreak)
+
+    def test_priority_from_tiebreak_orders_equal_victories(self):
+        """Higher-priority winner locks first."""
+        # Priority alice > bob > carol: B>A (winner bob) precedes C>B (winner carol)
+        result = self.resolve(first_alphabetical)
+
+        assert result.tiebreak_priority == ["alice", "bob", "carol"]
+        assert result.locked_victories == [("alice", "carol", 3), ("bob", "alice", 1)]
+        assert result.skipped_victories == [("carol", "bob", 1)]
+        assert result.winners == ["bob"]
+        assert result.tiebreak_applied is True
+
+    def test_different_tiebreak_changes_the_winner(self):
+        """The reversed priority locks C>B first and elects Alice."""
+        result = self.resolve(last_alphabetical)
+
+        assert result.tiebreak_priority == ["carol", "bob", "alice"]
+        assert result.locked_victories == [("alice", "carol", 3), ("carol", "bob", 1)]
+        assert result.skipped_victories == [("bob", "alice", 1)]
+        assert result.winners == ["alice"]
+        assert result.tiebreak_applied is True
+
+    def test_shared_winner_locks_lower_priority_loser_first(self):
+        """For a shared winner, the loser with lower priority goes first."""
+        # 1 A>B>C>D, 1 B>C>D>A, 1 C>D>A>B: C beats D 3-0 and every other
+        # victory is 2-1, so five victories share one strength.
+        # Priority a > b > c > d.
+        candidates = make_candidates("A", "B", "C", "D")
+        ballots = ballots_from(
+            [
+                (1, ["a", "b", "c", "d"]),
+                (1, ["b", "c", "d", "a"]),
+                (1, ["c", "d", "a", "b"]),
+            ],
+            candidate_ids(candidates),
+        )
+        result = resolve_ranked_pairs(candidates, ballots, tiebreak=first_alphabetical)
+
+        # c>d locks first. The margin-1 victories a>b, b>c, b>d, c>a, d>a go by
+        # winner priority, then lowest-priority loser first:
+        # a>b, b>d, b>c, then c>a and d>a would close cycles and are skipped.
+        assert result.locked_victories == [
+            ("c", "d", 3),
+            ("a", "b", 1),
+            ("b", "d", 1),
+            ("b", "c", 1),
+        ]
+        assert result.skipped_victories == [("c", "a", 1), ("d", "a", 1)]
+        assert result.winners == ["a"]
+
+    def test_default_tiebreak_is_reproducible(self):
+        """Without an explicit tiebreak, every run gives the same result."""
+        results = {
+            (tuple(r.winners), tuple(r.tiebreak_priority))
+            for r in (self.resolve() for _ in range(50))
+        }
+        assert len(results) == 1
+
+    def test_cycle_without_equal_victories_is_not_tiebroken(self):
+        """Skipping a victory in a cycle is not a tiebreak."""
+        # 4 A>C>B, 6 B>A>C, 3 C>A>B, 2 C>B>A: margins 5, 3, 1
+        candidates = make_candidates("Alice", "Bob", "Carol")
+        ballots = ballots_from(
+            [
+                (4, ["alice", "carol", "bob"]),
+                (6, ["bob", "alice", "carol"]),
+                (3, ["carol", "alice", "bob"]),
+                (2, ["carol", "bob", "alice"]),
+            ],
+            candidate_ids(candidates),
+        )
+        result = resolve_ranked_pairs(candidates, ballots, tiebreak=refuse_tiebreak)
+
+        assert result.had_condorcet_winner is False
+        assert result.locked_victories == [("alice", "carol", 5), ("carol", "bob", 3)]
+        assert result.skipped_victories == [("bob", "alice", 1)]
+        assert result.winners == ["alice"]
+        assert result.tiebreak_applied is False
 
 
 class TestRankedPairsAbstentions:

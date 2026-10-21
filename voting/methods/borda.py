@@ -38,7 +38,7 @@ class BordaResult(ElectionResult):
 def resolve_borda(
     candidates: list[Candidate],
     ballots: list[RankedChoiceBallot],
-    tiebreak: TiebreakFunction = random_tiebreak,
+    tiebreak: TiebreakFunction | None = None,
 ) -> BordaResult:
     """
     Resolve an election using Borda Count.
@@ -49,11 +49,14 @@ def resolve_borda(
     Args:
         candidates: All candidates in the election
         ballots: All cast ballots
-        tiebreak: Function to break ties (defaults to random selection)
+        tiebreak: Function to break ties (defaults to random_tiebreak())
 
     Returns:
         Borda result with winner, point totals, and metadata
     """
+    if tiebreak is None:
+        tiebreak = random_tiebreak()
+
     n = len(candidates)
     max_points = n - 1 if n > 0 else 0
 

@@ -22,7 +22,7 @@ from ..types import (
 def resolve_plurality(
     candidates: list[Candidate],
     ballots: list[SingleChoiceBallot],
-    tiebreak: TiebreakFunction = random_tiebreak,
+    tiebreak: TiebreakFunction | None = None,
 ) -> ElectionResult:
     """
     Resolve an election using plurality voting.
@@ -30,11 +30,14 @@ def resolve_plurality(
     Args:
         candidates: All candidates in the election
         ballots: All cast ballots
-        tiebreak: Function to break ties (defaults to random selection)
+        tiebreak: Function to break ties (defaults to random_tiebreak())
 
     Returns:
         Election result with winner, vote counts, and metadata
     """
+    if tiebreak is None:
+        tiebreak = random_tiebreak()
+
     # Initialize vote counts for all candidates to 0
     vote_counts: VoteCounts = {candidate.id: 0 for candidate in candidates}
 
