@@ -1,0 +1,183 @@
+#!/usr/bin/env python3
+"""Build the static data artifacts for the voting-methods instrument.
+
+Runs the exhaustive paradox search in voting/search over three candidates
+and writes JSON to public/data/methods/:
+
+- specimens.json  one search record per method and criterion: the smallest
+                  specimen found, certified against the reference methods,
+                  or none up to the search's voter bound
+- presets.json    the tour's opening majority cycle (found by search) and
+                  the center-squeeze profile, with every ranked method's winner
+- manifest.json   the voting package's source hash and output SHA-256 hashes
+
+Deterministic: the same voting package produces byte-identical outputs.
+Searches run in parallel, one process per method and criterion.
+
+Usage:
+    python scripts/build_methods_artifacts.py
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import sys
+from concurrent.futures import ProcessPoolExecutor
+from pathlib import Path
+from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from voting import create_ranked_profile  # noqa: E402
+from voting.search import (  # noqa: E402
+    CRITERIA,
+    DEFAULT_CANDIDATES,
+    RANKED_METHODS,
+    Criterion,
+    RankedMethod,
+    certify,
+    find_disagreement_cycle,
+    outcome,
+    search,
+    specimen_to_json,
+)
+from voting.ballots.ranked_profile import RankedProfile  # noqa: E402
+
+OUT = ROOT / "public" / "data" / "methods"
+ARTIFACT_VERSION = 1
+
+# Largest electorate each search covers. Cross-profile searches visit many
+# profiles per electorate, so their bounds are lower.
+MAX_VOTERS: dict[Criterion, int] = {
+    "majority": 24,
+    "condorcet_winner": 24,
+    "condorcet_loser": 24,
+    "monotonicity": 24,
+    "participation": 20,
+    "consistency": 24,
+    "iia": 24,
+    "clones": 24,
+}
+PRESET_MAX_VOTERS = 24
+
+# Each worker holds a search cache and, for consistency, a winner table
+MAX_WORKERS = min(8, os.cpu_count() or 1)
+
+# 35 A>C>B, 33 B>C>A, 32 C>B>A
+CENTER_SQUEEZE = [(35, ["A", "C", "B"]), (33, ["B", "C", "A"]), (32, ["C", "B", "A"])]
+
+
+def main() -> int:
+    OUT.mkdir(parents=True, exist_ok=True)
+    artifacts = {
+        "specimens.json": build_specimens(),
+        "presets.json": build_presets(),
+    }
+    outputs: dict[str, str] = {}
+    for name, payload in artifacts.items():
+        body = dumps(payload).encode("utf-8")
+        # Bytes, not text mode: Windows text mode would write CRLF and the
+        # files would no longer match their manifest hashes.
+        (OUT / name).write_bytes(body)
+        outputs[name] = sha256(body)
+        print(f"{name}: {len(body) / 1024:.1f} KB")
+
+    manifest = {
+        "artifact_version": ARTIFACT_VERSION,
+        "generator": "scripts/build_methods_artifacts.py",
+        "voting_source_sha256": voting_source_sha256(),
+        "outputs": outputs,
+    }
+    (OUT / "manifest.json").write_bytes(dumps(manifest).encode("utf-8"))
+    print("manifest.json written")
+    return 0
+
+
+def build_specimens() -> dict[str, Any]:
+    cells = [(criterion, method) for criterion in CRITERIA for method in RANKED_METHODS]
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as pool:
+        records = list(pool.map(_search_cell, cells))
+    return {
+        "artifact_version": ARTIFACT_VERSION,
+        "candidates": list(DEFAULT_CANDIDATES),
+        "engine": "exhaustive",
+        "searches": records,
+    }
+
+
+def _search_cell(cell: tuple[Criterion, RankedMethod]) -> dict[str, Any]:
+    criterion, method = cell
+    result = search(method, criterion, MAX_VOTERS[criterion])
+    record: dict[str, Any] = {
+        "method": method,
+        "criterion": criterion,
+        "max_voters": result.max_voters,
+        "specimen": None,
+    }
+    if result.specimen is not None:
+        certify(result.specimen)
+        record["specimen"] = specimen_to_json(result.specimen)
+    status = f"{result.specimen.voters} voters" if result.specimen else "none"
+    print(f"  {criterion} / {method}: {status}", flush=True)
+    return record
+
+
+def build_presets() -> dict[str, Any]:
+    cycle = find_disagreement_cycle(PRESET_MAX_VOTERS)
+    if cycle is None:
+        raise SystemExit(f"No disagreement cycle up to {PRESET_MAX_VOTERS} voters")
+    squeeze = create_ranked_profile(DEFAULT_CANDIDATES, CENTER_SQUEEZE)
+    return {
+        "artifact_version": ARTIFACT_VERSION,
+        "presets": [
+            {
+                "id": "majority-cycle",
+                "found_by": {"search": "disagreement_cycle", "max_voters": PRESET_MAX_VOTERS},
+                **preset_record(cycle),
+            },
+            {"id": "center-squeeze", "found_by": None, **preset_record(squeeze)},
+        ],
+    }
+
+
+def preset_record(profile: RankedProfile) -> dict[str, Any]:
+    winners: dict[str, str] = {}
+    for method in RANKED_METHODS:
+        result = outcome(method, profile)
+        if not result.decisive:
+            raise SystemExit(f"Preset needs a tiebreak under {method}")
+        winners[method] = result.winner
+    return {
+        "candidates": list(profile.candidates),
+        "rows": [[count, list(ranking)] for count, ranking in profile.rows],
+        "voters": profile.total_voters,
+        "winners": winners,
+    }
+
+
+def voting_source_sha256() -> str:
+    """Hash of the voting package's source, with line endings normalized."""
+    digest = hashlib.sha256()
+    package = ROOT / "voting"
+    for path in sorted(package.rglob("*.py")):
+        relative = path.relative_to(ROOT).as_posix()
+        if "/tests/" in relative:
+            continue
+        digest.update(relative.encode("utf-8") + b"\0")
+        digest.update(path.read_bytes().replace(b"\r\n", b"\n") + b"\0")
+    return digest.hexdigest()
+
+
+def dumps(payload: Any) -> str:
+    return json.dumps(payload, ensure_ascii=False, separators=(",", ":"), sort_keys=False) + "\n"
+
+
+def sha256(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+if __name__ == "__main__":
+    sys.exit(main())

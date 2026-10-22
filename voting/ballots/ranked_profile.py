@@ -49,6 +49,7 @@ class RankedProfile:
 def create_ranked_profile(
     candidates: Sequence[CandidateId],
     rows: Iterable[tuple[int, Sequence[CandidateId]]],
+    validate: bool = True,
 ) -> RankedProfile:
     """
     Create a ranked profile in canonical form.
@@ -56,11 +57,17 @@ def create_ranked_profile(
     Rows with the same ranking are merged and rows with a zero count are
     dropped.
 
+    Args:
+        candidates: Candidate IDs in their reference order
+        rows: (count, ranking) pairs
+        validate: If False, skip checking that each ranking is a complete
+            strict ranking. Only for rows built from an already valid profile.
+
     Raises:
         InvalidProfileError: If there are no candidates, candidates repeat,
             or a count is negative
         InvalidRankingError: If a ranking is not a complete strict ranking
-            of the candidates
+            of the candidates (when validate=True)
     """
     candidate_tuple = tuple(candidates)
     if not candidate_tuple:
@@ -75,8 +82,11 @@ def create_ranked_profile(
         if count < 0:
             raise InvalidProfileError(f"Row count must not be negative, got {count}")
         ranking_tuple = tuple(ranking)
-        # Reuse the ballot validator so every row is a complete strict ranking
-        create_ranked_choice_ballot("profile-row", list(ranking_tuple), list(candidate_tuple))
+        if validate:
+            # Reuse the ballot validator so every row is a complete strict ranking
+            create_ranked_choice_ballot(
+                "profile-row", list(ranking_tuple), list(candidate_tuple)
+            )
         if count:
             counts[ranking_tuple] = counts.get(ranking_tuple, 0) + count
 
