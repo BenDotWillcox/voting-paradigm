@@ -1,6 +1,6 @@
 # Demo 1: Voting methods as an instrument
 
-Status: design settled with Ben on 2026-10-21; slices A to E built. Supersedes
+Status: design settled with Ben on 2026-10-21; slices A to F built. Supersedes
 Phase 2 of `prompts/storytelling-redesign.md`.
 
 ## Why an instrument, not an essay
@@ -164,7 +164,7 @@ states:
 | Fails · specimen | The smallest profile found, re-resolved by the package. "Minimal" only when the search was exhaustive to that size. |
 | Fails · cited | A known theorem; the specimen is pending or beyond search bounds. |
 | Passes · cited | A proof reference. An empty search never fills this cell; it reads "no specimen ≤ N voters". |
-| Not applicable | The criterion is undefined for this ballot type. |
+| Open | No specimen up to the bound and no proof; the cell's note says why. |
 
 Opening a specimen loads it into the instrument as before → after, with the
 transformation highlighted (raised ballots, added voters, removed candidate,
@@ -188,8 +188,8 @@ confirmed by a specimen or a citation before it ships:
 | IIA (spoiler) | fail | fail | fail | fail |
 | Independence of clones | fail | pass | fail | pass (Tideman 1987) |
 
-Rated-method cells are judged under model v1 (see Rated methods) and are not
-pre-filled.
+Rated-method cells are judged under model v1 (see Ballot model v1) and were
+not pre-filled.
 
 Search results with three candidates (slice B build): the voters in each
 minimal specimen, or "none" when nothing was found up to the bound. Every
@@ -206,6 +206,38 @@ cell agrees with the expected table above.
 | IIA (24) | 7 | 5 | 5 | 7 |
 | Independence of clones (24) | 7 | none | 5 | none |
 
+Rated search results (slice F build), over voter types under sincere-v1.
+"Proof" and "open" mark the cells with no specimen; the gallery carries the
+proofs and the open cell's reason (`lib/methods/gallery.ts`). Clones are
+exact: every voter gives the clone the original's utility.
+
+| Criterion (bound) | Approval | Score | Quadratic |
+|---|---|---|---|
+| Majority (8) | 3 | 3 | 3 |
+| Condorcet winner (8) | 3 | 3 | 3 |
+| Condorcet loser (8) | 5 | 5 | 7 |
+| Monotonicity (7) | none · proof | none · proof | 4 |
+| Participation (7) | none · proof | none · proof | none · open |
+| Consistency (7) | none · proof | none · proof | none · proof |
+| IIA (8) | 3 | 3 | 3 |
+| Independence of exact clones (8) | 3 | none · proof | 2 |
+
+- **Proofs.** All three sincere-v1 rules are unchanged by rescaling a
+  voter's utilities. Approval: raising the winner lifts the voter's mean, so
+  it can only gain an approval and the rest can only lose one. Score: the
+  winner's rescaled score can only rise and the others' only fall. A voter
+  approves (or scores at least as high) everyone they like more, which gives
+  participation. Approvals, scores and net votes add, which gives
+  consistency. An exact clone leaves each voter's lowest and highest utility
+  in place, so score totals are unchanged and the clone ties the original.
+- **Quadratic monotonicity fails in 4 voters.** Two voters at (A 0, B 50,
+  C 100) move to (A 0, B 25, C 100), a rescaled raise of C. Their credits
+  shift from opposing A to opposing B, and A overtakes C.
+- **Quadratic participation is open.** Exact proportional votes satisfy it,
+  but whole-vote rounding and trimming to the budget can put two close
+  favorites one vote out of order. No proof covers the model as implemented,
+  and the search found nothing up to 7 voters.
+
 ### Search engine
 
 - `voting/criteria/`: pure predicates (majority winner, Condorcet winner and
@@ -220,16 +252,26 @@ cell agrees with the expected table above.
   bound is resolved once by the reference method, and pairs of profiles are
   checked as numpy lookups of their pooled count vectors. No method logic is
   re-implemented.
-- `scripts/build_methods_artifacts.py` runs all 32 searches in parallel,
+- **Rated searches** (`rated.py`) enumerate count vectors over 18 voter
+  types: each of the six rankings with its top at 100, bottom at 0 and middle
+  at 25, 50 or 75. Each type's ballots are cast once by sincere-v1 and
+  profiles are totaled as matrix products; a test checks those totals against
+  the reference methods on random profiles, and `certify()` re-resolves every
+  rated specimen from freshly cast ballots. A raise moves voters to a type
+  whose utilities are a rescaling of the old ones with the winner raised;
+  participation adds voters of one type; a clone gets the original's utility
+  from every voter (`voting/criteria/utility_transformations.py`). The space
+  grows much faster than over six rankings, so the bounds are 7 or 8 voters.
+- `scripts/build_methods_artifacts.py` runs all 56 searches in parallel,
   certifies each specimen, and writes `specimens.json`, `presets.json` and a
   `manifest.json` (voting source hash and output hashes) to
   `public/data/methods/`. Tests re-certify every committed specimen and
   re-run the small searches to check they reproduce.
 - **Measured cost:** the reference package resolves about 9,500
   three-candidate profiles a second under all four methods on one process.
-  The full build (32 searches, bounds of 20 to 24 voters) takes about two and
-  a half minutes on 8 worker processes, and two runs produce byte-identical
-  outputs.
+  The full build (56 searches: ranked bounds of 20 to 24 voters, rated
+  bounds of 7 or 8) takes under three minutes on 8 worker processes, and two
+  runs under different hash seeds produce byte-identical outputs.
 - **Four or more candidates** (24+ ranking types) cannot be enumerated very
   far. Use a seeded bounded search or an ILP, label results "smallest found",
   and record the seed and bounds.
@@ -394,8 +436,15 @@ E. **Gallery and tour.** The gallery grid (four ranked methods × eight
    specimen profile resolved, keyed like the instrument's URL form), so the
    tour and gallery work without the API.
 F. **Rated gallery cells.** Specimens for approval, score and quadratic
-   under sincere v1 (the ballot model interface and utility profiles landed
-   in slice D).
+   under sincere v1, searched over 18 voter types (ranking × middle utility
+   at 25, 50 or 75) with exact clones; utility transformations, a matrix-total
+   search kernel certified by the reference methods, and specimens that
+   record their `ballot_type` and `ballot_model`. The gallery shows all seven
+   methods in two groups (searched over rankings, searched over utilities),
+   with proofs for the rated passes and one open cell (quadratic
+   participation). Rated specimens load with their utilities as found.
+   Quadratic voting's totals now follow candidate order; a set-ordered dict
+   had made its trace, and so the artifact bytes, depend on string hashing.
 G. **Atlas.** Spatial winner maps.
 H. **Simulation.** Disagreement rates and Condorcet efficiency in `eval/`.
    Electorate generators are seeded samplers that return profiles, so they

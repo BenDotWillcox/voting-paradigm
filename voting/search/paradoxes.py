@@ -32,7 +32,7 @@ from ..criteria.single_profile import pairwise_counts
 from ..criteria.transformations import are_clones, combine, raise_candidate, remove_candidate
 from ..types import CandidateId
 from .enumeration import profiles, rankings
-from .outcomes import RANKED_METHODS, Outcome, RankedMethod, outcome
+from .outcomes import RANKED_METHODS, RATED_METHODS, Outcome, RankedMethod, SearchMethod, outcome
 from .specimens import (
     AddClone,
     AddVoters,
@@ -55,7 +55,7 @@ _CHUNK_PAIRS = 1 << 19
 @dataclass(frozen=True)
 class SearchResult:
     """The outcome of one exhaustive search."""
-    method: RankedMethod
+    method: SearchMethod
     criterion: Criterion
     candidates: tuple[CandidateId, ...]
     max_voters: int
@@ -64,15 +64,27 @@ class SearchResult:
 
 
 def search(
-    method: RankedMethod,
+    method: SearchMethod,
     criterion: Criterion,
     max_voters: int,
     candidates: Sequence[CandidateId] = DEFAULT_CANDIDATES,
 ) -> SearchResult:
-    """Find the smallest specimen of `method` failing `criterion`, if any."""
+    """
+    Find the smallest specimen of `method` failing `criterion`, if any.
+
+    Ranked methods search ranked profiles; rated methods search utility
+    profiles under the sincere ballot model (see rated.py).
+    """
     candidate_tuple = tuple(candidates)
-    finder = _FINDERS[criterion]
-    specimen = finder(method, criterion, candidate_tuple, max_voters)
+    specimen: Specimen | None
+    if method in RATED_METHODS:
+        # Imported here: rated.py builds on this module's specimen types
+        from .rated import search_rated
+
+        specimen = search_rated(method, criterion, max_voters, candidate_tuple)
+    else:
+        finder = _FINDERS[criterion]
+        specimen = finder(method, criterion, candidate_tuple, max_voters)  # type: ignore[arg-type]
     return SearchResult(
         method=method,
         criterion=criterion,

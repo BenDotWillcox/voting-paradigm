@@ -6,7 +6,9 @@ and writes JSON to public/data/methods/:
 
 - specimens.json  one search record per method and criterion: the smallest
                   specimen found, certified against the reference methods,
-                  or none up to the search's voter bound
+                  or none up to the search's voter bound. Ranked methods
+                  search rankings; approval, score and quadratic voting search
+                  utility profiles under the sincere ballot model
 - presets.json    the instrument's presets as voter types with utilities: the
                   opening majority cycle (rankings found by search, utilities
                   evenly spaced) and the center squeeze (utilities authored),
@@ -15,7 +17,8 @@ and writes JSON to public/data/methods/:
                   instrument renders presets without the API
 - specimen-resolutions.json
                   every specimen profile as the instrument loads it (ranked
-                  rows as evenly spaced voter types), resolved by the
+                  rows as evenly spaced voter types, utility rows as found),
+                  resolved by the
                   endpoint and keyed by the instrument's profile key, so the
                   gallery opens specimens without the API
 - manifest.json   a hash of the source that produced the outputs (the voting
@@ -47,8 +50,9 @@ from voting.search import (  # noqa: E402
     CRITERIA,
     DEFAULT_CANDIDATES,
     RANKED_METHODS,
+    RATED_METHODS,
     Criterion,
-    RankedMethod,
+    SearchMethod,
     certify,
     find_disagreement_cycle,
     search,
@@ -78,6 +82,19 @@ MAX_VOTERS: dict[Criterion, int] = {
     "clones": 24,
 }
 PRESET_MAX_VOTERS = 24
+
+# Rated searches walk 18 voter types instead of 6 rankings, so their spaces
+# grow much faster and their bounds are lower.
+RATED_MAX_VOTERS: dict[Criterion, int] = {
+    "majority": 8,
+    "condorcet_winner": 8,
+    "condorcet_loser": 8,
+    "monotonicity": 7,
+    "participation": 7,
+    "consistency": 7,
+    "iia": 8,
+    "clones": 8,
+}
 
 # Each worker holds a search cache and, for consistency, a winner table
 MAX_WORKERS = min(8, os.cpu_count() or 1)
@@ -120,7 +137,8 @@ def main() -> int:
 
 
 def build_specimens() -> dict[str, Any]:
-    cells = [(criterion, method) for criterion in CRITERIA for method in RANKED_METHODS]
+    methods: tuple[SearchMethod, ...] = RANKED_METHODS + RATED_METHODS
+    cells = [(criterion, method) for criterion in CRITERIA for method in methods]
     with ProcessPoolExecutor(max_workers=MAX_WORKERS) as pool:
         records = list(pool.map(_search_cell, cells))
     return {
@@ -131,12 +149,15 @@ def build_specimens() -> dict[str, Any]:
     }
 
 
-def _search_cell(cell: tuple[Criterion, RankedMethod]) -> dict[str, Any]:
+def _search_cell(cell: tuple[Criterion, SearchMethod]) -> dict[str, Any]:
     criterion, method = cell
-    result = search(method, criterion, MAX_VOTERS[criterion])
+    rated = method in RATED_METHODS
+    bound = (RATED_MAX_VOTERS if rated else MAX_VOTERS)[criterion]
+    result = search(method, criterion, bound)
     record: dict[str, Any] = {
         "method": method,
         "criterion": criterion,
+        "ballot_model": "sincere-v1" if rated else None,
         "max_voters": result.max_voters,
         "specimen": None,
     }
@@ -194,15 +215,22 @@ def build_specimen_resolutions(specimens: dict[str, Any]) -> dict[str, Any]:
             continue
         for profile in specimen["profiles"]:
             candidates = profile["candidates"]
-            rows = [
-                (count, evenly_spaced(candidates, ranking)) for count, ranking in profile["rows"]
-            ]
+            if profile["ballot_type"] == "utility":
+                rows = [
+                    (count, dict(zip(candidates, utilities)))
+                    for count, utilities in profile["rows"]
+                ]
+            else:
+                rows = [
+                    (count, evenly_spaced(candidates, ranking))
+                    for count, ranking in profile["rows"]
+                ]
             key = instrument_key(candidates, rows)
             if key not in resolutions:
                 resolutions[key] = resolve_utility(candidates, rows)
     return {
         "artifact_version": ARTIFACT_VERSION,
-        "utilities": "evenly spaced",
+        "utilities": "ranked specimens evenly spaced; rated specimens as found",
         "resolutions": resolutions,
     }
 

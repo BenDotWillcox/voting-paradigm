@@ -6,15 +6,28 @@ voting.methods, and certify() re-resolves each specimen from fresh ballots.
 """
 
 from .enumeration import profile_count, profiles, rankings
-from .outcomes import RANKED_METHODS, Outcome, RankedMethod, is_decisive, outcome, resolve_profile
+from .outcomes import (
+    RANKED_METHODS,
+    RATED_METHODS,
+    Outcome,
+    RankedMethod,
+    RatedMethod,
+    SearchMethod,
+    is_decisive,
+    outcome,
+    resolve_profile,
+    resolve_rated,
+)
 from .paradoxes import DEFAULT_CANDIDATES, SearchResult, find_disagreement_cycle, search
 from .specimens import (
     CRITERIA,
     AddClone,
+    AddUtilityVoters,
     AddVoters,
     Combine,
     Criterion,
     Raise,
+    RaiseUtility,
     RemoveCandidate,
     Specimen,
     SpecimenError,
@@ -32,8 +45,12 @@ __all__ = [
     "profiles",
     "rankings",
     "RANKED_METHODS",
+    "RATED_METHODS",
     "Outcome",
     "RankedMethod",
+    "RatedMethod",
+    "SearchMethod",
+    "resolve_rated",
     "is_decisive",
     "outcome",
     "resolve_profile",
@@ -43,10 +60,12 @@ __all__ = [
     "search",
     "CRITERIA",
     "AddClone",
+    "AddUtilityVoters",
     "AddVoters",
     "Combine",
     "Criterion",
     "Raise",
+    "RaiseUtility",
     "RemoveCandidate",
     "Specimen",
     "SpecimenError",

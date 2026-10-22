@@ -123,7 +123,7 @@ class TestCommittedArtifacts:
     def test_every_cell_is_searched_once(self):
         cells = [(r["method"], r["criterion"]) for r in committed_searches()]
 
-        assert len(cells) == len(set(cells)) == 32
+        assert len(cells) == len(set(cells)) == 56  # 7 methods x 8 criteria
 
     @pytest.mark.parametrize(
         "record", committed_specimens(), ids=lambda record: record["id"]
