@@ -149,11 +149,15 @@ class TestCommittedArtifacts:
 
     def test_presets_match_the_reference_methods(self):
         for preset in load("presets.json")["presets"]:  # type: ignore[union-attr]
-            profile = create_ranked_profile(preset["candidates"], preset["rows"])
+            rankings = preset["resolution"]["rankings"]
+            profile = create_ranked_profile(rankings["candidates"], [
+                (row["count"], row["ranking"]) for row in rankings["rows"]
+            ])
+            winners = {r["method"]: r["winner"] for r in preset["resolution"]["results"]}
             for method in RANKED_METHODS:
                 result = outcome(method, profile)
                 assert result.decisive
-                assert result.winner == preset["winners"][method]
+                assert result.winner == winners[method]
 
 
 class TestCertificationRejects:

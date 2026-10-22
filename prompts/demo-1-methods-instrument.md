@@ -1,6 +1,6 @@
 # Demo 1: Voting methods as an instrument
 
-Status: design settled with Ben on 2026-10-21; slices A to C built. Supersedes
+Status: design settled with Ben on 2026-10-21; slices A to D built. Supersedes
 Phase 2 of `prompts/storytelling-redesign.md`.
 
 ## Why an instrument, not an essay
@@ -68,8 +68,11 @@ Settled 2026-10-21:
   civic labels, including on tour presets.
 - **Criteria at launch are the core eight** in the gallery table below.
   Later-no-harm waits for truncated ballots.
-- **Rated methods are a second layer** under a declared, versioned ballot
-  model (model v1), and their gallery cells say so.
+- **All seven methods, side by side** (revised 2026-10-22; the first cut
+  showed only the four ranked methods and read as a step down from the lab).
+  The electorate is voter types with utilities; a declared, versioned ballot
+  model (sincere v1) turns each type into all five ballot formats, and rated
+  gallery cells say "under model v1".
 - **Python resolves live edits.** Presets and specimens stay static; revisit
   when the atlas needs in-browser resolution.
 
@@ -99,20 +102,29 @@ list grouped by method.
 
 ### Profile editor
 
-- Anonymous profiles in the notation voting theorists use: a count and a
-  strict ranking per row.
+- Each row is a voter type: a count and a **utility track**, the candidates'
+  glyphs placed on a 0–10 scale. Order along the track is the ranked ballot;
+  spacing is intensity, which only the rated ballots can see.
 - 3 to 5 candidates in fixed glyph order ● ▲ ■ ◆ ★.
-- Edits: change a count, reorder a ranking by drag or arrow keys, add or
-  remove rows and candidates. Cap at 999 voters.
-- The URL carries the profile (`?p=4ACB.6BAC.3CAB.2CBA`), so any state can be
-  shared.
+- Each glyph is a slider: drag it, or focus it and use the arrow keys (Page
+  Up/Down for larger steps, Home/End for the ends). Rows can be added and
+  removed; counts cap at 999.
+- The URL carries the profile (`?p=6:100,50,0.4:0,100,50`), so any state can
+  be shared. Earlier ranked links (`?p=6ABC.4BCA`) still load, spaced evenly.
 - The **tournament graph** (pairwise-majority arrows labelled with margins)
-  is the persistent anchor figure. A cycle visibly closes.
+  reads the ranked ballots. A cycle visibly closes.
+
+### Ballots panel
+
+For the selected voter type, the five ballots it casts under sincere v1, each
+naming the methods that read it: single choice (plurality), ranked (IRV,
+Borda, Ranked Pairs), approval, score and quadratic. Every card states its
+rule, so the step from preferences to ballots is never hidden.
 
 ### Channels
 
-- One row per method in fixed order. Position always means method and color
-  always means candidate.
+- One row per method, grouped by the ballot it reads, in fixed order.
+  Position always means method and color always means candidate.
 - Each row has a compact tally in candidate colors, the winner glyph, and
   lights for the single-profile criteria: majority winner elected, Condorcet
   winner elected (– when none exists), Condorcet loser avoided. A tie light
@@ -120,9 +132,10 @@ list grouped by method.
 - A computed summary line ("15 voters · 3 different winners · majority
   cycle").
 - Selecting a channel opens its trace: plurality counts, IRV rounds with
-  transfers (`IRVRound`), Borda points by position, and the Ranked Pairs matrix
-  with lock order and the skipped edge (`locked_victories`,
-  `skipped_victories`).
+  transfers (`IRVRound`), Borda points by position, the Ranked Pairs matrix
+  with lock order and the skipped edge, approvals, score totals, and net
+  quadratic votes. Below it sit the lab's method descriptions (strengths,
+  weaknesses, where it's used), corrected where they overclaimed.
 - Motion appears only to show cause and effect (a transfer, a lock). Every
   trace steps forward and back from the keyboard, and nothing is timed.
 
@@ -261,20 +274,23 @@ monotonicity, participation, IIA and clones, and `first`, `second` and
 `combined` for consistency. `specimen` is `null` when the search found
 nothing up to `max_voters`.
 
-### Rated methods
+### Ballot model v1
 
-Rated methods are a second layer below the ranked channels. They run in a
-utility mode in which ballots come from a ballot model: an interface that
-takes a voter's utilities (and, later, beliefs about other voters) and
-returns a ballot. The first implementation is a named, versioned sincere
-model, *model v1*:
+Ballots come from a ballot model (`voting/ballot_models/`): an interface that
+takes a voter's utilities and returns the ballot it casts in every format. A
+strategic model would be another implementation, built with beliefs about the
+other voters. The first implementation is the sincere voter, `sincere-v1`:
 
-- **Plurality and rankings:** the utility order. The editor enforces distinct
-  utilities so rankings are strict.
-- **Approval:** approve every candidate above the voter's mean utility.
-- **Score:** min-max normalize to 0–10 and round half up.
-- **Quadratic:** votes proportional to utility minus the voter's mean, scaled
-  to spend the 100-credit budget, rounded to integers within budget.
+- **Single choice and rankings:** the utility order; equal utilities keep
+  candidate order.
+- **Approval:** every candidate strictly above the voter's mean utility. An
+  indifferent voter approves no one.
+- **Score:** rescaled so the least favorite scores 0 and the favorite 10,
+  rounded half up. An indifferent voter scores everyone 5.
+- **Quadratic:** votes proportional to each utility's distance from the
+  voter's mean, scaled to spend the 100-credit budget, rounded half away from
+  zero, then trimmed from the largest vote until the cost fits. An
+  indifferent voter casts no votes.
 
 Rated gallery cells read "under model v1". A consequence worth showing:
 approval is often said to satisfy IIA when ballots are held fixed, but under
@@ -354,15 +370,24 @@ C. **Profile endpoint.** `POST /api/voting/profile/resolve` with Pydantic
    (`"ranked"` for now) so partial rankings, rated ballots and weights can be
    added later without breaking it. Each method's result reports every tie a
    tiebreak settled (the candidates it chose among), not only the winner.
-D. **Instrument.** Profile editor, tournament graph, channels and traces on
-   `/methods`, with the opening and center-squeeze presets and the `methods`
-   tokens.
+D. **Instrument.** Voter-type editor with utility tracks, ballots panel,
+   tournament graph, seven channels grouped by ballot, and traces with the
+   method descriptions on `/methods`; the endpoint accepts utility profiles
+   (`"ballot_type": "utility"`) and runs all seven methods through sincere v1.
+   Presets are voter types: the opening cycle with evenly spaced utilities and
+   the center squeeze with authored ones (C a close second for A and B voters,
+   so approval, score and quadratic all find it). Presets store their full
+   endpoint response in `presets.json`, so they render with no API; the
+   `methods` tokens' candidate colors (light
+   `#2a78d6 #d8452b #eda100 #14957a #a8479e`, dark
+   `#3987e5 #e34f5f #ad8c00 #199e80 #b665c4`) pass the dataviz validator on
+   all pairs, with glyph and letter as the second encoding.
 E. **Gallery and tour.** Gallery UI wired to specimens, the tour, and the
-   `/methods/lab` redirect.
-F. **Rated layer.** Utility mode and the rated gallery cells. Ballot models
-   sit behind one interface (a voter's utilities, and optionally beliefs about
-   other voters, in; a ballot out), with sincere model v1 as the first
-   implementation, so a strategic agent can later be another ballot model.
+   `/methods/lab` redirect. Ranked specimens load as evenly spaced voter
+   types, and the page says so.
+F. **Rated gallery cells.** Specimens for approval, score and quadratic
+   under sincere v1 (the ballot model interface and utility profiles landed
+   in slice D).
 G. **Atlas.** Spatial winner maps.
 H. **Simulation.** Disagreement rates and Condorcet efficiency in `eval/`.
    Electorate generators are seeded samplers that return profiles, so they

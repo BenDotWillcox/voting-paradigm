@@ -103,6 +103,9 @@ def resolve_irv(
     # Track eliminated candidates
     eliminated: set[CandidateId] = set()
     remaining_candidates = {c.id for c in candidates}
+    # Every list and dict below follows candidate order, never set order, so
+    # results do not depend on the interpreter's string hashing
+    candidate_order = [c.id for c in candidates]
 
     # Track rounds
     rounds: list[IRVRound] = []
@@ -116,7 +119,9 @@ def resolve_irv(
         round_number += 1
 
         # Count votes for remaining candidates
-        vote_counts: VoteCounts = {cid: 0 for cid in remaining_candidates}
+        vote_counts: VoteCounts = {
+            cid: 0 for cid in candidate_order if cid in remaining_candidates
+        }
         exhausted_this_round = 0
         active_this_round = 0
 
@@ -193,8 +198,9 @@ def resolve_irv(
         if len(candidates_with_min) >= len(remaining_candidates):
             # All remaining candidates are tied - use tiebreak to pick winner
             # This is a final-round tie
-            winner = tiebreak(list(remaining_candidates))
-            to_eliminate = [cid for cid in remaining_candidates if cid != winner]
+            remaining = [cid for cid in candidate_order if cid in remaining_candidates]
+            winner = tiebreak(remaining)
+            to_eliminate = [cid for cid in remaining if cid != winner]
             elimination_was_tiebreak = True
             tiebreak_applied = True
         elif len(remaining_candidates) - len(candidates_with_min) >= 1:

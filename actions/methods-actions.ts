@@ -6,13 +6,46 @@ import {
   MethodDemo,
   DemoScenario,
   DemoScenarioResolution,
+  ProfileResolveResponse,
 } from "@/types/methods";
 import {
   fetchDemoScenarios,
   fetchScenarioResult,
   fetchAllScenarioResults,
   resolveDemoScenario,
+  resolveProfile,
 } from "@/lib/methods-api";
+import { profileResolveRequestSchema } from "@/lib/validations/methods-schemas";
+
+/**
+ * Count a profile under every ranked method (the methods instrument). Read
+ * only: nothing is stored, so nothing is revalidated.
+ */
+export async function resolveProfileAction(
+  input: unknown
+): Promise<ActionResult<ProfileResolveResponse>> {
+  const parsed = profileResolveRequestSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      isSuccess: false,
+      message: parsed.error.issues[0]?.message ?? "Invalid profile",
+    };
+  }
+  try {
+    const data = await resolveProfile(parsed.data);
+    return { isSuccess: true, message: "Profile resolved", data };
+  } catch (error) {
+    console.error("Error resolving profile:", {
+      candidates: parsed.data.profile.candidates.length,
+      rows: parsed.data.profile.rows.length,
+      error,
+    });
+    return {
+      isSuccess: false,
+      message: "Live counting is unavailable right now.",
+    };
+  }
+}
 
 export async function getMethodDemoAction(
   method: VotingMethod

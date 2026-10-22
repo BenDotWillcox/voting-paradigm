@@ -4,12 +4,16 @@ HTTP-layer tests for POST /api/voting/profile/resolve.
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
 from api.main import app
 
 URL = "/api/voting/profile/resolve"
+PRESETS = Path(__file__).resolve().parents[2] / "public" / "data" / "methods" / "presets.json"
 
 
 @pytest.fixture(scope="module")
@@ -170,6 +174,20 @@ class TestValidation:
         assert client.post(URL, json=payload).status_code == 422
 
 
+class TestCommittedPresets:
+    def test_preset_resolutions_match_the_live_endpoint(self, client: TestClient):
+        """The instrument renders presets from the artifact; it must not drift."""
+        presets = json.loads(PRESETS.read_text(encoding="utf-8"))["presets"]
+
+        for preset in presets:
+            stored = preset["resolution"]
+            live = client.post(
+                URL,
+                json={"profile": stored["profile"], "tiebreak_seed": stored["tiebreak_seed"]},
+            ).json()
+            assert live == stored, preset["id"]
+
+
 class TestOpenAPI:
     def test_documented_under_voting(self, client: TestClient):
         operation = client.get("/openapi.json").json()["paths"][URL]["post"]
@@ -177,3 +195,98 @@ class TestOpenAPI:
         assert operation["tags"] == ["voting"]
         assert operation["summary"] == "Resolve a profile under every ranked method"
         assert "422" in operation["responses"]
+
+
+def utility_request(rows: list[tuple[int, dict[str, int]]], candidates: str = "ABC", **extra) -> dict:
+    return {
+        "profile": {
+            "ballot_type": "utility",
+            "candidates": list(candidates),
+            "rows": [{"count": count, "utilities": u} for count, u in rows],
+        },
+        **extra,
+    }
+
+
+# The center squeeze as voter types: C is a close second for A and B voters
+SQUEEZE_TYPES = [
+    (35, {"A": 100, "B": 0, "C": 60}),
+    (33, {"A": 0, "B": 100, "C": 60}),
+    (32, {"A": 0, "B": 40, "C": 100}),
+]
+
+
+class TestUtilityProfiles:
+    def test_all_seven_methods(self, client: TestClient):
+        body = client.post(URL, json=utility_request(SQUEEZE_TYPES)).json()
+
+        assert winners(body) == {
+            "plurality": "A",
+            "irv": "B",
+            "borda": "C",
+            "ranked_pairs": "C",
+            "approval": "C",
+            "score": "C",
+            "quadratic": "C",
+        }
+        assert body["ballot_model"] == "sincere-v1"
+        assert body["rankings"]["rows"] == [
+            {"count": 35, "ranking": ["A", "C", "B"]},
+            {"count": 33, "ranking": ["B", "C", "A"]},
+            {"count": 32, "ranking": ["C", "B", "A"]},
+        ]
+
+    def test_each_voter_type_casts_every_format(self, client: TestClient):
+        body = client.post(URL, json=utility_request(SQUEEZE_TYPES)).json()
+        first = body["voter_ballots"][0]
+
+        assert first == {
+            "row": 0,
+            "count": 35,
+            "choice": "A",
+            "ranking": ["A", "C", "B"],
+            "approvals": ["A", "C"],
+            "scores": {"A": 10, "B": 0, "C": 6},
+            # Distances from the mean 53.3 scale to 6.56, -7.49, 0.94 votes
+            "allocations": {"A": 7, "B": -7, "C": 1},
+            "credits_used": 99,
+            "credit_budget": 100,
+        }
+
+    def test_rated_traces(self, client: TestClient):
+        body = client.post(URL, json=utility_request(SQUEEZE_TYPES)).json()
+        traces = {r["method"]: r["trace"] for r in body["results"]}
+
+        assert traces["approval"]["approvals"] == {"A": 35, "B": 33, "C": 100}
+        assert traces["score"]["totals"] == {"A": 350, "B": 458, "C": 728}
+        assert traces["quadratic"]["credits_available"] == 100 * 100
+
+    def test_rows_keep_their_order_and_are_not_merged(self, client: TestClient):
+        rows = [(2, {"A": 0, "B": 50, "C": 100}), (1, {"A": 100, "B": 50, "C": 0}), (1, {"A": 0, "B": 60, "C": 100})]
+        body = client.post(URL, json=utility_request(rows)).json()
+
+        assert [r["count"] for r in body["profile"]["rows"]] == [2, 1, 1]
+        assert len(body["voter_ballots"]) == 3
+        assert body["rankings"]["rows"][-1] == {"count": 3, "ranking": ["C", "B", "A"]}
+
+    def test_ranked_input_has_no_rated_methods(self, client: TestClient):
+        body = client.post(URL, json=request(MAJORITY_CYCLE)).json()
+
+        assert [r["method"] for r in body["results"]] == ["plurality", "irv", "borda", "ranked_pairs"]
+        assert body["ballot_model"] is None
+        assert body["voter_ballots"] == []
+
+    @pytest.mark.parametrize(
+        "rows",
+        [
+            [(1, {"A": 0, "B": 50})],
+            [(1, {"A": 0, "B": 50, "C": 101})],
+            [(1, {"A": 0, "B": 50, "C": 100, "D": 1})],
+        ],
+        ids=["missing", "above-scale", "unknown"],
+    )
+    def test_invalid_utilities_are_422(self, client: TestClient, rows):
+        resp = client.post(URL, json=utility_request(rows))
+
+        assert resp.status_code == 422
+        assert isinstance(resp.json()["detail"], str)

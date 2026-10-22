@@ -1,42 +1,43 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
-import { Prose, StoryHeader, StoryRoot } from "@/components/story/story-layout";
+import { MethodsInstrument } from "@/components/methods/instrument/methods-instrument";
+import { instrumentMono, instrumentSans } from "@/lib/methods/fonts";
+import { loadInstrumentData } from "@/lib/methods/instrument-data";
+import { decodeProfile } from "@/lib/methods/profile";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Voting methods · Nebula Civitas",
   description:
-    "Same voters, different winners: how the choice of voting method decides elections.",
+    "Same voters, different winners: edit an electorate and watch plurality, instant runoff, Borda and Ranked Pairs count it at once.",
 };
 
 /**
- * Story cover for demo 1. The full scrollytelling story (Condorcet cycle
- * first) replaces the body in Phase 2 of prompts/storytelling-redesign.md;
- * the interactive explorer lives at /methods/lab.
+ * Demo 1: the voting-methods instrument (prompts/demo-1-methods-instrument.md).
+ * Presets render from static artifacts in public/data/methods/; edits are
+ * counted by the Python API through a Server Action. `?p=` holds a profile.
  */
-export default function MethodsStoryPage() {
+export default async function MethodsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ p?: string }>;
+}) {
+  const [{ p }, data] = await Promise.all([searchParams, loadInstrumentData()]);
+  const initialProfile = decodeProfile(p) ?? data.presets[0].profile;
+
   return (
-    <StoryRoot>
-      <StoryHeader
-        kicker="Voting methods"
-        title="When the majority can’t make up its mind"
-        dek="Three voters, three options, and every option loses a head-to-head vote. Majority rule has no answer, so every voting method invents one, and they don’t agree."
+    <div
+      className={cn(
+        "methods-instrument min-h-screen font-mi-sans",
+        instrumentSans.variable,
+        instrumentMono.variable
+      )}
+    >
+      <MethodsInstrument
+        presets={data.presets}
+        initialProfile={initialProfile}
+        provenance={{ presetsHash: data.presetsHash, sourceHash: data.sourceHash }}
       />
-      <Prose>
-        <p>
-          The same ballots can elect different winners depending on how they
-          are counted. Plurality, instant-runoff, Borda, Ranked Pairs, score,
-          approval, and quadratic voting each resolve disagreement in their own
-          way, and each fails a different fairness criterion.
-        </p>
-        <p>
-          This page is becoming a scrolling story that starts from a Condorcet
-          cycle and works outward. Until then, the{" "}
-          <Link href="/methods/lab">methods lab</Link> runs every method on the
-          same electorates, with controls for polarization, strategy, and
-          turnout.
-        </p>
-      </Prose>
-    </StoryRoot>
+    </div>
   );
 }
