@@ -375,13 +375,14 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 - User-facing rename: demo route `/elections` → `/methods`; corresponding `lib/`, `components/`, `actions/`, `types/` renames. TS types `ElectionMethod`/`ElectionScenario`/`ElectionDemo` → `VotingMethod`/`MethodScenario`/`MethodDemo`. Voting-result type names (`ElectionResult`, `IRVResult`, etc.) kept — they are the canonical voting-theory term.
 - Instrument slice A (`prompts/demo-1-methods-instrument.md`): methods default to a seeded `random_tiebreak()`; Ranked Pairs orders equal-strength victories by a candidate priority drawn from the injected tiebreak, only when their order could change what locks, and sets `tiebreak_applied` only then (recording `tiebreak_priority`); canonical anonymous `RankedProfile`; single-profile criteria (`pairwise_counts`, `majority_winner`, `condorcet_winner`, `condorcet_loser`) in `voting/criteria/`.
 - Instrument slice B: profile transformations in `voting/criteria/`; an exhaustive three-candidate paradox search in `voting/search/` (decisive outcomes from the reference methods, winner tables for consistency, `certify()`); `python scripts/build_methods_artifacts.py` writes certified minimal specimens for 4 ranked methods x 8 criteria, the tour presets, and a manifest to `public/data/methods/`.
+- Instrument slice C: `POST /api/voting/profile/resolve` (router `api/routers/profiles.py`, schemas `api/schemas/voting.py`, service `api/services/profile_resolution.py`) resolves a ballot-type-tagged anonymous profile under plurality, IRV, Borda and Ranked Pairs, returning winners, decisiveness, every tie the seeded tiebreak settled, method traces, the pairwise matrix and single-profile criteria; typed client `resolveProfile` in `lib/methods-api.ts`.
 
 **In progress (this branch):**
 - Portfolio-facing methods comparison explorer
 - Demo 3 districting shell with apportionment-driven seat counts
 
 **Next:**
-1. Continue the `/methods` instrument with slices C–I of `prompts/demo-1-methods-instrument.md`, starting with the profile resolve endpoint.
+1. Continue the `/methods` instrument with slices D–I of `prompts/demo-1-methods-instrument.md`, starting with the instrument UI on `/methods`.
 2. Replace curated method scenarios with persisted `resolution_run` rows when the demo needs saved runs
 3. Add ballot-measure queries/actions only when a portfolio demo has a concrete persisted workflow for them
 
