@@ -1,6 +1,6 @@
 # Demo 1: Voting methods as an instrument
 
-Status: design settled with Ben on 2026-10-21; slice A built. Supersedes
+Status: design settled with Ben on 2026-10-21; slices A and B built. Supersedes
 Phase 2 of `prompts/storytelling-redesign.md`.
 
 ## Why an instrument, not an essay
@@ -128,12 +128,11 @@ list grouped by method.
 
 ### Tour
 
-1. **Majority cycle** (opening). `4 A>C>B, 6 B>A>C, 3 C>A>B, 2 C>B>A` elects
-   B under plurality, C under IRV, and A under Borda and Ranked Pairs, with
-   pairwise margins 1, 3 and 5 (no ties). An exhaustive probe found it as the
-   smallest tie-free cycle where the ranked methods give three winners, among
-   all 593,774 three-candidate profiles of up to 24 voters. The build script
-   must reproduce this.
+1. **Majority cycle** (opening). `6 A>B>C, 4 B>C>A, 2 C>A>B, 3 C>B>A`
+   elects A under plurality, C under IRV, and B under Borda and Ranked Pairs,
+   with pairwise margins 1, 5 and 3 (A over B, B over C, C over A). It is the
+   first 15-voter profile in canonical order, and no smaller decisive cycle
+   gives three winners; the build script finds it (`presets.json`).
 2. **Center squeeze.** `35 A>C>B, 33 B>C>A, 32 C>B>A` elects A under
    plurality, B under IRV, and C, the Condorcet winner, under Borda and Ranked
    Pairs.
@@ -179,53 +178,88 @@ confirmed by a specimen or a citation before it ships:
 Rated-method cells are judged under model v1 (see Rated methods) and are not
 pre-filled.
 
+Search results with three candidates (slice B build): the voters in each
+minimal specimen, or "none" when nothing was found up to the bound. Every
+cell agrees with the expected table above.
+
+| Criterion (bound) | Plurality | IRV | Borda | Ranked Pairs |
+|---|---|---|---|---|
+| Majority (24) | none | none | 5 | none |
+| Condorcet winner (24) | 7 | 5 | 5 | none |
+| Condorcet loser (24) | 7 | none | none | none |
+| Monotonicity (24) | none | 17 | none | none |
+| Participation (20) | none | 11 | none | none (needs ≥ 4 candidates) |
+| Consistency (24) | none | 13 | none | 15 |
+| IIA (24) | 7 | 5 | 5 | 7 |
+| Independence of clones (24) | 7 | none | 5 | none |
+
 ### Search engine
 
-- `voting/criteria/`: pure predicates and transformations (Condorcet winner
-  and loser, majority winner, raise, add voters, remove a candidate, insert a
-  clone, split an electorate). No search code; fully unit-tested.
-- `voting/search/`: enumerates anonymous profiles as compositions of n voters
-  over the k! ranking types, in ascending n and canonical order, so the first
-  hit is minimal (fewest voters, then lexicographic). Writes specimen records.
-- `scripts/build_methods_artifacts.py` writes hashed JSON to
-  `public/data/methods/`. Tests re-resolve every committed specimen with the
-  reference package.
-- **Measured cost:** the reference package resolved 593,774 three-candidate
-  profiles (n ≤ 24) under four methods in 62 s on one process (about 9,500
-  profiles a second). Cross-profile criteria multiply that by their
-  neighborhood size (about 10 raise moves per profile for monotonicity), so
-  three-candidate searches take minutes at build time.
+- `voting/criteria/`: pure predicates (majority winner, Condorcet winner and
+  loser) and transformations (raise a candidate, add voters, combine two
+  electorates, remove a candidate, test for clones). No search code.
+- `voting/search/`: enumerates anonymous profiles as count vectors over the
+  k! rankings, in ascending size and a fixed canonical order, so the first
+  decisive violation is minimal (fewest voters, then first in that order).
+  `outcomes.py` resolves through the reference methods; `specimens.py` holds
+  the records and `certify()`; `paradoxes.py` has one search per criterion.
+- **Consistency uses winner tables** (`tables.py`): every profile up to the
+  bound is resolved once by the reference method, and pairs of profiles are
+  checked as numpy lookups of their pooled count vectors. No method logic is
+  re-implemented.
+- `scripts/build_methods_artifacts.py` runs all 32 searches in parallel,
+  certifies each specimen, and writes `specimens.json`, `presets.json` and a
+  `manifest.json` (voting source hash and output hashes) to
+  `public/data/methods/`. Tests re-certify every committed specimen and
+  re-run the small searches to check they reproduce.
+- **Measured cost:** the reference package resolves about 9,500
+  three-candidate profiles a second under all four methods on one process.
+  The full build (32 searches, bounds of 20 to 24 voters) takes about two and
+  a half minutes on 8 worker processes, and two runs produce byte-identical
+  outputs.
 - **Four or more candidates** (24+ ranking types) cannot be enumerated very
   far. Use a seeded bounded search or an ILP, label results "smallest found",
   and record the seed and bounds.
-- **Optional fast kernel:** if build time becomes a problem, a numpy kernel
-  may propose candidates, but only the reference package certifies a
-  specimen. The kernel gets its own parity tests.
-- **Tie rule:** every profile in a specimen must be tie-free. That means no
-  winner tiebreak in any method; for Ranked Pairs, no equal-strength
-  victories; and for IRV, no tie for last place in any round. IRV needs the
-  extra check because the package eliminates every candidate tied for last
-  together, without a tiebreak, whenever at least one candidate would remain.
+- **Tie rule:** every profile in a specimen must be decisive: no method
+  applied a tiebreak (for Ranked Pairs, no equal-strength victories whose
+  order mattered), and for IRV no round eliminated several candidates tied
+  for last. IRV needs the extra check because the package eliminates every
+  candidate tied for last together, without a tiebreak, whenever at least
+  one candidate would remain.
 
-Specimen record (sketch):
+Search record (the committed IRV monotonicity specimen):
 
 ```json
 {
-  "id": "irv-monotonicity-3c",
   "method": "irv",
   "criterion": "monotonicity",
-  "candidates": ["A", "B", "C"],
-  "before": { "profile": [[4, "ACB"], [6, "BAC"]], "winner": "A" },
-  "transformation": { "kind": "raise", "candidate": "A", "rows": [1], "voters": 2 },
-  "after": { "profile": [[6, "ACB"], [4, "BAC"]], "winner": "B" },
-  "voters": 10,
-  "search": { "engine": "exhaustive", "max_voters": 24, "minimal": true, "seed": null },
-  "verified": { "package_sha": "…", "tiebreak_applied": false },
-  "sha256": "…"
+  "max_voters": 24,
+  "specimen": {
+    "id": "irv-monotonicity-3c",
+    "method": "irv",
+    "criterion": "monotonicity",
+    "voters": 17,
+    "focus": null,
+    "transformation": { "kind": "raise", "candidate": "A", "ranking": ["C", "A", "B"], "position": 0, "voters": 2 },
+    "profiles": [
+      { "role": "before", "candidates": ["A", "B", "C"],
+        "rows": [[6, ["A", "B", "C"]], [5, ["B", "A", "C"]], [2, ["C", "A", "B"]], [4, ["C", "B", "A"]]],
+        "winner": "A" },
+      { "role": "after", "candidates": ["A", "B", "C"],
+        "rows": [[6, ["A", "B", "C"]], [2, ["A", "C", "B"]], [5, ["B", "A", "C"]], [4, ["C", "B", "A"]]],
+        "winner": "B" }
+    ]
+  }
 }
 ```
 
-(The profiles above show the shape only, not a real counterexample.)
+Raising A on two C>A>B ballots drops C below B in first choices, so C is
+eliminated instead of B, and C's voters elect B.
+
+Roles are `profile` for single-profile criteria, `before` and `after` for
+monotonicity, participation, IIA and clones, and `first`, `second` and
+`combined` for consistency. `specimen` is `null` when the search found
+nothing up to `max_voters`.
 
 ### Rated methods
 

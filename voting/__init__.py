@@ -83,6 +83,11 @@ from .criteria import (
     majority_winner,
     condorcet_winner,
     condorcet_loser,
+    raise_candidate,
+    add_voters,
+    combine,
+    remove_candidate,
+    are_clones,
 )
 
 __all__ = [
@@ -167,4 +172,10 @@ __all__ = [
     "majority_winner",
     "condorcet_winner",
     "condorcet_loser",
+    # Profile transformations
+    "raise_candidate",
+    "add_voters",
+    "combine",
+    "remove_candidate",
+    "are_clones",
 ]
