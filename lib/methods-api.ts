@@ -10,6 +10,8 @@ import {
   MethodDemo,
   DemoScenario,
   DemoScenarioResolution,
+  ProfileResolveRequest,
+  ProfileResolveResponse,
 } from "@/types/methods";
 import { methodOrder } from "@/lib/methods/method-descriptions";
 
@@ -107,4 +109,17 @@ export async function resolveDemoScenario(
       body: JSON.stringify({ controls }),
     }
   );
+}
+
+/**
+ * Resolve an anonymous ranked profile under plurality, IRV, Borda and Ranked
+ * Pairs. Throws on an invalid profile (HTTP 422) like any other API error.
+ */
+export async function resolveProfile(
+  request: ProfileResolveRequest
+): Promise<ProfileResolveResponse> {
+  return apiFetch<ProfileResolveResponse>("/api/voting/profile/resolve", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
 }

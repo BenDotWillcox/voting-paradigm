@@ -166,3 +166,106 @@ export interface DemoScenarioResolution {
   annotations: FailureModeAnnotation[];
   derived_ballots: DerivedMethodBallots;
 }
+
+// ---------------------------------------------------------------------------
+// Profile resolution (POST /api/voting/profile/resolve)
+// ---------------------------------------------------------------------------
+
+export type RankedMethod = "plurality" | "irv" | "borda" | "ranked_pairs";
+
+/** How many voters cast one complete ranking, most preferred first. */
+export interface RankedRow {
+  count: number;
+  ranking: string[];
+}
+
+/**
+ * An anonymous profile tagged with its ballot type. Only "ranked" exists
+ * today; other ballot types will join as a union on `ballot_type`.
+ */
+export interface RankedProfile {
+  ballot_type: "ranked";
+  candidates: string[];
+  rows: RankedRow[];
+}
+
+export interface ProfileResolveRequest {
+  profile: RankedProfile;
+  /** Seed for each method's tiebreak; defaults to 0 on the server. */
+  tiebreak_seed?: number;
+}
+
+/** One tie the tiebreak settled: the sorted tied candidates and its pick. */
+export interface TiebreakEvent {
+  tied: string[];
+  chose: string;
+}
+
+export interface PluralityTrace {
+  kind: "plurality";
+  first_choices: Record<string, number>;
+}
+
+export interface IRVRoundTrace {
+  round_number: number;
+  counts: Record<string, number>;
+  exhausted_ballots: number;
+  eliminated: string[];
+  elimination_was_tiebreak: boolean;
+}
+
+export interface IRVTrace {
+  kind: "irv";
+  rounds: IRVRoundTrace[];
+  winning_round: number;
+}
+
+export interface BordaTrace {
+  kind: "borda";
+  points: Record<string, number>;
+  max_points_per_ballot: number;
+}
+
+export interface Victory {
+  winner: string;
+  loser: string;
+  margin: number;
+}
+
+export interface RankedPairsTrace {
+  kind: "ranked_pairs";
+  had_condorcet_winner: boolean;
+  locked: Victory[];
+  skipped: Victory[];
+  /** Candidate priority that ordered equal-strength victories; empty if unused. */
+  tiebreak_priority: string[];
+}
+
+export type MethodTrace = PluralityTrace | IRVTrace | BordaTrace | RankedPairsTrace;
+
+export interface ProfileMethodResult {
+  method: RankedMethod;
+  winner: string;
+  /** No tiebreak applied and, for IRV, no batch elimination of a last-place tie. */
+  decisive: boolean;
+  tiebreaks: TiebreakEvent[];
+  trace: MethodTrace;
+}
+
+export interface SingleProfileCriteria {
+  majority_winner: string | null;
+  condorcet_winner: string | null;
+  condorcet_loser: string | null;
+}
+
+export interface ProfileResolveResponse {
+  /** Canonical echo of the request's profile; equal electorates echo identically. */
+  profile: RankedProfile;
+  total_voters: number;
+  tiebreak_seed: number;
+  /** pairwise[a][b] = voters ranking a above b. */
+  pairwise: Record<string, Record<string, number>>;
+  criteria: SingleProfileCriteria;
+  /** In method order: plurality, IRV, Borda, Ranked Pairs. */
+  results: ProfileMethodResult[];
+}

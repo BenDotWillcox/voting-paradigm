@@ -1,6 +1,6 @@
 # Demo 1: Voting methods as an instrument
 
-Status: design settled with Ben on 2026-10-21; slices A and B built. Supersedes
+Status: design settled with Ben on 2026-10-21; slices A to C built. Supersedes
 Phase 2 of `prompts/storytelling-redesign.md`.
 
 ## Why an instrument, not an essay
@@ -264,8 +264,10 @@ nothing up to `max_voters`.
 ### Rated methods
 
 Rated methods are a second layer below the ranked channels. They run in a
-utility mode in which ballots come from a named, versioned sincere model,
-*model v1*:
+utility mode in which ballots come from a ballot model: an interface that
+takes a voter's utilities (and, later, beliefs about other voters) and
+returns a ballot. The first implementation is a named, versioned sincere
+model, *model v1*:
 
 - **Plurality and rankings:** the utility order. The editor enforces distinct
   utilities so rankings are strict.
@@ -285,8 +287,9 @@ Python remains the only resolver:
 
 - Presets and specimens are static.
 - Free edits call a new `POST /api/voting/profile/resolve` (an anonymous
-  profile in; every method's result, the single-profile criteria and the
-  tournament out). Calls are debounced and cached by canonical profile hash.
+  profile tagged with its ballot type in; every method's result with the
+  ties its tiebreak settled, the single-profile criteria and the tournament
+  out). Calls are debounced and cached by canonical profile hash.
 - The deployed API is a Vercel Python function with cold starts, so the page
   pings it on load. When it is unreachable, presets and the gallery still
   work and editing shows a short offline note.
@@ -347,23 +350,59 @@ B. **Search and specimens.** Transformations, the three-candidate exhaustive
    search, the build script and artifacts, and tests that re-resolve every
    specimen.
 C. **Profile endpoint.** `POST /api/voting/profile/resolve` with Pydantic
-   schemas and a typed TS client.
+   schemas and a typed TS client. The request is tagged with its ballot type
+   (`"ranked"` for now) so partial rankings, rated ballots and weights can be
+   added later without breaking it. Each method's result reports every tie a
+   tiebreak settled (the candidates it chose among), not only the winner.
 D. **Instrument.** Profile editor, tournament graph, channels and traces on
    `/methods`, with the opening and center-squeeze presets and the `methods`
    tokens.
 E. **Gallery and tour.** Gallery UI wired to specimens, the tour, and the
    `/methods/lab` redirect.
-F. **Rated layer.** Utility mode, model v1, and the rated gallery cells.
+F. **Rated layer.** Utility mode and the rated gallery cells. Ballot models
+   sit behind one interface (a voter's utilities, and optionally beliefs about
+   other voters, in; a ballot out), with sincere model v1 as the first
+   implementation, so a strategic agent can later be another ballot model.
 G. **Atlas.** Spatial winner maps.
 H. **Simulation.** Disagreement rates and Condorcet efficiency in `eval/`.
+   Electorate generators are seeded samplers that return profiles, so they
+   can double as an agent's beliefs about other voters.
 I. **Home card.**
+
+## Toward a delegated agent
+
+A later goal, outside these slices: an agent that votes on a user's behalf,
+strategically where that helps, in any of these elections. It needs four
+layers, and this demo builds two of them.
+
+1. **What the user wants:** a posterior over the user's utility for each
+   option, from demo 2's personal learner (`preferences/personal/`). It must
+   be utilities, not Phase 4's option probabilities: whether a compromise
+   vote is worth it depends on how much the user prefers each option.
+2. **What other voters will do:** a distribution over profiles, from slice
+   H's samplers or a hand-edited profile.
+3. **How ballots become outcomes:** the voting package. The injectable
+   tiebreak gives exact tie probabilities by branching on each choice.
+4. **The decision:** the valid ballot with the highest expected utility, in
+   `agents/`, shown beside the sincere ballot with its expected gain and the
+   beliefs behind it. The user can override it.
+
+Principles: preferences stay sincere, and strategic ballots never train the
+preference model; strategy is shown, never hidden; elections are simulated.
+
+Known extensions, none a rewrite: partial rankings (truncation is a real
+strategy, and later-no-harm needs it); tie lotteries; count-based or weighted
+tallies for large simulated electorates (liquid democracy needs weights too);
+and manipulation specimens from slice B's search, since Gibbard–Satterthwaite
+guarantees every method here has one.
 
 ## Out of scope for now
 
 - No verdict on a "best" method. The criteria are trade-offs (Arrow,
   Gibbard–Satterthwaite).
-- Strategic voting is not modelled; the strategy slider retires. Editing
-  ballots by hand can still show burial or compromise.
+- Strategic voting is not modelled in these slices; the strategy slider
+  retires. Editing ballots by hand can still show burial or compromise. See
+  "Toward a delegated agent" for how it fits later.
 - Later-no-harm needs truncated rankings, and `RankedChoiceBallot` requires
   complete ones today. Adding it also needs a Borda truncation convention.
 - Civic framing. The civic scenarios (transit, energy, parks, budget) retire
