@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function CreateBallotPage() {
-  redirect("/methods/lab");
+  redirect("/methods");
 }

@@ -13,6 +13,11 @@ and writes JSON to public/data/methods/:
                   each with its full resolution exactly as
                   POST /api/voting/profile/resolve returns it, so the
                   instrument renders presets without the API
+- specimen-resolutions.json
+                  every specimen profile as the instrument loads it (ranked
+                  rows as evenly spaced voter types), resolved by the
+                  endpoint and keyed by the instrument's profile key, so the
+                  gallery opens specimens without the API
 - manifest.json   a hash of the source that produced the outputs (the voting
                   package and the API's profile-resolution service) and output
                   SHA-256 hashes
@@ -88,9 +93,11 @@ CENTER_SQUEEZE = [
 
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
+    specimens = build_specimens()
     artifacts = {
-        "specimens.json": build_specimens(),
+        "specimens.json": specimens,
         "presets.json": build_presets(),
+        "specimen-resolutions.json": build_specimen_resolutions(specimens),
     }
     outputs: dict[str, str] = {}
     for name, payload in artifacts.items():
@@ -171,6 +178,39 @@ def preset_resolution(
     candidates: list[str], rows: list[tuple[int, dict[str, int]]]
 ) -> dict[str, Any]:
     """The endpoint's response for a preset; every method must be decisive."""
+    response = resolve_utility(candidates, rows)
+    for result in response["results"]:
+        if not result["decisive"]:
+            raise SystemExit(f"Preset needs a tiebreak under {result['method']}")
+    return response
+
+
+def build_specimen_resolutions(specimens: dict[str, Any]) -> dict[str, Any]:
+    """Each specimen profile as the instrument loads it, resolved and keyed."""
+    resolutions: dict[str, Any] = {}
+    for record in specimens["searches"]:
+        specimen = record["specimen"]
+        if specimen is None:
+            continue
+        for profile in specimen["profiles"]:
+            candidates = profile["candidates"]
+            rows = [
+                (count, evenly_spaced(candidates, ranking)) for count, ranking in profile["rows"]
+            ]
+            key = instrument_key(candidates, rows)
+            if key not in resolutions:
+                resolutions[key] = resolve_utility(candidates, rows)
+    return {
+        "artifact_version": ARTIFACT_VERSION,
+        "utilities": "evenly spaced",
+        "resolutions": resolutions,
+    }
+
+
+def resolve_utility(
+    candidates: list[str], rows: list[tuple[int, dict[str, int]]]
+) -> dict[str, Any]:
+    """The endpoint's response for voter types, at the default tiebreak seed."""
     request = ProfileResolveRequest(
         profile=UtilityProfileSchema(
             ballot_type="utility",
@@ -179,11 +219,20 @@ def preset_resolution(
         ),
         tiebreak_seed=DEFAULT_TIEBREAK_SEED,
     )
-    response = resolve_profile_request(request)
-    for result in response.results:
-        if not result.decisive:
-            raise SystemExit(f"Preset needs a tiebreak under {result.method}")
-    return response.model_dump(mode="json")
+    return resolve_profile_request(request).model_dump(mode="json")
+
+
+def instrument_key(candidates: list[str], rows: list[tuple[int, dict[str, int]]]) -> str:
+    """
+    The instrument's profile key (lib/methods/profile.ts, encodeProfile):
+    rows as "count:u1,u2,..." joined by ".", prefixed with the candidates
+    and "|" unless they are the first N letters in order.
+    """
+    first = [chr(ord("A") + i) for i in range(len(candidates))]
+    prefix = "" if list(candidates) == first else "".join(candidates) + "|"
+    return prefix + ".".join(
+        f"{count}:{','.join(str(utilities[c]) for c in candidates)}" for count, utilities in rows
+    )
 
 
 # Source files whose behavior the outputs depend on, besides voting/

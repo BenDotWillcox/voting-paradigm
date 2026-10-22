@@ -1,6 +1,6 @@
 # Demo 1: Voting methods as an instrument
 
-Status: design settled with Ben on 2026-10-21; slices A to D built. Supersedes
+Status: design settled with Ben on 2026-10-21; slices A to E built. Supersedes
 Phase 2 of `prompts/storytelling-redesign.md`.
 
 ## Why an instrument, not an essay
@@ -341,9 +341,11 @@ and geometric.
 ### Routes
 
 - `/methods` becomes the instrument, replacing the story cover.
-- `/methods/lab` redirects to `/methods` once the instrument covers it. The
-  civic slider scenarios retire.
-- `?p=` holds a profile and `?s=` a specimen ID.
+- `/methods/lab` redirects to `/methods` (slice E); the lab's UI is gone.
+  The Python `/api/elections` routes and civic scenarios still exist but
+  nothing in the web app calls them.
+- `?p=` holds a profile, and `?s=` with `?v=` a specimen and which of its
+  profiles is showing.
 - The home page gets a methods card in this identity in a later slice, like
   apportionment's.
 
@@ -382,9 +384,15 @@ D. **Instrument.** Voter-type editor with utility tracks, ballots panel,
    `#2a78d6 #d8452b #eda100 #14957a #a8479e`, dark
    `#3987e5 #e34f5f #ad8c00 #199e80 #b665c4`) pass the dataviz validator on
    all pairs, with glyph and letter as the second encoding.
-E. **Gallery and tour.** Gallery UI wired to specimens, the tour, and the
-   `/methods/lab` redirect. Ranked specimens load as evenly spaced voter
-   types, and the page says so.
+E. **Gallery and tour.** The gallery grid (four ranked methods × eight
+   criteria) wired to the specimens, with proofs and citations for the cells
+   no specimen settles (`lib/methods/gallery.ts`); a specimen banner with its
+   before/after (or first/second/together) profiles; a six-step tour (two
+   presets, three specimens, the reader's turn); and the `/methods/lab`
+   redirect. Ranked specimens load as evenly spaced voter types, and the
+   page says so. The build writes `specimen-resolutions.json` (every
+   specimen profile resolved, keyed like the instrument's URL form), so the
+   tour and gallery work without the API.
 F. **Rated gallery cells.** Specimens for approval, score and quadratic
    under sincere v1 (the ballot model interface and utility profiles landed
    in slice D).

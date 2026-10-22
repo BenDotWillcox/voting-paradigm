@@ -3,12 +3,13 @@ import "server-only";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import type { ProfileResolveResponse, UtilityProfile } from "@/types/methods";
+import type { ProfileResolveResponse, SpecimenSearch, UtilityProfile } from "@/types/methods";
 
 /**
  * Static data for the methods instrument, from the artifacts that
  * scripts/build_methods_artifacts.py writes. Presets carry their full
- * resolution, so the page renders them with no Python process.
+ * resolution, so the page renders them with no Python process; specimens
+ * resolve from specimen-resolutions.json the same way.
  */
 
 export interface InstrumentPreset {
@@ -21,6 +22,8 @@ export interface InstrumentPreset {
 
 export interface InstrumentData {
   presets: InstrumentPreset[];
+  /** Every gallery search: the method, criterion, bound and specimen, if any. */
+  searches: SpecimenSearch[];
   /** First 12 hex digits of presets.json's SHA-256, from the manifest. */
   presetsHash: string;
   /** First 12 hex digits of the source the artifacts were built from. */
@@ -48,11 +51,13 @@ interface PresetRecord {
 }
 
 export async function loadInstrumentData(): Promise<InstrumentData> {
-  const [presetsText, manifestText] = await Promise.all([
+  const [presetsText, specimensText, manifestText] = await Promise.all([
     readFile(join(ARTIFACTS, "presets.json"), "utf-8"),
+    readFile(join(ARTIFACTS, "specimens.json"), "utf-8"),
     readFile(join(ARTIFACTS, "manifest.json"), "utf-8"),
   ]);
   const { presets } = JSON.parse(presetsText) as { presets: PresetRecord[] };
+  const { searches } = JSON.parse(specimensText) as { searches: SpecimenSearch[] };
   const manifest = JSON.parse(manifestText) as {
     source_sha256: string;
     outputs: Record<string, string>;
@@ -67,7 +72,17 @@ export async function loadInstrumentData(): Promise<InstrumentData> {
       }
       return { id: record.id, ...copy, profile, resolution: record.resolution };
     }),
+    searches,
     presetsHash: manifest.outputs["presets.json"].slice(0, 12),
     sourceHash: manifest.source_sha256.slice(0, 12),
   };
+}
+
+/** The build-time resolution of a specimen profile, by the instrument's key. */
+export async function loadSpecimenResolution(key: string): Promise<ProfileResolveResponse | null> {
+  const text = await readFile(join(ARTIFACTS, "specimen-resolutions.json"), "utf-8");
+  const { resolutions } = JSON.parse(text) as {
+    resolutions: Record<string, ProfileResolveResponse>;
+  };
+  return resolutions[key] ?? null;
 }
