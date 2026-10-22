@@ -13,8 +13,6 @@ export type VotingMethod =
 // Profile resolution (POST /api/voting/profile/resolve)
 // ---------------------------------------------------------------------------
 
-export type RankedMethod = "plurality" | "irv" | "borda" | "ranked_pairs";
-
 /** How many voters cast one complete ranking, most preferred first. */
 export interface RankedRow {
   count: number;
@@ -188,32 +186,49 @@ export type CriterionId =
 
 export type SpecimenRole = "profile" | "before" | "after" | "first" | "second" | "combined";
 
+/** Utilities in candidate order, as utility specimens record them. */
+type Utilities = number[];
+
 export type SpecimenTransformation =
   | { kind: "raise"; candidate: string; ranking: string[]; position: number; voters: number }
+  | { kind: "raise_utility"; candidate: string; before: Utilities; after: Utilities; voters: number }
   | { kind: "add_voters"; ranking: string[]; voters: number }
+  | { kind: "add_utility_voters"; utilities: Utilities; voters: number }
   | { kind: "combine" }
   | { kind: "remove_candidate"; candidate: string }
   | { kind: "add_clone"; candidate: string; clone: string };
 
+interface SpecimenProfileBase {
+  role: SpecimenRole;
+  candidates: string[];
+  winner: string;
+}
+
+/**
+ * One profile in a specimen. Ranked methods are searched over rankings;
+ * approval, score and quadratic voting over voter types with utilities.
+ */
+export type SpecimenProfile =
+  | (SpecimenProfileBase & { ballot_type: "ranked"; rows: [number, string[]][] })
+  | (SpecimenProfileBase & { ballot_type: "utility"; rows: [number, Utilities][] });
+
 /** The smallest profiles found on which a method fails a criterion. */
 export interface Specimen {
   id: string;
-  method: RankedMethod;
+  method: VotingMethod;
   criterion: CriterionId;
+  /** The model that turned utilities into ballots; null for ranked methods. */
+  ballot_model: string | null;
   voters: number;
   focus: string | null;
   transformation: SpecimenTransformation | null;
-  profiles: {
-    role: SpecimenRole;
-    candidates: string[];
-    rows: [number, string[]][];
-    winner: string;
-  }[];
+  profiles: SpecimenProfile[];
 }
 
 export interface SpecimenSearch {
-  method: RankedMethod;
+  method: VotingMethod;
   criterion: CriterionId;
+  ballot_model: string | null;
   max_voters: number;
   specimen: Specimen | null;
 }

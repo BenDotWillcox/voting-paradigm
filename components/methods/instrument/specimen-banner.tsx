@@ -93,9 +93,20 @@ export function SpecimenBanner({
       ) : null}
 
       <p className="mt-3 text-xs leading-relaxed text-mi-muted">
-        The smallest electorate found: an exhaustive search of every three-candidate electorate
-        up to {maxVoters} voters, re-checked against the reference implementation. Rankings load
-        as evenly spaced voter types, so the rated counts assume that spacing.
+        {specimen.ballot_model ? (
+          <>
+            The smallest electorate found: an exhaustive search of every three-candidate electorate
+            of voter types up to {maxVoters} voters, re-checked against the reference
+            implementation. Utilities load as found, and every ballot comes from the{" "}
+            {specimen.ballot_model} model.
+          </>
+        ) : (
+          <>
+            The smallest electorate found: an exhaustive search of every three-candidate electorate
+            up to {maxVoters} voters, re-checked against the reference implementation. Rankings
+            load as evenly spaced voter types, so the rated counts assume that spacing.
+          </>
+        )}
       </p>
     </section>
   );

@@ -66,8 +66,9 @@ def resolve_quadratic(
 
     candidate_ids = {c.id for c in candidates}
 
-    # Initialize vote totals
-    vote_totals: dict[CandidateId, int] = {cid: 0 for cid in candidate_ids}
+    # Totals follow candidate order, never set order, so results do not
+    # depend on the interpreter's string hashing
+    vote_totals: dict[CandidateId, int] = {c.id: 0 for c in candidates}
 
     # Track credits and abstentions
     abstentions = 0

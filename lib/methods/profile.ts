@@ -226,9 +226,22 @@ export function formatUtility(value: number): string {
   return (value / 10).toFixed(value % 10 === 0 ? 0 : 1);
 }
 
-/** A gallery specimen's profile as the instrument shows it: evenly spaced voter types. */
+/**
+ * A gallery specimen's profile as the instrument shows it: utility specimens
+ * as found, ranked ones as evenly spaced voter types.
+ */
 export function specimenProfile(specimen: Specimen, role: SpecimenRole): UtilityProfile {
   const profile = specimen.profiles.find((p) => p.role === role) ?? specimen.profiles[0];
+  if (profile.ballot_type === "utility") {
+    return {
+      ballot_type: "utility",
+      candidates: [...profile.candidates],
+      rows: profile.rows.map(([count, utilities]) => ({
+        count,
+        utilities: Object.fromEntries(profile.candidates.map((id, i) => [id, utilities[i]])),
+      })),
+    };
+  }
   return fromRanked({
     ballot_type: "ranked",
     candidates: profile.candidates,

@@ -13,20 +13,30 @@ counts each voter's first choice.
 
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Literal
+from typing import Literal, Union
 
+from ..ballot_models import SINCERE_V1, BallotModel, UtilityProfile, rated_ballots
 from ..ballots.ranked_choice import RankedChoiceBallot, create_ranked_choice_ballot
 from ..ballots.ranked_profile import RankedProfile
 from ..ballots.single_choice import SingleChoiceBallot, create_single_choice_ballot
+from ..methods.approval import resolve_approval
 from ..methods.borda import resolve_borda
 from ..methods.irv import IRVResult, resolve_irv
 from ..methods.plurality import resolve_plurality
+from ..methods.quadratic import resolve_quadratic
 from ..methods.ranked_pairs import resolve_ranked_pairs
+from ..methods.score import resolve_score
 from ..types import Candidate, CandidateId, ElectionResult
 
 RankedMethod = Literal["plurality", "irv", "borda", "ranked_pairs"]
 
 RANKED_METHODS: tuple[RankedMethod, ...] = ("plurality", "irv", "borda", "ranked_pairs")
+
+# Methods whose ballots come from a ballot model applied to utilities
+RatedMethod = Literal["approval", "score", "quadratic"]
+RATED_METHODS: tuple[RatedMethod, ...] = ("approval", "score", "quadratic")
+
+SearchMethod = Union[RankedMethod, RatedMethod]
 
 
 @dataclass(frozen=True)
@@ -87,6 +97,24 @@ def outcome(method: RankedMethod, profile: RankedProfile) -> Outcome:
     """The method's winner on this profile, cached for the search."""
     result = resolve_profile(method, profile)
     return Outcome(winner=result.winners[0], decisive=is_decisive(result))
+
+
+def resolve_rated(
+    method: RatedMethod,
+    profile: UtilityProfile,
+    model: BallotModel = SINCERE_V1,
+) -> ElectionResult:
+    """
+    Resolve a utility profile with a reference rated method, from fresh
+    ballots cast by the ballot model. Ties go to the smallest candidate ID.
+    """
+    candidates = _candidates(profile.candidates)
+    approval, score, quadratic = rated_ballots(profile, model)
+    if method == "approval":
+        return resolve_approval(candidates, approval, tiebreak=min)
+    if method == "score":
+        return resolve_score(candidates, score, tiebreak=min)
+    return resolve_quadratic(candidates, quadratic, tiebreak=min)
 
 
 @lru_cache(maxsize=None)
