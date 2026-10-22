@@ -199,14 +199,3 @@ export const methodDescriptions: Record<VotingMethod, MethodDescription> = {
     ],
   },
 };
-
-/** Order of methods for tab display */
-export const methodOrder: VotingMethod[] = [
-  "plurality",
-  "approval",
-  "irv",
-  "borda",
-  "ranked_pairs",
-  "score",
-  "quadratic",
-];

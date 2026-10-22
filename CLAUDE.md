@@ -23,7 +23,7 @@ Each demo is a top-level route in the web app and a domain package on the Python
 
 | # | Demo | Route | Status | Core showcase |
 |---|------|-------|--------|---------------|
-| 1 | **Voting methods comparison** — same ballots, multiple resolution methods, side-by-side winners | `/methods` (instrument), `/methods/lab` (legacy lab) | Voting package complete; UI in progress | Voting theory rigor, electoral criteria, reproducibility |
+| 1 | **Voting methods comparison** — same ballots, multiple resolution methods, side-by-side winners | `/methods` (instrument) | Voting package complete; UI in progress | Voting theory rigor, electoral criteria, reproducibility |
 | 2 | **Agent voting via preference models** — LLM-elicited preference posterior; agent casts a ballot under uncertainty | `/preferences` | In progress | Bayesian inference, embeddings, active learning, LLM orchestration |
 | 3 | **Algorithmic districting** — fair, transparent district maps under explicit constraints | `/districts` (story), `/districts/explore` | Tract-level plans for all 50 states live; enacted-map comparison planned | Optimization, graph algorithms, geo data, fairness metrics |
 | 4 | **Apportionment** — how many seats each state gets, and how House size drives interstate district inequality | `/apportionment` (story), `/apportionment/explore` | Live; methods comparison deferred | Apportionment math, data storytelling, reproducibility |
@@ -93,7 +93,7 @@ Two processes. One web app, one Python service.
 
 ```
 .claude/skills/              Versioned project review checklists
-app/                        Next.js App Router pages (demo stories + /methods/lab, /districts/explore)
+app/                        Next.js App Router pages (demo stories, the /methods instrument, /districts/explore)
 components/                 React components (domain subfolders + ui/ for shadcn)
   story/                    Scrollytelling kit: layout, Scrolly, figures, chart primitives
 actions/                    Server Actions — "use server", return ActionResult<T>
@@ -468,13 +468,14 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 - Instrument slice B: profile transformations in `voting/criteria/`; an exhaustive three-candidate paradox search in `voting/search/` (decisive outcomes from the reference methods, winner tables for consistency, `certify()`); `python scripts/build_methods_artifacts.py` writes certified minimal specimens for 4 ranked methods x 8 criteria, the tour presets, and a manifest to `public/data/methods/`.
 - Instrument slice C: `POST /api/voting/profile/resolve` (router `api/routers/profiles.py`, schemas `api/schemas/voting.py`, service `api/services/profile_resolution.py`) resolves a ballot-type-tagged anonymous profile under plurality, IRV, Borda and Ranked Pairs, returning winners, decisiveness, every tie the seeded tiebreak settled, method traces, the pairwise matrix and single-profile criteria; typed client `resolveProfile` in `lib/methods-api.ts`.
 - Instrument slice D: `/methods` is the instrument (`components/methods/instrument/`). The electorate is voter types on 0–10 utility tracks (order = ranking, spacing = intensity; `?p=` links); a ballots panel shows the five ballots each type casts; seven method channels grouped by ballot, with single-profile criteria; steppable traces with the lab's method descriptions (overclaims corrected); and a tournament graph. Ballot models live in `voting/ballot_models/` (`BallotModel` interface, `sincere-v1`, `UtilityProfile`); the endpoint accepts `"ballot_type": "utility"` profiles and runs all seven methods. Drafting-table identity (`.methods-instrument` tokens in `app/globals.css`, Instrument Sans + JetBrains Mono, a five-candidate palette validated for light and dark). Presets are voter types whose full endpoint responses live in `public/data/methods/presets.json`; edits go through `resolveProfileAction`, debounced and cached, with an offline fallback. IRV now iterates candidates in candidate order, so its rounds no longer depend on string hashing.
+- Instrument slice E: the paradox gallery (four ranked methods × eight criteria) opens each certified specimen in the instrument with a before/after banner; cells no specimen settles carry a proof or citation (`lib/methods/gallery.ts`). A six-step tour (`lib/methods/tour.ts`) loads presets and specimens. `specimen-resolutions.json` holds every specimen profile resolved at build time, so the tour and gallery need no API; `?s=`/`?v=` links render on the server. `/methods/lab` redirects to `/methods` and the lab UI is removed (the Python `/api/elections` routes remain, unused by the web app).
 
 **In progress (this branch):**
 - Portfolio-facing methods comparison explorer
 - Demo 3 districting shell with apportionment-driven seat counts
 
 **Next:**
-1. Continue the `/methods` instrument with slices E–I of `prompts/demo-1-methods-instrument.md`, starting with the paradox gallery and tour, then the `/methods/lab` redirect.
+1. Continue the `/methods` instrument with slices F–I of `prompts/demo-1-methods-instrument.md`, starting with rated-method gallery cells under sincere v1.
 2. Replace curated method scenarios with persisted `resolution_run` rows when the demo needs saved runs
 3. Add ballot-measure queries/actions only when a portfolio demo has a concrete persisted workflow for them
 

@@ -40,6 +40,12 @@ const nextConfig: NextConfig = {
         destination: "/apportionment/explore",
         permanent: false,
       },
+      // The methods lab became the instrument on /methods
+      {
+        source: "/methods/lab",
+        destination: "/methods",
+        permanent: false,
+      },
     ];
   },
   async headers() {

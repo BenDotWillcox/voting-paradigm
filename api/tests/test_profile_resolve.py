@@ -290,3 +290,42 @@ class TestUtilityProfiles:
 
         assert resp.status_code == 422
         assert isinstance(resp.json()["detail"], str)
+
+
+SPECIMEN_RESOLUTIONS = PRESETS.with_name("specimen-resolutions.json")
+
+
+class TestCommittedSpecimenResolutions:
+    def test_match_the_live_endpoint_and_their_keys(self, client: TestClient):
+        """The gallery opens specimens from this file by key; it must not drift."""
+        import importlib.util
+
+        script = PRESETS.parents[3] / "scripts" / "build_methods_artifacts.py"
+        spec = importlib.util.spec_from_file_location("build_methods_artifacts", script)
+        assert spec is not None and spec.loader is not None
+        build = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(build)
+
+        stored = json.loads(SPECIMEN_RESOLUTIONS.read_text(encoding="utf-8"))["resolutions"]
+        assert stored
+        for key, resolution in stored.items():
+            profile = resolution["profile"]
+            rows = [(row["count"], row["utilities"]) for row in profile["rows"]]
+            assert build.instrument_key(profile["candidates"], rows) == key
+
+            live = client.post(
+                URL, json={"profile": profile, "tiebreak_seed": resolution["tiebreak_seed"]}
+            ).json()
+            assert live == resolution, key
+
+    def test_key_names_candidates_only_when_not_the_first_letters(self):
+        import importlib.util
+
+        script = PRESETS.parents[3] / "scripts" / "build_methods_artifacts.py"
+        spec = importlib.util.spec_from_file_location("build_methods_artifacts", script)
+        assert spec is not None and spec.loader is not None
+        build = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(build)
+
+        assert build.instrument_key(["A", "B"], [(3, {"A": 100, "B": 0})]) == "3:100,0"
+        assert build.instrument_key(["A", "C"], [(3, {"A": 100, "C": 0})]) == "AC|3:100,0"
