@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { resolveProfileAction } from "@/actions/methods-actions";
+import { isReference, type AtlasView } from "@/lib/methods/atlas";
 import { METHOD_META } from "@/lib/methods/instrument";
 import { encodeProfile, specimenProfile, totalVoters } from "@/lib/methods/profile";
 import { TOUR } from "@/lib/methods/tour";
@@ -16,6 +17,7 @@ import type {
   VotingMethod,
 } from "@/types/methods";
 
+import { Atlas, AtlasPointBanner, type AtlasPoint } from "./atlas";
 import { BallotsPanel } from "./ballots-panel";
 import { Channels } from "./channels";
 import { MethodTrace } from "./method-trace";
@@ -52,9 +54,10 @@ const SPECIMEN_RESOLUTIONS = "/data/methods/specimen-resolutions.json";
 /**
  * The methods instrument: edit an electorate of voter types, see the ballots
  * each type casts in every format, and watch seven methods count them at
- * once. A tour and a gallery of minimal specimens load electorates into it.
- * Presets and specimens resolve from static artifacts; edits are counted by
- * the Python API (POST /api/voting/profile/resolve), cached by profile.
+ * once. A tour, a gallery of minimal specimens and the atlas's spatial maps
+ * load electorates into it. Presets and specimens resolve from static
+ * artifacts; edits are counted by the Python API
+ * (POST /api/voting/profile/resolve), cached by profile.
  */
 export function MethodsInstrument({
   presets,
@@ -98,12 +101,14 @@ export function MethodsInstrument({
   );
   const [voterType, setVoterType] = useState(0);
   const [specimenView, setSpecimenView] = useState<SpecimenView | null>(initialSpecimen);
+  const [atlasPoint, setAtlasPoint] = useState<AtlasPoint | null>(null);
   const [tourStep, setTourStep] = useState<number | null>(() =>
     initialStep(initialSpecimen, encodeProfile(initialProfile), presets)
   );
   const [staticVersion, setStaticVersion] = useState(0);
   const latest = useRef(0);
   const banner = useRef<HTMLDivElement>(null);
+  const atlasSection = useRef<HTMLDivElement>(null);
   const scrollToBanner = useRef(false);
 
   const key = useMemo(() => encodeProfile(profile), [profile]);
@@ -146,11 +151,11 @@ export function MethodsInstrument({
   }, [key, specimenView, presets]);
 
   useEffect(() => {
-    if (specimenView && scrollToBanner.current) {
+    if ((specimenView || atlasPoint) && scrollToBanner.current) {
       scrollToBanner.current = false;
       banner.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  }, [specimenView]);
+  }, [specimenView, atlasPoint]);
 
   useEffect(() => {
     const request = ++latest.current;
@@ -181,6 +186,7 @@ export function MethodsInstrument({
 
   function openSpecimen(specimen: Specimen, role?: SpecimenRole) {
     const shown = role ?? specimen.profiles[0].role;
+    setAtlasPoint(null);
     setSpecimenView({ id: specimen.id, role: shown });
     setProfile(specimenProfile(specimen, shown));
     setMethod(specimen.method);
@@ -194,6 +200,7 @@ export function MethodsInstrument({
       const preset = presets.find((p) => p.id === target.id);
       if (preset) {
         setSpecimenView(null);
+        setAtlasPoint(null);
         setProfile(preset.profile);
         setVoterType(0);
       }
@@ -201,6 +208,19 @@ export function MethodsInstrument({
       const specimen = specimens.get(target.id)?.specimen;
       if (specimen) openSpecimen(specimen, target.role);
     }
+  }
+
+  function loadAtlasPoint(response: ProfileResolveResponse, point: AtlasPoint, view: AtlasView) {
+    if (response.profile.ballot_type !== "utility") return;
+    // The point arrives counted; cache it so the instrument shows it at once
+    cache.current.set(encodeProfile(response.profile), response);
+    scrollToBanner.current = true;
+    setSpecimenView(null);
+    setTourStep(null);
+    setAtlasPoint(point);
+    setProfile(response.profile);
+    setVoterType(0);
+    if (!isReference(view)) setMethod(view);
   }
 
   const winners = new Set(resolution.results.map((r) => r.winner));
@@ -240,6 +260,16 @@ export function MethodsInstrument({
             }}
           />
         </div>
+      ) : atlasPoint ? (
+        <div ref={banner} className="mt-6 scroll-mt-4">
+          <AtlasPointBanner
+            point={atlasPoint}
+            voters={totalVoters(profile)}
+            types={profile.rows.length}
+            onBack={() => atlasSection.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            onClose={() => setAtlasPoint(null)}
+          />
+        </div>
       ) : null}
 
       <p className="mt-6 font-mi-mono text-sm text-mi-ink" aria-live="polite">
@@ -264,6 +294,7 @@ export function MethodsInstrument({
               onChange={(next) => {
                 setProfile(next);
                 setSpecimenView(null);
+                setAtlasPoint(null);
                 setTourStep((step) => (step !== null && TOUR[step].target.kind === "free" ? step : null));
               }}
             />
@@ -308,9 +339,15 @@ export function MethodsInstrument({
         </Panel>
       </div>
 
+      <div ref={atlasSection} className="mt-6 scroll-mt-4">
+        <Panel title="Atlas">
+          <Atlas onLoadPoint={loadAtlasPoint} />
+        </Panel>
+      </div>
+
       <footer className="mt-10 border-t border-mi-rule pt-4 font-mi-mono text-xs leading-relaxed text-mi-muted">
         Ballots: {resolution.ballot_model ?? "ranked input"} (sincere voters; rules in the Ballots
-        panel). Presets and specimens: public/data/methods (presets sha256{" "}
+        panel). Presets, specimens and atlas layouts: public/data/methods (presets sha256{" "}
         {provenance.presetsHash}…), built from source {provenance.sourceHash}…. Edits: POST
         /api/voting/profile/resolve. Ties: seeded random tiebreak, seed {resolution.tiebreak_seed}.
       </footer>

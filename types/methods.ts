@@ -232,3 +232,54 @@ export interface SpecimenSearch {
   max_voters: number;
   specimen: Specimen | null;
 }
+
+// ---------------------------------------------------------------------------
+// Atlas (POST /api/voting/atlas, public/data/methods/atlas.json)
+// ---------------------------------------------------------------------------
+
+/** A candidate at a point in the unit square; y grows downward. */
+export interface AtlasCandidate {
+  id: string;
+  x: number;
+  y: number;
+}
+
+export interface AtlasRequest {
+  candidates: AtlasCandidate[];
+  tiebreak_seed?: number;
+}
+
+export interface AtlasPointRequest extends AtlasRequest {
+  /** Row-major cell index; the cloud sits at its center. */
+  cell: number;
+}
+
+export interface AtlasMap {
+  method: VotingMethod;
+  /** The winner's ID in every cell, row-major from the top left. */
+  winners: string;
+  /** Cells where a tiebreak decided the winner. */
+  ties: number[];
+}
+
+export interface AtlasResponse {
+  candidates: AtlasCandidate[];
+  /** Cells per side. */
+  size: number;
+  cloud: {
+    voters_per_type: number;
+    /** Standard deviation of the Gaussian the cloud approximates. */
+    spread: number;
+    /** Each voter type's offset from the cloud's center. */
+    offsets: [number, number][];
+  };
+  ballot_model: string;
+  tiebreak_seed: number;
+  maps: AtlasMap[];
+  /** The Condorcet winner per cell, "-" where there is none. */
+  condorcet: string;
+  /** The candidate with the least total distance to the voters, per cell. */
+  utilitarian: string;
+  /** How many different winners the seven methods produce, one digit per cell. */
+  disagreement: string;
+}

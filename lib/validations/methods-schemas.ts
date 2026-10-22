@@ -93,3 +93,30 @@ export const profileResolveRequestSchema = z.object({
   profile: z.union([rankedProfileSchema, utilityProfileSchema]),
   tiebreak_seed: z.number().int().min(0).max(2 ** 31 - 1).optional(),
 });
+
+// The atlas: three to five single-letter candidates in the unit square, and
+// a 64 x 64 grid (api/schemas/atlas.py)
+const ATLAS_CELLS = 64 * 64;
+
+export const atlasRequestSchema = z
+  .object({
+    candidates: z
+      .array(
+        z.object({
+          id: z.string().regex(/^[A-E]$/),
+          x: z.number().min(0).max(1),
+          y: z.number().min(0).max(1),
+        })
+      )
+      .min(3)
+      .max(5),
+    tiebreak_seed: z.number().int().min(0).max(2 ** 31 - 1).optional(),
+  })
+  .refine((request) => new Set(request.candidates.map((c) => c.id)).size === request.candidates.length, {
+    message: "Candidates repeat",
+  });
+
+export const atlasPointRequestSchema = z.intersection(
+  atlasRequestSchema,
+  z.object({ cell: z.number().int().min(0).max(ATLAS_CELLS - 1) })
+);

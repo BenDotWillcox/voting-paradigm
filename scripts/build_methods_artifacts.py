@@ -21,6 +21,9 @@ and writes JSON to public/data/methods/:
                   resolved by the
                   endpoint and keyed by the instrument's profile key, so the
                   gallery opens specimens without the API
+- atlas.json      the atlas's curated layouts, each with its full response
+                  from POST /api/voting/atlas (every method's winner in every
+                  cell), so the atlas renders them without the API
 - manifest.json   a hash of the source that produced the outputs (the voting
                   package and the API's profile-resolution service) and output
                   SHA-256 hashes
@@ -59,11 +62,13 @@ from voting.search import (  # noqa: E402
     specimen_to_json,
 )
 from voting.types import DEFAULT_TIEBREAK_SEED  # noqa: E402
+from api.schemas.atlas import AtlasCandidateSchema, AtlasRequest  # noqa: E402
 from api.schemas.voting import (  # noqa: E402
     ProfileResolveRequest,
     UtilityProfileSchema,
     UtilityRowSchema,
 )
+from api.services.atlas import atlas_response  # noqa: E402
 from api.services.profile_resolution import resolve_profile_request  # noqa: E402
 
 OUT = ROOT / "public" / "data" / "methods"
@@ -107,6 +112,20 @@ CENTER_SQUEEZE = [
     (32, {"A": 0, "B": 40, "C": 100}),
 ]
 
+# The atlas's curated layouts: candidate positions in the unit square, y down.
+# The page's copy for each lives in lib/methods/atlas.ts.
+ATLAS_LAYOUTS: list[tuple[str, list[tuple[str, float, float]]]] = [
+    # D inside A, B and C: the center squeeze in two dimensions
+    ("hub", [("A", 0.5, 0.26), ("B", 0.27, 0.66), ("C", 0.73, 0.66), ("D", 0.5, 0.53)]),
+    # C between A and B on a line
+    ("squeeze", [("A", 0.3, 0.5), ("B", 0.7, 0.5), ("C", 0.5, 0.5)]),
+    # B and C a near-identical pair facing A
+    ("clones", [("A", 0.38, 0.5), ("B", 0.6, 0.48), ("C", 0.62, 0.53)]),
+    ("ring", [("A", 0.5, 0.2), ("B", 0.8, 0.45), ("C", 0.68, 0.8), ("D", 0.32, 0.8), ("E", 0.2, 0.45)]),
+    # Far apart, where the methods mostly agree
+    ("spread", [("A", 0.5, 0.27), ("B", 0.27, 0.68), ("C", 0.73, 0.68)]),
+]
+
 
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
@@ -115,6 +134,7 @@ def main() -> int:
         "specimens.json": specimens,
         "presets.json": build_presets(),
         "specimen-resolutions.json": build_specimen_resolutions(specimens),
+        "atlas.json": build_atlas(),
     }
     outputs: dict[str, str] = {}
     for name, payload in artifacts.items():
@@ -235,6 +255,19 @@ def build_specimen_resolutions(specimens: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def build_atlas() -> dict[str, Any]:
+    """Each curated layout with the endpoint's response at the default seed."""
+    layouts = []
+    for layout_id, candidates in ATLAS_LAYOUTS:
+        request = AtlasRequest(
+            candidates=[AtlasCandidateSchema(id=c, x=x, y=y) for c, x, y in candidates],
+            tiebreak_seed=DEFAULT_TIEBREAK_SEED,
+        )
+        layouts.append({"id": layout_id, "atlas": atlas_response(request).model_dump(mode="json")})
+        print(f"  atlas / {layout_id}", flush=True)
+    return {"artifact_version": ARTIFACT_VERSION, "layouts": layouts}
+
+
 def resolve_utility(
     candidates: list[str], rows: list[tuple[int, dict[str, int]]]
 ) -> dict[str, Any]:
@@ -264,13 +297,19 @@ def instrument_key(candidates: list[str], rows: list[tuple[int, dict[str, int]]]
 
 
 # Source files whose behavior the outputs depend on, besides voting/
-RESOLUTION_SOURCES = ("api/schemas/voting.py", "api/services/profile_resolution.py")
+RESOLUTION_SOURCES = (
+    "api/schemas/atlas.py",
+    "api/schemas/voting.py",
+    "api/services/atlas.py",
+    "api/services/profile_resolution.py",
+)
 
 
 def source_sha256() -> str:
     """
     Hash of the source that produced the outputs: the voting package (tests
-    excluded) and the API's profile-resolution modules, line endings normalized.
+    excluded) and the API's profile-resolution and atlas modules, line endings
+    normalized.
     """
     digest = hashlib.sha256()
     paths = [p for p in (ROOT / "voting").rglob("*.py") if "tests" not in p.parts]

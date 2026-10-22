@@ -1,6 +1,6 @@
 # Demo 1: Voting methods as an instrument
 
-Status: design settled with Ben on 2026-10-21; slices A to F built. Supersedes
+Status: design settled with Ben on 2026-10-21; slices A to G built. Supersedes
 Phase 2 of `prompts/storytelling-redesign.md`.
 
 ## Why an instrument, not an essay
@@ -339,6 +339,56 @@ approval is often said to satisfy IIA when ballots are held fixed, but under
 a mean-threshold model, removing a loser moves the mean and can change the
 winner.
 
+### Atlas
+
+Ka-Ping Yee's spatial diagram, for all seven methods. Settled with Ben on
+2026-10-22:
+
+- **Each point is an electorate.** Candidates sit at fixed positions in a
+  two-dimensional issue space, the unit square with y growing downward as on
+  screen. Each cell of a 64 × 64 grid holds the same voter cloud centered
+  there and is colored by its winner. A cell where a tiebreak decided the
+  winner is drawn lighter, never hidden.
+- **The cloud is 19 voter types of 5 voters each (95 voters)** on a
+  sunflower (Vogel) spiral whose radii are quantiles of a circular Gaussian
+  with standard deviation 0.16. A hexagonal lattice was tried first: its
+  voters share columns, and as the cloud slides, a whole column crosses a
+  boundary at once and stripes the maps. The spiral gives every type its own
+  x and y. An odd total rules out tied head-to-head counts.
+- **The spread is fixed** and was chosen so the methods visibly disagree. A
+  symmetric cloud's nearest candidate is its Condorcet winner, so the
+  Condorcet-consistent methods draw near-Voronoi maps and only plurality, IRV
+  and approval stray far from them; the layouts place candidates close
+  enough, relative to the cloud, for that to show.
+- **Utility is linear in distance.** Each voter's distances are rescaled so
+  the nearest candidate gets 100 and the farthest 0, rounded half up.
+  Sincere-v1 casts the same ballots under any rescaling, so the spread is
+  the only free parameter, and rankings do not depend on the utility shape at
+  all.
+- **The reference methods count every cell,** exactly as the instrument
+  counts a profile: one fresh tiebreak per method, seeded with the default
+  seed. Cells with identical ballots are counted once (neighbors mostly share
+  them), and Ranked Pairs reads its pairwise matrix from the aggregated
+  rankings. A map takes one to five seconds, so the methods need no second,
+  faster implementation.
+- **Reference maps:** the Condorcet winner, with no color where the majority
+  relation cycles; the utilitarian winner, the candidate with the least total
+  raw distance (raw distances, not rescaled utilities, so it is a welfare
+  benchmark rather than a restatement of score voting); and the disagreement
+  map, the number of different winners among the seven methods.
+- **Clicking a cell loads its electorate** into the instrument.
+  `POST /api/voting/atlas/point` builds the cell's 19 voter types and returns
+  the same response as `POST /api/voting/profile/resolve`, so the instrument
+  shows exactly the electorate the map counted.
+- **Moving a candidate recomputes on release** through
+  `POST /api/voting/atlas`. Curated layouts ship precomputed in
+  `public/data/methods/atlas.json`, so they render with no API.
+- **Layouts:** a four-candidate hub (D inside A, B and C: the center squeeze
+  in two dimensions), a center squeeze on a line, a clone pair, a ring of
+  five, and a spread-out triangle where the methods mostly agree.
+- **Where it lives:** a section of `/methods` below the gallery, with three
+  to five candidates.
+
 ### Live resolution
 
 Python remains the only resolver:
@@ -351,7 +401,8 @@ Python remains the only resolver:
 - The deployed API is a Vercel Python function with cold starts, so the page
   pings it on load. When it is unreachable, presets and the gallery still
   work and editing shows a short offline note.
-- Revisit when the atlas needs thousands of resolutions a frame.
+- The atlas counts 4,096 electorates per map in one request, still through
+  the reference methods (see Atlas).
 
 ### Visual identity: drafting table
 
@@ -445,7 +496,11 @@ F. **Rated gallery cells.** Specimens for approval, score and quadratic
    participation). Rated specimens load with their utilities as found.
    Quadratic voting's totals now follow candidate order; a set-ordered dict
    had made its trace, and so the artifact bytes, depend on string hashing.
-G. **Atlas.** Spatial winner maps.
+G. **Atlas.** Spatial winner maps for the seven methods plus Condorcet,
+   utilitarian and disagreement references (see Atlas): a sunflower
+   voter cloud, linear utility, every cell counted by the reference
+   methods, curated layouts precomputed, dragging recomputed on release,
+   and clicking a cell loads its electorate into the instrument.
 H. **Simulation.** Disagreement rates and Condorcet efficiency in `eval/`.
    Electorate generators are seeded samplers that return profiles, so they
    can double as an agent's beliefs about other voters.
