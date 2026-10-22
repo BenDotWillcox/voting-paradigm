@@ -1,10 +1,12 @@
 """
 Pydantic request/response models for the voting router.
 
-A request carries an anonymous profile tagged with its ballot type. Only
-"ranked" exists today; partial rankings, rated ballots and weights will
-arrive as further ballot types (the `profile` field then becomes a union
-discriminated on `ballot_type`), so existing requests keep working.
+A request carries a profile tagged with its type:
+- "ranked": voters' complete rankings. Resolved by the four ranked methods.
+- "utility": voter types with utilities. A ballot model turns each type into
+  every ballot format, so all seven methods resolve it.
+Partial rankings, rated ballots and weights can join as further tags without
+breaking existing requests.
 """
 
 from typing import Annotated, Literal, Self
@@ -19,7 +21,9 @@ MIN_CANDIDATES = 2
 MAX_CANDIDATES = 5
 MAX_VOTERS = 10_000
 
-RankedMethodLiteral = Literal["plurality", "irv", "borda", "ranked_pairs"]
+MethodLiteral = Literal[
+    "plurality", "irv", "borda", "ranked_pairs", "approval", "score", "quadratic"
+]
 
 CandidateIdStr = Annotated[
     str, StringConstraints(pattern=r"^[A-Za-z0-9_-]{1,32}$")
@@ -55,8 +59,39 @@ class RankedProfileSchema(BaseModel):
         return self
 
 
+class UtilityRowSchema(BaseModel):
+    """How many voters share one set of utilities (0 worst, 100 best)."""
+
+    count: int = Field(ge=0, le=MAX_VOTERS)
+    utilities: dict[CandidateIdStr, int] = Field(
+        description="One utility per candidate, 0 to 100."
+    )
+
+
+class UtilityProfileSchema(BaseModel):
+    """Voter types with utilities. Rows keep their order and are not merged."""
+
+    ballot_type: Literal["utility"]
+    candidates: list[CandidateIdStr] = Field(
+        min_length=MIN_CANDIDATES, max_length=MAX_CANDIDATES
+    )
+    rows: list[UtilityRowSchema]
+
+    @model_validator(mode="after")
+    def _voters_in_range(self) -> Self:
+        total = sum(row.count for row in self.rows)
+        if not 1 <= total <= MAX_VOTERS:
+            raise ValueError(f"A profile needs 1 to {MAX_VOTERS} voters, got {total}")
+        return self
+
+
+ProfileSchema = Annotated[
+    RankedProfileSchema | UtilityProfileSchema, Field(discriminator="ballot_type")
+]
+
+
 class ProfileResolveRequest(BaseModel):
-    profile: RankedProfileSchema
+    profile: ProfileSchema
     tiebreak_seed: int = Field(
         default=DEFAULT_TIEBREAK_SEED,
         ge=0,
@@ -73,13 +108,12 @@ class ProfileResolveRequest(BaseModel):
             "examples": [
                 {
                     "profile": {
-                        "ballot_type": "ranked",
+                        "ballot_type": "utility",
                         "candidates": ["A", "B", "C"],
                         "rows": [
-                            {"count": 6, "ranking": ["A", "B", "C"]},
-                            {"count": 4, "ranking": ["B", "C", "A"]},
-                            {"count": 2, "ranking": ["C", "A", "B"]},
-                            {"count": 3, "ranking": ["C", "B", "A"]},
+                            {"count": 35, "utilities": {"A": 100, "B": 0, "C": 60}},
+                            {"count": 33, "utilities": {"A": 0, "B": 100, "C": 60}},
+                            {"count": 32, "utilities": {"A": 0, "B": 40, "C": 100}},
                         ],
                     },
                     "tiebreak_seed": 0,
@@ -142,14 +176,53 @@ class RankedPairsTraceSchema(BaseModel):
     )
 
 
+class ApprovalTraceSchema(BaseModel):
+    kind: Literal["approval"] = "approval"
+    approvals: dict[str, int]
+    abstentions: int
+
+
+class ScoreTraceSchema(BaseModel):
+    kind: Literal["score"] = "score"
+    totals: dict[str, int]
+    max_score: int
+
+
+class QuadraticTraceSchema(BaseModel):
+    kind: Literal["quadratic"] = "quadratic"
+    net_votes: dict[str, int] = Field(description="Votes for minus votes against.")
+    credits_spent: int
+    credits_available: int
+
+
 TraceSchema = Annotated[
-    PluralityTraceSchema | IRVTraceSchema | BordaTraceSchema | RankedPairsTraceSchema,
+    PluralityTraceSchema
+    | IRVTraceSchema
+    | BordaTraceSchema
+    | RankedPairsTraceSchema
+    | ApprovalTraceSchema
+    | ScoreTraceSchema
+    | QuadraticTraceSchema,
     Field(discriminator="kind"),
 ]
 
 
+class VoterBallotsSchema(BaseModel):
+    """The ballots one voter type casts in every format, under the ballot model."""
+
+    row: int = Field(description="Index of the voter type in the request's rows.")
+    count: int
+    choice: str
+    ranking: list[str]
+    approvals: list[str]
+    scores: dict[str, int]
+    allocations: dict[str, int] = Field(description="Quadratic votes; nonzero only.")
+    credits_used: int
+    credit_budget: int
+
+
 class MethodResultSchema(BaseModel):
-    method: RankedMethodLiteral
+    method: MethodLiteral
     winner: str
     decisive: bool = Field(
         description=(
@@ -175,12 +248,24 @@ class SingleProfileCriteriaSchema(BaseModel):
 
 
 class ProfileResolveResponse(BaseModel):
-    profile: RankedProfileSchema = Field(
+    profile: ProfileSchema = Field(
         description=(
-            "The profile in canonical form: one row per distinct ranking, zero "
-            "rows dropped, rows sorted in candidate order. Equal electorates "
-            "always echo identically, so clients can cache by it."
+            "The request's profile. A ranked profile comes back canonical (one "
+            "row per distinct ranking, zero rows dropped, rows in candidate "
+            "order); a utility profile comes back as given."
         )
+    )
+    rankings: RankedProfileSchema = Field(
+        description=(
+            "The ranked ballots, canonical. Ranked methods, the head-to-head "
+            "matrix and the criteria read these."
+        )
+    )
+    ballot_model: str | None = Field(
+        description="The model that turned utilities into ballots; null for ranked input."
+    )
+    voter_ballots: list[VoterBallotsSchema] = Field(
+        description="Each voter type's ballots, in request row order; empty for ranked input."
     )
     total_voters: int
     tiebreak_seed: int
@@ -189,7 +274,10 @@ class ProfileResolveResponse(BaseModel):
     )
     criteria: SingleProfileCriteriaSchema
     results: list[MethodResultSchema] = Field(
-        description="One result per ranked method: plurality, IRV, Borda, Ranked Pairs."
+        description=(
+            "Plurality, IRV, Borda and Ranked Pairs; for utility input also "
+            "approval, score and quadratic voting."
+        )
     )
 
 

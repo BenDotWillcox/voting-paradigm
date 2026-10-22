@@ -179,18 +179,31 @@ export interface RankedRow {
   ranking: string[];
 }
 
-/**
- * An anonymous profile tagged with its ballot type. Only "ranked" exists
- * today; other ballot types will join as a union on `ballot_type`.
- */
+/** An anonymous profile of complete rankings. */
 export interface RankedProfile {
   ballot_type: "ranked";
   candidates: string[];
   rows: RankedRow[];
 }
 
+/** How many voters share one set of utilities (0 worst, 100 best). */
+export interface UtilityRow {
+  count: number;
+  utilities: Record<string, number>;
+}
+
+/** Voter types with utilities; rows keep their order and are not merged. */
+export interface UtilityProfile {
+  ballot_type: "utility";
+  candidates: string[];
+  rows: UtilityRow[];
+}
+
+/** A profile tagged with its type. */
+export type Profile = RankedProfile | UtilityProfile;
+
 export interface ProfileResolveRequest {
-  profile: RankedProfile;
+  profile: Profile;
   /** Seed for each method's tiebreak; defaults to 0 on the server. */
   tiebreak_seed?: number;
 }
@@ -241,10 +254,51 @@ export interface RankedPairsTrace {
   tiebreak_priority: string[];
 }
 
-export type MethodTrace = PluralityTrace | IRVTrace | BordaTrace | RankedPairsTrace;
+export interface ApprovalTrace {
+  kind: "approval";
+  approvals: Record<string, number>;
+  abstentions: number;
+}
+
+export interface ScoreTrace {
+  kind: "score";
+  totals: Record<string, number>;
+  max_score: number;
+}
+
+export interface QuadraticTrace {
+  kind: "quadratic";
+  /** Votes for minus votes against. */
+  net_votes: Record<string, number>;
+  credits_spent: number;
+  credits_available: number;
+}
+
+export type MethodTrace =
+  | PluralityTrace
+  | IRVTrace
+  | BordaTrace
+  | RankedPairsTrace
+  | ApprovalTrace
+  | ScoreTrace
+  | QuadraticTrace;
+
+/** The ballots one voter type casts in every format, under the ballot model. */
+export interface VoterBallots {
+  row: number;
+  count: number;
+  choice: string;
+  ranking: string[];
+  approvals: string[];
+  scores: Record<string, number>;
+  /** Quadratic votes; nonzero only. */
+  allocations: Record<string, number>;
+  credits_used: number;
+  credit_budget: number;
+}
 
 export interface ProfileMethodResult {
-  method: RankedMethod;
+  method: VotingMethod;
   winner: string;
   /** No tiebreak applied and, for IRV, no batch elimination of a last-place tie. */
   decisive: boolean;
@@ -259,13 +313,19 @@ export interface SingleProfileCriteria {
 }
 
 export interface ProfileResolveResponse {
-  /** Canonical echo of the request's profile; equal electorates echo identically. */
-  profile: RankedProfile;
+  /** The request's profile: ranked comes back canonical, utility as given. */
+  profile: Profile;
+  /** The ranked ballots, canonical; ranked methods and criteria read these. */
+  rankings: RankedProfile;
+  /** The model that turned utilities into ballots; null for ranked input. */
+  ballot_model: string | null;
+  /** Each voter type's ballots, in row order; empty for ranked input. */
+  voter_ballots: VoterBallots[];
   total_voters: number;
   tiebreak_seed: number;
   /** pairwise[a][b] = voters ranking a above b. */
   pairwise: Record<string, Record<string, number>>;
   criteria: SingleProfileCriteria;
-  /** In method order: plurality, IRV, Borda, Ranked Pairs. */
+  /** Plurality, IRV, Borda, Ranked Pairs, then approval, score, quadratic for utility input. */
   results: ProfileMethodResult[];
 }

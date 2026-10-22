@@ -562,3 +562,76 @@
   --gap-more-2-ink: #f3f2ee;
   --gap-more-3-ink: #1c1b19;
 }
+
+/* ------------------------------------------------------------------------
+ * Methods instrument ("drafting table"; components/methods/instrument).
+ * Cool white, hairline ink rules, flat candidate colors. Color always means
+ * a candidate and position always means a method; text never wears a
+ * candidate color.
+ *
+ * Candidate colors are validated with the dataviz validate_palette.js
+ * against --mi-surface with --pairs all, since any candidate can sit beside
+ * any other. Light passes every gate; C (yellow) is under 3:1 contrast, so
+ * every glyph has an ink outline and a letter label. Dark passes with a CVD
+ * warning on A/E, which the glyph shapes cover.
+ * --------------------------------------------------------------------- */
+@theme inline {
+  --color-mi-page: var(--mi-page);
+  --color-mi-surface: var(--mi-surface);
+  --color-mi-ink: var(--mi-ink);
+  --color-mi-ink-2: var(--mi-ink-2);
+  --color-mi-muted: var(--mi-muted);
+  --color-mi-rule: var(--mi-rule);
+  --color-mi-grid: var(--mi-grid);
+  --color-mi-wash: var(--mi-wash);
+  --font-mi-sans: var(--font-instrument-sans), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mi-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.methods-instrument {
+  color-scheme: light;
+  --mi-page: #eef0f2;
+  --mi-surface: #fbfbf9;
+  --mi-ink: #15171a;
+  --mi-ink-2: #474c54;
+  --mi-muted: #656b74;
+  --mi-rule: rgb(21 23 26 / 0.14);
+  --mi-grid: rgb(21 23 26 / 0.055);
+  --mi-wash: rgb(21 23 26 / 0.045);
+
+  --mi-cand-a: #2a78d6;
+  --mi-cand-b: #d8452b;
+  --mi-cand-c: #eda100;
+  --mi-cand-d: #14957a;
+  --mi-cand-e: #a8479e;
+
+  background: var(--mi-page);
+  color: var(--mi-ink);
+}
+
+.dark .methods-instrument {
+  color-scheme: dark;
+  --mi-page: #0e1012;
+  --mi-surface: #141619;
+  --mi-ink: #eceef0;
+  --mi-ink-2: #b9bec5;
+  --mi-muted: #8c929a;
+  --mi-rule: rgb(236 238 240 / 0.14);
+  --mi-grid: rgb(236 238 240 / 0.05);
+  --mi-wash: rgb(236 238 240 / 0.06);
+
+  --mi-cand-a: #3987e5;
+  --mi-cand-b: #e34f5f;
+  --mi-cand-c: #ad8c00;
+  --mi-cand-d: #199e80;
+  --mi-cand-e: #b665c4;
+}
+
+/* Drafting grid, behind figures only. */
+.mi-grid-paper {
+  background-color: var(--mi-surface);
+  background-image:
+    linear-gradient(var(--mi-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--mi-grid) 1px, transparent 1px);
+  background-size: 16px 16px;
+}

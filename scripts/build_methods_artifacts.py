@@ -7,9 +7,15 @@ and writes JSON to public/data/methods/:
 - specimens.json  one search record per method and criterion: the smallest
                   specimen found, certified against the reference methods,
                   or none up to the search's voter bound
-- presets.json    the tour's opening majority cycle (found by search) and
-                  the center-squeeze profile, with every ranked method's winner
-- manifest.json   the voting package's source hash and output SHA-256 hashes
+- presets.json    the instrument's presets as voter types with utilities: the
+                  opening majority cycle (rankings found by search, utilities
+                  evenly spaced) and the center squeeze (utilities authored),
+                  each with its full resolution exactly as
+                  POST /api/voting/profile/resolve returns it, so the
+                  instrument renders presets without the API
+- manifest.json   a hash of the source that produced the outputs (the voting
+                  package and the API's profile-resolution service) and output
+                  SHA-256 hashes
 
 Deterministic: the same voting package produces byte-identical outputs.
 Searches run in parallel, one process per method and criterion.
@@ -31,7 +37,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from voting import create_ranked_profile  # noqa: E402
+from voting.ballot_models import evenly_spaced  # noqa: E402
 from voting.search import (  # noqa: E402
     CRITERIA,
     DEFAULT_CANDIDATES,
@@ -40,11 +46,16 @@ from voting.search import (  # noqa: E402
     RankedMethod,
     certify,
     find_disagreement_cycle,
-    outcome,
     search,
     specimen_to_json,
 )
-from voting.ballots.ranked_profile import RankedProfile  # noqa: E402
+from voting.types import DEFAULT_TIEBREAK_SEED  # noqa: E402
+from api.schemas.voting import (  # noqa: E402
+    ProfileResolveRequest,
+    UtilityProfileSchema,
+    UtilityRowSchema,
+)
+from api.services.profile_resolution import resolve_profile_request  # noqa: E402
 
 OUT = ROOT / "public" / "data" / "methods"
 ARTIFACT_VERSION = 1
@@ -66,8 +77,13 @@ PRESET_MAX_VOTERS = 24
 # Each worker holds a search cache and, for consistency, a winner table
 MAX_WORKERS = min(8, os.cpu_count() or 1)
 
-# 35 A>C>B, 33 B>C>A, 32 C>B>A
-CENTER_SQUEEZE = [(35, ["A", "C", "B"]), (33, ["B", "C", "A"]), (32, ["C", "B", "A"])]
+# The center squeeze as voter types: A and B voters rate C a close-ish second,
+# and C voters lean toward B. Rankings: 35 A>C>B, 33 B>C>A, 32 C>B>A.
+CENTER_SQUEEZE = [
+    (35, {"A": 100, "B": 0, "C": 60}),
+    (33, {"A": 0, "B": 100, "C": 60}),
+    (32, {"A": 0, "B": 40, "C": 100}),
+]
 
 
 def main() -> int:
@@ -88,7 +104,7 @@ def main() -> int:
     manifest = {
         "artifact_version": ARTIFACT_VERSION,
         "generator": "scripts/build_methods_artifacts.py",
-        "voting_source_sha256": voting_source_sha256(),
+        "source_sha256": source_sha256(),
         "outputs": outputs,
     }
     (OUT / "manifest.json").write_bytes(dumps(manifest).encode("utf-8"))
@@ -129,43 +145,61 @@ def build_presets() -> dict[str, Any]:
     cycle = find_disagreement_cycle(PRESET_MAX_VOTERS)
     if cycle is None:
         raise SystemExit(f"No disagreement cycle up to {PRESET_MAX_VOTERS} voters")
-    squeeze = create_ranked_profile(DEFAULT_CANDIDATES, CENTER_SQUEEZE)
+    cycle_rows = [
+        (count, evenly_spaced(cycle.candidates, ranking)) for count, ranking in cycle.rows
+    ]
     return {
         "artifact_version": ARTIFACT_VERSION,
         "presets": [
             {
                 "id": "majority-cycle",
                 "found_by": {"search": "disagreement_cycle", "max_voters": PRESET_MAX_VOTERS},
-                **preset_record(cycle),
+                "utilities": "evenly spaced",
+                "resolution": preset_resolution(list(cycle.candidates), cycle_rows),
             },
-            {"id": "center-squeeze", "found_by": None, **preset_record(squeeze)},
+            {
+                "id": "center-squeeze",
+                "found_by": None,
+                "utilities": "authored",
+                "resolution": preset_resolution(list(DEFAULT_CANDIDATES), CENTER_SQUEEZE),
+            },
         ],
     }
 
 
-def preset_record(profile: RankedProfile) -> dict[str, Any]:
-    winners: dict[str, str] = {}
-    for method in RANKED_METHODS:
-        result = outcome(method, profile)
+def preset_resolution(
+    candidates: list[str], rows: list[tuple[int, dict[str, int]]]
+) -> dict[str, Any]:
+    """The endpoint's response for a preset; every method must be decisive."""
+    request = ProfileResolveRequest(
+        profile=UtilityProfileSchema(
+            ballot_type="utility",
+            candidates=candidates,
+            rows=[UtilityRowSchema(count=count, utilities=u) for count, u in rows],
+        ),
+        tiebreak_seed=DEFAULT_TIEBREAK_SEED,
+    )
+    response = resolve_profile_request(request)
+    for result in response.results:
         if not result.decisive:
-            raise SystemExit(f"Preset needs a tiebreak under {method}")
-        winners[method] = result.winner
-    return {
-        "candidates": list(profile.candidates),
-        "rows": [[count, list(ranking)] for count, ranking in profile.rows],
-        "voters": profile.total_voters,
-        "winners": winners,
-    }
+            raise SystemExit(f"Preset needs a tiebreak under {result.method}")
+    return response.model_dump(mode="json")
 
 
-def voting_source_sha256() -> str:
-    """Hash of the voting package's source, with line endings normalized."""
+# Source files whose behavior the outputs depend on, besides voting/
+RESOLUTION_SOURCES = ("api/schemas/voting.py", "api/services/profile_resolution.py")
+
+
+def source_sha256() -> str:
+    """
+    Hash of the source that produced the outputs: the voting package (tests
+    excluded) and the API's profile-resolution modules, line endings normalized.
+    """
     digest = hashlib.sha256()
-    package = ROOT / "voting"
-    for path in sorted(package.rglob("*.py")):
+    paths = [p for p in (ROOT / "voting").rglob("*.py") if "tests" not in p.parts]
+    paths += [ROOT / name for name in RESOLUTION_SOURCES]
+    for path in sorted(paths, key=lambda p: p.relative_to(ROOT).as_posix()):
         relative = path.relative_to(ROOT).as_posix()
-        if "/tests/" in relative:
-            continue
         digest.update(relative.encode("utf-8") + b"\0")
         digest.update(path.read_bytes().replace(b"\r\n", b"\n") + b"\0")
     return digest.hexdigest()
