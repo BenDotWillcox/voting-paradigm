@@ -45,7 +45,7 @@ class QuadraticResult(ElectionResult):
 def resolve_quadratic(
     candidates: list[Candidate],
     ballots: list[QuadraticBallot],
-    tiebreak: TiebreakFunction = random_tiebreak,
+    tiebreak: TiebreakFunction | None = None,
 ) -> QuadraticResult:
     """
     Resolve an election using quadratic voting.
@@ -56,11 +56,14 @@ def resolve_quadratic(
     Args:
         candidates: All candidates in the election
         ballots: All cast ballots
-        tiebreak: Function to break ties (defaults to random selection)
+        tiebreak: Function to break ties (defaults to random_tiebreak())
 
     Returns:
         QuadraticResult with winner, totals, and utilization metrics
     """
+    if tiebreak is None:
+        tiebreak = random_tiebreak()
+
     candidate_ids = {c.id for c in candidates}
 
     # Initialize vote totals

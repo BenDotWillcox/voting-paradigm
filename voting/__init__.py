@@ -12,6 +12,8 @@ from .types import (
     Ballot,
     VoteCounts,
     ElectionResult,
+    TiebreakFunction,
+    DEFAULT_TIEBREAK_SEED,
     random_tiebreak,
 )
 from .ballots.single_choice import (
@@ -34,6 +36,13 @@ from .ballots.ranked_choice import (
     get_first_choice,
     prefers,
     InvalidRankingError,
+)
+from .ballots.ranked_profile import (
+    RankedProfile,
+    ProfileRow,
+    create_ranked_profile,
+    profile_ballots,
+    InvalidProfileError,
 )
 from .ballots.score import (
     ScoreBallot,
@@ -69,6 +78,12 @@ from .ballots.quadratic import (
     DEFAULT_CREDIT_BUDGET,
 )
 from .methods.quadratic import resolve_quadratic, QuadraticResult
+from .criteria import (
+    pairwise_counts,
+    majority_winner,
+    condorcet_winner,
+    condorcet_loser,
+)
 
 __all__ = [
     # Types
@@ -78,6 +93,8 @@ __all__ = [
     "Ballot",
     "VoteCounts",
     "ElectionResult",
+    "TiebreakFunction",
+    "DEFAULT_TIEBREAK_SEED",
     "random_tiebreak",
     # Single choice ballots
     "SingleChoiceBallot",
@@ -97,6 +114,12 @@ __all__ = [
     "get_first_choice",
     "prefers",
     "InvalidRankingError",
+    # Ranked profiles
+    "RankedProfile",
+    "ProfileRow",
+    "create_ranked_profile",
+    "profile_ballots",
+    "InvalidProfileError",
     # Score ballots
     "ScoreBallot",
     "create_score_ballot",
@@ -139,4 +162,9 @@ __all__ = [
     # Quadratic method
     "resolve_quadratic",
     "QuadraticResult",
+    # Single-profile criteria
+    "pairwise_counts",
+    "majority_winner",
+    "condorcet_winner",
+    "condorcet_loser",
 ]

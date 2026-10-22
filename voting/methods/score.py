@@ -41,7 +41,7 @@ class ScoreResult(ElectionResult):
 def resolve_score(
     candidates: list[Candidate],
     ballots: list[ScoreBallot],
-    tiebreak: TiebreakFunction = random_tiebreak,
+    tiebreak: TiebreakFunction | None = None,
 ) -> ScoreResult:
     """
     Resolve an election using score voting (range voting).
@@ -52,11 +52,14 @@ def resolve_score(
     Args:
         candidates: All candidates in the election
         ballots: All cast ballots
-        tiebreak: Function to break ties (defaults to random selection)
+        tiebreak: Function to break ties (defaults to random_tiebreak())
 
     Returns:
         Score result with winner, totals, averages, and percentages
     """
+    if tiebreak is None:
+        tiebreak = random_tiebreak()
+
     candidate_ids = [c.id for c in candidates]
 
     # Initialize score totals

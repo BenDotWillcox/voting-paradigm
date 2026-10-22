@@ -45,7 +45,26 @@ class ElectionResult:
 # Function signature for resolving ties
 TiebreakFunction = Callable[[list[CandidateId]], CandidateId]
 
+# Seed used when a method is called without an explicit tiebreak
+DEFAULT_TIEBREAK_SEED = 0
 
-def random_tiebreak(tied: list[CandidateId]) -> CandidateId:
-    """Default random tiebreaker - selects uniformly at random."""
-    return random.choice(tied)
+
+def random_tiebreak(seed: int = DEFAULT_TIEBREAK_SEED) -> TiebreakFunction:
+    """
+    Build a seeded tiebreaker that selects uniformly at random.
+
+    Each call returns a tiebreaker with its own random stream, so the same
+    seed always breaks the same sequence of ties the same way. Methods build
+    a fresh one per resolution when no tiebreak is passed, which makes every
+    default resolution reproducible. Simulations that need independent
+    tiebreaks across elections pass a distinct seed per election.
+
+    Tied candidates are sorted before the draw, so the choice never depends
+    on the order the caller listed them in.
+    """
+    rng = random.Random(seed)
+
+    def tiebreak(tied: list[CandidateId]) -> CandidateId:
+        return rng.choice(sorted(tied))
+
+    return tiebreak

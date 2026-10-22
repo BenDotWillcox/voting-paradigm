@@ -15,12 +15,15 @@ description: Use when adding or modifying code under voting/. Enforces ballot-me
 
 ### Tiebreaks are injectable
 
-Method entry points accept a `TiebreakFunction` and default to
-`random_tiebreak`. Tests inject deterministic tiebreaks when the selected
-winner matters. Seed the Python random generator when exercising the default in
-a reproducible simulation.
+Method entry points accept an optional `TiebreakFunction`. When none is
+passed they build `random_tiebreak()`, which is seeded with
+`DEFAULT_TIEBREAK_SEED`, so a default resolution is reproducible. Tests inject
+deterministic tiebreaks when the selected winner matters. Simulations pass
+`random_tiebreak(seed)` with a recorded seed per election.
 
-Never hide a positional or alphabetical tiebreak inside a method.
+Never hide a positional, alphabetical, or unseeded random tiebreak inside a
+method. Set `tiebreak_applied` only when the tiebreak actually decided
+something.
 
 ### Abstention is valid
 

@@ -1,6 +1,6 @@
 # Demo 1: Voting methods as an instrument
 
-Status: design settled with Ben on 2026-10-21; no slice built yet. Supersedes
+Status: design settled with Ben on 2026-10-21; slice A built. Supersedes
 Phase 2 of `prompts/storytelling-redesign.md`.
 
 ## Why an instrument, not an essay
@@ -202,8 +202,10 @@ pre-filled.
   may propose candidates, but only the reference package certifies a
   specimen. The kernel gets its own parity tests.
 - **Tie rule:** every profile in a specimen must be tie-free. That means no
-  winner tiebreak in any method and, for Ranked Pairs, no equal-strength
-  victories. This depends on fixing the Ranked Pairs tie problems first.
+  winner tiebreak in any method; for Ranked Pairs, no equal-strength
+  victories; and for IRV, no tie for last place in any round. IRV needs the
+  extra check because the package eliminates every candidate tied for last
+  together, without a tiebreak, whenever at least one candidate would remain.
 
 Specimen record (sketch):
 

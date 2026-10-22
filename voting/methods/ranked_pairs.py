@@ -11,12 +11,24 @@ Algorithm:
 2. Check for Condorcet winner (beats all others)
 3. If no Condorcet winner, apply Ranked Pairs:
    a. List all victories with margins
-   b. Sort by margin (desc), then winning votes (desc), then random
+   b. Sort by margin (desc), then winning votes (desc)
    c. Lock victories in order, skipping any that would create a cycle
    d. Winner = candidate with no incoming edges in final graph
+
+Equal-strength victories (same margin and winning votes) are ordered by the
+tiebreak only when their order could change which of them get locked. The
+tiebreak is applied repeatedly to rank the candidates; equal victories then
+go by winner priority, and for a shared winner the lower-priority loser goes
+first. Because that priority need not keep clones adjacent, independence of
+clones can fail in such exact ties.
+
+Criteria:
+- Satisfies majority, Condorcet winner, Condorcet loser, monotonicity, and
+  independence of clones (outside the exact ties above)
+- Violates participation (with four or more candidates; Moulin 1988),
+  consistency, independence of irrelevant alternatives, and later-no-harm
 """
 
-import random
 from dataclasses import dataclass, field
 from typing import Tuple
 
@@ -49,6 +61,19 @@ class RankedPairsResult(ElectionResult):
     locked_victories: list[Tuple[CandidateId, CandidateId, int]] = field(default_factory=list)
     # Victories that were skipped to avoid cycles
     skipped_victories: list[Tuple[CandidateId, CandidateId, int]] = field(default_factory=list)
+    # Candidate priority drawn from the tiebreak to order equal-strength
+    # victories, highest first; empty when no such order was needed
+    tiebreak_priority: list[CandidateId] = field(default_factory=list)
+
+
+@dataclass
+class _LockOutcome:
+    """Outcome of the locking pass, before the edge-case fallbacks."""
+    winner: CandidateId | None
+    locked: list[Tuple[CandidateId, CandidateId, int]]
+    skipped: list[Tuple[CandidateId, CandidateId, int]]
+    priority: list[CandidateId]
+    tiebreak_applied: bool
 
 
 def _build_pairwise_matrix(
@@ -136,22 +161,35 @@ def _get_all_victories(
     return victories
 
 
-def _sort_victories(victories: list[Victory]) -> list[Victory]:
+def _strength_groups(victories: list[Victory]) -> list[list[Victory]]:
     """
-    Sort victories by margin (desc), then winning votes (desc), then random.
+    Group victories by strength, strongest first.
 
-    Random tiebreaker is applied by shuffling before stable sort.
+    Strength is margin, then winning votes. Victories of equal strength share
+    a group and keep their candidate-list order until the tiebreak is needed.
     """
-    # Shuffle first to randomize ties
-    shuffled = list(victories)
-    random.shuffle(shuffled)
+    ordered = sorted(victories, key=lambda v: (-v[2], -v[3]))
+    groups: list[list[Victory]] = []
+    for victory in ordered:
+        if groups and groups[-1][0][2:] == victory[2:]:
+            groups[-1].append(victory)
+        else:
+            groups.append([victory])
+    return groups
 
-    # Stable sort by winning_votes (secondary), then margin (primary)
-    # Sort is stable, so we sort by secondary key first, then primary
-    shuffled.sort(key=lambda v: v[3], reverse=True)  # winning_votes desc
-    shuffled.sort(key=lambda v: v[2], reverse=True)  # margin desc
 
-    return shuffled
+def _priority_order(
+    candidate_ids: list[CandidateId],
+    tiebreak: TiebreakFunction,
+) -> list[CandidateId]:
+    """Rank candidates by repeatedly letting the tiebreak pick from those left."""
+    remaining = list(candidate_ids)
+    order: list[CandidateId] = []
+    while len(remaining) > 1:
+        pick = tiebreak(remaining)
+        order.append(pick)
+        remaining.remove(pick)
+    return order + remaining
 
 
 def _would_create_cycle(
@@ -184,53 +222,90 @@ def _would_create_cycle(
     return False
 
 
+def _stays_acyclic(
+    graph: dict[CandidateId, set[CandidateId]],
+    victories: list[Victory],
+) -> bool:
+    """Whether locking every one of these victories keeps the graph acyclic."""
+    trial = {cid: set(edges) for cid, edges in graph.items()}
+    for winner, loser, _, _ in victories:
+        if _would_create_cycle(trial, winner, loser):
+            return False
+        trial[winner].add(loser)
+    return True
+
+
 def _apply_ranked_pairs(
     candidate_ids: list[CandidateId],
     matrix: PairwiseMatrix,
     tiebreak: TiebreakFunction,
-) -> Tuple[CandidateId | None, list[Tuple[CandidateId, CandidateId, int]], list[Tuple[CandidateId, CandidateId, int]]]:
-    """
-    Apply Ranked Pairs algorithm to find winner.
-
-    Returns (winner, locked_victories, skipped_victories).
-    """
-    victories = _get_all_victories(candidate_ids, matrix)
-    sorted_victories = _sort_victories(victories)
-
+) -> _LockOutcome:
+    """Apply Ranked Pairs algorithm to find winner."""
     # Graph: graph[a] = set of candidates that a beats (edges a→b)
     graph: dict[CandidateId, set[CandidateId]] = {cid: set() for cid in candidate_ids}
 
     locked: list[Tuple[CandidateId, CandidateId, int]] = []
     skipped: list[Tuple[CandidateId, CandidateId, int]] = []
+    priority: list[CandidateId] = []
+    tiebreak_applied = False
 
-    for winner, loser, margin, _ in sorted_victories:
-        if _would_create_cycle(graph, winner, loser):
-            skipped.append((winner, loser, margin))
-        else:
-            graph[winner].add(loser)
-            locked.append((winner, loser, margin))
+    for group in _strength_groups(_get_all_victories(candidate_ids, matrix)):
+        # A victory that already closes a cycle is skipped in any order
+        open_victories: list[Victory] = []
+        for victory in group:
+            winner, loser, margin, _ = victory
+            if _would_create_cycle(graph, winner, loser):
+                skipped.append((winner, loser, margin))
+            else:
+                open_victories.append(victory)
+
+        # If the rest can all be locked, their order cannot matter; otherwise
+        # it can, so order them by the tiebreak priority
+        if len(open_victories) > 1 and not _stays_acyclic(graph, open_victories):
+            if not priority:
+                priority = _priority_order(candidate_ids, tiebreak)
+            rank = {cid: i for i, cid in enumerate(priority)}
+            open_victories.sort(key=lambda v: (rank[v[0]], -rank[v[1]]))
+            tiebreak_applied = True
+
+        for winner, loser, margin, _ in open_victories:
+            if _would_create_cycle(graph, winner, loser):
+                skipped.append((winner, loser, margin))
+            else:
+                graph[winner].add(loser)
+                locked.append((winner, loser, margin))
 
     # Find winner: candidate with no incoming edges
-    has_incoming = set()
+    has_incoming: set[CandidateId] = set()
     for edges in graph.values():
         has_incoming.update(edges)
 
     sources = [cid for cid in candidate_ids if cid not in has_incoming]
 
+    winner_id: CandidateId | None
     if len(sources) == 1:
-        return sources[0], locked, skipped
+        winner_id = sources[0]
     elif len(sources) == 0:
-        # Shouldn't happen with correct algorithm
-        return None, locked, skipped
+        # Shouldn't happen: a graph built without cycles always has a source
+        winner_id = None
     else:
-        # Multiple sources (all tied at top) - use tiebreak
-        return tiebreak(sources), locked, skipped
+        # Several unbeaten candidates (pairwise ties) - use tiebreak
+        winner_id = tiebreak(sources)
+        tiebreak_applied = True
+
+    return _LockOutcome(
+        winner=winner_id,
+        locked=locked,
+        skipped=skipped,
+        priority=priority,
+        tiebreak_applied=tiebreak_applied,
+    )
 
 
 def resolve_ranked_pairs(
     candidates: list[Candidate],
     ballots: list[RankedChoiceBallot],
-    tiebreak: TiebreakFunction = random_tiebreak,
+    tiebreak: TiebreakFunction | None = None,
     pairwise_matrix: PairwiseMatrix | None = None,
     include_pairwise_matrix: bool = True,
 ) -> RankedPairsResult:
@@ -240,13 +315,19 @@ def resolve_ranked_pairs(
     Args:
         candidates: All candidates in the election
         ballots: All cast ballots
-        tiebreak: Function to break ties (used when no clear winner)
+        tiebreak: Function to break ties (defaults to random_tiebreak()).
+            Orders equal-strength victories when their order could change
+            which are locked, and picks among unbeaten candidates when
+            pairwise ties leave more than one.
         pairwise_matrix: Optional precomputed pairwise matrix to reuse
         include_pairwise_matrix: Whether to include the matrix in the result
 
     Returns:
         Ranked Pairs result with winner, pairwise matrix, and locked/skipped edges
     """
+    if tiebreak is None:
+        tiebreak = random_tiebreak()
+
     candidate_ids = [c.id for c in candidates]
 
     # Handle edge cases
@@ -306,7 +387,7 @@ def resolve_ranked_pairs(
         )
 
     # No Condorcet winner - apply Ranked Pairs
-    winner, locked, skipped = _apply_ranked_pairs(candidate_ids, matrix, tiebreak)
+    outcome = _apply_ranked_pairs(candidate_ids, matrix, tiebreak)
 
     # Build vote_counts from pairwise wins
     vote_counts = {}
@@ -314,7 +395,8 @@ def resolve_ranked_pairs(
         wins = sum(1 for opp in candidate_ids if opp != cid and _get_margin(matrix, cid, opp) > 0)
         vote_counts[cid] = wins
 
-    tiebreak_applied = winner is None or len(skipped) > 0
+    winner = outcome.winner
+    tiebreak_applied = outcome.tiebreak_applied
 
     if winner is None:
         # All candidates tied - use tiebreak
@@ -329,6 +411,7 @@ def resolve_ranked_pairs(
         tiebreak_applied=tiebreak_applied,
         pairwise_matrix=matrix if include_pairwise_matrix else {},
         had_condorcet_winner=False,
-        locked_victories=locked,
-        skipped_victories=skipped,
+        locked_victories=outcome.locked,
+        skipped_victories=outcome.skipped,
+        tiebreak_priority=outcome.priority,
     )
