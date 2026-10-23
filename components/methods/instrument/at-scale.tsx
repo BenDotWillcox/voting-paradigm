@@ -41,22 +41,15 @@ export function AtScale({ summary }: { summary: SimulationSummary }) {
     <div className="space-y-5">
       <p className="max-w-3xl text-sm leading-relaxed text-mi-ink-2">
         {total.toLocaleString("en-US")} seeded elections, {config.elections.toLocaleString("en-US")}{" "}
-        each with {counts.join(", ").replace(/, (\d+)$/, " and $1")} candidates. Every election
-        draws its candidates and {config.voters} voters from the same Gaussian in the plane;
-        utility falls with distance, {summary.ballot_model} casts the ballots, and the seven
-        methods count them exactly as on the earlier slides.
-      </p>
-
-      <p className="text-sm text-mi-ink">
-        A Condorcet winner exists in{" "}
+        each with {counts.join(", ").replace(/, (\d+)$/, " and $1")} candidates and{" "}
+        {config.voters} voters, counted exactly as on the earlier slides. A Condorcet winner exists in{" "}
         {summary.by_candidates.map((g, i) => (
           <span key={g.candidates}>
             {i > 0 ? (i === counts.length - 1 ? " and " : ", ") : null}
             <span className="font-mi-mono">{percent(g.condorcet_winner)}</span>
           </span>
         ))}{" "}
-        of elections with {counts.join(", ").replace(/, (\d+)$/, " and $1")} candidates, so
-        Condorcet efficiency is measured over nearly every election.
+        of them respectively, so Condorcet efficiency covers nearly every election.
       </p>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -90,14 +83,16 @@ export function AtScale({ summary }: { summary: SimulationSummary }) {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2">
-        <EfficiencyPlot summary={summary} selected={selected} />
         <DisagreementMatrix group={group} methods={summary.methods} />
+        <EfficiencyPlot summary={summary} selected={selected} />
       </div>
 
       {showTable ? <NumbersTable summary={summary} group={group} /> : null}
 
       <p className="font-mi-mono text-xs leading-relaxed text-mi-muted">
-        {summary.benchmark} · seed {config.seed} · {summary.interval} intervals · ties: seeded
+        {summary.benchmark} · seed {config.seed} · candidates and voters drawn from one Gaussian in
+        the plane · utility falls with distance · ballots {summary.ballot_model} · {summary.interval}{" "}
+        intervals · ties: seeded
         tiebreak (seed {config.tiebreak_seed}), or for instant runoff, candidates tied for last
         eliminated together · source {summary.source_sha256.slice(0, 12)}…
       </p>

@@ -57,7 +57,7 @@ const PRESET_COPY: Record<string, Omit<InstrumentPreset, "id" | "profile" | "res
       "C is everyone's acceptable middle: it beats both rivals head to head but has the fewest first choices.",
     notes: {
       counts:
-        "C is everyone's acceptable middle but has the fewest first choices, so plurality and instant runoff pass it over.",
+        "C is everyone's acceptable middle but has the fewest first choices, so plurality and instant runoff pass it over. Plurality even elects A, the Condorcet loser: A loses both of its two-way races.",
       "head-to-head": "C wins both of its two-way races, though fewer voters rank it first than either rival.",
       ballots:
         "C sits above most voters' average, so their approval ballots include it: approval elects C, where plurality elects A.",
