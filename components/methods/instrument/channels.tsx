@@ -35,9 +35,11 @@ export function Channels({
 }) {
   const byMethod = new Map(resolution.results.map((result) => [result.method, result]));
   return (
-    <div>
+    // Columns follow the table's own width: on a slide it shares the row with
+    // the count's trace, so the viewport says little about the room it has
+    <div className="@container">
       <div
-        className="hidden grid-cols-[minmax(0,11rem)_minmax(0,1fr)_4.5rem_8.5rem] gap-4 px-3 pb-2 text-xs text-mi-muted xl:grid"
+        className="hidden grid-cols-[minmax(0,11rem)_minmax(0,1fr)_4.5rem_8.5rem] gap-4 px-3 pb-2 text-xs text-mi-muted @2xl:grid"
         aria-hidden
       >
         <span>Method</span>
@@ -118,7 +120,7 @@ function ChannelRow({
       onClick={onSelect}
       className={cn(
         "grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-3 py-2.5 text-left",
-        "xl:grid-cols-[minmax(0,11rem)_minmax(0,1fr)_4.5rem_8.5rem]",
+        "@2xl:grid-cols-[minmax(0,11rem)_minmax(0,1fr)_4.5rem_8.5rem]",
         "hover:bg-mi-wash focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-mi-ink",
         selected && "bg-mi-wash"
       )}
@@ -127,10 +129,10 @@ function ChannelRow({
         <span className="block font-medium text-mi-ink">{METHOD_META[result.method].label}</span>
         <span className="block text-xs text-mi-muted">{METHOD_META[result.method].rule}</span>
       </span>
-      <span className="col-span-2 row-start-2 xl:col-span-1 xl:row-start-auto">
+      <span className="col-span-2 row-start-2 @2xl:col-span-1 @2xl:row-start-auto">
         <ChannelCount result={result} candidates={resolution.rankings.candidates} />
       </span>
-      <span className="col-start-2 row-start-1 flex items-center justify-end gap-1.5 xl:col-start-auto xl:row-start-auto xl:justify-start">
+      <span className="col-start-2 row-start-1 flex items-center justify-end gap-1.5 @2xl:col-start-auto @2xl:row-start-auto @2xl:justify-start">
         <CandidateGlyph id={result.winner} size={20} />
         <span className="font-mi-mono text-lg font-semibold">{result.winner}</span>
       </span>
@@ -227,7 +229,7 @@ function CriteriaCells({
 }) {
   const checks = criteriaChecks(result, criteria);
   return (
-    <span className="col-span-2 flex justify-between gap-3 text-xs xl:col-span-1">
+    <span className="col-span-2 flex justify-between gap-3 text-xs @2xl:col-span-1">
       <CriterionCell name="Majority winner elected" short="Maj." check={checks.majority} />
       <CriterionCell name="Condorcet winner elected" short="Cond." check={checks.condorcetWinner} />
       <CriterionCell name="Condorcet loser avoided" short="Loser" check={checks.condorcetLoser} />
@@ -250,7 +252,7 @@ function CriterionCell({
       : `${name}: ${check === "pass" ? "yes" : "no"}`;
   return (
     <span className="inline-flex items-center gap-1" title={label}>
-      <span className="text-mi-muted xl:hidden">{short}</span>
+      <span className="text-mi-muted @2xl:hidden">{short}</span>
       <span
         className={cn(
           "grid size-5 place-items-center rounded-[3px]",
