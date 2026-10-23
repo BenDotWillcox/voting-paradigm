@@ -20,16 +20,26 @@ import type {
 
 import { CandidateMark } from "./glyph";
 
+/** One of a method's smallest failures in the paradox gallery. */
+export interface GalleryFailure {
+  criterion: string;
+  voters: number;
+  onOpen: () => void;
+}
+
 /**
  * How the selected method reached its winner, step by step where it has
- * steps, followed by what the method is known for.
+ * steps, with what the method is known for, and where the gallery shows it
+ * failing, behind a disclosure.
  */
 export function MethodTrace({
   result,
   resolution,
+  failures = [],
 }: {
   result: ProfileMethodResult;
   resolution: ProfileResolveResponse;
+  failures?: GalleryFailure[];
 }) {
   const trace = result.trace;
   return (
@@ -69,12 +79,18 @@ export function MethodTrace({
           </ul>
         </div>
       ) : null}
-      <MethodProfile method={result.method} />
+      <MethodProfile method={result.method} failures={failures} />
     </div>
   );
 }
 
-function MethodProfile({ method }: { method: ProfileMethodResult["method"] }) {
+function MethodProfile({
+  method,
+  failures,
+}: {
+  method: ProfileMethodResult["method"];
+  failures: GalleryFailure[];
+}) {
   const description = methodDescriptions[method];
   const lists: [string, string[]][] = [
     ["Strengths", description.strengths],
@@ -82,8 +98,11 @@ function MethodProfile({ method }: { method: ProfileMethodResult["method"] }) {
     ["Where it's used", description.realWorldUsage],
   ];
   return (
-    <div className="border-t border-mi-rule pt-3">
-      <p className="text-xs text-mi-muted">
+    <details className="border-t border-mi-rule pt-3">
+      <summary className="cursor-pointer text-sm text-mi-ink-2 hover:text-mi-ink">
+        About {description.name}
+      </summary>
+      <p className="mt-2 text-xs text-mi-muted">
         Also called {description.aliases.join(", ")}. Ballot: {description.ballotType.toLowerCase()}.
       </p>
       <div className="mt-2 grid gap-4 text-sm sm:grid-cols-3">
@@ -98,7 +117,25 @@ function MethodProfile({ method }: { method: ProfileMethodResult["method"] }) {
           </div>
         ))}
       </div>
-    </div>
+      {failures.length > 0 ? (
+        <p className="mt-3 text-xs leading-relaxed text-mi-ink-2">
+          Smallest failures in the paradox gallery:{" "}
+          {failures.map((failure, index) => (
+            <span key={failure.criterion}>
+              {index > 0 ? ", " : null}
+              <button
+                type="button"
+                onClick={failure.onOpen}
+                className="underline decoration-mi-rule underline-offset-2 hover:text-mi-ink hover:decoration-mi-ink"
+              >
+                {failure.criterion} ({failure.voters} voters)
+              </button>
+            </span>
+          ))}
+          .
+        </p>
+      ) : null}
+    </details>
   );
 }
 

@@ -75,7 +75,8 @@ export function Atlas({
         const loaded = data.layouts.map((layout) => ({
           id: layout.id,
           label: LAYOUT_COPY[layout.id]?.label ?? layout.id,
-          caption: LAYOUT_COPY[layout.id]?.caption ?? "",
+          headline: LAYOUT_COPY[layout.id]?.headline ?? "",
+          detail: LAYOUT_COPY[layout.id]?.detail ?? "",
           atlas: layout.atlas,
         }));
         for (const layout of loaded) cache.current.set(layoutKey(layout.atlas.candidates), layout.atlas);
@@ -153,11 +154,10 @@ export function Atlas({
   return (
     <div className="space-y-4">
       <p className="max-w-3xl text-sm leading-relaxed text-mi-ink-2">
-        Each point on a map is an electorate: {atlas.cloud.offsets.length * atlas.cloud.voters_per_type}{" "}
-        voters in {atlas.cloud.offsets.length} types, scattered around it. Their utility falls
-        with distance, sincere-v1 turns it into ballots, and the cell takes the color of the
-        winner. Drag a candidate and every map recounts when you let go; click a point to
-        open its electorate in the playground.
+        Each point on a map is an electorate of{" "}
+        {atlas.cloud.offsets.length * atlas.cloud.voters_per_type} voters scattered around it,
+        colored by who wins. Drag a candidate to recount every map, or click a point to open its
+        electorate in the playground.
       </p>
 
       <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Atlas layouts">
@@ -176,9 +176,7 @@ export function Atlas({
             )}
           >
             {layout.label}
-            <span className="ml-1.5 font-mi-mono text-xs opacity-75">
-              {layout.atlas.candidates.length}
-            </span>
+            <span className="ml-1 text-xs opacity-75">· {layout.atlas.candidates.length} candidates</span>
           </button>
         ))}
         {layoutId === null ? (
@@ -187,8 +185,16 @@ export function Atlas({
           </span>
         ) : null}
       </div>
-      {current?.caption ? (
-        <p className="max-w-3xl text-sm leading-relaxed text-mi-ink">{current.caption}</p>
+      {current?.headline ? (
+        <div className="max-w-3xl text-sm leading-relaxed">
+          <p className="text-mi-ink">{current.headline}</p>
+          {current.detail ? (
+            <details className="mt-1">
+              <summary className="cursor-pointer text-mi-muted hover:text-mi-ink">More on this layout</summary>
+              <p className="mt-1 text-mi-ink-2">{current.detail}</p>
+            </details>
+          ) : null}
+        </div>
       ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">

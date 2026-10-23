@@ -185,4 +185,13 @@ needs an explicit yes:
    example list (`SLIDE_EXAMPLES` in `lib/methods/instrument-data.ts`); a
    preset outside a slide's list shows as an extra chip with its note.
 4. Collapse within slides: "About this method", criteria headers, gallery
-   footnote and legend, atlas layout copy.
+   footnote and legend, atlas layout copy. *Implemented
+   2026-10-23.* Departures from the plan above: the criteria columns keep
+   their short headers (the column is too narrow for full words) and gain a
+   one-line key under the table that defines them and says once which
+   criteria this electorate gives nothing to check. "About this method"
+   lists the method's smallest gallery failures from `specimens.json`
+   rather than linking its free-text weaknesses; each opens its specimen.
+   Gallery headers show their definition on hover, focus or tap. Atlas
+   captions split into a headline and "More on this layout" with every
+   claim kept, so `api/tests/test_atlas.py` still holds them.

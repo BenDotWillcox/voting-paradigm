@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { isReference, type AtlasView } from "@/lib/methods/atlas";
 import { atScaleTakeaway, countsClaim, headToHeadClaim, numberWord } from "@/lib/methods/claims";
+import { CRITERIA } from "@/lib/methods/gallery";
 import { METHOD_META } from "@/lib/methods/instrument";
 import { encodeProfile, specimenProfile } from "@/lib/methods/profile";
 import { SECTIONS, type ExampleSlide, type SectionId, type SlideExample } from "@/lib/methods/sections";
@@ -23,7 +24,7 @@ import { AtScale } from "./at-scale";
 import { Atlas, AtlasPointBanner, type AtlasPoint } from "./atlas";
 import { BallotsPanel } from "./ballots-panel";
 import { Channels } from "./channels";
-import { MethodTrace } from "./method-trace";
+import { MethodTrace, type GalleryFailure } from "./method-trace";
 import { ParadoxGallery } from "./paradox-gallery";
 import { Playground } from "./playground";
 import { ProfileEditor } from "./profile-editor";
@@ -200,12 +201,28 @@ export function MethodsInstrument({
       <Channels resolution={resolution} selected={method} onSelect={setMethod} />
     </div>
   );
+  // Opening a failure from the slides moves to the gallery; the playground
+  // shows the specimen's banner where it is
+  const failures: GalleryFailure[] = searches.flatMap(({ method: searched, criterion, specimen }) =>
+    searched === selectedResult.method && specimen
+      ? [
+          {
+            criterion: criterionName(criterion),
+            voters: specimen.voters,
+            onOpen: () => {
+              openSpecimen(specimen);
+              if (!playOpen) setSection(SECTIONS.indexOf("paradoxes"));
+            },
+          },
+        ]
+      : []
+  );
   const trace = (
     <div className={cn("transition-opacity", !showing && "opacity-55")}>
       <h3 className="mb-3 text-sm font-medium text-mi-ink">
         How {METHOD_META[selectedResult.method].label.toLowerCase()} counted
       </h3>
-      <MethodTrace result={selectedResult} resolution={resolution} />
+      <MethodTrace result={selectedResult} resolution={resolution} failures={failures} />
     </div>
   );
   const ballots = (
@@ -586,6 +603,12 @@ function StartingPoints({
       ) : null}
     </div>
   );
+}
+
+/** A criterion's name mid-sentence: Condorcet keeps its capital. */
+function criterionName(id: string): string {
+  const label = CRITERIA.find((criterion) => criterion.id === id)?.label ?? id;
+  return label.startsWith("Condorcet") ? label : label.charAt(0).toLowerCase() + label.slice(1);
 }
 
 function PlayButton({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
