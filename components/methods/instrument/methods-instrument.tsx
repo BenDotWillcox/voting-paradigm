@@ -4,12 +4,21 @@ import { ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { isReference, type AtlasView } from "@/lib/methods/atlas";
-import { atScaleTakeaway, countsClaim, headToHeadClaim, numberWord } from "@/lib/methods/claims";
+import { atScaleTakeaway, countsClaim, numberWord } from "@/lib/methods/claims";
 import { CRITERIA } from "@/lib/methods/gallery";
 import { METHOD_META } from "@/lib/methods/instrument";
 import { encodeProfile, specimenProfile } from "@/lib/methods/profile";
 import { CHAPTERS, STEPS, type ExampleSlide, type SlideExample, type StepId } from "@/lib/methods/sections";
 import { cn } from "@/lib/utils";
+import {
+  BALLOT_RULES,
+  WALK_PRESET,
+  ballotCopy,
+  countCopy,
+  headToHeadCopy as walkHeadToHead,
+  votersCopy,
+  type BallotKind,
+} from "@/lib/methods/walkthrough";
 import type {
   ProfileResolveResponse,
   SimulationSummary,
@@ -33,6 +42,7 @@ import { SpecimenBanner } from "./specimen-banner";
 import { TournamentGraph } from "./tournament-graph";
 import { useElectorate, type ElectorateStatus } from "./use-electorate";
 import { VoterCounts } from "./voter-counts";
+import { BallotView, CountView, HeadToHeadView, VotersView } from "./walkthrough";
 
 export interface PresetOption {
   id: string;
@@ -202,28 +212,29 @@ export function MethodsInstrument({
       <Channels resolution={resolution} selected={method} onSelect={setMethod} />
     </div>
   );
-  // Opening a failure from the steps moves to the gallery; the playground
-  // shows the specimen's banner where it is
-  const failures: GalleryFailure[] = searches.flatMap(({ method: searched, criterion, specimen }) =>
-    searched === selectedResult.method && specimen
-      ? [
-          {
-            criterion: criterionName(criterion),
-            voters: specimen.voters,
-            onOpen: () => {
-              openSpecimen(specimen);
-              if (!playOpen) showStep("gallery");
+  // A method's smallest gallery failures. Opening one from the steps moves to
+  // the gallery; the playground shows the specimen's banner where it is.
+  const failuresOf = (method: VotingMethod): GalleryFailure[] =>
+    searches.flatMap(({ method: searched, criterion, specimen }) =>
+      searched === method && specimen
+        ? [
+            {
+              criterion: criterionName(criterion),
+              voters: specimen.voters,
+              onOpen: () => {
+                openSpecimen(specimen);
+                if (!playOpen) showStep("gallery");
+              },
             },
-          },
-        ]
-      : []
-  );
+          ]
+        : []
+    );
   const trace = (
     <div className={cn("transition-opacity", !showing && "opacity-55")}>
       <h3 className="mb-3 text-sm font-medium text-mi-ink">
         How {METHOD_META[selectedResult.method].label.toLowerCase()} counted
       </h3>
-      <MethodTrace result={selectedResult} resolution={resolution} failures={failures} />
+      <MethodTrace result={selectedResult} resolution={resolution} failures={failuresOf(selectedResult.method)} />
     </div>
   );
   const ballots = (
@@ -243,41 +254,58 @@ export function MethodsInstrument({
   );
 
   const countsCopy = countsClaim(resolution);
-  const headToHeadCopy = headToHeadClaim(resolution);
   const methodCount = numberWord(resolution.results.length);
+
+  // Chapter 1 walks one preset whatever the playground holds, from its
+  // stored count, so its steps never wait on the API
+  const walk = presets.find((preset) => preset.id === WALK_PRESET) ?? presets[0];
+  const ballotStep = (kind: BallotKind) => ({
+    title: `${BALLOT_RULES[kind].name} ballot`,
+    render: (number: string) => (
+      <StepFrame number={number} {...ballotCopy(kind, walk.resolution)}>
+        <BallotView kind={kind} profile={walk.profile} resolution={walk.resolution} />
+      </StepFrame>
+    ),
+  });
+  const countStep = (method: VotingMethod) => ({
+    title: METHOD_META[method].label,
+    render: (number: string) => (
+      <StepFrame number={number} {...countCopy(method, walk.resolution)}>
+        <CountView method={method} resolution={walk.resolution} failures={failuresOf(method)} />
+      </StepFrame>
+    ),
+  });
 
   // Each step's content, by id; CHAPTERS sets their order and numbers
   const stepContent: Record<StepId, { title: string; render: (number: string) => React.ReactNode }> = {
-    ballots: {
-      title: "Ballots",
+    voters: {
+      title: "The voters",
       render: (number) => (
-        <StepFrame
-          number={number}
-          transition="Start with what voters are asked."
-          title="Rated ballots hear how much, not just which order"
-          takeaway="The ballot model, not just the count, decides what score, approval and quadratic voting see."
-          intro="Each group of voters places the candidates on a scale from 0 to 10. A declared ballot model, sincere-v1, turns that placement into every kind of ballot the seven methods read."
-        >
-          {examples("ballots")}
-          {ballots}
+        <StepFrame number={number} {...votersCopy(walk.resolution)}>
+          <VotersView profile={walk.profile} />
         </StepFrame>
       ),
     },
+    "ballot-single": ballotStep("single"),
+    "count-plurality": countStep("plurality"),
+    "ballot-ranked": ballotStep("ranked"),
+    "count-irv": countStep("irv"),
+    "count-borda": countStep("borda"),
     "head-to-head": {
       title: "Head to head",
       render: (number) => (
-        <StepFrame
-          number={number}
-          transition="Ranked ballots also settle every two-way race."
-          title={headToHeadCopy.title}
-          takeaway={headToHeadCopy.takeaway}
-          intro="Every pair of candidates as a two-way race, decided by how many voters rank one above the other."
-        >
-          {examples("head-to-head")}
-          <div className="max-w-xl">{tournament}</div>
+        <StepFrame number={number} {...walkHeadToHead(walk.resolution)}>
+          <HeadToHeadView resolution={walk.resolution} />
         </StepFrame>
       ),
     },
+    "count-ranked-pairs": countStep("ranked_pairs"),
+    "ballot-approval": ballotStep("approval"),
+    "count-approval": countStep("approval"),
+    "ballot-score": ballotStep("score"),
+    "count-score": countStep("score"),
+    "ballot-quadratic": ballotStep("quadratic"),
+    "count-quadratic": countStep("quadratic"),
     comparison: {
       title: "Seven counts",
       render: (number) => (
@@ -288,16 +316,15 @@ export function MethodsInstrument({
           takeaway={countsCopy.takeaway}
           intro={
             <>
-              Choose a method to see how it reached its winner. Approval, score and quadratic
-              voting read each voter&apos;s 0 to 10 scale;{" "}
+              Choose a method to see how it reached its winner, or{" "}
               <button
                 type="button"
-                onClick={() => showStep("ballots")}
+                onClick={() => showStep("voters")}
                 className="underline decoration-mi-rule underline-offset-2 hover:decoration-mi-ink"
               >
-                Ballots shows how
-              </button>
-              .
+                walk through each ballot and count
+              </button>{" "}
+              again.
             </>
           }
         >
