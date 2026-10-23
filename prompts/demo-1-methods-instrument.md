@@ -61,7 +61,9 @@ Settled 2026-10-21:
   its middle steps load gallery specimens, so the tour is an index into the
   gallery rather than separate content.
 - **Opening preset is a majority cycle** (keeping the 2026-09-25 decision),
-  chosen so the ranked methods disagree.
+  chosen so the ranked methods disagree. *Revised 2026-10-23:* the page now
+  opens on center squeeze, whose Condorcet winner gives the first slide a
+  story to tell; the cycle is the second example (`demo-1-methods-narrative-proposal.md`).
 - **Style:** the "drafting table" direction (geometric, cool, flat primaries),
   borrowing the instrument direction's mono numerals and channel rows.
 - **Static-first for content:** presets and specimens are build-time

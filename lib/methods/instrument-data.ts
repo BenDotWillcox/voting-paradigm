@@ -3,6 +3,7 @@ import "server-only";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
+import type { ExampleSlide } from "@/lib/methods/sections";
 import type {
   AtlasCandidate,
   AtlasResponse,
@@ -25,6 +26,8 @@ export interface InstrumentPreset {
   id: string;
   label: string;
   description: string;
+  /** What to notice about this preset on each slide that shows it. */
+  notes: Record<ExampleSlide, string>;
   profile: UtilityProfile;
   resolution: ProfileResolveResponse;
 }
@@ -43,18 +46,34 @@ export interface InstrumentData {
 
 const ARTIFACTS = join(process.cwd(), "public", "data", "methods");
 
-const PRESET_COPY: Record<string, { label: string; description: string }> = {
-  "majority-cycle": {
-    label: "Majority cycle",
-    description:
-      "Every candidate loses one head-to-head race, and the seven counts pick three different winners.",
-  },
+// In display order: the first preset opens the page. Notes describe the
+// preset as built, so they show only while it is unedited.
+const PRESET_COPY: Record<string, Omit<InstrumentPreset, "id" | "profile" | "resolution">> = {
   "center-squeeze": {
     label: "Center squeeze",
     description:
       "C is everyone's acceptable middle: it beats both rivals head to head but has the fewest first choices.",
+    notes: {
+      counts:
+        "C is everyone's acceptable middle but has the fewest first choices, so plurality and instant runoff pass it over.",
+      "head-to-head": "C wins both of its two-way races, though fewer voters rank it first than either rival.",
+      ballots:
+        "C sits above most voters' average, so their approval ballots include it: approval elects C, where plurality elects A.",
+    },
+  },
+  "majority-cycle": {
+    label: "Majority cycle",
+    description:
+      "Every candidate loses one head-to-head race, and the seven counts pick three different winners.",
+    notes: {
+      counts: "Every candidate loses one two-way race, and the counts split three ways. Head to head shows the cycle.",
+      "head-to-head": "A beats B, B beats C, and C beats A: there is no top for the methods to find.",
+      ballots:
+        "Each voter's middle candidate sits exactly at their average, so approval approves only favorites and matches plurality.",
+    },
   },
 };
+const PRESET_ORDER = Object.keys(PRESET_COPY);
 
 interface PresetRecord {
   id: string;
@@ -76,14 +95,16 @@ export async function loadInstrumentData(): Promise<InstrumentData> {
   };
 
   return {
-    presets: presets.map((record) => {
-      const copy = PRESET_COPY[record.id];
-      const profile = record.resolution?.profile;
-      if (!copy || profile?.ballot_type !== "utility") {
-        throw new Error(`Preset ${record.id} is missing copy or a utility profile`);
-      }
-      return { id: record.id, ...copy, profile, resolution: record.resolution };
-    }),
+    presets: presets
+      .map((record) => {
+        const copy = PRESET_COPY[record.id];
+        const profile = record.resolution?.profile;
+        if (!copy || profile?.ballot_type !== "utility") {
+          throw new Error(`Preset ${record.id} is missing copy or a utility profile`);
+        }
+        return { id: record.id, ...copy, profile, resolution: record.resolution };
+      })
+      .sort((a, b) => PRESET_ORDER.indexOf(a.id) - PRESET_ORDER.indexOf(b.id)),
     searches,
     simulation: JSON.parse(simulationText) as SimulationSummary,
     presetsHash: manifest.outputs["presets.json"].slice(0, 12),

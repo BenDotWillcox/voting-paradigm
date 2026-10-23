@@ -58,7 +58,7 @@ export default async function MethodsPage({
         initialProfile={initialProfile}
         initialResolution={initialResolution}
         initialSpecimen={initialSpecimen}
-        initialSection={initialSpecimen ? "paradoxes" : isSection(section) ? section : "ballots"}
+        initialSection={initialSpecimen ? "paradoxes" : isSection(section) ? section : "counts"}
         initialPlay={play !== undefined || (p !== undefined && !initialSpecimen)}
         provenance={{ presetsHash: data.presetsHash, sourceHash: data.sourceHash }}
       />
