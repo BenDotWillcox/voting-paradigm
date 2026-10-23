@@ -144,7 +144,7 @@ export function ProfileEditor({
   );
 }
 
-function CountInput({
+export function CountInput({
   value,
   label,
   onChange,
@@ -187,7 +187,7 @@ function CountInput({
   );
 }
 
-function IconButton({
+export function IconButton({
   label,
   disabled,
   compact,

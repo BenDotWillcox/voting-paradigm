@@ -1,6 +1,8 @@
 # Demo 1: Voting methods as an instrument
 
-Status: design settled with Ben on 2026-10-21; slices A to I built. Supersedes
+Status: design settled with Ben on 2026-10-21; slices A to I built. The
+2026-10-23 revision (slides and a playground) is slices J to L; J is built.
+Supersedes
 Phase 2 of `prompts/storytelling-redesign.md`.
 
 ## Why an instrument, not an essay
@@ -76,7 +78,51 @@ Settled 2026-10-21:
 - **Python resolves live edits.** Presets and specimens stay static; revisit
   when the atlas needs in-browser resolution.
 
-## The page
+## Revision: slides and a playground
+
+Settled with Ben on 2026-10-23, after slices A to I. The instrument holds
+more than one page can explain. The editor, ballots, tournament, seven
+counts, traces, gallery, atlas and simulation share one long page and
+compete for attention, and no graph gets its own explanation. The revision
+keeps every piece and changes how they are presented.
+
+- **Sections become slides.** Below the header, a horizontal carousel shows
+  one section at a time, with arrows, dots, the arrow keys and swipe;
+  `?section=` links to a slide. Each slide pairs one graph with a short
+  explainer of how to read it and a row of examples. Each example loads an
+  interesting case into the graph, with a sentence on what to notice.
+- **Six slides** (first draft of the examples):
+
+  | Slide | Graph | Examples |
+  |---|---|---|
+  | Ballots | One voter type's utility track and the five ballots it casts under sincere-v1 | A clear favorite; a close second, at approval's threshold; an indifferent voter |
+  | Seven counts | The seven channels for one electorate, each opening its count | Majority cycle; center squeeze; a consensus where all seven agree |
+  | Head to head | The tournament graph and its margins | Majority cycle; a clear Condorcet winner; the center squeeze, whose Condorcet winner has the fewest first choices |
+  | Paradoxes | The gallery grid and the open specimen's before and after | Spoiler; teaming; monotonicity; quadratic monotonicity; approval's exact clone |
+  | Atlas | The main map and its thumbnails | Hub; center squeeze; clones; ring of five; spread out |
+  | At scale | Condorcet efficiency and the disagreement matrix | 3, 4 and 5 candidates; plurality against approval |
+
+  The six-step tour retires; its presets and specimens become examples on
+  the slides where they belong.
+- **"Try it yourself" is a bottom sheet.** A tab pinned to the bottom of
+  the screen pulls the full instrument up over the page, and closing it
+  returns to the slide. `?play` opens it directly, and `?p=` profile links
+  open it with that electorate. Any example, gallery specimen or atlas
+  point can be opened in the playground.
+- **Advanced controls.** By default the playground offers starting points
+  (presets, specimens, atlas points) and a count stepper for each voter
+  type. "Advanced controls" opens a side drawer with the full voter-type
+  editor: utility tracks, and adding or removing voter types and
+  candidates. It opens from the right on desktop, with the graphs reflowing
+  beside it, and from the bottom on phones. The graphs stay in view and
+  update as the electorate changes.
+- **One electorate, shared.** The slides and the playground read one
+  electorate state and one resolution cache, so an example opened in the
+  playground carries its counts with it and needs no API call.
+- **Unchanged:** the counts, the static artifacts, the API and the
+  drafting-table identity. The revision is presentation only.
+
+## The page, as first built (slices D to I)
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
@@ -555,6 +601,23 @@ I. **Home card.** Demo 1's card on the home page, in the drafting-table
    plurality, 61% under approval). Touch screens play it while it is on
    screen; reduced motion holds on plurality, and every share stays in the
    list. The maps are read from `atlas.json` and downsampled on the server.
+
+Revision (see Revision: slides and a playground):
+
+J. **Slides and playground.** One shared electorate state; the carousel
+   with six slides, each holding its graph and its current copy; the
+   playground sheet with starting points and count steppers; advanced
+   controls in a side drawer. The tour retires; the existing presets,
+   gallery, atlas layouts and simulation controls carry the slides until
+   their examples arrive. Built details: the slides sit in a scroll-snap
+   track (swipe and trackpads move between them) with a tablist for the
+   keyboard, so the arrow keys never conflict with the utility tracks or
+   the atlas; off-screen slides are inert. With the drawer open, the
+   playground's panels reflow by container width and put the seven counts
+   first, so every edit shows at once.
+K. **Explainers and examples, slides 1 to 3:** Ballots, Seven counts, Head
+   to head.
+L. **Explainers and examples, slides 4 to 6:** Paradoxes, Atlas, At scale.
 
 ## Toward a delegated agent
 
