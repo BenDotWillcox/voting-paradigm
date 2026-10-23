@@ -228,26 +228,35 @@ function ArrowButton({
 }
 
 /**
- * One slide's frame: a kicker, a title and an intro, the graph, and a side
- * column for the explainer.
+ * One slide's frame: a kicker with the transition from the slide before, the
+ * claim the graph proves and its takeaway, an intro on how to read the graph,
+ * the graph, and a side column for the explainer.
  */
 export function SlideFrame({
   number,
+  transition,
   title,
+  takeaway,
   intro,
   aside,
   children,
 }: {
   number: number;
+  transition?: React.ReactNode;
   title: string;
+  takeaway?: React.ReactNode;
   intro?: React.ReactNode;
   aside?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <div className="rounded-[4px] border border-mi-rule bg-mi-surface p-4 sm:p-6">
-      <p className="font-mi-mono text-xs text-mi-muted">{String(number).padStart(2, "0")}</p>
+      <p className="text-xs text-mi-muted">
+        <span className="font-mi-mono">{String(number).padStart(2, "0")}</span>
+        {transition ? <span> · {transition}</span> : null}
+      </p>
       <h2 className="mt-1 text-2xl font-semibold tracking-[-0.02em] text-mi-ink">{title}</h2>
+      {takeaway ? <p className="mt-2 max-w-3xl text-base leading-relaxed text-mi-ink">{takeaway}</p> : null}
       {intro ? <div className="mt-2 max-w-3xl text-sm leading-relaxed text-mi-ink-2">{intro}</div> : null}
       <div className={cn("mt-5 grid gap-6", aside && "lg:grid-cols-[minmax(0,1fr)_18rem]")}>
         <div className="min-w-0">{children}</div>

@@ -33,9 +33,9 @@ export function ParadoxGallery({
   return (
     <div className="space-y-4">
       <p className="max-w-3xl text-sm leading-relaxed text-mi-ink-2">
-        Every method fails some criterion. Each ✗ with a number is the smallest three-candidate
-        electorate an exhaustive search found where the method fails, re-checked against the
-        reference implementation; open it to load it above. A ✓ is a proof, not an empty search.
+        Each ✗ with a number is the smallest three-candidate electorate an exhaustive search
+        found where the method fails, re-checked against the reference implementation; open it
+        to see the failure above the table. A ✓ is a proof, not an empty search.
       </p>
       <p className="max-w-3xl text-xs leading-relaxed text-mi-muted">
         Approval, score and quadratic voting read utilities, so their rows search voter types:

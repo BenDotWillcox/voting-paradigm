@@ -157,7 +157,7 @@ export function Atlas({
         voters in {atlas.cloud.offsets.length} types, scattered around it. Their utility falls
         with distance, sincere-v1 turns it into ballots, and the cell takes the color of the
         winner. Drag a candidate and every map recounts when you let go; click a point to
-        load its electorate into the instrument above.
+        open its electorate in the playground.
       </p>
 
       <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Atlas layouts">

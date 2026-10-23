@@ -44,7 +44,7 @@ export function AtScale({ summary }: { summary: SimulationSummary }) {
         each with {counts.join(", ").replace(/, (\d+)$/, " and $1")} candidates. Every election
         draws its candidates and {config.voters} voters from the same Gaussian in the plane;
         utility falls with distance, {summary.ballot_model} casts the ballots, and the seven
-        methods count them exactly as above.
+        methods count them exactly as on the earlier slides.
       </p>
 
       <p className="text-sm text-mi-ink">

@@ -4,6 +4,7 @@ import { ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { isReference, type AtlasView } from "@/lib/methods/atlas";
+import { atScaleTakeaway, countsClaim, headToHeadClaim, numberWord } from "@/lib/methods/claims";
 import { METHOD_META } from "@/lib/methods/instrument";
 import { encodeProfile, specimenProfile } from "@/lib/methods/profile";
 import { SECTIONS, type SectionId } from "@/lib/methods/sections";
@@ -210,6 +211,10 @@ export function MethodsInstrument({
     />
   );
 
+  const countsCopy = countsClaim(resolution);
+  const headToHeadCopy = headToHeadClaim(resolution);
+  const methodCount = numberWord(resolution.results.length);
+
   const slides: Slide[] = [
     {
       id: "ballots",
@@ -217,8 +222,9 @@ export function MethodsInstrument({
       content: (
         <SlideFrame
           number={1}
-          title="Five ballots from one voter"
-          intro="Each group of voters places the candidates on a scale from 0 to 10. The sincere-v1 model turns that placement into every kind of ballot the seven methods read."
+          title="Rated ballots hear how much, not just which order"
+          takeaway="The ballot model, not just the count, decides what score, approval and quadratic voting see."
+          intro="Each group of voters places the candidates on a scale from 0 to 10. A declared ballot model, sincere-v1, turns that placement into every kind of ballot the seven methods read."
         >
           {electorateBar}
           {ballots}
@@ -231,8 +237,10 @@ export function MethodsInstrument({
       content: (
         <SlideFrame
           number={2}
-          title="Same voters, different winners"
-          intro="Seven methods count the same electorate. Choose one to see how it reached its winner."
+          transition={`Those ballots, counted ${methodCount} ways.`}
+          title={countsCopy.title}
+          takeaway={countsCopy.takeaway}
+          intro="Choose a method to see how it reached its winner."
         >
           {electorateBar}
           <div className="grid gap-6 lg:grid-cols-2">
@@ -248,7 +256,13 @@ export function MethodsInstrument({
       content: (
         <SlideFrame
           number={3}
-          title="Head to head"
+          transition={
+            winners.size > 1
+              ? "Why do the counts disagree? Look at the two-way races."
+              : "Why do the counts agree? Look at the two-way races."
+          }
+          title={headToHeadCopy.title}
+          takeaway={headToHeadCopy.takeaway}
           intro="Every pair of candidates as a two-way race, decided by how many voters rank one above the other."
         >
           {electorateBar}
@@ -262,8 +276,9 @@ export function MethodsInstrument({
       content: (
         <SlideFrame
           number={4}
-          title="Paradox gallery"
-          intro="The smallest elections in which each method fails a fairness criterion, found by exhaustive search."
+          transition="So far, one electorate. Now the worst electorate we could find for each method."
+          title="Every method fails a fairness test"
+          takeaway="Each numbered ✗ is a real election, and the number is how few voters it takes."
         >
           {specimenView && activeSearch?.specimen ? (
             <div className="mb-5 space-y-2">
@@ -291,7 +306,12 @@ export function MethodsInstrument({
       id: "atlas",
       title: "Atlas",
       content: (
-        <SlideFrame number={5} title="Atlas">
+        <SlideFrame
+          number={5}
+          transition="Those were worst cases. Here is every electorate in a plane at once."
+          title="Same candidates, same voters, different maps"
+          takeaway="Each method carves the same plane of voters into a different map of winners."
+        >
           <Atlas onLoadPoint={loadAtlasPoint} />
         </SlideFrame>
       ),
@@ -300,7 +320,12 @@ export function MethodsInstrument({
       id: "at-scale",
       title: "At scale",
       content: (
-        <SlideFrame number={6} title="At scale">
+        <SlideFrame
+          number={6}
+          transition="And in typical elections?"
+          title="In typical elections they still disagree"
+          takeaway={atScaleTakeaway(simulation)}
+        >
           <AtScale summary={simulation} />
         </SlideFrame>
       ),
@@ -315,10 +340,8 @@ export function MethodsInstrument({
           Same voters, different winners.
         </h1>
         <p className="mt-3 text-base leading-relaxed text-mi-ink-2 sm:text-lg">
-          Seven ways to count the same voters, one section at a time: how voters fill in
-          their ballots, how each method counts them, where majority rule breaks down, the
-          smallest elections in which each method fails a fairness test, who wins where across
-          a plane of voters, and how often the methods disagree.
+          Seven voting methods count the same voters and can elect different candidates. Every
+          one of them, somewhere, breaks a rule most people take for basic fairness.
         </p>
       </header>
 
@@ -326,11 +349,19 @@ export function MethodsInstrument({
         <SlideDeck slides={slides} index={section} onIndex={setSection} />
       </div>
 
-      <footer className="mt-10 border-t border-mi-rule pt-4 font-mi-mono text-xs leading-relaxed text-mi-muted">
-        Ballots: {resolution.ballot_model ?? "ranked input"} (sincere voters; rules on the Ballots
-        slide). Presets, specimens and atlas layouts: public/data/methods (presets sha256{" "}
-        {provenance.presetsHash}…), built from source {provenance.sourceHash}…. Edits: POST
-        /api/voting/profile/resolve. Ties: seeded random tiebreak, seed {resolution.tiebreak_seed}.
+      <footer className="mt-10 border-t border-mi-rule pt-4">
+        <details className="group">
+          <summary className="cursor-pointer text-sm text-mi-ink-2 hover:text-mi-ink">
+            Methods &amp; provenance
+          </summary>
+          <p className="mt-2 font-mi-mono text-xs leading-relaxed text-mi-muted">
+            Ballots: {resolution.ballot_model ?? "ranked input"} (sincere voters; rules on the
+            Ballots slide). Presets, specimens and atlas layouts: public/data/methods (presets
+            sha256 {provenance.presetsHash}…), built from source {provenance.sourceHash}…. Edits:
+            POST /api/voting/profile/resolve. Ties: seeded random tiebreak, seed{" "}
+            {resolution.tiebreak_seed}.
+          </p>
+        </details>
       </footer>
 
       <Playground
