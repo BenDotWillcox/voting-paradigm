@@ -175,6 +175,14 @@ needs an explicit yes:
    unedited, and a quiet "Explore it in the playground" link; the counts
    slide links forward to Ballots.
 3. New presets (consensus, clear Condorcet winner, ballot examples) and
-   slide-3 examples.
+   slide-3 examples. *Implemented
+   2026-10-23* with two authored presets in `scripts/build_methods_artifacts.py`:
+   a consensus (45 A>B>C, 30 B>A>C, 25 C>A>B: all seven elect A, a
+   Condorcet winner without a majority), which serves both the counts and
+   head-to-head slides, and three ballot shapes (every voter ranks A>B>C; B
+   at 20, 50 and 90), whose voter types are the ballots slide's examples:
+   clear favorite, indifferent middle, close second. Each slide has its own
+   example list (`SLIDE_EXAMPLES` in `lib/methods/instrument-data.ts`); a
+   preset outside a slide's list shows as an extra chip with its note.
 4. Collapse within slides: "About this method", criteria headers, gallery
    footnote and legend, atlas layout copy.

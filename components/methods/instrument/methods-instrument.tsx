@@ -7,7 +7,7 @@ import { isReference, type AtlasView } from "@/lib/methods/atlas";
 import { atScaleTakeaway, countsClaim, headToHeadClaim, numberWord } from "@/lib/methods/claims";
 import { METHOD_META } from "@/lib/methods/instrument";
 import { encodeProfile, specimenProfile } from "@/lib/methods/profile";
-import { SECTIONS, type ExampleSlide, type SectionId } from "@/lib/methods/sections";
+import { SECTIONS, type ExampleSlide, type SectionId, type SlideExample } from "@/lib/methods/sections";
 import { cn } from "@/lib/utils";
 import type {
   ProfileResolveResponse,
@@ -55,6 +55,7 @@ export interface SpecimenView {
  */
 export function MethodsInstrument({
   presets,
+  examples: slideExamples,
   searches,
   simulation,
   initialProfile,
@@ -65,6 +66,7 @@ export function MethodsInstrument({
   provenance,
 }: {
   presets: PresetOption[];
+  examples: Record<ExampleSlide, SlideExample[]>;
   searches: SpecimenSearch[];
   simulation: SimulationSummary;
   initialProfile: UtilityProfile;
@@ -128,6 +130,13 @@ export function MethodsInstrument({
     setVoterType(0);
   }
 
+  function openExample(example: SlideExample) {
+    const preset = presets.find((p) => p.id === example.presetId);
+    if (!preset) return;
+    openPreset(preset);
+    if (example.voterType !== undefined) setVoterType(example.voterType);
+  }
+
   function openSpecimen(specimen: Specimen, role?: SpecimenRole) {
     const shown = role ?? specimen.profiles[0].role;
     setAtlasPoint(null);
@@ -175,11 +184,13 @@ export function MethodsInstrument({
   const examples = (slide: ExampleSlide) => (
     <Examples
       slide={slide}
+      examples={slideExamples[slide]}
       presets={presets}
       activeKey={key}
+      selectedType={selectedType}
       origin={origin}
       status={<StatusNote status={status} showing={showing} />}
-      onPreset={openPreset}
+      onExample={openExample}
       onPlay={() => setPlayOpen(true)}
     />
   );
@@ -450,50 +461,68 @@ export function MethodsInstrument({
 }
 
 /**
- * A slide's examples: the presets to switch to, and what to notice about the
- * one showing on this slide. An electorate from elsewhere (a specimen, an
- * atlas point, an edit) shows as its origin instead.
+ * A slide's examples, and what to notice about the one showing. A preset that
+ * is not among this slide's examples still shows, as an extra chip with its
+ * note for this slide; an electorate from elsewhere (a specimen, an atlas
+ * point, an edit) shows as its origin instead.
  */
 function Examples({
   slide,
+  examples,
   presets,
   activeKey,
+  selectedType,
   origin,
   status,
-  onPreset,
+  onExample,
   onPlay,
 }: {
   slide: ExampleSlide;
+  examples: SlideExample[];
   presets: PresetOption[];
   activeKey: string;
+  selectedType: number;
   origin: string | null;
   status: React.ReactNode;
-  onPreset: (preset: PresetOption) => void;
+  onExample: (example: SlideExample) => void;
   onPlay: () => void;
 }) {
   const active = presets.find((preset) => encodeProfile(preset.profile) === activeKey);
-  const note = active
-    ? active.notes[slide]
-    : "Loaded from elsewhere on the page or edited in the playground; choose an example to return.";
+  const showing = examples.find(
+    (example) =>
+      example.presetId === active?.id &&
+      (example.voterType === undefined || example.voterType === selectedType)
+  );
+  const extra: SlideExample | null =
+    active && !examples.some((example) => example.presetId === active.id)
+      ? { presetId: active.id, label: active.label, note: active.notes[slide] }
+      : null;
+  const chips = extra ? [...examples, extra] : examples;
+  const pressed = showing ?? extra;
+  const note =
+    pressed?.note ??
+    (active
+      ? active.notes[slide]
+      : "Loaded from elsewhere on the page or edited in the playground; choose an example to return.");
 
   return (
     <div className="mb-5 space-y-2">
       <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Examples">
         <span className="text-xs text-mi-muted">Examples</span>
-        {presets.map((preset) => {
-          const pressed = preset === active;
+        {chips.map((chip) => {
+          const isPressed = chip === pressed;
           return (
             <button
-              key={preset.id}
+              key={`${chip.presetId}-${chip.voterType ?? ""}`}
               type="button"
-              aria-pressed={pressed}
-              onClick={() => onPreset(preset)}
+              aria-pressed={isPressed}
+              onClick={() => onExample(chip)}
               className={cn(
                 "rounded-[3px] border px-2.5 py-1 text-sm",
-                pressed ? "border-mi-ink bg-mi-ink text-mi-surface" : "border-mi-rule text-mi-ink hover:border-mi-ink"
+                isPressed ? "border-mi-ink bg-mi-ink text-mi-surface" : "border-mi-rule text-mi-ink hover:border-mi-ink"
               )}
             >
-              {preset.label}
+              {chip.label}
             </button>
           );
         })}
