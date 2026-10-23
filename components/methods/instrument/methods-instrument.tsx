@@ -8,7 +8,7 @@ import { atScaleTakeaway, countsClaim, headToHeadClaim, numberWord } from "@/lib
 import { CRITERIA } from "@/lib/methods/gallery";
 import { METHOD_META } from "@/lib/methods/instrument";
 import { encodeProfile, specimenProfile } from "@/lib/methods/profile";
-import { SECTIONS, type ExampleSlide, type SectionId, type SlideExample } from "@/lib/methods/sections";
+import { CHAPTERS, STEPS, type ExampleSlide, type SlideExample, type StepId } from "@/lib/methods/sections";
 import { cn } from "@/lib/utils";
 import type {
   ProfileResolveResponse,
@@ -28,7 +28,7 @@ import { MethodTrace, type GalleryFailure } from "./method-trace";
 import { ParadoxGallery } from "./paradox-gallery";
 import { Playground } from "./playground";
 import { ProfileEditor } from "./profile-editor";
-import { SlideDeck, SlideFrame, type Slide } from "./slide-deck";
+import { StepDeck, StepFrame, type Step } from "./step-deck";
 import { SpecimenBanner } from "./specimen-banner";
 import { TournamentGraph } from "./tournament-graph";
 import { useElectorate, type ElectorateStatus } from "./use-electorate";
@@ -49,10 +49,10 @@ export interface SpecimenView {
 }
 
 /**
- * The methods instrument: six sections as slides (ballots, the seven counts,
- * head to head, the paradox gallery, the atlas, and the simulation), and a
- * playground that pulls up from the bottom of the screen. The slides and the
- * playground share one electorate and its count.
+ * The methods instrument: chapters of steps (lib/methods/sections.ts), one
+ * step on screen at a time, and a playground that pulls up from the bottom of
+ * the screen. The steps and the playground share one electorate and its
+ * count.
  */
 export function MethodsInstrument({
   presets,
@@ -62,7 +62,7 @@ export function MethodsInstrument({
   initialProfile,
   initialResolution,
   initialSpecimen,
-  initialSection,
+  initialStep,
   initialPlay,
   provenance,
 }: {
@@ -73,7 +73,7 @@ export function MethodsInstrument({
   initialProfile: UtilityProfile;
   initialResolution: ProfileResolveResponse | null;
   initialSpecimen: SpecimenView | null;
-  initialSection: SectionId;
+  initialStep: StepId;
   initialPlay: boolean;
   provenance: { presetsHash: string; sourceHash: string };
 }) {
@@ -90,7 +90,8 @@ export function MethodsInstrument({
     [searches]
   );
 
-  const [section, setSection] = useState(() => SECTIONS.indexOf(initialSection));
+  const [stepIndex, setStepIndex] = useState(() => STEPS.indexOf(initialStep));
+  const showStep = (id: StepId) => setStepIndex(STEPS.indexOf(id));
   const [method, setMethod] = useState<VotingMethod>(
     () => specimens.get(initialSpecimen?.id ?? "")?.specimen?.method ?? "irv"
   );
@@ -106,8 +107,8 @@ export function MethodsInstrument({
 
   useEffect(() => {
     const url = new URL(window.location.href);
-    for (const name of ["p", "s", "v", "section", "play"]) url.searchParams.delete(name);
-    if (section > 0) url.searchParams.set("section", SECTIONS[section]);
+    for (const name of ["p", "s", "v", "step", "section", "play"]) url.searchParams.delete(name);
+    if (stepIndex > 0) url.searchParams.set("step", STEPS[stepIndex]);
     if (specimenView) {
       url.searchParams.set("s", specimenView.id);
       url.searchParams.set("v", specimenView.role);
@@ -116,7 +117,7 @@ export function MethodsInstrument({
     }
     if (playOpen) url.searchParams.set("play", "1");
     window.history.replaceState(null, "", url);
-  }, [key, specimenView, section, playOpen, defaultKey]);
+  }, [key, specimenView, stepIndex, playOpen, defaultKey]);
 
   function edit(next: UtilityProfile) {
     electorate.load(next);
@@ -201,7 +202,7 @@ export function MethodsInstrument({
       <Channels resolution={resolution} selected={method} onSelect={setMethod} />
     </div>
   );
-  // Opening a failure from the slides moves to the gallery; the playground
+  // Opening a failure from the steps moves to the gallery; the playground
   // shows the specimen's banner where it is
   const failures: GalleryFailure[] = searches.flatMap(({ method: searched, criterion, specimen }) =>
     searched === selectedResult.method && specimen
@@ -211,7 +212,7 @@ export function MethodsInstrument({
             voters: specimen.voters,
             onOpen: () => {
               openSpecimen(specimen);
-              if (!playOpen) setSection(SECTIONS.indexOf("paradoxes"));
+              if (!playOpen) showStep("gallery");
             },
           },
         ]
@@ -245,13 +246,43 @@ export function MethodsInstrument({
   const headToHeadCopy = headToHeadClaim(resolution);
   const methodCount = numberWord(resolution.results.length);
 
-  const slides: Slide[] = [
-    {
-      id: "counts",
+  // Each step's content, by id; CHAPTERS sets their order and numbers
+  const stepContent: Record<StepId, { title: string; render: (number: string) => React.ReactNode }> = {
+    ballots: {
+      title: "Ballots",
+      render: (number) => (
+        <StepFrame
+          number={number}
+          transition="Start with what voters are asked."
+          title="Rated ballots hear how much, not just which order"
+          takeaway="The ballot model, not just the count, decides what score, approval and quadratic voting see."
+          intro="Each group of voters places the candidates on a scale from 0 to 10. A declared ballot model, sincere-v1, turns that placement into every kind of ballot the seven methods read."
+        >
+          {examples("ballots")}
+          {ballots}
+        </StepFrame>
+      ),
+    },
+    "head-to-head": {
+      title: "Head to head",
+      render: (number) => (
+        <StepFrame
+          number={number}
+          transition="Ranked ballots also settle every two-way race."
+          title={headToHeadCopy.title}
+          takeaway={headToHeadCopy.takeaway}
+          intro="Every pair of candidates as a two-way race, decided by how many voters rank one above the other."
+        >
+          {examples("head-to-head")}
+          <div className="max-w-xl">{tournament}</div>
+        </StepFrame>
+      ),
+    },
+    comparison: {
       title: "Seven counts",
-      content: (
-        <SlideFrame
-          number={1}
+      render: (number) => (
+        <StepFrame
+          number={number}
           transition={`One electorate, counted ${methodCount} ways.`}
           title={countsCopy.title}
           takeaway={countsCopy.takeaway}
@@ -261,7 +292,7 @@ export function MethodsInstrument({
               voting read each voter&apos;s 0 to 10 scale;{" "}
               <button
                 type="button"
-                onClick={() => setSection(SECTIONS.indexOf("ballots"))}
+                onClick={() => showStep("ballots")}
                 className="underline decoration-mi-rule underline-offset-2 hover:decoration-mi-ink"
               >
                 Ballots shows how
@@ -275,51 +306,14 @@ export function MethodsInstrument({
             {counts}
             {trace}
           </div>
-        </SlideFrame>
+        </StepFrame>
       ),
     },
-    {
-      id: "head-to-head",
-      title: "Head to head",
-      content: (
-        <SlideFrame
-          number={2}
-          transition={
-            winners.size > 1
-              ? "Why do the counts disagree? Look at the two-way races."
-              : "Why do the counts agree? Look at the two-way races."
-          }
-          title={headToHeadCopy.title}
-          takeaway={headToHeadCopy.takeaway}
-          intro="Every pair of candidates as a two-way race, decided by how many voters rank one above the other."
-        >
-          {examples("head-to-head")}
-          <div className="max-w-xl">{tournament}</div>
-        </SlideFrame>
-      ),
-    },
-    {
-      id: "ballots",
-      title: "Ballots",
-      content: (
-        <SlideFrame
-          number={3}
-          transition="How does a voter's 0 to 10 scale become each ballot?"
-          title="Rated ballots hear how much, not just which order"
-          takeaway="The ballot model, not just the count, decides what score, approval and quadratic voting see."
-          intro="Each group of voters places the candidates on a scale from 0 to 10. A declared ballot model, sincere-v1, turns that placement into every kind of ballot the seven methods read."
-        >
-          {examples("ballots")}
-          {ballots}
-        </SlideFrame>
-      ),
-    },
-    {
-      id: "paradoxes",
-      title: "Paradoxes",
-      content: (
-        <SlideFrame
-          number={4}
+    gallery: {
+      title: "Paradox gallery",
+      render: (number) => (
+        <StepFrame
+          number={number}
           transition="So far, one electorate. Now the worst electorate we could find for each method."
           title="Every method fails a fairness test"
           takeaway="Each numbered ✗ is a real election, and the number is how few voters it takes."
@@ -343,54 +337,75 @@ export function MethodsInstrument({
             activeSpecimen={specimenView?.id ?? null}
             onOpen={(specimen) => openSpecimen(specimen)}
           />
-        </SlideFrame>
+        </StepFrame>
       ),
     },
-    {
-      id: "atlas",
+    atlas: {
       title: "Atlas",
-      content: (
-        <SlideFrame
-          number={5}
+      render: (number) => (
+        <StepFrame
+          number={number}
           transition="Those were worst cases. Here is every electorate in a plane at once."
           title="Same candidates, same voters, different maps"
           takeaway="Each method carves the same plane of voters into a different map of winners."
         >
           <Atlas onLoadPoint={loadAtlasPoint} />
-        </SlideFrame>
+        </StepFrame>
       ),
     },
-    {
-      id: "at-scale",
+    "at-scale": {
       title: "At scale",
-      content: (
-        <SlideFrame
-          number={6}
+      render: (number) => (
+        <StepFrame
+          number={number}
           transition="And in typical elections?"
           title="In typical elections they still disagree"
           takeaway={atScaleTakeaway(simulation)}
         >
           <AtScale summary={simulation} />
-        </SlideFrame>
+        </StepFrame>
       ),
     },
-  ];
+  };
+  const steps: Step[] = CHAPTERS.flatMap((chapter, at) =>
+    chapter.steps.map((id, within) => ({
+      id,
+      chapter: at,
+      title: stepContent[id].title,
+      content: stepContent[id].render(`${at + 1}.${within + 1}`),
+    }))
+  );
 
   return (
-    <div className="mx-auto max-w-6xl px-4 pt-8 pb-28 sm:pt-12">
+    <div className="mx-auto max-w-6xl px-4 pt-6 pb-28 sm:pt-8">
+      {/* The full title opens the first step; after it, the kicker alone
+          keeps the page's name and leaves the screen to the steps */}
       <header className="max-w-3xl">
-        <p className="font-mi-mono text-xs tracking-wide text-mi-muted">Voting methods · instrument</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-[-0.02em] text-mi-ink sm:text-[2.75rem] sm:leading-[1.08]">
-          Same voters, different winners.
-        </h1>
-        <p className="mt-3 text-base leading-relaxed text-mi-ink-2 sm:text-lg">
-          Seven voting methods count the same voters and can elect different candidates. Every
-          one of them, somewhere, breaks a rule most people take for basic fairness.
+        <p className="font-mi-mono text-xs tracking-wide text-mi-muted">
+          Voting methods · instrument
+          {stepIndex > 0 ? <span className="text-mi-ink-2"> · Same voters, different winners</span> : null}
         </p>
+        {stepIndex === 0 ? (
+          <>
+            <h1 className="mt-2 text-3xl font-semibold tracking-[-0.02em] text-mi-ink sm:text-[2.75rem] sm:leading-[1.08]">
+              Same voters, different winners.
+            </h1>
+            <p className="mt-3 text-base leading-relaxed text-mi-ink-2 sm:text-lg">
+              Seven voting methods count the same voters and can elect different candidates. Every
+              one of them, somewhere, breaks a rule most people take for basic fairness.
+            </p>
+          </>
+        ) : null}
       </header>
 
-      <div className="mt-8">
-        <SlideDeck slides={slides} index={section} onIndex={setSection} />
+      <div className={stepIndex === 0 ? "mt-6" : "mt-3"}>
+        <StepDeck
+          chapters={CHAPTERS.map((chapter) => chapter.title)}
+          steps={steps}
+          index={stepIndex}
+          onIndex={setStepIndex}
+          keys={!playOpen}
+        />
       </div>
 
       <footer className="mt-10 border-t border-mi-rule pt-4">
@@ -400,7 +415,7 @@ export function MethodsInstrument({
           </summary>
           <p className="mt-2 font-mi-mono text-xs leading-relaxed text-mi-muted">
             Ballots: {resolution.ballot_model ?? "ranked input"} (sincere voters; rules on the
-            Ballots slide). Presets, specimens and atlas layouts: public/data/methods (presets
+            Ballots step). Presets, specimens and atlas layouts: public/data/methods (presets
             sha256 {provenance.presetsHash}…), built from source {provenance.sourceHash}…. Edits:
             POST /api/voting/profile/resolve. Ties: seeded random tiebreak, seed{" "}
             {resolution.tiebreak_seed}.
@@ -436,7 +451,7 @@ export function MethodsInstrument({
               types={profile.rows.length}
               onBack={() => {
                 setPlayOpen(false);
-                setSection(SECTIONS.indexOf("atlas"));
+                showStep("atlas");
               }}
               onClose={() => setAtlasPoint(null)}
             />
