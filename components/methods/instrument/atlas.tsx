@@ -16,6 +16,7 @@ import {
   shares,
   viewCells,
   viewLabel,
+  viewTieCells,
   viewTies,
   type AtlasLayout,
   type AtlasView,
@@ -24,6 +25,7 @@ import { cn } from "@/lib/utils";
 import type { AtlasCandidate, AtlasResponse, ProfileResolveResponse } from "@/types/methods";
 
 import { CandidateGlyph, CandidateMark } from "./glyph";
+import { MapCanvas, disagreementShade } from "./map-canvas";
 
 // Curated layouts, mapped at build time (scripts/build_methods_artifacts.py)
 const ATLAS_DATA = "/data/methods/atlas.json";
@@ -63,7 +65,6 @@ export function Atlas({
   const [loadingPoint, setLoadingPoint] = useState(false);
   const cache = useRef(new Map<string, AtlasResponse>());
   const latest = useRef(0);
-  const palette = usePalette();
 
   useEffect(() => {
     let cancelled = false;
@@ -196,7 +197,6 @@ export function Atlas({
             atlas={atlas}
             view={view}
             positions={positions}
-            palette={palette}
             cell={cell}
             stale={dragging || status.kind === "counting"}
             onMove={setPositions}
@@ -220,7 +220,6 @@ export function Atlas({
             title="Methods"
             views={ATLAS_METHOD_VIEWS}
             atlas={atlas}
-            palette={palette}
             selected={view}
             onSelect={setView}
           />
@@ -228,7 +227,6 @@ export function Atlas({
             title="References"
             views={ATLAS_REFERENCES.map((r) => r.id)}
             atlas={atlas}
-            palette={palette}
             selected={view}
             onSelect={setView}
           />
@@ -250,7 +248,6 @@ function MainMap({
   atlas,
   view,
   positions,
-  palette,
   cell,
   stale,
   onMove,
@@ -260,7 +257,6 @@ function MainMap({
   atlas: AtlasResponse;
   view: AtlasView;
   positions: AtlasCandidate[];
-  palette: Palette | null;
   cell: number | null;
   stale: boolean;
   onMove: (positions: AtlasCandidate[]) => void;
@@ -322,9 +318,10 @@ function MainMap({
       }}
     >
       <MapCanvas
-        atlas={atlas}
-        view={view}
-        palette={palette}
+        cells={viewCells(atlas, view)}
+        size={atlas.size}
+        ties={viewTieCells(atlas, view)}
+        kind={view === "disagreement" ? "disagreement" : "winners"}
         label={`${label} map`}
         className={cn("absolute inset-0 transition-opacity", stale && "opacity-45")}
       />
@@ -403,14 +400,12 @@ function ThumbGroup({
   title,
   views,
   atlas,
-  palette,
   selected,
   onSelect,
 }: {
   title: string;
   views: AtlasView[];
   atlas: AtlasResponse;
-  palette: Palette | null;
   selected: AtlasView;
   onSelect: (view: AtlasView) => void;
 }) {
@@ -431,7 +426,13 @@ function ThumbGroup({
             )}
           >
             <span className="relative block aspect-square w-full">
-              <MapCanvas atlas={atlas} view={view} palette={palette} className="absolute inset-0" />
+              <MapCanvas
+                cells={viewCells(atlas, view)}
+                size={atlas.size}
+                ties={viewTieCells(atlas, view)}
+                kind={view === "disagreement" ? "disagreement" : "winners"}
+                className="absolute inset-0"
+              />
             </span>
             <span className="mt-1 block truncate text-xs text-mi-ink">{viewLabel(view)}</span>
           </button>
@@ -540,111 +541,6 @@ export function AtlasPointBanner({
       </p>
     </section>
   );
-}
-
-// ---------------------------------------------------------------------------
-// Drawing
-// ---------------------------------------------------------------------------
-
-type Rgb = [number, number, number];
-
-interface Palette {
-  candidates: Record<string, Rgb>;
-  surface: Rgb;
-  ink: Rgb;
-}
-
-// How far toward the surface a tiebreak-decided cell is lightened
-const TIE_FADE = 0.55;
-
-/** One map as a size × size image, scaled up by CSS with crisp cells. */
-function MapCanvas({
-  atlas,
-  view,
-  palette,
-  label,
-  className,
-}: {
-  atlas: AtlasResponse;
-  view: AtlasView;
-  palette: Palette | null;
-  label?: string;
-  className?: string;
-}) {
-  const canvas = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const element = canvas.current;
-    const context = element?.getContext("2d");
-    if (!element || !context || !palette) return;
-    const size = atlas.size;
-    const cells = viewCells(atlas, view);
-    const ties = viewTies(atlas, view);
-    element.width = size;
-    element.height = size;
-    const image = context.createImageData(size, size);
-    for (let i = 0; i < cells.length; i++) {
-      const value = cells[i];
-      let color: Rgb;
-      if (view === "disagreement") color = mix(palette.surface, palette.ink, disagreementShade(Number(value)));
-      else if (value === "-") color = mix(palette.surface, palette.ink, 0.08);
-      else color = palette.candidates[value] ?? palette.ink;
-      if (ties.has(i)) color = mix(color, palette.surface, TIE_FADE);
-      image.data.set([color[0], color[1], color[2], 255], i * 4);
-    }
-    context.putImageData(image, 0, 0);
-  }, [atlas, view, palette]);
-
-  return (
-    <canvas
-      ref={canvas}
-      role={label ? "img" : undefined}
-      aria-label={label}
-      aria-hidden={label ? undefined : true}
-      className={cn("h-full w-full [image-rendering:pixelated]", className)}
-    />
-  );
-}
-
-/** The candidate colors and surfaces, read from the live theme tokens. */
-function usePalette(): Palette | null {
-  const [palette, setPalette] = useState<Palette | null>(null);
-  useEffect(() => {
-    const read = () => {
-      const root = document.querySelector(".methods-instrument") ?? document.documentElement;
-      const style = getComputedStyle(root);
-      const color = (name: string): Rgb => parseHex(style.getPropertyValue(name));
-      setPalette({
-        candidates: Object.fromEntries(
-          ["A", "B", "C", "D", "E"].map((id) => [id, color(`--mi-cand-${id.toLowerCase()}`)])
-        ),
-        surface: color("--mi-surface"),
-        ink: color("--mi-ink"),
-      });
-    };
-    read();
-    // Dark mode is a class on <html>; redraw when it changes
-    const observer = new MutationObserver(read);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    return () => observer.disconnect();
-  }, []);
-  return palette;
-}
-
-function parseHex(value: string): Rgb {
-  const match = /^#?([0-9a-f]{6})$/i.exec(value.trim());
-  if (!match) return [128, 128, 128];
-  const n = parseInt(match[1], 16);
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-}
-
-function mix(from: Rgb, to: Rgb, amount: number): Rgb {
-  return [0, 1, 2].map((i) => Math.round(from[i] + (to[i] - from[i]) * amount)) as Rgb;
-}
-
-/** Ink coverage for a disagreement count: one winner is blank, five nearly solid. */
-function disagreementShade(count: number): number {
-  return Math.min(0.85, Math.max(0, (count - 1) * 0.24));
 }
 
 function disagreementCss(count: number): string {

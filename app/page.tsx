@@ -1,4 +1,4 @@
-import type * as React from "react";
+import * as React from "react";
 import Link from "next/link";
 import { ArrowRight, Bot, Landmark, Map, Network, Vote } from "lucide-react";
 import {
@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ApportionmentCard } from "@/components/home/apportionment-card";
+import { MethodsCard } from "@/components/home/methods-card";
 import {
   showcaseData,
   statusLabel,
@@ -17,23 +18,30 @@ import {
   type DemoStatus,
   type ShowcaseDemo,
 } from "@/components/home/demo-types";
+import { loadHomeCardAtlas, type HomeCardAtlas } from "@/lib/methods/instrument-data";
 
 /**
  * Demos with their own animated card in the demo's visual identity; the
- * rest use the shared neutral card until theirs is built.
+ * rest use the shared neutral card until theirs is built. The methods card
+ * draws the atlas's hub maps, read from the build artifacts on the server.
  */
-const showcaseCards: Partial<Record<number, React.ComponentType<{ demo: ShowcaseDemo }>>> = {
-  4: ApportionmentCard,
-};
+function showcaseCards(
+  methodsAtlas: HomeCardAtlas
+): Partial<Record<number, (demo: ShowcaseDemo) => React.ReactNode>> {
+  return {
+    1: (demo) => <MethodsCard demo={demo} atlas={methodsAtlas} />,
+    4: (demo) => <ApportionmentCard demo={demo} />,
+  };
+}
 
 const demos: Demo[] = [
   {
     number: 1,
-    title: "Voting methods comparison",
-    tagline: "Same ballots, different methods, different winners.",
+    title: "Voting methods",
+    tagline: "Same voters, different winners.",
     description:
-      "Run the same set of ballots through plurality, IRV, Borda, Ranked Pairs, Score, Approval, and Quadratic — and see how the choice of method changes who wins.",
-    showcase: ["Voting theory", "Electoral criteria", "Reproducibility"],
+      "An instrument for seven voting methods. Edit an electorate and watch plurality, instant runoff, Borda, Ranked Pairs, approval, score and quadratic voting count it side by side, open the smallest elections in which each fails a fairness criterion, map who wins where across a plane of voters, and read 30,000 simulated elections.",
+    showcase: ["Voting theory", "Exhaustive search", "Spatial models", "Simulation"],
     href: "/methods",
     status: "live",
     Icon: Vote,
@@ -107,7 +115,8 @@ const statusVariant: Record<
   planned: "outline",
 };
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const cards = showcaseCards(await loadHomeCardAtlas());
   return (
     <div className="container mx-auto px-4 py-12 max-w-5xl">
       <header className="mb-12 space-y-4">
@@ -130,9 +139,9 @@ export default function LandingPage() {
 
       <div className="grid gap-6 sm:grid-cols-2">
         {demos.map((demo) => {
-          const ShowcaseCard = showcaseCards[demo.number];
-          return ShowcaseCard ? (
-            <ShowcaseCard key={demo.number} demo={showcaseData(demo)} />
+          const showcase = cards[demo.number];
+          return showcase ? (
+            <React.Fragment key={demo.number}>{showcase(showcaseData(demo))}</React.Fragment>
           ) : (
             <DemoCard key={demo.number} demo={demo} />
           );

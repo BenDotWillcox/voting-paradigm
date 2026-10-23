@@ -60,10 +60,16 @@ export function viewCells(atlas: AtlasResponse, view: AtlasView): string {
   return atlas.maps.find((m) => m.method === view)?.winners ?? "";
 }
 
+const NO_TIES: readonly number[] = [];
+
 /** Cells where a tiebreak decided the winner; empty for reference views. */
+export function viewTieCells(atlas: AtlasResponse, view: AtlasView): readonly number[] {
+  if (isReference(view)) return NO_TIES;
+  return atlas.maps.find((m) => m.method === view)?.ties ?? NO_TIES;
+}
+
 export function viewTies(atlas: AtlasResponse, view: AtlasView): Set<number> {
-  if (isReference(view)) return new Set();
-  return new Set(atlas.maps.find((m) => m.method === view)?.ties ?? []);
+  return new Set(viewTieCells(atlas, view));
 }
 
 /** Share of the cells showing each character. */

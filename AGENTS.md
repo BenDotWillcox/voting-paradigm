@@ -23,7 +23,7 @@ Each demo is a top-level route in the web app and a domain package on the Python
 
 | # | Demo | Route | Status | Core showcase |
 |---|------|-------|--------|---------------|
-| 1 | **Voting methods comparison** — same ballots, multiple resolution methods, side-by-side winners | `/methods` | Voting package complete; UI in progress | Voting theory rigor, electoral criteria, reproducibility |
+| 1 | **Voting methods comparison** — same ballots, multiple resolution methods, side-by-side winners | `/methods` | Instrument, paradox gallery, atlas and simulation built | Voting theory rigor, electoral criteria, reproducibility |
 | 2 | **Agent voting via preference models** — LLM-elicited preference posterior; agent casts a ballot under uncertainty | `/preferences` | In progress | Bayesian inference, embeddings, active learning, LLM orchestration |
 | 3 | **Algorithmic districting** — fair, transparent district maps under explicit constraints | `/districts` | Apportionment slice live; district polygons planned | Optimization, graph algorithms, geo data, fairness metrics |
 | 4 | **Liquid democracy** — delegation graphs, transitive trust, topic-conditional delegates | `/delegation` | Planned | Network analysis, simulation, dynamics on graphs |
@@ -381,13 +381,13 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 - Instrument slice F: rated gallery rows. Approval, score and quadratic voting are searched over 18 voter types (each ranking with its middle candidate at 25, 50 or 75) whose ballots sincere-v1 casts (`voting/search/rated.py`, a matrix-total kernel tested against the reference methods; utility transformations with exact clones in `voting/criteria/utility_transformations.py`); `certify()` re-resolves every rated specimen, and specimens record `ballot_type` and `ballot_model`. The gallery shows all seven methods in two groups, with proofs for the rated passes and one open cell (quadratic participation); rated specimens load with their utilities as found. Quadratic totals now follow candidate order, so its traces and the built artifacts no longer depend on string hashing.
 - Instrument slice G: the atlas, Yee's spatial diagrams for all seven methods, as a section of `/methods`. Each cell of a 64 × 64 grid is the same cloud of 95 voters (19 voter types on a sunflower spiral, spread 0.16) centered there, with utility linear in distance (`voting/spatial/`); the reference methods count every cell exactly as the instrument would, with identical ballots counted once. Condorcet, least-distance and disagreement reference maps; tie cells drawn lighter and counted apart in area shares. `POST /api/voting/atlas` recounts a dragged layout, `POST /api/voting/atlas/point` resolves one cell for the instrument, and five curated layouts ship in `public/data/methods/atlas.json`, with tests holding each caption's claims to that file.
 - Instrument slice H: the methods simulation. `voting/spatial/sampling.py` draws seeded two-dimensional spatial elections (candidates, then voters, from one standard Gaussian) as utility profiles, and `voting/spatial/counting.py` (`ProfileCounter`, now shared with the atlas) counts them exactly as the instrument does. `python -m eval.run_methods_simulation` runs 10,000 elections each with 3, 4 and 5 candidates and 101 voters, seeded per election, and writes `eval/benchmarks/methods_simulation_v1/` (config, per-election rows, a summary with 95% Wilson intervals, provenance, README) plus `public/data/methods/simulation.json`. An "At scale" section on `/methods` shows Condorcet efficiency and pairwise disagreement, with a table view of every number.
+- Instrument slice I: demo 1's home card (`components/home/methods-card.tsx`) in the instrument's drafting-table identity. The atlas's hub layout steps through the seven methods' maps on hover or focus (in view on touch screens; held on plurality under reduced motion) beside a list of D's outright share under each, read and downsampled from `atlas.json` on the server (`loadHomeCardAtlas`). The atlas's map renderer moved to `components/methods/instrument/map-canvas.tsx`, and the showcase cards share their motion hooks (`components/home/card-hooks.ts`).
 
 **In progress (this branch):**
-- Portfolio-facing methods comparison explorer
 - Demo 3 districting shell with apportionment-driven seat counts
 
 **Next:**
-1. Finish the `/methods` instrument with slice I of `prompts/demo-1-methods-instrument.md`, the home card.
+1. Demo 1's instrument slices are complete. Follow-ups, if wanted, are listed under the simulation's "Not in this study" and "Toward a delegated agent" in `prompts/demo-1-methods-instrument.md`.
 2. Replace curated method scenarios with persisted `resolution_run` rows when the demo needs saved runs
 3. Add ballot-measure queries/actions only when a portfolio demo has a concrete persisted workflow for them
 

@@ -1,6 +1,6 @@
 # Demo 1: Voting methods as an instrument
 
-Status: design settled with Ben on 2026-10-21; slices A to H built. Supersedes
+Status: design settled with Ben on 2026-10-21; slices A to I built. Supersedes
 Phase 2 of `prompts/storytelling-redesign.md`.
 
 ## Why an instrument, not an essay
@@ -549,7 +549,12 @@ H. **Simulation.** Disagreement rates and Condorcet efficiency over
    benchmark in `eval/` and an "At scale" section on `/methods`. Electorate
    generators are seeded samplers that return profiles, so they can double
    as an agent's beliefs about other voters.
-I. **Home card.**
+I. **Home card.** Demo 1's card on the home page, in the drafting-table
+   identity: the atlas's hub layout steps through the seven methods' maps on
+   hover or focus, beside a list of D's outright share under each (2.5% under
+   plurality, 61% under approval). Touch screens play it while it is on
+   screen; reduced motion holds on plurality, and every share stays in the
+   list. The maps are read from `atlas.json` and downsampled on the server.
 
 ## Toward a delegated agent
 

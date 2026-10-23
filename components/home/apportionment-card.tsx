@@ -12,6 +12,7 @@ import { storySerif } from "@/lib/story/fonts";
 import { hemicycleLayout, type SeatDot } from "@/lib/story/hemicycle";
 import { cn } from "@/lib/utils";
 
+import { useCanHover, useInView } from "./card-hooks";
 import { statusLabel, type ShowcaseDemo } from "./demo-types";
 
 /**
@@ -167,32 +168,4 @@ export function ApportionmentCard({ demo }: { demo: ShowcaseDemo }) {
   ) : (
     card
   );
-}
-
-/** Whether the primary pointer can hover (false on touch screens). */
-function useCanHover(): boolean {
-  return React.useSyncExternalStore(
-    (onChange) => {
-      const query = window.matchMedia("(hover: hover)");
-      query.addEventListener("change", onChange);
-      return () => query.removeEventListener("change", onChange);
-    },
-    () => window.matchMedia("(hover: hover)").matches,
-    () => true
-  );
-}
-
-/** Whether the element is on screen, so the loop only runs while seen. */
-function useInView<T extends Element>(): { ref: React.RefCallback<T>; inView: boolean } {
-  const [node, setNode] = React.useState<T | null>(null);
-  const [inView, setInView] = React.useState(false);
-  React.useEffect(() => {
-    if (!node) return;
-    const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), {
-      threshold: 0.35,
-    });
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [node]);
-  return { ref: setNode, inView };
 }
