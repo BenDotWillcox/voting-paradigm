@@ -3,13 +3,19 @@ import "server-only";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import type { ProfileResolveResponse, SpecimenSearch, UtilityProfile } from "@/types/methods";
+import type {
+  ProfileResolveResponse,
+  SimulationSummary,
+  SpecimenSearch,
+  UtilityProfile,
+} from "@/types/methods";
 
 /**
  * Static data for the methods instrument, from the artifacts that
  * scripts/build_methods_artifacts.py writes. Presets carry their full
  * resolution, so the page renders them with no Python process; specimens
- * resolve from specimen-resolutions.json the same way.
+ * resolve from specimen-resolutions.json the same way. The simulation summary
+ * comes from the eval/ benchmark (python -m eval.run_methods_simulation).
  */
 
 export interface InstrumentPreset {
@@ -24,6 +30,8 @@ export interface InstrumentData {
   presets: InstrumentPreset[];
   /** Every gallery search: the method, criterion, bound and specimen, if any. */
   searches: SpecimenSearch[];
+  /** The methods simulation's summary, with Wilson intervals. */
+  simulation: SimulationSummary;
   /** First 12 hex digits of presets.json's SHA-256, from the manifest. */
   presetsHash: string;
   /** First 12 hex digits of the source the artifacts were built from. */
@@ -51,10 +59,11 @@ interface PresetRecord {
 }
 
 export async function loadInstrumentData(): Promise<InstrumentData> {
-  const [presetsText, specimensText, manifestText] = await Promise.all([
+  const [presetsText, specimensText, manifestText, simulationText] = await Promise.all([
     readFile(join(ARTIFACTS, "presets.json"), "utf-8"),
     readFile(join(ARTIFACTS, "specimens.json"), "utf-8"),
     readFile(join(ARTIFACTS, "manifest.json"), "utf-8"),
+    readFile(join(ARTIFACTS, "simulation.json"), "utf-8"),
   ]);
   const { presets } = JSON.parse(presetsText) as { presets: PresetRecord[] };
   const { searches } = JSON.parse(specimensText) as { searches: SpecimenSearch[] };
@@ -73,6 +82,7 @@ export async function loadInstrumentData(): Promise<InstrumentData> {
       return { id: record.id, ...copy, profile, resolution: record.resolution };
     }),
     searches,
+    simulation: JSON.parse(simulationText) as SimulationSummary,
     presetsHash: manifest.outputs["presets.json"].slice(0, 12),
     sourceHash: manifest.source_sha256.slice(0, 12),
   };

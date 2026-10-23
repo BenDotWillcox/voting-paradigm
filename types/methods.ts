@@ -283,3 +283,47 @@ export interface AtlasResponse {
   /** How many different winners the seven methods produce, one digit per cell. */
   disagreement: string;
 }
+
+// ---------------------------------------------------------------------------
+// Simulation (public/data/methods/simulation.json, eval/benchmarks/methods_simulation_v1)
+// ---------------------------------------------------------------------------
+
+/** A rate with its 95% Wilson interval. */
+export interface SimulationRate {
+  count: number;
+  of: number;
+  rate: number | null;
+  interval: [number, number];
+}
+
+export interface SimulationGroup {
+  candidates: number;
+  elections: number;
+  /** Elections in which a Condorcet winner exists. */
+  condorcet_winner: SimulationRate;
+  /** Of those, the share in which each method elects it. */
+  condorcet_efficiency: Record<VotingMethod, SimulationRate>;
+  /** Elections a tie decided, by method. */
+  tie_rate: Record<VotingMethod, SimulationRate>;
+  /** Instant runoff's ties by kind: the tiebreak, or eliminating the tied together (with or without votes). */
+  irv_ties: Record<"tiebreak" | "together" | "together_empty", SimulationRate>;
+  /** Each pair once, in method order: how often the two elect different winners. */
+  disagreement: (SimulationRate & { a: VotingMethod; b: VotingMethod })[];
+}
+
+export interface SimulationSummary {
+  study: string;
+  config: {
+    seed: number;
+    voters: number;
+    candidate_counts: number[];
+    elections: number;
+    tiebreak_seed: number;
+  };
+  methods: VotingMethod[];
+  ballot_model: string;
+  interval: string;
+  by_candidates: SimulationGroup[];
+  benchmark: string;
+  source_sha256: string;
+}

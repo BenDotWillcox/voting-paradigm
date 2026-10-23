@@ -9,11 +9,14 @@ from voting.ballot_models import UTILITY_SCALE
 from voting.spatial import (
     DEFAULT_CLOUD,
     InvalidLayoutError,
+    ProfileCounter,
     cell_center,
     cloud_distances,
     cloud_utilities,
     compute_atlas,
     electorate_at,
+    point_distances,
+    sample_spatial_election,
     sunflower_cloud,
 )
 
@@ -172,3 +175,49 @@ class TestAtlas:
             outputs.add(completed.stdout)
 
         assert len(outputs) == 1
+
+
+class TestSampling:
+    def test_same_generator_seed_same_election(self):
+        first = sample_spatial_election(np.random.default_rng(7), 101, 4)
+        second = sample_spatial_election(np.random.default_rng(7), 101, 4)
+
+        assert first == second
+
+    def test_shape(self):
+        election = sample_spatial_election(np.random.default_rng(1), 25, 5)
+
+        assert election.candidates == ("A", "B", "C", "D", "E")
+        assert len(election.voter_positions) == 25
+        assert all(count == 1 for count, _ in election.profile.rows)
+
+    def test_each_voter_rates_the_nearest_100_and_the_farthest_0(self):
+        election = sample_spatial_election(np.random.default_rng(3), 50, 4)
+        distances = point_distances(
+            np.array(election.voter_positions), election.candidate_positions
+        )
+
+        for (_, utilities), row in zip(election.profile.rows, distances):
+            assert utilities[int(row.argmin())] == 100
+            assert utilities[int(row.argmax())] == 0
+
+    @pytest.mark.parametrize("voters, candidates", [(0, 3), (10, 1), (10, 6)])
+    def test_rejects_impossible_elections(self, voters, candidates):
+        with pytest.raises(InvalidLayoutError):
+            sample_spatial_election(np.random.default_rng(0), voters, candidates)
+
+
+class TestProfileCounter:
+    def test_counts_merge_identical_voters(self):
+        """Two rows of one voter count like one row of two."""
+        counter = ProfileCounter(ABC)
+        rows = [(1, (100, 40, 0)), (1, (100, 40, 0)), (1, (0, 100, 30))]
+
+        assert counter.count(rows) == counter.count([(2, (100, 40, 0)), (1, (0, 100, 30))])
+
+    def test_ranked_pairs_elects_the_condorcet_winner(self):
+        election = sample_spatial_election(np.random.default_rng(11), 101, 5)
+        count = ProfileCounter(election.candidates).count(election.profile.rows)
+
+        assert count.condorcet >= 0
+        assert count.winners["ranked_pairs"] == count.condorcet

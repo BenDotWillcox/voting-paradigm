@@ -12,11 +12,13 @@ import type {
   ProfileResolveResponse,
   Specimen,
   SpecimenRole,
+  SimulationSummary,
   SpecimenSearch,
   UtilityProfile,
   VotingMethod,
 } from "@/types/methods";
 
+import { AtScale } from "./at-scale";
 import { Atlas, AtlasPointBanner, type AtlasPoint } from "./atlas";
 import { BallotsPanel } from "./ballots-panel";
 import { Channels } from "./channels";
@@ -62,6 +64,7 @@ const SPECIMEN_RESOLUTIONS = "/data/methods/specimen-resolutions.json";
 export function MethodsInstrument({
   presets,
   searches,
+  simulation,
   initialProfile,
   initialResolution,
   initialSpecimen,
@@ -69,6 +72,7 @@ export function MethodsInstrument({
 }: {
   presets: PresetOption[];
   searches: SpecimenSearch[];
+  simulation: SimulationSummary;
   initialProfile: UtilityProfile;
   initialResolution: ProfileResolveResponse | null;
   initialSpecimen: SpecimenView | null;
@@ -342,6 +346,12 @@ export function MethodsInstrument({
       <div ref={atlasSection} className="mt-6 scroll-mt-4">
         <Panel title="Atlas">
           <Atlas onLoadPoint={loadAtlasPoint} />
+        </Panel>
+      </div>
+
+      <div className="mt-6">
+        <Panel title="At scale">
+          <AtScale summary={simulation} />
         </Panel>
       </div>
 

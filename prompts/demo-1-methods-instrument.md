@@ -1,6 +1,6 @@
 # Demo 1: Voting methods as an instrument
 
-Status: design settled with Ben on 2026-10-21; slices A to G built. Supersedes
+Status: design settled with Ben on 2026-10-21; slices A to H built. Supersedes
 Phase 2 of `prompts/storytelling-redesign.md`.
 
 ## Why an instrument, not an essay
@@ -389,6 +389,49 @@ Ka-Ping Yee's spatial diagram, for all seven methods. Settled with Ben on
 - **Where it lives:** a section of `/methods` below the gallery, with three
   to five candidates.
 
+### Simulation
+
+Typical elections rather than worst cases. Settled with Ben on 2026-10-23:
+
+- **Electorates are two-dimensional and spatial.** Each election draws 3,
+  4 or 5 candidates and then 101 voters independently from the same standard
+  bivariate Gaussian. Utility is linear in distance and rescaled per voter,
+  as in the atlas, and sincere-v1 casts the ballots. The sampler lives in
+  `voting/spatial/` and returns a utility profile, so a future agent can use
+  it as its beliefs about the other voters.
+- **10,000 elections per candidate count.** Each election's generator is
+  seeded from (study seed, candidate count, election index), so any
+  election can be regenerated on its own and the results do not depend on
+  how the work is split across processes.
+- **Counting is the instrument's:** the reference methods, each with a
+  fresh tiebreak seeded with the default seed. Each method's tie rate is
+  reported beside its results.
+- **Measures:** how often a Condorcet winner exists; each method's
+  Condorcet efficiency, the share of those elections in which it elects the
+  Condorcet winner; and pairwise disagreement, the share of elections in
+  which two methods elect different winners. Every rate carries a 95% Wilson
+  interval.
+- **Outputs:** `eval/benchmarks/methods_simulation_v1/` holds the
+  configuration, one row per election (every method's winner and
+  decisiveness, and the Condorcet winner), the summary, provenance and a
+  README with the study's claims and limits. `public/data/methods/simulation.json`
+  is the summary the page reads; tests check it against the benchmark and
+  regenerate a sample of elections.
+- **Page:** an "At scale" section below the atlas, with Condorcet
+  efficiency by method and candidate count, and the disagreement matrix.
+- **Not in this study:** polarized, random-utility and one-dimensional
+  electorates; satisfaction efficiency; criterion-failure rates; strategic
+  voting.
+- **Results** (`eval/benchmarks/methods_simulation_v1/README.md`): a
+  Condorcet winner exists in 99.3–99.8% of elections. From 3 to 5
+  candidates, plurality's Condorcet efficiency falls from 84% to 63%,
+  approval's from 88% to 76% and instant runoff's from 96% to 84%, while
+  Borda, score and quadratic voting hold between 84% and 93%. At 5
+  candidates, plurality and approval disagree in 55% of elections. Instant
+  runoff eliminates candidates tied for last together in 12% of
+  five-candidate elections; in all but 3 of those 1,246, the tied candidates
+  had the same nonzero number of first choices, so the order could matter.
+
 ### Live resolution
 
 Python remains the only resolver:
@@ -501,9 +544,11 @@ G. **Atlas.** Spatial winner maps for the seven methods plus Condorcet,
    voter cloud, linear utility, every cell counted by the reference
    methods, curated layouts precomputed, dragging recomputed on release,
    and clicking a cell loads its electorate into the instrument.
-H. **Simulation.** Disagreement rates and Condorcet efficiency in `eval/`.
-   Electorate generators are seeded samplers that return profiles, so they
-   can double as an agent's beliefs about other voters.
+H. **Simulation.** Disagreement rates and Condorcet efficiency over
+   30,000 seeded two-dimensional spatial elections (see Simulation): a
+   benchmark in `eval/` and an "At scale" section on `/methods`. Electorate
+   generators are seeded samplers that return profiles, so they can double
+   as an agent's beliefs about other voters.
 I. **Home card.**
 
 ## Toward a delegated agent

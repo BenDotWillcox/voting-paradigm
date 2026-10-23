@@ -3,7 +3,8 @@ Spatial electorates: voters and candidates at points in a two-dimensional
 issue space, each voter's utility falling linearly with distance.
 
 Used by: the atlas (voting.spatial.atlas), which slides one voter cloud
-across the plane, and the profile it hands the instrument for a single cell.
+across the plane, and the profile it hands the instrument for a single cell;
+and the sampler (voting.spatial.sampling), which draws whole elections.
 
 Coordinates are in the unit square, y growing downward as on screen. Both
 callers turn distances into utilities with cloud_utilities, so a cell's
@@ -86,9 +87,17 @@ def cloud_distances(
     center: an array of shape (centers, voter types, candidates).
     """
     voters = centers[:, None, :] + np.asarray(cloud.offsets, dtype=np.float64)[None, :, :]
+    return point_distances(voters, positions)
+
+
+def point_distances(voters: FloatArray, positions: Sequence[Point]) -> FloatArray:
+    """
+    Euclidean distance from voters, an array of points of any leading shape,
+    to every candidate: shape (..., candidates).
+    """
     candidates = np.asarray(positions, dtype=np.float64)
-    dx = voters[:, :, None, 0] - candidates[None, None, :, 0]
-    dy = voters[:, :, None, 1] - candidates[None, None, :, 1]
+    dx = voters[..., None, 0] - candidates[:, 0]
+    dy = voters[..., None, 1] - candidates[:, 1]
     distances: FloatArray = np.sqrt(dx * dx + dy * dy)
     return distances
 
