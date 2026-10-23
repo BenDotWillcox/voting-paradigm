@@ -3,7 +3,7 @@ import "server-only";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import type { ExampleSlide } from "@/lib/methods/sections";
+import type { ExampleSlide, SlideExample } from "@/lib/methods/sections";
 import type {
   AtlasCandidate,
   AtlasResponse,
@@ -34,6 +34,8 @@ export interface InstrumentPreset {
 
 export interface InstrumentData {
   presets: InstrumentPreset[];
+  /** The examples on each slide that shows the shared electorate. */
+  examples: Record<ExampleSlide, SlideExample[]>;
   /** Every gallery search: the method, criterion, bound and specimen, if any. */
   searches: SpecimenSearch[];
   /** The methods simulation's summary, with Wilson intervals. */
@@ -72,8 +74,65 @@ const PRESET_COPY: Record<string, Omit<InstrumentPreset, "id" | "profile" | "res
         "Each voter's middle candidate sits exactly at their average, so approval approves only favorites and matches plurality.",
     },
   },
+  consensus: {
+    label: "Consensus",
+    description: "Voters split on their favorite, but A is everyone's first or second choice.",
+    notes: {
+      counts:
+        "Voters split three ways on their favorite, but A is every voter's first or second choice, so all seven methods agree.",
+      "head-to-head": "A beats both rivals one-on-one without a majority of first choices: a clear Condorcet winner.",
+      ballots: "Two of the three voter types approve A as well as their favorite, because A sits above their average.",
+    },
+  },
+  "ballot-shapes": {
+    label: "Ballot shapes",
+    description: "Every voter ranks A, B, C; only how far B sits from A changes.",
+    notes: {
+      counts: "Every voter ranks A first, so all seven methods elect A. The differences are in the ballots.",
+      "head-to-head": "Every voter ranks A over B over C, so each two-way race is unanimous.",
+      ballots: "Every voter ranks A, then B, then C; only how far B sits from A changes.",
+    },
+  },
 };
 const PRESET_ORDER = Object.keys(PRESET_COPY);
+
+// Each slide's examples, in chip order. Label and note default to the
+// preset's own. The ballot shapes' voter types are a clear favorite, an
+// indifferent middle and a close second (scripts/build_methods_artifacts.py).
+const SLIDE_EXAMPLES: Record<ExampleSlide, (Partial<SlideExample> & { presetId: string })[]> = {
+  counts: [{ presetId: "center-squeeze" }, { presetId: "consensus" }, { presetId: "majority-cycle" }],
+  "head-to-head": [{ presetId: "center-squeeze" }, { presetId: "majority-cycle" }, { presetId: "consensus" }],
+  ballots: [
+    {
+      presetId: "ballot-shapes",
+      voterType: 0,
+      label: "Clear favorite",
+      note: "B sits well below this voter's average: approval leaves it out, score gives it 2, and quadratic voting spends votes against it.",
+    },
+    {
+      presetId: "ballot-shapes",
+      voterType: 1,
+      label: "Indifferent middle",
+      note: "B sits exactly at this voter's average: approval still leaves it out, score gives it 5, and quadratic voting spends nothing on it.",
+    },
+    {
+      presetId: "ballot-shapes",
+      voterType: 2,
+      label: "Close second",
+      note: "B sits just below A: approval now includes it, score gives it 9, and quadratic voting spends votes for it. The ranked ballot never changed.",
+    },
+  ],
+};
+
+function slideExamples(presets: InstrumentPreset[]): Record<ExampleSlide, SlideExample[]> {
+  const resolve = (slide: ExampleSlide) =>
+    SLIDE_EXAMPLES[slide].map((example) => {
+      const preset = presets.find((p) => p.id === example.presetId);
+      if (!preset) throw new Error(`Example on ${slide} names a missing preset ${example.presetId}`);
+      return { label: preset.label, note: preset.notes[slide], ...example };
+    });
+  return { counts: resolve("counts"), "head-to-head": resolve("head-to-head"), ballots: resolve("ballots") };
+}
 
 interface PresetRecord {
   id: string;
@@ -94,17 +153,20 @@ export async function loadInstrumentData(): Promise<InstrumentData> {
     outputs: Record<string, string>;
   };
 
+  const ordered = presets
+    .map((record) => {
+      const copy = PRESET_COPY[record.id];
+      const profile = record.resolution?.profile;
+      if (!copy || profile?.ballot_type !== "utility") {
+        throw new Error(`Preset ${record.id} is missing copy or a utility profile`);
+      }
+      return { id: record.id, ...copy, profile, resolution: record.resolution };
+    })
+    .sort((a, b) => PRESET_ORDER.indexOf(a.id) - PRESET_ORDER.indexOf(b.id));
+
   return {
-    presets: presets
-      .map((record) => {
-        const copy = PRESET_COPY[record.id];
-        const profile = record.resolution?.profile;
-        if (!copy || profile?.ballot_type !== "utility") {
-          throw new Error(`Preset ${record.id} is missing copy or a utility profile`);
-        }
-        return { id: record.id, ...copy, profile, resolution: record.resolution };
-      })
-      .sort((a, b) => PRESET_ORDER.indexOf(a.id) - PRESET_ORDER.indexOf(b.id)),
+    presets: ordered,
+    examples: slideExamples(ordered),
     searches,
     simulation: JSON.parse(simulationText) as SimulationSummary,
     presetsHash: manifest.outputs["presets.json"].slice(0, 12),

@@ -53,6 +53,7 @@ export default async function MethodsPage({
     >
       <MethodsInstrument
         presets={data.presets}
+        examples={data.examples}
         searches={data.searches}
         simulation={data.simulation}
         initialProfile={initialProfile}

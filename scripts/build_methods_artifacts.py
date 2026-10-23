@@ -9,9 +9,10 @@ and writes JSON to public/data/methods/:
                   or none up to the search's voter bound. Ranked methods
                   search rankings; approval, score and quadratic voting search
                   utility profiles under the sincere ballot model
-- presets.json    the instrument's presets as voter types with utilities: the
-                  opening majority cycle (rankings found by search, utilities
-                  evenly spaced) and the center squeeze (utilities authored),
+- presets.json    the instrument's presets as voter types with utilities: a
+                  majority cycle (rankings found by search, utilities evenly
+                  spaced), and the center squeeze, a consensus and three
+                  ballot shapes (utilities authored),
                   each with its full resolution exactly as
                   POST /api/voting/profile/resolve returns it, so the
                   instrument renders presets without the API
@@ -112,6 +113,25 @@ CENTER_SQUEEZE = [
     (32, {"A": 0, "B": 40, "C": 100}),
 ]
 
+# A consensus: voters split on their favorite, but A is every voter's first or
+# second choice, so all seven methods elect A without a majority of first
+# choices. Rankings: 45 A>B>C, 30 B>A>C, 25 C>A>B.
+CONSENSUS = [
+    (45, {"A": 100, "B": 40, "C": 0}),
+    (30, {"A": 70, "B": 100, "C": 0}),
+    (25, {"A": 60, "B": 0, "C": 100}),
+]
+
+# Three ballot shapes: every voter ranks A>B>C, and only B's distance from A
+# changes, so the ranked ballots are identical and the rated ballots are not.
+# In row order: a clear favorite, an indifferent middle (B exactly at the
+# voter's average), and a close second.
+BALLOT_SHAPES = [
+    (4, {"A": 100, "B": 20, "C": 0}),
+    (3, {"A": 100, "B": 50, "C": 0}),
+    (2, {"A": 100, "B": 90, "C": 0}),
+]
+
 # The atlas's curated layouts: candidate positions in the unit square, y down.
 # The page's copy for each lives in lib/methods/atlas.ts.
 ATLAS_LAYOUTS: list[tuple[str, list[tuple[str, float, float]]]] = [
@@ -210,6 +230,18 @@ def build_presets() -> dict[str, Any]:
                 "found_by": None,
                 "utilities": "authored",
                 "resolution": preset_resolution(list(DEFAULT_CANDIDATES), CENTER_SQUEEZE),
+            },
+            {
+                "id": "consensus",
+                "found_by": None,
+                "utilities": "authored",
+                "resolution": preset_resolution(list(DEFAULT_CANDIDATES), CONSENSUS),
+            },
+            {
+                "id": "ballot-shapes",
+                "found_by": None,
+                "utilities": "authored",
+                "resolution": preset_resolution(list(DEFAULT_CANDIDATES), BALLOT_SHAPES),
             },
         ],
     }
