@@ -4,3 +4,4 @@
 data/apportionment/sources/** -text
 public/data/apportionment-story/** -text
 public/data/methods/** -text
+eval/benchmarks/methods_simulation_v1/*.json -text
