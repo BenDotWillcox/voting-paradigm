@@ -46,7 +46,7 @@ export const methodDescriptions: Record<VotingMethod, MethodDescription> = {
     howItWorks:
       "Each voter marks all candidates they find acceptable. The candidate approved by the most voters wins. This captures breadth of support that plurality misses.",
     strengths: [
-      "Eliminates the spoiler effect entirely",
+      "No spoiler effect while ballots stay fixed, though sincere approvals can shift when candidates enter or leave",
       "Simple ballots — just check boxes",
       "Elects broadly acceptable consensus candidates",
       "No wasted votes — you can support all candidates you like",
@@ -76,10 +76,11 @@ export const methodDescriptions: Record<VotingMethod, MethodDescription> = {
       "Reduces spoiler effect — vote for your favorite without fear",
       "Encourages positive campaigning (candidates seek 2nd-choice votes)",
       "Voters can express full preference ordering",
+      "Later-no-harm: ranking more candidates never hurts your favorite",
     ],
     weaknesses: [
       "Non-monotonic: ranking a candidate higher can cause them to lose",
-      "Later-no-harm: your lower rankings can never hurt your top choice (pro or con)",
+      "Fails participation: turning out can elect someone you like less (the no-show paradox)",
       "More complex to count — cannot be tallied at the precinct level",
       "Can still eliminate a Condorcet winner in early rounds",
     ],
@@ -127,9 +128,9 @@ export const methodDescriptions: Record<VotingMethod, MethodDescription> = {
       "First checks if any candidate beats every other head-to-head (Condorcet winner). If not, it lists all pairwise victories by margin, locks them in from strongest to weakest, and skips any that would create a cycle. The winner is the candidate with no locked losses.",
     strengths: [
       "Always elects the Condorcet winner when one exists",
-      "Resists strategic voting well — hard to manipulate",
+      "Independent of clones: adding a near-duplicate candidate doesn't change the winner, outside exact ties",
       "Considers every pairwise preference, not just first choices",
-      "Consistent and fair cycle resolution",
+      "Resolves majority cycles by a transparent rule: strongest victories first",
     ],
     weaknesses: [
       "Complex to explain and compute — harder to audit",
@@ -138,10 +139,9 @@ export const methodDescriptions: Record<VotingMethod, MethodDescription> = {
       "Ties in margins can still require an arbitrary tiebreak",
     ],
     realWorldUsage: [
-      "Debian GNU/Linux project leader elections",
-      "Wikimedia Foundation board elections",
-      "Various open-source project governance",
-      "Academic research and theory (benchmark method)",
+      "Few public uses; proposed by Nicolaus Tideman (1987)",
+      "Related Condorcet methods run some organizations' elections (Debian uses the Schulze method)",
+      "A benchmark method in social choice research",
     ],
   },
 
@@ -154,7 +154,7 @@ export const methodDescriptions: Record<VotingMethod, MethodDescription> = {
       "Each voter gives every candidate a score from 0 to 10 (unscored = 0). All scores are summed per candidate and the highest total wins. This captures preference intensity — you can distinguish between 'acceptable' and 'excellent'.",
     strengths: [
       "Captures preference intensity, not just ordering",
-      "No spoiler effect — scoring one candidate doesn't affect others",
+      "No spoiler effect while ballots stay fixed, though rescaled sincere scores can shift when the field changes",
       "Simple to fill out and understand",
       "Encourages honest expression of preference strength",
     ],
@@ -181,7 +181,7 @@ export const methodDescriptions: Record<VotingMethod, MethodDescription> = {
       "Each voter receives a credit budget (default 100). Casting v votes for a candidate costs v² credits. This means 1 vote costs 1 credit, but 10 votes cost 100. Negative votes (opposition) are allowed. This forces voters to prioritize — you can go deep on one issue or spread across many.",
     strengths: [
       "Captures preference intensity via cost mechanism",
-      "Prevents tyranny of the majority — passionate minorities can concentrate votes",
+      "Lets an intense minority outweigh a mildly interested majority",
       "Mathematically optimal for preference aggregation (under certain assumptions)",
       "Allows expressing opposition through negative votes",
     ],
@@ -199,14 +199,3 @@ export const methodDescriptions: Record<VotingMethod, MethodDescription> = {
     ],
   },
 };
-
-/** Order of methods for tab display */
-export const methodOrder: VotingMethod[] = [
-  "plurality",
-  "approval",
-  "irv",
-  "borda",
-  "ranked_pairs",
-  "score",
-  "quadratic",
-];

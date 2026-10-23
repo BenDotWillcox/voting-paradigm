@@ -1,0 +1,1242 @@
+{
+  "study": "methods_simulation_v1",
+  "config": {
+    "seed": 20261023,
+    "voters": 101,
+    "candidate_counts": [
+      3,
+      4,
+      5
+    ],
+    "elections": 10000,
+    "tiebreak_seed": 0
+  },
+  "methods": [
+    "plurality",
+    "irv",
+    "borda",
+    "ranked_pairs",
+    "approval",
+    "score",
+    "quadratic"
+  ],
+  "ballot_model": "sincere-v1",
+  "interval": "95% Wilson score",
+  "by_candidates": [
+    {
+      "candidates": 3,
+      "elections": 10000,
+      "condorcet_winner": {
+        "count": 9978,
+        "of": 10000,
+        "rate": 0.9978,
+        "interval": [
+          0.996671,
+          0.998547
+        ]
+      },
+      "condorcet_efficiency": {
+        "plurality": {
+          "count": 8369,
+          "of": 9978,
+          "rate": 0.838745,
+          "interval": [
+            0.831399,
+            0.845831
+          ]
+        },
+        "irv": {
+          "count": 9539,
+          "of": 9978,
+          "rate": 0.956003,
+          "interval": [
+            0.951801,
+            0.959855
+          ]
+        },
+        "borda": {
+          "count": 9273,
+          "of": 9978,
+          "rate": 0.929345,
+          "interval": [
+            0.92415,
+            0.934209
+          ]
+        },
+        "ranked_pairs": {
+          "count": 9978,
+          "of": 9978,
+          "rate": 1.0,
+          "interval": [
+            0.999615,
+            1.0
+          ]
+        },
+        "approval": {
+          "count": 8754,
+          "of": 9978,
+          "rate": 0.87733,
+          "interval": [
+            0.870748,
+            0.883622
+          ]
+        },
+        "score": {
+          "count": 9037,
+          "of": 9978,
+          "rate": 0.905693,
+          "interval": [
+            0.899801,
+            0.911272
+          ]
+        },
+        "quadratic": {
+          "count": 9067,
+          "of": 9978,
+          "rate": 0.908699,
+          "interval": [
+            0.902889,
+            0.914195
+          ]
+        }
+      },
+      "tie_rate": {
+        "plurality": {
+          "count": 146,
+          "of": 10000,
+          "rate": 0.0146,
+          "interval": [
+            0.012429,
+            0.017144
+          ]
+        },
+        "irv": {
+          "count": 111,
+          "of": 10000,
+          "rate": 0.0111,
+          "interval": [
+            0.009226,
+            0.013349
+          ]
+        },
+        "borda": {
+          "count": 75,
+          "of": 10000,
+          "rate": 0.0075,
+          "interval": [
+            0.005988,
+            0.00939
+          ]
+        },
+        "ranked_pairs": {
+          "count": 11,
+          "of": 10000,
+          "rate": 0.0011,
+          "interval": [
+            0.000614,
+            0.001969
+          ]
+        },
+        "approval": {
+          "count": 135,
+          "of": 10000,
+          "rate": 0.0135,
+          "interval": [
+            0.011418,
+            0.015956
+          ]
+        },
+        "score": {
+          "count": 16,
+          "of": 10000,
+          "rate": 0.0016,
+          "interval": [
+            0.000985,
+            0.002598
+          ]
+        },
+        "quadratic": {
+          "count": 8,
+          "of": 10000,
+          "rate": 0.0008,
+          "interval": [
+            0.000405,
+            0.001578
+          ]
+        }
+      },
+      "irv_ties": {
+        "tiebreak": {
+          "count": 0,
+          "of": 10000,
+          "rate": 0.0,
+          "interval": [
+            0.0,
+            0.000384
+          ]
+        },
+        "together": {
+          "count": 111,
+          "of": 10000,
+          "rate": 0.0111,
+          "interval": [
+            0.009226,
+            0.013349
+          ]
+        },
+        "together_empty": {
+          "count": 0,
+          "of": 10000,
+          "rate": 0.0,
+          "interval": [
+            0.0,
+            0.000384
+          ]
+        }
+      },
+      "disagreement": [
+        {
+          "a": "plurality",
+          "b": "irv",
+          "count": 1312,
+          "of": 10000,
+          "rate": 0.1312,
+          "interval": [
+            0.124724,
+            0.137959
+          ]
+        },
+        {
+          "a": "plurality",
+          "b": "borda",
+          "count": 2278,
+          "of": 10000,
+          "rate": 0.2278,
+          "interval": [
+            0.219685,
+            0.236124
+          ]
+        },
+        {
+          "a": "plurality",
+          "b": "ranked_pairs",
+          "count": 1619,
+          "of": 10000,
+          "rate": 0.1619,
+          "interval": [
+            0.15481,
+            0.169249
+          ]
+        },
+        {
+          "a": "plurality",
+          "b": "approval",
+          "count": 2506,
+          "of": 10000,
+          "rate": 0.2506,
+          "interval": [
+            0.242203,
+            0.259188
+          ]
+        },
+        {
+          "a": "plurality",
+          "b": "score",
+          "count": 2400,
+          "of": 10000,
+          "rate": 0.24,
+          "interval": [
+            0.23173,
+            0.24847
+          ]
+        },
+        {
+          "a": "plurality",
+          "b": "quadratic",
+          "count": 2368,
+          "of": 10000,
+          "rate": 0.2368,
+          "interval": [
+            0.22857,
+            0.245232
+          ]
+        },
+        {
+          "a": "irv",
+          "b": "borda",
+          "count": 1153,
+          "of": 10000,
+          "rate": 0.1153,
+          "interval": [
+            0.109187,
+            0.121708
+          ]
+        },
+        {
+          "a": "irv",
+          "b": "ranked_pairs",
+          "count": 454,
+          "of": 10000,
+          "rate": 0.0454,
+          "interval": [
+            0.041491,
+            0.049658
+          ]
+        },
+        {
+          "a": "irv",
+          "b": "approval",
+          "count": 1544,
+          "of": 10000,
+          "rate": 0.1544,
+          "interval": [
+            0.147451,
+            0.161615
+          ]
+        },
+        {
+          "a": "irv",
+          "b": "score",
+          "count": 1336,
+          "of": 10000,
+          "rate": 0.1336,
+          "interval": [
+            0.127072,
+            0.140409
+          ]
+        },
+        {
+          "a": "irv",
+          "b": "quadratic",
+          "count": 1300,
+          "of": 10000,
+          "rate": 0.13,
+          "interval": [
+            0.12355,
+            0.136734
+          ]
+        },
+        {
+          "a": "borda",
+          "b": "ranked_pairs",
+          "count": 717,
+          "of": 10000,
+          "rate": 0.0717,
+          "interval": [
+            0.066806,
+            0.076923
+          ]
+        },
+        {
+          "a": "borda",
+          "b": "approval",
+          "count": 1153,
+          "of": 10000,
+          "rate": 0.1153,
+          "interval": [
+            0.109187,
+            0.121708
+          ]
+        },
+        {
+          "a": "borda",
+          "b": "score",
+          "count": 607,
+          "of": 10000,
+          "rate": 0.0607,
+          "interval": [
+            0.056187,
+            0.065551
+          ]
+        },
+        {
+          "a": "borda",
+          "b": "quadratic",
+          "count": 585,
+          "of": 10000,
+          "rate": 0.0585,
+          "interval": [
+            0.054068,
+            0.063272
+          ]
+        },
+        {
+          "a": "ranked_pairs",
+          "b": "approval",
+          "count": 1235,
+          "of": 10000,
+          "rate": 0.1235,
+          "interval": [
+            0.117196,
+            0.130093
+          ]
+        },
+        {
+          "a": "ranked_pairs",
+          "b": "score",
+          "count": 953,
+          "of": 10000,
+          "rate": 0.0953,
+          "interval": [
+            0.089699,
+            0.101211
+          ]
+        },
+        {
+          "a": "ranked_pairs",
+          "b": "quadratic",
+          "count": 925,
+          "of": 10000,
+          "rate": 0.0925,
+          "interval": [
+            0.086977,
+            0.098336
+          ]
+        },
+        {
+          "a": "approval",
+          "b": "score",
+          "count": 660,
+          "of": 10000,
+          "rate": 0.066,
+          "interval": [
+            0.061298,
+            0.071035
+          ]
+        },
+        {
+          "a": "approval",
+          "b": "quadratic",
+          "count": 667,
+          "of": 10000,
+          "rate": 0.0667,
+          "interval": [
+            0.061974,
+            0.071758
+          ]
+        },
+        {
+          "a": "score",
+          "b": "quadratic",
+          "count": 73,
+          "of": 10000,
+          "rate": 0.0073,
+          "interval": [
+            0.00581,
+            0.009168
+          ]
+        }
+      ]
+    },
+    {
+      "candidates": 4,
+      "elections": 10000,
+      "condorcet_winner": {
+        "count": 9954,
+        "of": 10000,
+        "rate": 0.9954,
+        "interval": [
+          0.99387,
+          0.996549
+        ]
+      },
+      "condorcet_efficiency": {
+        "plurality": {
+          "count": 7281,
+          "of": 9954,
+          "rate": 0.731465,
+          "interval": [
+            0.72267,
+            0.740081
+          ]
+        },
+        "irv": {
+          "count": 8962,
+          "of": 9954,
+          "rate": 0.900342,
+          "interval": [
+            0.894302,
+            0.906073
+          ]
+        },
+        "borda": {
+          "count": 8884,
+          "of": 9954,
+          "rate": 0.892506,
+          "interval": [
+            0.886269,
+            0.89844
+          ]
+        },
+        "ranked_pairs": {
+          "count": 9954,
+          "of": 9954,
+          "rate": 1.0,
+          "interval": [
+            0.999614,
+            1.0
+          ]
+        },
+        "approval": {
+          "count": 8073,
+          "of": 9954,
+          "rate": 0.811031,
+          "interval": [
+            0.803221,
+            0.818601
+          ]
+        },
+        "score": {
+          "count": 8601,
+          "of": 9954,
+          "rate": 0.864075,
+          "interval": [
+            0.857202,
+            0.870667
+          ]
+        },
+        "quadratic": {
+          "count": 8685,
+          "of": 9954,
+          "rate": 0.872514,
+          "interval": [
+            0.865818,
+            0.878922
+          ]
+        }
+      },
+      "tie_rate": {
+        "plurality": {
+          "count": 240,
+          "of": 10000,
+          "rate": 0.024,
+          "interval": [
+            0.021178,
+            0.027187
+          ]
+        },
+        "irv": {
+          "count": 464,
+          "of": 10000,
+          "rate": 0.0464,
+          "interval": [
+            0.042449,
+            0.0507
+          ]
+        },
+        "borda": {
+          "count": 85,
+          "of": 10000,
+          "rate": 0.0085,
+          "interval": [
+            0.00688,
+            0.010498
+          ]
+        },
+        "ranked_pairs": {
+          "count": 15,
+          "of": 10000,
+          "rate": 0.0015,
+          "interval": [
+            0.000909,
+            0.002474
+          ]
+        },
+        "approval": {
+          "count": 225,
+          "of": 10000,
+          "rate": 0.0225,
+          "interval": [
+            0.019771,
+            0.025595
+          ]
+        },
+        "score": {
+          "count": 31,
+          "of": 10000,
+          "rate": 0.0031,
+          "interval": [
+            0.002185,
+            0.004397
+          ]
+        },
+        "quadratic": {
+          "count": 18,
+          "of": 10000,
+          "rate": 0.0018,
+          "interval": [
+            0.001139,
+            0.002844
+          ]
+        }
+      },
+      "irv_ties": {
+        "tiebreak": {
+          "count": 0,
+          "of": 10000,
+          "rate": 0.0,
+          "interval": [
+            0.0,
+            0.000384
+          ]
+        },
+        "together": {
+          "count": 464,
+          "of": 10000,
+          "rate": 0.0464,
+          "interval": [
+            0.042449,
+            0.0507
+          ]
+        },
+        "together_empty": {
+          "count": 0,
+          "of": 10000,
+          "rate": 0.0,
+          "interval": [
+            0.0,
+            0.000384
+          ]
+        }
+      },
+      "disagreement": [
+        {
+          "a": "plurality",
+          "b": "irv",
+          "count": 2115,
+          "of": 10000,
+          "rate": 0.2115,
+          "interval": [
+            0.203608,
+            0.219614
+          ]
+        },
+        {
+          "a": "plurality",
+          "b": "borda",
+          "count": 3522,
+          "of": 10000,
+          "rate": 0.3522,
+          "interval": [
+            0.342896,
+            0.361617
+          ]
+        },
+        {
+          "a": "plurality",
+          "b": "ranked_pairs",
+          "count": 2702,
+          "of": 10000,
+          "rate": 0.2702,
+          "interval": [
+            0.261586,
+            0.27899
+          ]
+        },
+        {
+          "a": "plurality",
+          "b": "approval",
+          "count": 4217,
+          "of": 10000,
+          "rate": 0.4217,
+          "interval": [
+            0.412053,
+            0.431407
+          ]
+        },
+        {
+          "a": "plurality",
+          "b": "score",
+          "count": 3485,
+          "of": 10000,
+          "rate": 0.3485,
+          "interval": [
+            0.339221,
+            0.357896
+          ]
+        },
+        {
+          "a": "plurality",
+          "b": "quadratic",
+          "count": 3428,
+          "of": 10000,
+          "rate": 0.3428,
+          "interval": [
+            0.333559,
+            0.352162
+          ]
+        },
+        {
+          "a": "irv",
+          "b": "borda",
+          "count": 1909,
+          "of": 10000,
+          "rate": 0.1909,
+          "interval": [
+            0.183316,
+            0.198721
+          ]
+        },
+        {
+          "a": "irv",
+          "b": "ranked_pairs",
+          "count": 1027,
+          "of": 10000,
+          "rate": 0.1027,
+          "interval": [
+            0.096902,
+            0.108803
+          ]
+        },
+        {
+          "a": "irv",
+          "b": "approval",
+          "count": 2707,
+          "of": 10000,
+          "rate": 0.2707,
+          "interval": [
+            0.262081,
+            0.279495
+          ]
+        },
+        {
+          "a": "irv",
+          "b": "score",
+          "count": 2012,
+          "of": 10000,
+          "rate": 0.2012,
+          "interval": [
+            0.193458,
+            0.209172
+          ]
+        },
+        {
+          "a": "irv",
+          "b": "quadratic",
+          "count": 1936,
+          "of": 10000,
+          "rate": 0.1936,
+          "interval": [
+            0.185974,
+            0.201461
+          ]
+        },
+        {
+          "a": "borda",
+          "b": "ranked_pairs",
+          "count": 1095,
+          "of": 10000,
+          "rate": 0.1095,
+          "interval": [
+            0.103529,
+            0.115771
+          ]
+        },
+        {
+          "a": "borda",
+          "b": "approval",
+          "count": 1455,
+          "of": 10000,
+          "rate": 0.1455,
+          "interval": [
+            0.138725,
+            0.152547
+          ]
+        },
+        {
+          "a": "borda",
+          "b": "score",
+          "count": 1044,
+          "of": 10000,
+          "rate": 0.1044,
+          "interval": [
+            0.098558,
+            0.110546
+          ]
+        },
+        {
+          "a": "borda",
+          "b": "quadratic",
+          "count": 1007,
+          "of": 10000,
+          "rate": 0.1007,
+          "interval": [
+            0.094954,
+            0.106752
+          ]
+        },
+        {
+          "a": "ranked_pairs",
+          "b": "approval",
+          "count": 1906,
+          "of": 10000,
+          "rate": 0.1906,
+          "interval": [
+            0.183021,
+            0.198416
+          ]
+        },
+        {
+          "a": "ranked_pairs",
+          "b": "score",
+          "count": 1380,
+          "of": 10000,
+          "rate": 0.138,
+          "interval": [
+            0.131379,
+            0.144899
+          ]
+        },
+        {
+          "a": "ranked_pairs",
+          "b": "quadratic",
+          "count": 1297,
+          "of": 10000,
+          "rate": 0.1297,
+          "interval": [
+            0.123257,
+            0.136427
+          ]
+        },
+        {
+          "a": "approval",
+          "b": "score",
+          "count": 1293,
+          "of": 10000,
+          "rate": 0.1293,
+          "interval": [
+            0.122866,
+            0.136019
+          ]
+        },
+        {
+          "a": "approval",
+          "b": "quadratic",
+          "count": 1261,
+          "of": 10000,
+          "rate": 0.1261,
+          "interval": [
+            0.119737,
+            0.13275
+          ]
+        },
+        {
+          "a": "score",
+          "b": "quadratic",
+          "count": 197,
+          "of": 10000,
+          "rate": 0.0197,
+          "interval": [
+            0.017155,
+            0.022614
+          ]
+        }
+      ]
+    },
+    {
+      "candidates": 5,
+      "elections": 10000,
+      "condorcet_winner": {
+        "count": 9928,
+        "of": 10000,
+        "rate": 0.9928,
+        "interval": [
+          0.990943,
+          0.994278
+        ]
+      },
+      "condorcet_efficiency": {
+        "plurality": {
+          "count": 6223,
+          "of": 9928,
+          "rate": 0.626813,
+          "interval": [
+            0.617252,
+            0.636276
+          ]
+        },
+        "irv": {
+          "count": 8339,
+          "of": 9928,
+          "rate": 0.839948,
+          "interval": [
+            0.832604,
+            0.847028
+          ]
+        },
+        "borda": {
+          "count": 8769,
+          "of": 9928,
+          "rate": 0.883259,
+          "interval": [
+            0.876794,
+            0.889428
+          ]
+        },
+        "ranked_pairs": {
+          "count": 9928,
+          "of": 9928,
+          "rate": 1.0,
+          "interval": [
+            0.999613,
+            1.0
+          ]
+        },
+        "approval": {
+          "count": 7516,
+          "of": 9928,
+          "rate": 0.757051,
+          "interval": [
+            0.748516,
+            0.765386
+          ]
+        },
+        "score": {
+          "count": 8388,
+          "of": 9928,
+          "rate": 0.844883,
+          "interval": [
+            0.837629,
+            0.851871
+          ]
+        },
+        "quadratic": {
+          "count": 8475,
+          "of": 9928,
+          "rate": 0.853646,
+          "interval": [
+            0.846557,
+            0.860462
+          ]
+        }
+      },
+      "tie_rate": {
+        "plurality": {
+          "count": 283,
+          "of": 10000,
+          "rate": 0.0283,
+          "interval": [
+            0.025227,
+            0.031736
+          ]
+        },
+        "irv": {
+          "count": 1246,
+          "of": 10000,
+          "rate": 0.1246,
+          "interval": [
+            0.118271,
+            0.131218
+          ]
+        },
+        "borda": {
+          "count": 74,
+          "of": 10000,
+          "rate": 0.0074,
+          "interval": [
+            0.005899,
+            0.009279
+          ]
+        },
+        "ranked_pairs": {
+          "count": 24,
+          "of": 10000,
+          "rate": 0.0024,
+          "interval": [
+            0.001613,
+            0.003569
+          ]
+        },
+        "approval": {
+          "count": 266,
+          "of": 10000,
+          "rate": 0.0266,
+          "interval": [
+            0.023623,
+            0.02994
+          ]
+        },
+        "score": {
+          "count": 41,
+          "of": 10000,
+          "rate": 0.0041,
+          "interval": [
+            0.003024,
+            0.005557
+          ]
+        },
+        "quadratic": {
+          "count": 37,
+          "of": 10000,
+          "rate": 0.0037,
+          "interval": [
+            0.002686,
+            0.005096
+          ]
+        }
+      },
+      "irv_ties": {
+        "tiebreak": {
+          "count": 0,
+          "of": 10000,
+          "rate": 0.0,
+          "interval": [
+            0.0,
+            0.000384
+          ]
+        },
+        "together": {
+          "count": 1243,
+          "of": 10000,
+          "rate": 0.1243,
+          "interval": [
+            0.117978,
+            0.130911
+          ]
+        },
+        "together_empty": {
+          "count": 3,
+          "of": 10000,
+          "rate": 0.0003,
+          "interval": [
+            0.000102,
+            0.000882
+          ]
+        }
+      },
+      "disagreement": [
+        {
+          "a": "plurality",
+          "b": "irv",
+          "count": 2922,
+          "of": 10000,
+          "rate": 0.2922,
+          "interval": [
+            0.283368,
+            0.301192
+          ]
+        },
+        {
+          "a": "plurality",
+          "b": "borda",
+          "count": 4575,
+          "of": 10000,
+          "rate": 0.4575,
+          "interval": [
+            0.447754,
+            0.467279
+          ]
+        },
+        {
+          "a": "plurality",
+          "b": "ranked_pairs",
+          "count": 3746,
+          "of": 10000,
+          "rate": 0.3746,
+          "interval": [
+            0.365163,
+            0.384133
+          ]
+        },
+        {
+          "a": "plurality",
+          "b": "approval",
+          "count": 5507,
+          "of": 10000,
+          "rate": 0.5507,
+          "interval": [
+            0.540933,
+            0.560428
+          ]
+        },
+        {
+          "a": "plurality",
+          "b": "score",
+          "count": 4267,
+          "of": 10000,
+          "rate": 0.4267,
+          "interval": [
+            0.417036,
+            0.43642
+          ]
+        },
+        {
+          "a": "plurality",
+          "b": "quadratic",
+          "count": 4224,
+          "of": 10000,
+          "rate": 0.4224,
+          "interval": [
+            0.412751,
+            0.432109
+          ]
+        },
+        {
+          "a": "irv",
+          "b": "borda",
+          "count": 2595,
+          "of": 10000,
+          "rate": 0.2595,
+          "interval": [
+            0.251002,
+            0.268183
+          ]
+        },
+        {
+          "a": "irv",
+          "b": "ranked_pairs",
+          "count": 1633,
+          "of": 10000,
+          "rate": 0.1633,
+          "interval": [
+            0.156185,
+            0.170674
+          ]
+        },
+        {
+          "a": "irv",
+          "b": "approval",
+          "count": 3666,
+          "of": 10000,
+          "rate": 0.3666,
+          "interval": [
+            0.357208,
+            0.376094
+          ]
+        },
+        {
+          "a": "irv",
+          "b": "score",
+          "count": 2517,
+          "of": 10000,
+          "rate": 0.2517,
+          "interval": [
+            0.24329,
+            0.2603
+          ]
+        },
+        {
+          "a": "irv",
+          "b": "quadratic",
+          "count": 2482,
+          "of": 10000,
+          "rate": 0.2482,
+          "interval": [
+            0.239831,
+            0.256762
+          ]
+        },
+        {
+          "a": "borda",
+          "b": "ranked_pairs",
+          "count": 1198,
+          "of": 10000,
+          "rate": 0.1198,
+          "interval": [
+            0.113581,
+            0.126311
+          ]
+        },
+        {
+          "a": "borda",
+          "b": "approval",
+          "count": 1795,
+          "of": 10000,
+          "rate": 0.1795,
+          "interval": [
+            0.172102,
+            0.187144
+          ]
+        },
+        {
+          "a": "borda",
+          "b": "score",
+          "count": 1315,
+          "of": 10000,
+          "rate": 0.1315,
+          "interval": [
+            0.125018,
+            0.138265
+          ]
+        },
+        {
+          "a": "borda",
+          "b": "quadratic",
+          "count": 1264,
+          "of": 10000,
+          "rate": 0.1264,
+          "interval": [
+            0.12003,
+            0.133057
+          ]
+        },
+        {
+          "a": "ranked_pairs",
+          "b": "approval",
+          "count": 2456,
+          "of": 10000,
+          "rate": 0.2456,
+          "interval": [
+            0.237262,
+            0.254133
+          ]
+        },
+        {
+          "a": "ranked_pairs",
+          "b": "score",
+          "count": 1582,
+          "of": 10000,
+          "rate": 0.1582,
+          "interval": [
+            0.151179,
+            0.165484
+          ]
+        },
+        {
+          "a": "ranked_pairs",
+          "b": "quadratic",
+          "count": 1494,
+          "of": 10000,
+          "rate": 0.1494,
+          "interval": [
+            0.142548,
+            0.156522
+          ]
+        },
+        {
+          "a": "approval",
+          "b": "score",
+          "count": 1906,
+          "of": 10000,
+          "rate": 0.1906,
+          "interval": [
+            0.183021,
+            0.198416
+          ]
+        },
+        {
+          "a": "approval",
+          "b": "quadratic",
+          "count": 1869,
+          "of": 10000,
+          "rate": 0.1869,
+          "interval": [
+            0.17938,
+            0.19466
+          ]
+        },
+        {
+          "a": "score",
+          "b": "quadratic",
+          "count": 356,
+          "of": 10000,
+          "rate": 0.0356,
+          "interval": [
+            0.032143,
+            0.039414
+          ]
+        }
+      ]
+    }
+  ]
+}

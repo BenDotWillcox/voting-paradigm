@@ -1,0 +1,16 @@
+{
+  "study": "methods_simulation_v1",
+  "generator": "python -m eval.run_methods_simulation",
+  "python": "3.11.3",
+  "numpy": "2.4.6",
+  "source_sha256": "b086495839dc41f1393138cd7a5d3c7cb8bda221c34a918b7d8e223462057bac",
+  "outputs": {
+    "config.json": "6da9e92670d54fb196112da9369b4442b3663d99b583ecabf0638036e34085c6",
+    "elections.csv.gz": "e3bac6d05c0b58938a055b82904d461b55f81c97efc74dafcf929ee4378b99f8",
+    "summary.json": "81fb29058011a8d68b1f487d29a0b922617cc13270cdca92a2f0ab519852c09b"
+  },
+  "page_summary": {
+    "path": "public/data/methods/simulation.json",
+    "sha256": "ae77e88b36c4b63b9cfb95e3ec6867573ec1e99fd6f3beda415b0de825e3dbe4"
+  }
+}

@@ -1,4 +1,4 @@
-// TypeScript types mirroring the Python voting package and demo API.
+// TypeScript types mirroring the Python voting package and the voting API.
 
 export type VotingMethod =
   | "plurality"
@@ -9,160 +9,321 @@ export type VotingMethod =
   | "score"
   | "quadratic";
 
-export interface ElectionResult {
-  winners: string[];
-  vote_counts: Record<string, number>;
-  total_ballots: number;
-  abstentions: number;
-  tiebreak_applied: boolean;
+// ---------------------------------------------------------------------------
+// Profile resolution (POST /api/voting/profile/resolve)
+// ---------------------------------------------------------------------------
+
+/** How many voters cast one complete ranking, most preferred first. */
+export interface RankedRow {
+  count: number;
+  ranking: string[];
 }
 
-export interface ApprovalResult extends ElectionResult {
-  avg_approvals_per_ballot: number;
-  approval_rates: Record<string, number>;
+/** An anonymous profile of complete rankings. */
+export interface RankedProfile {
+  ballot_type: "ranked";
+  candidates: string[];
+  rows: RankedRow[];
 }
 
-export interface IRVRound {
+/** How many voters share one set of utilities (0 worst, 100 best). */
+export interface UtilityRow {
+  count: number;
+  utilities: Record<string, number>;
+}
+
+/** Voter types with utilities; rows keep their order and are not merged. */
+export interface UtilityProfile {
+  ballot_type: "utility";
+  candidates: string[];
+  rows: UtilityRow[];
+}
+
+/** A profile tagged with its type. */
+export type Profile = RankedProfile | UtilityProfile;
+
+export interface ProfileResolveRequest {
+  profile: Profile;
+  /** Seed for each method's tiebreak; defaults to 0 on the server. */
+  tiebreak_seed?: number;
+}
+
+/** One tie the tiebreak settled: the sorted tied candidates and its pick. */
+export interface TiebreakEvent {
+  tied: string[];
+  chose: string;
+}
+
+export interface PluralityTrace {
+  kind: "plurality";
+  first_choices: Record<string, number>;
+}
+
+export interface IRVRoundTrace {
   round_number: number;
-  vote_counts: Record<string, number>;
+  counts: Record<string, number>;
   exhausted_ballots: number;
-  active_ballots: number;
   eliminated: string[];
   elimination_was_tiebreak: boolean;
 }
 
-export interface IRVResult extends ElectionResult {
-  rounds: IRVRound[];
-  total_exhausted: number;
+export interface IRVTrace {
+  kind: "irv";
+  rounds: IRVRoundTrace[];
   winning_round: number;
 }
 
-export interface BordaResult extends ElectionResult {
-  point_totals: Record<string, number>;
+export interface BordaTrace {
+  kind: "borda";
+  points: Record<string, number>;
   max_points_per_ballot: number;
-  avg_points_per_candidate: number;
 }
 
-export interface RankedPairsResult extends ElectionResult {
-  pairwise_matrix: Record<string, Record<string, number>>;
+export interface Victory {
+  winner: string;
+  loser: string;
+  margin: number;
+}
+
+export interface RankedPairsTrace {
+  kind: "ranked_pairs";
   had_condorcet_winner: boolean;
-  locked_victories: [string, string, number][];
-  skipped_victories: [string, string, number][];
+  locked: Victory[];
+  skipped: Victory[];
   /** Candidate priority that ordered equal-strength victories; empty if unused. */
   tiebreak_priority: string[];
 }
 
-export interface ScoreResult extends ElectionResult {
-  score_totals: Record<string, number>;
-  avg_scores: Record<string, number>;
-  max_possible_score: number;
-  score_percentages: Record<string, number>;
+export interface ApprovalTrace {
+  kind: "approval";
+  approvals: Record<string, number>;
+  abstentions: number;
 }
 
-export interface QuadraticResult extends ElectionResult {
-  vote_totals: Record<string, number>;
-  total_credits_spent: number;
-  total_credits_available: number;
-  overall_utilization: number;
-  avg_voter_utilization: number;
-  candidates_with_negative_totals: number;
+export interface ScoreTrace {
+  kind: "score";
+  totals: Record<string, number>;
+  max_score: number;
 }
 
-export type AnyElectionResult =
-  | ElectionResult
-  | ApprovalResult
-  | IRVResult
-  | BordaResult
-  | RankedPairsResult
-  | ScoreResult
-  | QuadraticResult;
-
-export interface CandidateData {
-  id: string;
-  name: string;
+export interface QuadraticTrace {
+  kind: "quadratic";
+  /** Votes for minus votes against. */
+  net_votes: Record<string, number>;
+  credits_spent: number;
+  credits_available: number;
 }
 
-export interface MethodScenario {
+export type MethodTrace =
+  | PluralityTrace
+  | IRVTrace
+  | BordaTrace
+  | RankedPairsTrace
+  | ApprovalTrace
+  | ScoreTrace
+  | QuadraticTrace;
+
+/** The ballots one voter type casts in every format, under the ballot model. */
+export interface VoterBallots {
+  row: number;
+  count: number;
+  choice: string;
+  ranking: string[];
+  approvals: string[];
+  scores: Record<string, number>;
+  /** Quadratic votes; nonzero only. */
+  allocations: Record<string, number>;
+  credits_used: number;
+  credit_budget: number;
+}
+
+export interface ProfileMethodResult {
   method: VotingMethod;
-  title: string;
-  description: string;
-  candidates: CandidateData[];
-  ballots: Record<string, unknown>[];
-  ballot_type: string;
-  voter_count: number;
-  key_insight: string;
+  winner: string;
+  /** No tiebreak applied and, for IRV, no batch elimination of a last-place tie. */
+  decisive: boolean;
+  tiebreaks: TiebreakEvent[];
+  trace: MethodTrace;
 }
 
-export interface MethodDemo {
-  scenario: MethodScenario;
-  result: AnyElectionResult;
+export interface SingleProfileCriteria {
+  majority_winner: string | null;
+  condorcet_winner: string | null;
+  condorcet_loser: string | null;
 }
 
-export interface ScenarioControl {
+export interface ProfileResolveResponse {
+  /** The request's profile: ranked comes back canonical, utility as given. */
+  profile: Profile;
+  /** The ranked ballots, canonical; ranked methods and criteria read these. */
+  rankings: RankedProfile;
+  /** The model that turned utilities into ballots; null for ranked input. */
+  ballot_model: string | null;
+  /** Each voter type's ballots, in row order; empty for ranked input. */
+  voter_ballots: VoterBallots[];
+  total_voters: number;
+  tiebreak_seed: number;
+  /** pairwise[a][b] = voters ranking a above b. */
+  pairwise: Record<string, Record<string, number>>;
+  criteria: SingleProfileCriteria;
+  /** Plurality, IRV, Borda, Ranked Pairs, then approval, score, quadratic for utility input. */
+  results: ProfileMethodResult[];
+}
+
+// ---------------------------------------------------------------------------
+// Paradox gallery (public/data/methods/specimens.json)
+// ---------------------------------------------------------------------------
+
+export type CriterionId =
+  | "majority"
+  | "condorcet_winner"
+  | "condorcet_loser"
+  | "monotonicity"
+  | "participation"
+  | "consistency"
+  | "iia"
+  | "clones";
+
+export type SpecimenRole = "profile" | "before" | "after" | "first" | "second" | "combined";
+
+/** Utilities in candidate order, as utility specimens record them. */
+type Utilities = number[];
+
+export type SpecimenTransformation =
+  | { kind: "raise"; candidate: string; ranking: string[]; position: number; voters: number }
+  | { kind: "raise_utility"; candidate: string; before: Utilities; after: Utilities; voters: number }
+  | { kind: "add_voters"; ranking: string[]; voters: number }
+  | { kind: "add_utility_voters"; utilities: Utilities; voters: number }
+  | { kind: "combine" }
+  | { kind: "remove_candidate"; candidate: string }
+  | { kind: "add_clone"; candidate: string; clone: string };
+
+interface SpecimenProfileBase {
+  role: SpecimenRole;
+  candidates: string[];
+  winner: string;
+}
+
+/**
+ * One profile in a specimen. Ranked methods are searched over rankings;
+ * approval, score and quadratic voting over voter types with utilities.
+ */
+export type SpecimenProfile =
+  | (SpecimenProfileBase & { ballot_type: "ranked"; rows: [number, string[]][] })
+  | (SpecimenProfileBase & { ballot_type: "utility"; rows: [number, Utilities][] });
+
+/** The smallest profiles found on which a method fails a criterion. */
+export interface Specimen {
   id: string;
-  label: string;
-  description: string;
-  min: number;
-  max: number;
-  step: number;
-  default: number;
-  low_label: string;
-  high_label: string;
-}
-
-export interface VoterBloc {
-  id: string;
-  name: string;
-  description: string;
-  share: number;
-  voters?: number;
-  color: string;
-  utilities: Record<string, number>;
-  preference_summary?: string;
-  strategic_target?: string;
-}
-
-export interface DemoScenario {
-  id: string;
-  title: string;
-  domain: string;
-  thesis: string;
-  lesson: string;
-  voter_count: number;
-  candidates: CandidateData[];
-  controls: ScenarioControl[];
-  default_controls: Record<string, number>;
-  blocs: VoterBloc[];
-}
-
-export interface MethodComparisonResult {
   method: VotingMethod;
-  winner: string | null;
-  winner_name: string;
-  basis: string;
-  reason: string;
+  criterion: CriterionId;
+  /** The model that turned utilities into ballots; null for ranked methods. */
+  ballot_model: string | null;
+  voters: number;
+  focus: string | null;
+  transformation: SpecimenTransformation | null;
+  profiles: SpecimenProfile[];
 }
 
-export interface FailureModeAnnotation {
-  type: string;
-  label: string;
-  severity: "success" | "warning" | "info";
-  description: string;
+export interface SpecimenSearch {
+  method: VotingMethod;
+  criterion: CriterionId;
+  ballot_model: string | null;
+  max_voters: number;
+  specimen: Specimen | null;
 }
 
-export interface DerivedMethodBallots {
-  plurality: Record<string, unknown>[];
-  approval: Record<string, unknown>[];
-  ranked: Record<string, unknown>[];
-  score: Record<string, unknown>[];
-  quadratic: Record<string, unknown>[];
+// ---------------------------------------------------------------------------
+// Atlas (POST /api/voting/atlas, public/data/methods/atlas.json)
+// ---------------------------------------------------------------------------
+
+/** A candidate at a point in the unit square; y grows downward. */
+export interface AtlasCandidate {
+  id: string;
+  x: number;
+  y: number;
 }
 
-export interface DemoScenarioResolution {
-  scenario: DemoScenario;
-  controls: Record<string, number>;
-  results: Record<VotingMethod, AnyElectionResult>;
-  comparison: Record<VotingMethod, MethodComparisonResult>;
-  annotations: FailureModeAnnotation[];
-  derived_ballots: DerivedMethodBallots;
+export interface AtlasRequest {
+  candidates: AtlasCandidate[];
+  tiebreak_seed?: number;
+}
+
+export interface AtlasPointRequest extends AtlasRequest {
+  /** Row-major cell index; the cloud sits at its center. */
+  cell: number;
+}
+
+export interface AtlasMap {
+  method: VotingMethod;
+  /** The winner's ID in every cell, row-major from the top left. */
+  winners: string;
+  /** Cells where a tiebreak decided the winner. */
+  ties: number[];
+}
+
+export interface AtlasResponse {
+  candidates: AtlasCandidate[];
+  /** Cells per side. */
+  size: number;
+  cloud: {
+    voters_per_type: number;
+    /** Standard deviation of the Gaussian the cloud approximates. */
+    spread: number;
+    /** Each voter type's offset from the cloud's center. */
+    offsets: [number, number][];
+  };
+  ballot_model: string;
+  tiebreak_seed: number;
+  maps: AtlasMap[];
+  /** The Condorcet winner per cell, "-" where there is none. */
+  condorcet: string;
+  /** The candidate with the least total distance to the voters, per cell. */
+  utilitarian: string;
+  /** How many different winners the seven methods produce, one digit per cell. */
+  disagreement: string;
+}
+
+// ---------------------------------------------------------------------------
+// Simulation (public/data/methods/simulation.json, eval/benchmarks/methods_simulation_v1)
+// ---------------------------------------------------------------------------
+
+/** A rate with its 95% Wilson interval. */
+export interface SimulationRate {
+  count: number;
+  of: number;
+  rate: number | null;
+  interval: [number, number];
+}
+
+export interface SimulationGroup {
+  candidates: number;
+  elections: number;
+  /** Elections in which a Condorcet winner exists. */
+  condorcet_winner: SimulationRate;
+  /** Of those, the share in which each method elects it. */
+  condorcet_efficiency: Record<VotingMethod, SimulationRate>;
+  /** Elections a tie decided, by method. */
+  tie_rate: Record<VotingMethod, SimulationRate>;
+  /** Instant runoff's ties by kind: the tiebreak, or eliminating the tied together (with or without votes). */
+  irv_ties: Record<"tiebreak" | "together" | "together_empty", SimulationRate>;
+  /** Each pair once, in method order: how often the two elect different winners. */
+  disagreement: (SimulationRate & { a: VotingMethod; b: VotingMethod })[];
+}
+
+export interface SimulationSummary {
+  study: string;
+  config: {
+    seed: number;
+    voters: number;
+    candidate_counts: number[];
+    elections: number;
+    tiebreak_seed: number;
+  };
+  methods: VotingMethod[];
+  ballot_model: string;
+  interval: string;
+  by_candidates: SimulationGroup[];
+  benchmark: string;
+  source_sha256: string;
 }

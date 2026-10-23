@@ -580,3 +580,45 @@ class TestQuadraticResolutionEdgeCases:
 
         assert result.total_credits_available == 125
         assert result.total_credits_spent == 34  # 25 + 9
+
+
+class TestQuadraticResolutionOrder:
+    """Totals follow candidate order, so results never depend on string hashing."""
+
+    SCRIPT = (
+        "from voting import Candidate, create_quadratic_ballot, resolve_quadratic\n"
+        "ids = ['alice', 'bob', 'carol', 'dave', 'erin']\n"
+        "cands = [Candidate(id=i, name=i) for i in ids]\n"
+        "ballots = [create_quadratic_ballot('v1', {'erin': 3, 'alice': -2, 'carol': 1})]\n"
+        "print(list(resolve_quadratic(cands, ballots).vote_totals))\n"
+    )
+
+    def test_totals_are_in_candidate_order(self):
+        candidates = make_candidates("Alice", "Bob", "Carol")
+        ballots = [create_quadratic_ballot("v1", {"carol": 3, "alice": 1})]
+
+        result = resolve_quadratic(candidates, ballots)
+
+        assert list(result.vote_totals) == ["alice", "bob", "carol"]
+
+    def test_same_result_under_any_hash_seed(self):
+        import os
+        import subprocess
+        import sys
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parents[2]
+        outputs = set()
+        for seed in ("0", "1", "2", "3"):
+            env = {**os.environ, "PYTHONHASHSEED": seed, "PYTHONPATH": str(root)}
+            completed = subprocess.run(
+                [sys.executable, "-c", self.SCRIPT],
+                capture_output=True,
+                text=True,
+                env=env,
+                cwd=root,
+                check=True,
+            )
+            outputs.add(completed.stdout)
+
+        assert len(outputs) == 1

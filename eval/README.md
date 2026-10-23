@@ -62,6 +62,19 @@ Scratch runs under `eval/results/` remain ignored. Only this explicitly
 synthetic, curated reference directory is intended for version control;
 the private human-study paths and their publication rules are unchanged.
 
+## Voting-Methods Simulation (demo 1)
+
+How often the seven methods disagree, and how often each elects the
+Condorcet winner, over 30,000 seeded two-dimensional spatial elections:
+3, 4 and 5 candidates, 101 voters, sincere-v1 ballots, counted exactly as the
+`/methods` instrument counts a profile. See
+[the benchmark](benchmarks/methods_simulation_v1/README.md) for the model,
+results with 95% Wilson intervals, and limits.
+
+```bash
+python -m eval.run_methods_simulation --overwrite
+```
+
 ## Standardized Human-Measure Track
 
 The human track will evaluate pre-answer predictions on independent civic

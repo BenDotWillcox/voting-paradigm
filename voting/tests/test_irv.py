@@ -353,3 +353,57 @@ class TestIRVEdgeCases:
         assert result.winners == ["alice"]
         assert result.vote_counts["alice"] == 2
         assert result.winning_round == 1
+
+
+class TestIRVDeterministicOrder:
+    """Round data follows candidate order, not the interpreter's set order."""
+
+    SCRIPT = (
+        "from voting import Candidate, create_ranked_choice_ballot, resolve_irv\n"
+        "ids = ['alice', 'bob', 'carol', 'dave']\n"
+        "cands = [Candidate(id=i, name=i) for i in ids]\n"
+        "rows = [(3, ['alice', 'bob', 'carol', 'dave']), (2, ['bob', 'alice', 'carol', 'dave']),\n"
+        "        (2, ['carol', 'alice', 'bob', 'dave']), (2, ['dave', 'bob', 'alice', 'carol'])]\n"
+        "ballots = [create_ranked_choice_ballot(f'v{n}{k}', r, ids) for n, r in rows for k in range(n)]\n"
+        "result = resolve_irv(cands, ballots, tiebreak=min)\n"
+        "print([(list(r.vote_counts), r.eliminated) for r in result.rounds])\n"
+    )
+
+    def test_round_order_is_candidate_order(self):
+        candidates = make_candidates("Alice", "Bob", "Carol")
+        ids = candidate_ids(candidates)
+        # Bob and Carol tie for last and are eliminated together
+        ballots = [
+            create_ranked_choice_ballot(f"a{i}", ["alice", "bob", "carol"], ids) for i in range(3)
+        ] + [
+            create_ranked_choice_ballot(f"b{i}", ["bob", "alice", "carol"], ids) for i in range(2)
+        ] + [
+            create_ranked_choice_ballot(f"c{i}", ["carol", "alice", "bob"], ids) for i in range(2)
+        ]
+
+        result = resolve_irv(candidates, ballots)
+
+        assert list(result.rounds[0].vote_counts) == ["alice", "bob", "carol"]
+        assert result.rounds[0].eliminated == ["bob", "carol"]
+
+    def test_same_result_under_any_hash_seed(self):
+        import os
+        import subprocess
+        import sys
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parents[2]
+        outputs = set()
+        for seed in ("0", "1", "2", "3"):
+            env = {**os.environ, "PYTHONHASHSEED": seed, "PYTHONPATH": str(root)}
+            completed = subprocess.run(
+                [sys.executable, "-c", self.SCRIPT],
+                capture_output=True,
+                text=True,
+                env=env,
+                cwd=root,
+                check=True,
+            )
+            outputs.add(completed.stdout)
+
+        assert len(outputs) == 1

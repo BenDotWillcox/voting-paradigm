@@ -2,7 +2,8 @@
 FastAPI application for Nebula Civitas.
 
 Single service, multiple routers:
-  - /api/elections/...     voting resolution + curated demo scenarios
+  - /api/voting/...        profile resolution for the methods instrument
+  - /api/elections/...     voting resolution + curated demo scenarios (lab)
   - /api/preferences/...   preference elicitation (stateless)
 
 Run with: uvicorn api.main:app --reload --port 8000
@@ -11,7 +12,9 @@ Run with: uvicorn api.main:app --reload --port 8000
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .routers.atlas import router as atlas_router
 from .routers.districting import router as districting_router
+from .routers.profiles import router as profiles_router
 from .routers.voting import router as voting_router
 
 try:
@@ -20,6 +23,15 @@ except ModuleNotFoundError:
     preferences_router = None
 
 tags_metadata = [
+    {
+        "name": "voting",
+        "description": (
+            "Resolve anonymous voter profiles under every ranked method, with "
+            "head-to-head counts, single-profile criteria, and every tie the "
+            "seeded tiebreak settled, and map who each method elects across a "
+            "plane of voter clouds. Backs the methods instrument."
+        ),
+    },
     {
         "name": "elections",
         "description": (
@@ -63,6 +75,8 @@ app.add_middleware(
 )
 
 app.include_router(districting_router)
+app.include_router(profiles_router)
+app.include_router(atlas_router)
 app.include_router(voting_router)
 if preferences_router is not None:
     app.include_router(preferences_router)

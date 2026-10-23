@@ -1,0 +1,11 @@
+{
+  "seed": 20261023,
+  "voters": 101,
+  "candidate_counts": [
+    3,
+    4,
+    5
+  ],
+  "elections": 10000,
+  "tiebreak_seed": 0
+}
