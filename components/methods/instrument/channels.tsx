@@ -72,7 +72,31 @@ export function Channels({
           </section>
         );
       })}
+      <CriteriaKey criteria={resolution.criteria} />
     </div>
+  );
+}
+
+/**
+ * What the three criteria columns mean, and, once rather than in every row,
+ * which of them this electorate gives nothing to check.
+ */
+function CriteriaKey({ criteria }: { criteria: ProfileResolveResponse["criteria"] }) {
+  const missing = [
+    criteria.majority_winner === null ? "majority winner" : null,
+    criteria.condorcet_winner === null ? "Condorcet winner" : null,
+    criteria.condorcet_loser === null ? "Condorcet loser" : null,
+  ].filter((name): name is string => name !== null);
+  const listed =
+    missing.length < 2 ? missing.join("") : `${missing.slice(0, -1).join(", ")} or ${missing[missing.length - 1]}`;
+  return (
+    <p className="border-t border-mi-rule px-3 pt-2.5 text-xs leading-relaxed text-mi-muted">
+      <span className="text-mi-ink-2">Maj.</span> elects the majority winner, a candidate more
+      than half the voters rank first. <span className="text-mi-ink-2">Cond.</span> elects the Condorcet winner,
+      who beats every rival head to head. <span className="text-mi-ink-2">Loser</span> avoids the
+      Condorcet loser, who loses to every rival.
+      {missing.length > 0 ? ` This electorate has no ${listed}, so a dash marks nothing to check.` : null}
+    </p>
   );
 }
 

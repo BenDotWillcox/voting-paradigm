@@ -104,39 +104,51 @@ export function round(value: number): number {
 export interface AtlasLayout {
   id: string;
   label: string;
-  caption: string;
+  /** The layout's headline claim, always shown. */
+  headline: string;
+  /** The rest of its claims, behind "More on this layout". */
+  detail: string;
   atlas: AtlasResponse;
 }
 
 /**
  * Copy for the curated layouts built by scripts/build_methods_artifacts.py.
  * Shares count only cells a method decided outright; api/tests/test_atlas.py
- * checks each claim against public/data/methods/atlas.json.
+ * checks each claim, headline and detail alike, against
+ * public/data/methods/atlas.json.
  */
-export const LAYOUT_COPY: Record<string, { label: string; caption: string }> = {
+export const LAYOUT_COPY: Record<string, { label: string; headline: string; detail: string }> = {
   hub: {
     label: "Hub",
-    caption:
-      "D sits inside A, B and C. D is the Condorcet winner on 11% of the map, but plurality elects it on under 3%: near D, the voters on every side give their first choices to A, B or C. Instant runoff gives D 7%, and Borda, score and quadratic about 13%. Approval elects D outright on 61% and has it tied for the lead on all the rest, because D is above most voters' average utility from anywhere on the map.",
+    headline:
+      "D sits inside A, B and C. Plurality elects D on under 3% of the map; approval elects it outright on 61%.",
+    detail:
+      "D is the Condorcet winner on 11% of the map, but near D the voters on every side give their first choices to A, B or C. Instant runoff gives D 7%, and Borda, score and quadratic about 13%. Approval has D tied for the lead on all the rest of the map, because D is above most voters' average utility from anywhere on it.",
   },
   squeeze: {
     label: "Center squeeze",
-    caption:
-      "C sits between A and B. C is the Condorcet winner on 20% of the map, but plurality elects it on only 9%: near C, the voters on either side give their first choices to A or B. Instant runoff gives C 17%; approval gives it 55%, because C is above average for most voters.",
+    headline:
+      "C sits between A and B and is the Condorcet winner on 20% of the map, but plurality elects it on only 9%.",
+    detail:
+      "Near C, the voters on either side give their first choices to A or B. Instant runoff gives C 17%; approval gives it 55%, because C is above average for most voters.",
   },
   clones: {
     label: "Clones",
-    caption:
-      "B and C are a near-identical pair facing A. Plurality gives A a point more of the map than the Condorcet winner map does, because the pair splits its voters' first choices. Borda gives A four points less: on the pair's voters' ballots, the second clone pushes A a place lower.",
+    headline:
+      "B and C are a near-identical pair facing A: plurality gives A more of the map than the Condorcet winner map does, and Borda gives it less.",
+    detail:
+      "Plurality's gain is a point, because the pair splits its voters' first choices. Borda's loss is four points: on the pair's voters' ballots, the second clone pushes A a place lower.",
   },
   ring: {
     label: "Ring of five",
-    caption:
-      "Five candidates around a ring. Near the middle, instant runoff's eliminations cascade, and its regions break up: a tie decides 9% of its cells. Approval needs a tiebreak in 18%, Ranked Pairs in almost none.",
+    headline:
+      "Five candidates around a ring. Near the middle, instant runoff's regions break up: a tie decides 9% of its cells.",
+    detail: "Its eliminations cascade there. Approval needs a tiebreak in 18% of its cells, Ranked Pairs in almost none.",
   },
   spread: {
     label: "Spread out",
-    caption:
-      "Far apart, the methods agree. Every method's map is within two points of the Condorcet winner map, and 97% of cells have a single winner across all seven.",
+    headline: "Far apart, the methods agree.",
+    detail:
+      "Every method's map is within two points of the Condorcet winner map, and 97% of cells have a single winner across all seven.",
   },
 };

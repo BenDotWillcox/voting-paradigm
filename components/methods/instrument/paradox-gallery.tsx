@@ -29,6 +29,8 @@ export function ParadoxGallery({
 }) {
   const [noted, setNoted] = useState<{ method: VotingMethod; criterion: CriterionId } | null>(null);
   const note = noted ? galleryCell(searches, noted.method, noted.criterion) : null;
+  const [defined, setDefined] = useState<CriterionId | null>(null);
+  const definedCriterion = CRITERIA.find((criterion) => criterion.id === defined);
 
   return (
     <div className="space-y-4">
@@ -37,11 +39,29 @@ export function ParadoxGallery({
         found where the method fails, re-checked against the reference implementation; open it
         to see the failure above the table. A ✓ is a proof, not an empty search.
       </p>
-      <p className="max-w-3xl text-xs leading-relaxed text-mi-muted">
-        Approval, score and quadratic voting read utilities, so their rows search voter types:
-        each ranking with its middle candidate at 2.5, 5 or 7.5, cast into ballots by the
-        sincere-v1 model. Their clones are exact: every voter gives the clone the original&apos;s
-        utility.
+      <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-mi-muted">
+        <span className="inline-flex items-center gap-1.5">
+          <Swatch kind="fail" /> fails: smallest specimen, voters
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <Swatch kind="cited" /> fails: known theorem, beyond the search
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <Swatch kind="pass" /> satisfies: proof
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <Swatch kind="open" /> open: no specimen found and no proof
+        </span>
+      </div>
+      <p className="min-h-5 text-xs text-mi-ink-2" aria-live="polite">
+        {definedCriterion ? (
+          <>
+            <span className="font-medium text-mi-ink">{definedCriterion.label}:</span>{" "}
+            {definedCriterion.definition}
+          </>
+        ) : (
+          <span className="text-mi-muted">Hover over or focus a column heading for its definition.</span>
+        )}
       </p>
 
       <div className="overflow-x-auto">
@@ -51,13 +71,21 @@ export function ParadoxGallery({
             <tr className="border-b border-mi-rule">
               <th className="py-2 pr-3 text-left text-xs font-normal text-mi-muted">Method</th>
               {CRITERIA.map((criterion) => (
-                <th
-                  key={criterion.id}
-                  scope="col"
-                  title={`${criterion.label}: ${criterion.definition}`}
-                  className="px-1 py-2 text-center text-xs font-normal text-mi-muted"
-                >
-                  {criterion.short}
+                <th key={criterion.id} scope="col" className="px-1 py-2 text-center text-xs font-normal">
+                  <button
+                    type="button"
+                    aria-label={`${criterion.label}: ${criterion.definition}`}
+                    onMouseEnter={() => setDefined(criterion.id)}
+                    onFocus={() => setDefined(criterion.id)}
+                    onClick={() => setDefined(criterion.id)}
+                    className={cn(
+                      "rounded-[3px] px-1 underline decoration-dotted underline-offset-2 hover:text-mi-ink",
+                      "focus-visible:outline-1 focus-visible:outline-mi-ink",
+                      defined === criterion.id ? "text-mi-ink" : "text-mi-muted"
+                    )}
+                  >
+                    {criterion.short}
+                  </button>
                 </th>
               ))}
             </tr>
@@ -109,22 +137,15 @@ export function ParadoxGallery({
         </table>
       </div>
 
-      <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-mi-muted">
-        <span className="inline-flex items-center gap-1.5">
-          <Swatch kind="fail" /> fails: smallest specimen, voters
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <Swatch kind="cited" /> fails: known theorem, beyond the search
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <Swatch kind="pass" /> satisfies: proof
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <Swatch kind="open" /> open: no specimen found and no proof
-        </span>
-      </div>
 
       {noted && note ? <CellNote method={noted.method} criterion={noted.criterion} cell={note} /> : null}
+
+      <p className="max-w-3xl text-xs leading-relaxed text-mi-muted">
+        Approval, score and quadratic voting read utilities, so their rows search voter types:
+        each ranking with its middle candidate at 2.5, 5 or 7.5, cast into ballots by the
+        sincere-v1 model. Their clones are exact: every voter gives the clone the original&apos;s
+        utility.
+      </p>
     </div>
   );
 }
