@@ -41,32 +41,12 @@ export function MethodTrace({
   resolution: ProfileResolveResponse;
   failures?: GalleryFailure[];
 }) {
-  const trace = result.trace;
   return (
     <div className="space-y-4">
       <p className="text-sm leading-relaxed text-mi-ink-2">
         {methodDescriptions[result.method].howItWorks}
       </p>
-      {trace.kind === "plurality" ? (
-        <PluralityView trace={trace} resolution={resolution} winner={result.winner} />
-      ) : trace.kind === "irv" ? (
-        <IRVView
-          key={JSON.stringify(resolution.rankings.rows)}
-          trace={trace}
-          winner={result.winner}
-          candidates={resolution.rankings.candidates}
-        />
-      ) : trace.kind === "borda" ? (
-        <BordaView trace={trace} resolution={resolution} winner={result.winner} />
-      ) : trace.kind === "ranked_pairs" ? (
-        <RankedPairsView trace={trace} resolution={resolution} winner={result.winner} />
-      ) : trace.kind === "approval" ? (
-        <ApprovalView trace={trace} resolution={resolution} winner={result.winner} />
-      ) : trace.kind === "score" ? (
-        <ScoreView trace={trace} resolution={resolution} winner={result.winner} />
-      ) : (
-        <QuadraticView trace={trace} resolution={resolution} winner={result.winner} />
-      )}
+      <TraceView result={result} resolution={resolution} />
       {result.tiebreaks.length > 0 ? (
         <div className="border-t border-mi-rule pt-3 text-xs text-mi-ink-2">
           <p className="font-medium text-mi-ink">Ties broken by the seeded tiebreak (seed {resolution.tiebreak_seed})</p>
@@ -84,7 +64,38 @@ export function MethodTrace({
   );
 }
 
-function MethodProfile({
+/** The count itself, without the method's description or background. */
+export function TraceView({
+  result,
+  resolution,
+}: {
+  result: ProfileMethodResult;
+  resolution: ProfileResolveResponse;
+}) {
+  const trace = result.trace;
+  return trace.kind === "plurality" ? (
+    <PluralityView trace={trace} resolution={resolution} winner={result.winner} />
+  ) : trace.kind === "irv" ? (
+    <IRVView
+      key={JSON.stringify(resolution.rankings.rows)}
+      trace={trace}
+      winner={result.winner}
+      candidates={resolution.rankings.candidates}
+    />
+  ) : trace.kind === "borda" ? (
+    <BordaView trace={trace} resolution={resolution} winner={result.winner} />
+  ) : trace.kind === "ranked_pairs" ? (
+    <RankedPairsView trace={trace} resolution={resolution} winner={result.winner} />
+  ) : trace.kind === "approval" ? (
+    <ApprovalView trace={trace} resolution={resolution} winner={result.winner} />
+  ) : trace.kind === "score" ? (
+    <ScoreView trace={trace} resolution={resolution} winner={result.winner} />
+  ) : (
+    <QuadraticView trace={trace} resolution={resolution} winner={result.winner} />
+  );
+}
+
+export function MethodProfile({
   method,
   failures,
 }: {
@@ -243,8 +254,15 @@ function IRVView({
       tabIndex={0}
       aria-label="IRV rounds. Left and right arrows step between rounds."
       onKeyDown={(event) => {
-        if (event.key === "ArrowLeft" && step > 0) setStep(step - 1);
-        if (event.key === "ArrowRight" && !last) setStep(step + 1);
+        // Handled keys stay here, so they do not also move the page's step
+        if (event.key === "ArrowLeft" && step > 0) {
+          event.preventDefault();
+          setStep(step - 1);
+        }
+        if (event.key === "ArrowRight" && !last) {
+          event.preventDefault();
+          setStep(step + 1);
+        }
       }}
     >
       <Stepper

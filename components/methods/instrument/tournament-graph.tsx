@@ -14,10 +14,13 @@ export function TournamentGraph({
   candidates,
   pairwise,
   condorcetWinner,
+  caption = true,
 }: {
   candidates: string[];
   pairwise: Record<string, Record<string, number>>;
   condorcetWinner: string | null;
+  /** Off where the page around the graph already explains how to read it. */
+  caption?: boolean;
 }) {
   const position = new Map(
     candidates.map((id, index) => {
@@ -142,12 +145,14 @@ export function TournamentGraph({
           );
         })}
       </svg>
-      <figcaption className="text-xs leading-relaxed text-mi-muted">
-        Arrows point from the head-to-head winner; numbers are winning margins.
-        {condorcetWinner
-          ? ` The ringed candidate beats every other: the Condorcet winner.`
-          : " No candidate beats every other, so there is no Condorcet winner."}
-      </figcaption>
+      {caption ? (
+        <figcaption className="text-xs leading-relaxed text-mi-muted">
+          Arrows point from the head-to-head winner; numbers are winning margins.
+          {condorcetWinner
+            ? ` The ringed candidate beats every other: the Condorcet winner.`
+            : " No candidate beats every other, so there is no Condorcet winner."}
+        </figcaption>
+      ) : null}
     </figure>
   );
 }

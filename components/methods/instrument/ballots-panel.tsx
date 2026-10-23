@@ -3,6 +3,7 @@
 import { candidateColor } from "@/lib/methods/candidates";
 import { formatUtility } from "@/lib/methods/profile";
 import { cn } from "@/lib/utils";
+import type { BallotKind } from "@/lib/methods/walkthrough";
 import type { UtilityProfile, VoterBallots } from "@/types/methods";
 
 import { CandidateGlyph, CandidateMark } from "./glyph";
@@ -61,18 +62,11 @@ export function BallotsPanel({
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
             <Card title="Single choice" readBy="Plurality" rule="Mark one: the favorite.">
-              <CandidateMark id={cast.choice} size={18} className="text-lg font-semibold" />
+              <BallotBody kind="single" candidates={candidates} cast={cast} />
             </Card>
 
             <Card title="Ranked" readBy="IRV, Borda, Ranked Pairs" rule="Order every candidate.">
-              <span className="flex flex-wrap items-center gap-1 font-mi-mono text-sm">
-                {cast.ranking.map((id, position) => (
-                  <span key={id} className="inline-flex items-center gap-1">
-                    {position > 0 ? <span className="text-mi-muted">›</span> : null}
-                    <CandidateMark id={id} size={13} />
-                  </span>
-                ))}
-              </span>
+              <BallotBody kind="ranked" candidates={candidates} cast={cast} />
             </Card>
 
             <Card
@@ -80,37 +74,11 @@ export function BallotsPanel({
               readBy="Approval"
               rule="Approve every candidate above your average."
             >
-              <ul className="flex flex-wrap gap-x-3 gap-y-1 font-mi-mono text-sm">
-                {candidates.map((id) => {
-                  const approved = cast.approvals.includes(id);
-                  return (
-                    <li key={id} className={cn("inline-flex items-center gap-1", !approved && "text-mi-muted")}>
-                      <CandidateGlyph id={id} size={12} />
-                      {id} {approved ? "✓" : "–"}
-                    </li>
-                  );
-                })}
-              </ul>
-              {cast.approvals.length === 0 ? (
-                <p className="mt-1 text-xs text-mi-muted">Indifferent, so this ballot is blank.</p>
-              ) : null}
+              <BallotBody kind="approval" candidates={candidates} cast={cast} />
             </Card>
 
             <Card title="Score" readBy="Score" rule="Rescale worst to 0 and favorite to 10.">
-              <ul className="space-y-0.5">
-                {candidates.map((id) => (
-                  <li key={id} className="grid grid-cols-[2.25rem_minmax(0,1fr)_1.5rem] items-center gap-2 font-mi-mono text-sm">
-                    <CandidateMark id={id} size={12} />
-                    <span className="h-2">
-                      <span
-                        className="block h-full rounded-r-[3px]"
-                        style={{ width: `${(cast.scores[id] ?? 0) * 10}%`, background: candidateColor(id) }}
-                      />
-                    </span>
-                    <span className="text-right">{cast.scores[id] ?? 0}</span>
-                  </li>
-                ))}
-              </ul>
+              <BallotBody kind="score" candidates={candidates} cast={cast} />
             </Card>
 
             <Card
@@ -119,7 +87,7 @@ export function BallotsPanel({
               rule="Votes in proportion to distance from your average; v votes cost v² credits."
               wide
             >
-              <QuadraticBallot candidates={candidates} cast={cast} />
+              <BallotBody kind="quadratic" candidates={candidates} cast={cast} />
             </Card>
           </div>
           <p className="text-xs text-mi-muted">
@@ -129,6 +97,71 @@ export function BallotsPanel({
       )}
     </div>
   );
+}
+
+/** What one voter type casts on one kind of ballot. */
+export function BallotBody({
+  kind,
+  candidates,
+  cast,
+}: {
+  kind: BallotKind;
+  candidates: string[];
+  cast: VoterBallots;
+}) {
+  switch (kind) {
+    case "single":
+      return <CandidateMark id={cast.choice} size={18} className="text-lg font-semibold" />;
+    case "ranked":
+      return (
+        <span className="flex flex-wrap items-center gap-1 font-mi-mono text-sm">
+          {cast.ranking.map((id, position) => (
+            <span key={id} className="inline-flex items-center gap-1">
+              {position > 0 ? <span className="text-mi-muted">›</span> : null}
+              <CandidateMark id={id} size={13} />
+            </span>
+          ))}
+        </span>
+      );
+    case "approval":
+      return (
+        <>
+          <ul className="flex flex-wrap gap-x-3 gap-y-1 font-mi-mono text-sm">
+            {candidates.map((id) => {
+              const approved = cast.approvals.includes(id);
+              return (
+                <li key={id} className={cn("inline-flex items-center gap-1", !approved && "text-mi-muted")}>
+                  <CandidateGlyph id={id} size={12} />
+                  {id} {approved ? "✓" : "–"}
+                </li>
+              );
+            })}
+          </ul>
+          {cast.approvals.length === 0 ? (
+            <p className="mt-1 text-xs text-mi-muted">Indifferent, so this ballot is blank.</p>
+          ) : null}
+        </>
+      );
+    case "score":
+      return (
+        <ul className="space-y-0.5">
+          {candidates.map((id) => (
+            <li key={id} className="grid grid-cols-[2.25rem_minmax(0,1fr)_1.5rem] items-center gap-2 font-mi-mono text-sm">
+              <CandidateMark id={id} size={12} />
+              <span className="h-2">
+                <span
+                  className="block h-full rounded-r-[3px]"
+                  style={{ width: `${(cast.scores[id] ?? 0) * 10}%`, background: candidateColor(id) }}
+                />
+              </span>
+              <span className="text-right">{cast.scores[id] ?? 0}</span>
+            </li>
+          ))}
+        </ul>
+      );
+    case "quadratic":
+      return <QuadraticBallot candidates={candidates} cast={cast} />;
+  }
 }
 
 function Card({

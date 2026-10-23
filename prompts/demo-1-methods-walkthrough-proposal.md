@@ -156,7 +156,15 @@ Notes:
    (head to head) to 1,000px (the comparison); slices 2–4 design to that
    budget.
 2. Chapter 1: voters step, single-card ballot steps, count steps with the
-   scoreboard, head-to-head concept step.
+   scoreboard, head-to-head concept step. *Implemented 2026-10-23*: steps
+   1.1–1.14 (`lib/methods/walkthrough.ts` for copy written from the
+   center-squeeze resolution, `components/methods/instrument/walkthrough.tsx`
+   for the views). Chapter 1 always reads the preset's stored count, so it
+   never waits on the API and ignores whatever the playground holds. Ranked
+   Pairs shows its locking order even with a Condorcet winner, where the
+   reference trace skips it. All 14 steps fit at 1280×720 with no inner
+   scroll. The ballots and head-to-head example sets (`SLIDE_EXAMPLES`) and
+   `headToHeadClaim` are unused until chapter 2.2 brings examples back.
 3. Chapter 2 and 3: comparison steps, criteria step, the three paradox
    stories (before / change / after), gallery as reference.
 4. Chapter 4: sample-election artifact and step, atlas framing, matrix

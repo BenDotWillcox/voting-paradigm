@@ -59,7 +59,7 @@ export default async function MethodsPage({
         initialProfile={initialProfile}
         initialResolution={initialResolution}
         initialSpecimen={initialSpecimen}
-        initialStep={initialSpecimen ? "gallery" : (linkedStep(step, section) ?? "ballots")}
+        initialStep={initialSpecimen ? "gallery" : (linkedStep(step, section) ?? "voters")}
         initialPlay={play !== undefined || (p !== undefined && !initialSpecimen)}
         provenance={{ presetsHash: data.presetsHash, sourceHash: data.sourceHash }}
       />

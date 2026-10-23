@@ -6,7 +6,25 @@
  */
 
 export const CHAPTERS = [
-  { title: "Ballots and counts", steps: ["ballots", "head-to-head"] },
+  {
+    title: "Ballots and counts",
+    steps: [
+      "voters",
+      "ballot-single",
+      "count-plurality",
+      "ballot-ranked",
+      "count-irv",
+      "count-borda",
+      "head-to-head",
+      "count-ranked-pairs",
+      "ballot-approval",
+      "count-approval",
+      "ballot-score",
+      "count-score",
+      "ballot-quadratic",
+      "count-quadratic",
+    ],
+  },
   { title: "Same voters, different winners", steps: ["comparison"] },
   { title: "When methods break", steps: ["gallery"] },
   { title: "Across many elections", steps: ["atlas", "at-scale"] },
@@ -20,7 +38,7 @@ export const STEPS: readonly StepId[] = CHAPTERS.flatMap((chapter) => chapter.st
 const SECTION_STEPS: Record<string, StepId> = {
   counts: "comparison",
   "head-to-head": "head-to-head",
-  ballots: "ballots",
+  ballots: "voters",
   paradoxes: "gallery",
   atlas: "atlas",
   "at-scale": "at-scale",
@@ -30,9 +48,13 @@ export function isStep(value: string | undefined): value is StepId {
   return (STEPS as readonly string[]).includes(value ?? "");
 }
 
+// Steps renamed since their links were shared
+const RENAMED_STEPS: Record<string, StepId> = { ballots: "voters" };
+
 /** The step a link names, by `?step=` or by an old `?section=`. */
 export function linkedStep(step: string | undefined, section: string | undefined): StepId | null {
   if (isStep(step)) return step;
+  if (step && RENAMED_STEPS[step]) return RENAMED_STEPS[step];
   return section ? (SECTION_STEPS[section] ?? null) : null;
 }
 
