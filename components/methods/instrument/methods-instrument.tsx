@@ -7,7 +7,7 @@ import { isReference, type AtlasView } from "@/lib/methods/atlas";
 import { atScaleTakeaway, countsClaim, headToHeadClaim, numberWord } from "@/lib/methods/claims";
 import { METHOD_META } from "@/lib/methods/instrument";
 import { encodeProfile, specimenProfile } from "@/lib/methods/profile";
-import { SECTIONS, type SectionId } from "@/lib/methods/sections";
+import { SECTIONS, type ExampleSlide, type SectionId } from "@/lib/methods/sections";
 import { cn } from "@/lib/utils";
 import type {
   ProfileResolveResponse,
@@ -37,6 +37,7 @@ export interface PresetOption {
   id: string;
   label: string;
   description: string;
+  notes: Record<ExampleSlide, string>;
   profile: UtilityProfile;
   resolution: ProfileResolveResponse;
 }
@@ -171,12 +172,13 @@ export function MethodsInstrument({
     </span>
   );
 
-  const electorateBar = (
-    <ElectorateBar
+  const examples = (slide: ExampleSlide) => (
+    <Examples
+      slide={slide}
       presets={presets}
       activeKey={key}
       origin={origin}
-      summary={summary}
+      status={<StatusNote status={status} showing={showing} />}
       onPreset={openPreset}
       onPlay={() => setPlayOpen(true)}
     />
@@ -217,32 +219,30 @@ export function MethodsInstrument({
 
   const slides: Slide[] = [
     {
-      id: "ballots",
-      title: "Ballots",
-      content: (
-        <SlideFrame
-          number={1}
-          title="Rated ballots hear how much, not just which order"
-          takeaway="The ballot model, not just the count, decides what score, approval and quadratic voting see."
-          intro="Each group of voters places the candidates on a scale from 0 to 10. A declared ballot model, sincere-v1, turns that placement into every kind of ballot the seven methods read."
-        >
-          {electorateBar}
-          {ballots}
-        </SlideFrame>
-      ),
-    },
-    {
       id: "counts",
       title: "Seven counts",
       content: (
         <SlideFrame
-          number={2}
-          transition={`Those ballots, counted ${methodCount} ways.`}
+          number={1}
+          transition={`One electorate, counted ${methodCount} ways.`}
           title={countsCopy.title}
           takeaway={countsCopy.takeaway}
-          intro="Choose a method to see how it reached its winner."
+          intro={
+            <>
+              Choose a method to see how it reached its winner. Approval, score and quadratic
+              voting read each voter&apos;s 0 to 10 scale;{" "}
+              <button
+                type="button"
+                onClick={() => setSection(SECTIONS.indexOf("ballots"))}
+                className="underline decoration-mi-rule underline-offset-2 hover:decoration-mi-ink"
+              >
+                Ballots shows how
+              </button>
+              .
+            </>
+          }
         >
-          {electorateBar}
+          {examples("counts")}
           <div className="grid gap-6 lg:grid-cols-2">
             {counts}
             {trace}
@@ -255,7 +255,7 @@ export function MethodsInstrument({
       title: "Head to head",
       content: (
         <SlideFrame
-          number={3}
+          number={2}
           transition={
             winners.size > 1
               ? "Why do the counts disagree? Look at the two-way races."
@@ -265,8 +265,24 @@ export function MethodsInstrument({
           takeaway={headToHeadCopy.takeaway}
           intro="Every pair of candidates as a two-way race, decided by how many voters rank one above the other."
         >
-          {electorateBar}
+          {examples("head-to-head")}
           <div className="max-w-xl">{tournament}</div>
+        </SlideFrame>
+      ),
+    },
+    {
+      id: "ballots",
+      title: "Ballots",
+      content: (
+        <SlideFrame
+          number={3}
+          transition="How does a voter's 0 to 10 scale become each ballot?"
+          title="Rated ballots hear how much, not just which order"
+          takeaway="The ballot model, not just the count, decides what score, approval and quadratic voting see."
+          intro="Each group of voters places the candidates on a scale from 0 to 10. A declared ballot model, sincere-v1, turns that placement into every kind of ballot the seven methods read."
+        >
+          {examples("ballots")}
+          {ballots}
         </SlideFrame>
       ),
     },
@@ -433,29 +449,71 @@ export function MethodsInstrument({
   );
 }
 
-/** What the slides are counting, with presets to switch to and the playground. */
-function ElectorateBar({
+/**
+ * A slide's examples: the presets to switch to, and what to notice about the
+ * one showing on this slide. An electorate from elsewhere (a specimen, an
+ * atlas point, an edit) shows as its origin instead.
+ */
+function Examples({
+  slide,
   presets,
   activeKey,
   origin,
-  summary,
+  status,
   onPreset,
   onPlay,
 }: {
+  slide: ExampleSlide;
   presets: PresetOption[];
   activeKey: string;
   origin: string | null;
-  summary: React.ReactNode;
+  status: React.ReactNode;
   onPreset: (preset: PresetOption) => void;
   onPlay: () => void;
 }) {
+  const active = presets.find((preset) => encodeProfile(preset.profile) === activeKey);
+  const note = active
+    ? active.notes[slide]
+    : "Loaded from elsewhere on the page or edited in the playground; choose an example to return.";
+
   return (
-    <div className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[3px] border border-mi-rule bg-mi-page px-3 py-2">
-      <StartingPoints presets={presets} activeKey={activeKey} origin={origin} onPreset={onPreset} />
-      <span className="font-mi-mono text-xs text-mi-ink-2">{summary}</span>
-      <span className="ml-auto">
-        <PlayButton onClick={onPlay}>Open in the playground</PlayButton>
-      </span>
+    <div className="mb-5 space-y-2">
+      <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Examples">
+        <span className="text-xs text-mi-muted">Examples</span>
+        {presets.map((preset) => {
+          const pressed = preset === active;
+          return (
+            <button
+              key={preset.id}
+              type="button"
+              aria-pressed={pressed}
+              onClick={() => onPreset(preset)}
+              className={cn(
+                "rounded-[3px] border px-2.5 py-1 text-sm",
+                pressed ? "border-mi-ink bg-mi-ink text-mi-surface" : "border-mi-rule text-mi-ink hover:border-mi-ink"
+              )}
+            >
+              {preset.label}
+            </button>
+          );
+        })}
+        {origin ? (
+          <span className="rounded-[3px] border border-dashed border-mi-ink px-2.5 py-1 text-sm text-mi-ink">
+            {origin}
+          </span>
+        ) : null}
+      </div>
+      <p className="max-w-3xl text-sm leading-relaxed text-mi-ink-2" aria-live="polite">
+        {note}{" "}
+        <button
+          type="button"
+          onClick={onPlay}
+          className="whitespace-nowrap text-mi-muted underline decoration-mi-rule underline-offset-2 hover:text-mi-ink hover:decoration-mi-ink"
+        >
+          Explore it in the playground
+        </button>
+        {status}
+      </p>
     </div>
   );
 }

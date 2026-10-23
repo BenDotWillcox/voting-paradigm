@@ -55,7 +55,7 @@ export function BallotsPanel({
       ) : (
         <>
           <p className="text-sm text-mi-ink-2">
-            Each of these {row.count} {row.count === 1 ? "voter casts" : "voters casts"} the
+            Each of these {row.count} {row.count === 1 ? "voter casts" : "voters cast"} the
             ballots below. Their average utility is{" "}
             <span className="font-mi-mono">{formatUtility(Math.round(mean))}</span>.
           </p>

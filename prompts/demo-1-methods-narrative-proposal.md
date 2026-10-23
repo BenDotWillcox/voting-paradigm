@@ -167,7 +167,13 @@ needs an explicit yes:
    preset, specimen or edit. The gallery's "load it above" was not stale
    (the specimen banner opens above the table) and was only clarified.
 2. Reorder slides and switch the opening preset; replace the electorate bar
-   with example chips (existing presets and specimens only).
+   with example chips (existing presets and specimens only). *Implemented
+   2026-10-23* with the two presets only: loading a specimen from slides 1–3
+   would move the page to the paradox slide, so specimens stay in the
+   gallery. Each example carries a note per slide (`PRESET_COPY` in
+   `lib/methods/instrument-data.ts`), shown only while the preset is
+   unedited, and a quiet "Explore it in the playground" link; the counts
+   slide links forward to Ballots.
 3. New presets (consensus, clear Condorcet winner, ballot examples) and
    slide-3 examples.
 4. Collapse within slides: "About this method", criteria headers, gallery
