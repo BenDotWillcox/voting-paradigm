@@ -30,7 +30,7 @@ export const CHAPTERS = [
     title: "When methods break",
     steps: ["fairness", "paradox-spoiler", "paradox-no-show", "paradox-monotonicity", "gallery"],
   },
-  { title: "Across many elections", steps: ["atlas", "at-scale"] },
+  { title: "Across many elections", steps: ["one-election", "atlas", "disagreement", "efficiency"] },
 ] as const;
 
 export type StepId = (typeof CHAPTERS)[number]["steps"][number];
@@ -44,7 +44,7 @@ const SECTION_STEPS: Record<string, StepId> = {
   ballots: "voters",
   paradoxes: "gallery",
   atlas: "atlas",
-  "at-scale": "at-scale",
+  "at-scale": "disagreement",
 };
 
 export function isStep(value: string | undefined): value is StepId {
@@ -52,7 +52,7 @@ export function isStep(value: string | undefined): value is StepId {
 }
 
 // Steps renamed since their links were shared
-const RENAMED_STEPS: Record<string, StepId> = { ballots: "voters" };
+const RENAMED_STEPS: Record<string, StepId> = { ballots: "voters", "at-scale": "disagreement" };
 
 /** The step a link names, by `?step=` or by an old `?section=`. */
 export function linkedStep(step: string | undefined, section: string | undefined): StepId | null {

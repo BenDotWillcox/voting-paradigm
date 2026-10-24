@@ -55,6 +55,7 @@ export default async function MethodsPage({
         presets={data.presets}
         examples={data.examples}
         stories={data.stories}
+        samples={data.samples}
         searches={data.searches}
         simulation={data.simulation}
         initialProfile={initialProfile}

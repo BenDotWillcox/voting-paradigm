@@ -4,7 +4,7 @@ import { ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { isReference, type AtlasView } from "@/lib/methods/atlas";
-import { atScaleTakeaway, countsClaim, numberWord } from "@/lib/methods/claims";
+import { countsClaim, disagreementTakeaway, efficiencyClaim, numberWord } from "@/lib/methods/claims";
 import { CRITERIA } from "@/lib/methods/gallery";
 import { METHOD_META } from "@/lib/methods/instrument";
 import { encodeProfile, specimenProfile } from "@/lib/methods/profile";
@@ -15,6 +15,7 @@ import {
   BALLOT_RULES,
   WALK_PRESET,
   ballotCopy,
+  sampleCopy,
   countCopy,
   headToHeadCopy as walkHeadToHead,
   votersCopy,
@@ -22,6 +23,7 @@ import {
 } from "@/lib/methods/walkthrough";
 import type {
   ProfileResolveResponse,
+  SampleElection,
   SimulationSummary,
   Specimen,
   SpecimenRole,
@@ -30,7 +32,7 @@ import type {
   VotingMethod,
 } from "@/types/methods";
 
-import { AtScale } from "./at-scale";
+import { DisagreementStep, EfficiencyStep } from "./at-scale";
 import { Atlas, AtlasPointBanner, type AtlasPoint } from "./atlas";
 import { BallotsPanel } from "./ballots-panel";
 import { Channels } from "./channels";
@@ -49,6 +51,7 @@ import {
   CountView,
   FairnessView,
   HeadToHeadView,
+  SampleElectionView,
   StoryView,
   VotersView,
 } from "./walkthrough";
@@ -77,6 +80,7 @@ export function MethodsInstrument({
   presets,
   examples,
   stories,
+  samples,
   searches,
   simulation,
   initialProfile,
@@ -89,6 +93,7 @@ export function MethodsInstrument({
   presets: PresetOption[];
   examples: SlideExample[];
   stories: Story[];
+  samples: SampleElection[];
   searches: SpecimenSearch[];
   simulation: SimulationSummary;
   initialProfile: UtilityProfile;
@@ -123,6 +128,8 @@ export function MethodsInstrument({
   const [advanced, setAdvanced] = useState(false);
   // Step 2.2 shows its own example, not the playground's electorate
   const [exampleId, setExampleId] = useState("majority-cycle");
+  // Step 4.1 likewise shows its own sample election
+  const [sampleId, setSampleId] = useState<SampleElection["id"]>("agree");
 
   const selectedType = Math.min(voterType, profile.rows.length - 1);
   const activeSearch = specimenView ? specimens.get(specimenView.id) : undefined;
@@ -258,6 +265,7 @@ export function MethodsInstrument({
     ),
   });
   const example = presets.find((preset) => preset.id === exampleId) ?? walk;
+  const sample = samples.find((s) => s.id === sampleId) ?? samples[0];
   const countStepOf = (method: VotingMethod) => `count-${method.replace("_", "-")}` as StepId;
   const storyStep = (step: StoryStep) => {
     const story = stories.find((s) => s.step === step);
@@ -451,7 +459,7 @@ export function MethodsInstrument({
       render: (number) => (
         <StepFrame
           number={number}
-          transition="Those were worst cases. Here is every electorate in a plane at once."
+          transition="Now one election at every point of the plane: a cloud of voters centered there."
           title="Same candidates, same voters, different maps"
           takeaway="Each method carves the same plane of voters into a different map of winners."
         >
@@ -459,16 +467,55 @@ export function MethodsInstrument({
         </StepFrame>
       ),
     },
-    "at-scale": {
-      title: "At scale",
+    "one-election": {
+      title: "One random election",
+      render: (number) => (
+        <StepFrame number={number} {...sampleCopy(sample)}>
+          <div className="mb-3 flex flex-wrap items-center gap-1.5" role="group" aria-label="Sample elections">
+            <span className="text-xs text-mi-muted">Samples</span>
+            {samples.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                aria-pressed={s.id === sample.id}
+                onClick={() => setSampleId(s.id)}
+                className={cn(
+                  "rounded-[3px] border px-2.5 py-1 text-sm",
+                  s.id === sample.id
+                    ? "border-mi-ink bg-mi-ink text-mi-surface"
+                    : "border-mi-rule text-mi-ink hover:border-mi-ink"
+                )}
+              >
+                {s.id === "agree" ? "They agree" : "They split"}
+              </button>
+            ))}
+          </div>
+          <SampleElectionView sample={sample} />
+        </StepFrame>
+      ),
+    },
+    disagreement: {
+      title: "Disagreement",
       render: (number) => (
         <StepFrame
           number={number}
-          transition="And in typical elections?"
+          transition={`And across ${(simulation.config.elections * simulation.by_candidates.length).toLocaleString("en-US")} random elections?`}
           title="In typical elections they still disagree"
-          takeaway={atScaleTakeaway(simulation)}
+          takeaway={disagreementTakeaway(simulation)}
         >
-          <AtScale summary={simulation} />
+          <DisagreementStep summary={simulation} />
+        </StepFrame>
+      ),
+    },
+    efficiency: {
+      title: "Condorcet efficiency",
+      render: (number) => (
+        <StepFrame
+          number={number}
+          transition="Back to step 1.7: how often each method finds the Condorcet winner."
+          {...efficiencyClaim(simulation)}
+        >
+          <EfficiencyStep summary={simulation} />
         </StepFrame>
       ),
     },

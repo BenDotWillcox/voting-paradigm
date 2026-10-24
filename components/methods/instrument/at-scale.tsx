@@ -25,77 +25,122 @@ interface Tip {
   lines: string[];
 }
 
+/** The candidate counts the study ran, as buttons. */
+function CandidateCounts({
+  counts,
+  selected,
+  onSelect,
+}: {
+  counts: number[];
+  selected: number;
+  onSelect: (k: number) => void;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-xs text-mi-muted">Candidates</span>
+      <div className="flex gap-1" role="group" aria-label="Candidates per election">
+        {counts.map((k) => (
+          <button
+            key={k}
+            type="button"
+            aria-pressed={k === selected}
+            onClick={() => onSelect(k)}
+            className={cn(
+              "min-w-9 rounded-[3px] border px-2.5 py-1 font-mi-mono text-sm",
+              k === selected
+                ? "border-mi-ink bg-mi-ink text-mi-surface"
+                : "border-mi-rule text-mi-ink hover:border-mi-ink"
+            )}
+          >
+            {k}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Where the numbers come from, under each chart of the study. */
+function StudyCaption({ summary }: { summary: SimulationSummary }) {
+  const { config } = summary;
+  return (
+    <p className="font-mi-mono text-[0.6875rem] leading-relaxed text-mi-muted">
+      {summary.benchmark} · seed {config.seed} · {summary.interval} intervals · ties: seeded
+      tiebreak (seed {config.tiebreak_seed}), or for instant runoff, candidates tied for last
+      eliminated together · source {summary.source_sha256.slice(0, 12)}…
+    </p>
+  );
+}
+
 /**
- * The methods at scale: Condorcet efficiency and pairwise disagreement over
- * the seeded spatial elections of eval/benchmarks/methods_simulation_v1.
+ * How often two methods disagree, over the seeded spatial elections of
+ * eval/benchmarks/methods_simulation_v1, with the most-disagreeing pair read
+ * out as an example of how to read a cell.
  */
-export function AtScale({ summary }: { summary: SimulationSummary }) {
+export function DisagreementStep({ summary }: { summary: SimulationSummary }) {
   const counts = summary.by_candidates.map((g) => g.candidates);
   const [selected, setSelected] = useState(counts[counts.length - 1]);
-  const [showTable, setShowTable] = useState(false);
   const group = summary.by_candidates.find((g) => g.candidates === selected) ?? summary.by_candidates[0];
-  const { config } = summary;
-  const total = config.elections * counts.length;
+  const most = group.disagreement.reduce((a, b) => ((b.rate ?? 0) > (a.rate ?? 0) ? b : a));
 
   return (
-    <div className="space-y-5">
-      <p className="max-w-3xl text-sm leading-relaxed text-mi-ink-2">
-        {total.toLocaleString("en-US")} seeded elections, {config.elections.toLocaleString("en-US")}{" "}
-        each with {counts.join(", ").replace(/, (\d+)$/, " and $1")} candidates and{" "}
-        {config.voters} voters, counted exactly as on the earlier slides. A Condorcet winner exists in{" "}
-        {summary.by_candidates.map((g, i) => (
-          <span key={g.candidates}>
-            {i > 0 ? (i === counts.length - 1 ? " and " : ", ") : null}
-            <span className="font-mi-mono">{percent(g.condorcet_winner)}</span>
-          </span>
-        ))}{" "}
-        of them respectively, so Condorcet efficiency covers nearly every election.
-      </p>
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_19rem]">
+      <DisagreementMatrix group={group} methods={summary.methods} highlight={[most.a, most.b]} />
+      <div className="space-y-3 text-sm leading-relaxed text-mi-ink-2">
+        <CandidateCounts counts={counts} selected={selected} onSelect={setSelected} />
+        <p>
+          <span className="font-medium text-mi-ink">Reading a cell.</span> The outlined cell says{" "}
+          {METHOD_META[most.a].label.toLowerCase()} and {METHOD_META[most.b].label.toLowerCase()}{" "}
+          elect different winners in{" "}
+          <span className="font-mi-mono text-mi-ink">{percent(most, 0)}</span> of these{" "}
+          {group.elections.toLocaleString("en-US")} elections ({withInterval(most)} with its 95%
+          interval). The darker the cell, the more often the pair splits: every pair splits
+          sometimes, and more candidates mean more splits.
+        </p>
+        <StudyCaption summary={summary} />
+      </div>
+    </div>
+  );
+}
 
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-xs text-mi-muted">Candidates</span>
-        <div className="flex gap-1" role="group" aria-label="Candidates per election">
-          {counts.map((k) => (
-            <button
-              key={k}
-              type="button"
-              aria-pressed={k === selected}
-              onClick={() => setSelected(k)}
-              className={cn(
-                "min-w-9 rounded-[3px] border px-2.5 py-1 font-mi-mono text-sm",
-                k === selected
-                  ? "border-mi-ink bg-mi-ink text-mi-surface"
-                  : "border-mi-rule text-mi-ink hover:border-mi-ink"
-              )}
-            >
-              {k}
-            </button>
-          ))}
+/**
+ * How often each method elects the Condorcet winner, with how often there is
+ * one, and every number behind a table toggle.
+ */
+export function EfficiencyStep({ summary }: { summary: SimulationSummary }) {
+  const counts = summary.by_candidates.map((g) => g.candidates);
+  const [showTable, setShowTable] = useState(false);
+  const group = summary.by_candidates[summary.by_candidates.length - 1];
+
+  return (
+    <div className="space-y-3">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]">
+        <EfficiencyPlot summary={summary} selected={counts[counts.length - 1]} />
+        <div className="space-y-3 text-sm leading-relaxed text-mi-ink-2">
+          <p>
+            A Condorcet winner exists in{" "}
+            {summary.by_candidates.map((g, i) => (
+              <span key={g.candidates}>
+                {i > 0 ? (i === counts.length - 1 ? " and " : ", ") : null}
+                <span className="font-mi-mono text-mi-ink">{percent(g.condorcet_winner)}</span>
+              </span>
+            ))}{" "}
+            of elections with {counts.join(", ").replace(/, (\d+)$/, " and $1")} candidates. Cycles
+            are rare in this model, so a method that misses the Condorcet winner here is passing over a
+            candidate a majority prefers to every rival, not escaping a cycle.
+          </p>
+          <button
+            type="button"
+            aria-pressed={showTable}
+            onClick={() => setShowTable((shown) => !shown)}
+            className="rounded-[3px] border border-mi-rule px-2.5 py-1 text-sm text-mi-ink hover:border-mi-ink"
+          >
+            {showTable ? "Hide the numbers" : "Show the numbers"}
+          </button>
+          <StudyCaption summary={summary} />
         </div>
-        <button
-          type="button"
-          aria-pressed={showTable}
-          onClick={() => setShowTable((shown) => !shown)}
-          className="ml-auto rounded-[3px] border border-mi-rule px-2.5 py-1 text-sm text-mi-ink hover:border-mi-ink"
-        >
-          {showTable ? "Hide the numbers" : "Show the numbers"}
-        </button>
       </div>
-
-      <div className="grid gap-8 lg:grid-cols-2">
-        <DisagreementMatrix group={group} methods={summary.methods} />
-        <EfficiencyPlot summary={summary} selected={selected} />
-      </div>
-
       {showTable ? <NumbersTable summary={summary} group={group} /> : null}
-
-      <p className="font-mi-mono text-xs leading-relaxed text-mi-muted">
-        {summary.benchmark} · seed {config.seed} · candidates and voters drawn from one Gaussian in
-        the plane · utility falls with distance · ballots {summary.ballot_model} · {summary.interval}{" "}
-        intervals · ties: seeded
-        tiebreak (seed {config.tiebreak_seed}), or for instant runoff, candidates tied for last
-        eliminated together · source {summary.source_sha256.slice(0, 12)}…
-      </p>
     </div>
   );
 }
@@ -229,7 +274,16 @@ function EfficiencyPlot({ summary, selected }: { summary: SimulationSummary; sel
   );
 }
 
-function DisagreementMatrix({ group, methods }: { group: SimulationGroup; methods: VotingMethod[] }) {
+function DisagreementMatrix({
+  group,
+  methods,
+  highlight,
+}: {
+  group: SimulationGroup;
+  methods: VotingMethod[];
+  /** A pair to outline, read out beside the matrix. */
+  highlight?: [VotingMethod, VotingMethod];
+}) {
   const [tip, setTip] = useState<Tip | null>(null);
   const rows = methods.slice(1);
   const columns = methods.slice(0, -1);
@@ -262,8 +316,11 @@ function DisagreementMatrix({ group, methods }: { group: SimulationGroup; method
                   role="img"
                   aria-label={`${METHOD_META[row].label} and ${METHOD_META[column].label} disagree in ${rate ? percent(rate) : "no"} of elections`}
                   className={cn(
-                    "flex h-9 items-center justify-center rounded-[2px] font-mi-mono text-xs tabular-nums",
-                    shade > 45 ? "text-mi-surface" : "text-mi-ink"
+                    "flex h-8 items-center justify-center rounded-[2px] font-mi-mono text-xs tabular-nums",
+                    shade > 45 ? "text-mi-surface" : "text-mi-ink",
+                    highlight?.includes(row) &&
+                      highlight.includes(column) &&
+                      "ring-2 ring-mi-ink ring-offset-2 ring-offset-mi-surface"
                   )}
                   style={{ background: ink(shade) }}
                   onPointerEnter={(event) => {

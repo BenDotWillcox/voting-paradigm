@@ -4,9 +4,14 @@
  * resolution, so every number on a step is the artifact's. Display only.
  */
 
-import { numberWord } from "@/lib/methods/claims";
+import { numberWord, winnersTitle } from "@/lib/methods/claims";
 import { METHOD_META } from "@/lib/methods/instrument";
-import type { ProfileMethodResult, ProfileResolveResponse, VotingMethod } from "@/types/methods";
+import type {
+  ProfileMethodResult,
+  ProfileResolveResponse,
+  SampleElection,
+  VotingMethod,
+} from "@/types/methods";
 
 /** The preset chapter 1 walks through. */
 export const WALK_PRESET = "center-squeeze";
@@ -235,4 +240,18 @@ export function headToHeadCopy(resolution: ProfileResolveResponse): StepCopy {
 
 function signed(value: number): string {
   return value > 0 ? `+${value}` : String(value);
+}
+
+/** Step 4.1: one of the simulation's elections, before the 30,000. */
+export function sampleCopy(sample: SampleElection): StepCopy {
+  const voters = sample.voter_positions.length;
+  const share = `${sample.matching.toLocaleString("en-US")} of the ${sample.of.toLocaleString("en-US")}`;
+  return {
+    transition: "So far, chosen electorates. Now random ones.",
+    title: winnersTitle(COUNT_ORDER.map((method) => [method, sample.winners[method]])),
+    takeaway:
+      sample.id === "agree"
+        ? `${voters} voters and ${numberWord(sample.candidates)} candidates, drawn at random from one bell-shaped cloud. Here all seven methods agree, as they do in ${share} such elections.`
+        : `Another draw from the same cloud, and the counts split three ways. That happens in only ${share} such elections.`,
+  };
 }

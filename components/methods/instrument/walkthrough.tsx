@@ -13,10 +13,10 @@ import {
   races,
   type BallotKind,
 } from "@/lib/methods/walkthrough";
-import type { ProfileResolveResponse, UtilityProfile, VotingMethod } from "@/types/methods";
+import type { ProfileResolveResponse, SampleElection, UtilityProfile, VotingMethod } from "@/types/methods";
 
 import { BallotBody } from "./ballots-panel";
-import { CandidateGlyph, CandidateMark } from "./glyph";
+import { CandidateGlyph, CandidateMark, GlyphShapeSvg } from "./glyph";
 import { MethodProfile, TraceView, type GalleryFailure } from "./method-trace";
 import { TournamentGraph } from "./tournament-graph";
 
@@ -466,5 +466,58 @@ function StorySide({
         </div>
       ) : null}
     </section>
+  );
+}
+
+// The plane a sample election is drawn in: standard-normal draws, clipped
+const PLANE = 3;
+const PLANE_PX = 240;
+
+/** One simulated election: its voters and candidates in the plane, and the seven winners. */
+export function SampleElectionView({ sample }: { sample: SampleElection }) {
+  const at = (value: number) => ((Math.max(-PLANE, Math.min(PLANE, value)) + PLANE) / (2 * PLANE)) * PLANE_PX;
+  return (
+    <div className="grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start">
+      <svg
+        viewBox={`0 0 ${PLANE_PX} ${PLANE_PX}`}
+        className="w-full rounded-[3px] border border-mi-rule bg-mi-page"
+        role="img"
+        aria-label={`${sample.voter_positions.length} voters and ${sample.candidates} candidates in the plane`}
+      >
+        <line x1={PLANE_PX / 2} y1={0} x2={PLANE_PX / 2} y2={PLANE_PX} stroke="var(--mi-rule)" />
+        <line x1={0} y1={PLANE_PX / 2} x2={PLANE_PX} y2={PLANE_PX / 2} stroke="var(--mi-rule)" />
+        {sample.voter_positions.map(([x, y], index) => (
+          <circle key={index} cx={at(x)} cy={at(-y)} r={2.2} fill="var(--mi-muted)" opacity={0.55} />
+        ))}
+        {Object.entries(sample.candidate_positions).map(([id, [x, y]]) => (
+          <g key={id}>
+            <circle cx={at(x)} cy={at(-y)} r={11} fill="var(--mi-surface)" stroke="var(--mi-ink)" />
+            <GlyphShapeSvg id={id} cx={at(x)} cy={at(-y)} r={7} strokeWidth={1.4} />
+            <text x={at(x) + 13} y={at(-y) - 9} className="fill-mi-ink font-mi-mono text-[11px]">
+              {id}
+            </text>
+          </g>
+        ))}
+      </svg>
+      <div className="space-y-3">
+        <ol className="grid grid-cols-7 gap-1.5" aria-label="The seven winners">
+          {COUNT_ORDER.map((method) => (
+            <li key={method} className="flex flex-col items-center gap-1 rounded-[3px] border border-mi-rule px-1 py-1.5 text-center">
+              <span className="truncate text-[0.6875rem] text-mi-muted">{METHOD_META[method].label}</span>
+              <CandidateMark id={sample.winners[method]} size={13} className="text-sm font-semibold text-mi-ink" />
+            </li>
+          ))}
+        </ol>
+        <p className="text-sm leading-relaxed text-mi-ink-2">
+          Each dot is a voter. A voter likes a candidate less the farther away it sits, so the
+          seven ballots and counts follow from the positions alone.
+          {sample.condorcet ? ` ${sample.condorcet} is the Condorcet winner.` : " There is no Condorcet winner."}
+        </p>
+        <p className="font-mi-mono text-[0.6875rem] leading-relaxed text-mi-muted">
+          Election {sample.index} of the study&apos;s {sample.of.toLocaleString("en-US")} with{" "}
+          {sample.candidates} candidates: {sample.rule}. Drawn from a standard Gaussian; axes clipped at ±{PLANE}.
+        </p>
+      </div>
+    </div>
   );
 }

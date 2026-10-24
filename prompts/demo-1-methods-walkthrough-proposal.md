@@ -180,4 +180,15 @@ Notes:
    `headToHeadClaim` are removed. All 21 steps of chapters 1–3 fit at
    1280×720.
 4. Chapter 4: sample-election artifact and step, atlas framing, matrix
-   reading guide, efficiency step.
+   reading guide, efficiency step. *Implemented 2026-10-24.* The builder
+   writes `samples.json`: the first three-candidate election of the study
+   where all seven methods agree (election 0) and the first where they
+   split three ways (election 444), each with every position, its winners
+   and how many of the 10,000 match its rule; `eval/tests` holds both to
+   `elections.csv.gz`. 4.1 draws one in the plane with its seven winners;
+   the atlas fits one screen with the map on the left and layouts, legend,
+   thumbnails and provenance on the right; at scale becomes 4.3
+   disagreement, with the most-disagreeing cell outlined and read aloud,
+   and 4.4 Condorcet efficiency, titled from the data ("Only Ranked Pairs
+   always finds the Condorcet winner"). `?step=at-scale` and
+   `?section=at-scale` open 4.3. Every step fits at 1280×720.
