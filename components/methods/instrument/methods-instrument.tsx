@@ -9,6 +9,7 @@ import { CRITERIA } from "@/lib/methods/gallery";
 import { METHOD_META } from "@/lib/methods/instrument";
 import { encodeProfile, specimenProfile } from "@/lib/methods/profile";
 import { CHAPTERS, STEPS, type ExampleSlide, type SlideExample, type StepId } from "@/lib/methods/sections";
+import { storyCopy, type Story, type StoryStep } from "@/lib/methods/stories";
 import { cn } from "@/lib/utils";
 import {
   BALLOT_RULES,
@@ -42,7 +43,15 @@ import { SpecimenBanner } from "./specimen-banner";
 import { TournamentGraph } from "./tournament-graph";
 import { useElectorate, type ElectorateStatus } from "./use-electorate";
 import { VoterCounts } from "./voter-counts";
-import { BallotView, CountView, HeadToHeadView, VotersView } from "./walkthrough";
+import {
+  BallotView,
+  CompactCounts,
+  CountView,
+  FairnessView,
+  HeadToHeadView,
+  StoryView,
+  VotersView,
+} from "./walkthrough";
 
 export interface PresetOption {
   id: string;
@@ -66,7 +75,8 @@ export interface SpecimenView {
  */
 export function MethodsInstrument({
   presets,
-  examples: slideExamples,
+  examples,
+  stories,
   searches,
   simulation,
   initialProfile,
@@ -77,7 +87,8 @@ export function MethodsInstrument({
   provenance,
 }: {
   presets: PresetOption[];
-  examples: Record<ExampleSlide, SlideExample[]>;
+  examples: SlideExample[];
+  stories: Story[];
   searches: SpecimenSearch[];
   simulation: SimulationSummary;
   initialProfile: UtilityProfile;
@@ -110,6 +121,8 @@ export function MethodsInstrument({
   const [atlasPoint, setAtlasPoint] = useState<AtlasPoint | null>(null);
   const [playOpen, setPlayOpen] = useState(initialPlay);
   const [advanced, setAdvanced] = useState(false);
+  // Step 2.2 shows its own example, not the playground's electorate
+  const [exampleId, setExampleId] = useState("majority-cycle");
 
   const selectedType = Math.min(voterType, profile.rows.length - 1);
   const activeSearch = specimenView ? specimens.get(specimenView.id) : undefined;
@@ -140,13 +153,6 @@ export function MethodsInstrument({
     setSpecimenView(null);
     setAtlasPoint(null);
     setVoterType(0);
-  }
-
-  function openExample(example: SlideExample) {
-    const preset = presets.find((p) => p.id === example.presetId);
-    if (!preset) return;
-    openPreset(preset);
-    if (example.voterType !== undefined) setVoterType(example.voterType);
   }
 
   function openSpecimen(specimen: Specimen, role?: SpecimenRole) {
@@ -191,20 +197,6 @@ export function MethodsInstrument({
         : "no Condorcet winner"}
       <StatusNote status={status} showing={showing} />
     </span>
-  );
-
-  const examples = (slide: ExampleSlide) => (
-    <Examples
-      slide={slide}
-      examples={slideExamples[slide]}
-      presets={presets}
-      activeKey={key}
-      selectedType={selectedType}
-      origin={origin}
-      status={<StatusNote status={status} showing={showing} />}
-      onExample={openExample}
-      onPlay={() => setPlayOpen(true)}
-    />
   );
 
   const counts = (
@@ -253,8 +245,6 @@ export function MethodsInstrument({
     />
   );
 
-  const countsCopy = countsClaim(resolution);
-  const methodCount = numberWord(resolution.results.length);
 
   // Chapter 1 walks one preset whatever the playground holds, from its
   // stored count, so its steps never wait on the API
@@ -267,6 +257,26 @@ export function MethodsInstrument({
       </StepFrame>
     ),
   });
+  const example = presets.find((preset) => preset.id === exampleId) ?? walk;
+  const countStepOf = (method: VotingMethod) => `count-${method.replace("_", "-")}` as StepId;
+  const storyStep = (step: StoryStep) => {
+    const story = stories.find((s) => s.step === step);
+    return {
+      title: story?.name ?? step,
+      render: (number: string) =>
+        story ? (
+          <StepFrame number={number} {...storyCopy(story)}>
+            <StoryView
+              story={story}
+              onGallery={() => {
+                openSpecimen(story.specimen);
+                showStep("gallery");
+              }}
+            />
+          </StepFrame>
+        ) : null,
+    };
+  };
   const countStep = (method: VotingMethod) => ({
     title: METHOD_META[method].label,
     render: (number: string) => (
@@ -308,45 +318,105 @@ export function MethodsInstrument({
     "count-quadratic": countStep("quadratic"),
     comparison: {
       title: "Seven counts",
+      render: (number) => {
+        const copy = countsClaim(walk.resolution);
+        return (
+          <StepFrame
+            number={number}
+            transition={`One electorate, counted ${numberWord(walk.resolution.results.length)} ways.`}
+            title={copy.title}
+            takeaway={copy.takeaway}
+          >
+            <CompactCounts resolution={walk.resolution} onOpen={(m) => showStep(countStepOf(m))} />
+          </StepFrame>
+        );
+      },
+    },
+    examples: {
+      title: "Other voters",
+      render: (number) => {
+        const copy = countsClaim(example.resolution);
+        return (
+          <StepFrame
+            number={number}
+            transition="Change the voters, and the split changes."
+            title={copy.title}
+            takeaway={example.notes.counts}
+          >
+            <div className="mb-3 flex flex-wrap items-center gap-1.5" role="group" aria-label="Examples">
+              <span className="text-xs text-mi-muted">Examples</span>
+              {examples.map((chip) => (
+                <button
+                  key={chip.presetId}
+                  type="button"
+                  aria-pressed={chip.presetId === example.id}
+                  onClick={() => setExampleId(chip.presetId)}
+                  className={cn(
+                    "rounded-[3px] border px-2.5 py-1 text-sm",
+                    chip.presetId === example.id
+                      ? "border-mi-ink bg-mi-ink text-mi-surface"
+                      : "border-mi-rule text-mi-ink hover:border-mi-ink"
+                  )}
+                >
+                  {chip.label}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  openPreset(example);
+                  setPlayOpen(true);
+                }}
+                className="ml-auto text-sm text-mi-muted underline decoration-mi-rule underline-offset-2 hover:text-mi-ink hover:decoration-mi-ink"
+              >
+                Explore it in the playground
+              </button>
+            </div>
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_12rem] lg:items-start">
+              <CompactCounts resolution={example.resolution} />
+              <div className="space-y-2">
+                <TournamentGraph
+                  candidates={example.resolution.rankings.candidates}
+                  pairwise={example.resolution.pairwise}
+                  condorcetWinner={example.resolution.criteria.condorcet_winner}
+                  caption={false}
+                />
+                <p className="text-xs leading-relaxed text-mi-ink-2">{example.notes["head-to-head"]}</p>
+              </div>
+            </div>
+          </StepFrame>
+        );
+      },
+    },
+    fairness: {
+      title: "Fairness criteria",
       render: (number) => (
         <StepFrame
           number={number}
-          transition={`One electorate, counted ${methodCount} ways.`}
-          title={countsCopy.title}
-          takeaway={countsCopy.takeaway}
-          intro={
-            <>
-              Choose a method to see how it reached its winner, or{" "}
-              <button
-                type="button"
-                onClick={() => showStep("voters")}
-                className="underline decoration-mi-rule underline-offset-2 hover:decoration-mi-ink"
-              >
-                walk through each ballot and count
-              </button>{" "}
-              again.
-            </>
-          }
+          transition="So far, what methods do. Now, what they should never do."
+          title="Eight rules a fair count is expected to keep"
+          takeaway="Voting theory names them as criteria. Every one of the seven methods breaks at least one, and the next three steps show how."
         >
-          {examples("counts")}
-          <div className="grid gap-6 lg:grid-cols-2">
-            {counts}
-            {trace}
-          </div>
+          <FairnessView />
         </StepFrame>
       ),
     },
+    "paradox-spoiler": storyStep("paradox-spoiler"),
+    "paradox-no-show": storyStep("paradox-no-show"),
+    "paradox-monotonicity": storyStep("paradox-monotonicity"),
     gallery: {
       title: "Paradox gallery",
       render: (number) => (
         <StepFrame
           number={number}
-          transition="So far, one electorate. Now the worst electorate we could find for each method."
+          transition="Those three, and every other failure the search found."
           title="Every method fails a fairness test"
-          takeaway="Each numbered ✗ is a real election, and the number is how few voters it takes."
+          takeaway="Each numbered ✗ is a story like those three: the fewest voters it takes to break the rule."
         >
+          {/* An open specimen takes the table's place, so the step still
+              fits; closing it brings the table back */}
           {specimenView && activeSearch?.specimen ? (
-            <div className="mb-5 space-y-2">
+            <div className="space-y-2">
               <SpecimenBanner
                 specimen={activeSearch.specimen}
                 role={specimenView.role}
@@ -356,14 +426,23 @@ export function MethodsInstrument({
                 }}
                 onClose={() => setSpecimenView(null)}
               />
-              <PlayButton onClick={() => setPlayOpen(true)}>Explore this electorate in the playground</PlayButton>
+              <div className="flex flex-wrap gap-2">
+                <PlayButton onClick={() => setPlayOpen(true)}>Explore this electorate in the playground</PlayButton>
+                <button
+                  type="button"
+                  onClick={() => setSpecimenView(null)}
+                  className="rounded-[3px] border border-mi-rule px-2.5 py-1 text-sm text-mi-ink hover:border-mi-ink"
+                >
+                  Back to the table
+                </button>
+              </div>
             </div>
-          ) : null}
-          <ParadoxGallery
-            searches={searches}
-            activeSpecimen={specimenView?.id ?? null}
-            onOpen={(specimen) => openSpecimen(specimen)}
-          />
+          ) : (
+            <ParadoxGallery
+              searches={searches}
+              onOpen={(specimen) => openSpecimen(specimen)}
+            />
+          )}
         </StepFrame>
       ),
     },
@@ -515,93 +594,6 @@ export function MethodsInstrument({
           </div>
         </div>
       </Playground>
-    </div>
-  );
-}
-
-/**
- * A slide's examples, and what to notice about the one showing. A preset that
- * is not among this slide's examples still shows, as an extra chip with its
- * note for this slide; an electorate from elsewhere (a specimen, an atlas
- * point, an edit) shows as its origin instead.
- */
-function Examples({
-  slide,
-  examples,
-  presets,
-  activeKey,
-  selectedType,
-  origin,
-  status,
-  onExample,
-  onPlay,
-}: {
-  slide: ExampleSlide;
-  examples: SlideExample[];
-  presets: PresetOption[];
-  activeKey: string;
-  selectedType: number;
-  origin: string | null;
-  status: React.ReactNode;
-  onExample: (example: SlideExample) => void;
-  onPlay: () => void;
-}) {
-  const active = presets.find((preset) => encodeProfile(preset.profile) === activeKey);
-  const showing = examples.find(
-    (example) =>
-      example.presetId === active?.id &&
-      (example.voterType === undefined || example.voterType === selectedType)
-  );
-  const extra: SlideExample | null =
-    active && !examples.some((example) => example.presetId === active.id)
-      ? { presetId: active.id, label: active.label, note: active.notes[slide] }
-      : null;
-  const chips = extra ? [...examples, extra] : examples;
-  const pressed = showing ?? extra;
-  const note =
-    pressed?.note ??
-    (active
-      ? active.notes[slide]
-      : "Loaded from elsewhere on the page or edited in the playground; choose an example to return.");
-
-  return (
-    <div className="mb-5 space-y-2">
-      <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Examples">
-        <span className="text-xs text-mi-muted">Examples</span>
-        {chips.map((chip) => {
-          const isPressed = chip === pressed;
-          return (
-            <button
-              key={`${chip.presetId}-${chip.voterType ?? ""}`}
-              type="button"
-              aria-pressed={isPressed}
-              onClick={() => onExample(chip)}
-              className={cn(
-                "rounded-[3px] border px-2.5 py-1 text-sm",
-                isPressed ? "border-mi-ink bg-mi-ink text-mi-surface" : "border-mi-rule text-mi-ink hover:border-mi-ink"
-              )}
-            >
-              {chip.label}
-            </button>
-          );
-        })}
-        {origin ? (
-          <span className="rounded-[3px] border border-dashed border-mi-ink px-2.5 py-1 text-sm text-mi-ink">
-            {origin}
-          </span>
-        ) : null}
-      </div>
-      <p className="max-w-3xl text-sm leading-relaxed text-mi-ink-2" aria-live="polite">
-        {note}{" "}
-        <button
-          type="button"
-          onClick={onPlay}
-          className="whitespace-nowrap text-mi-muted underline decoration-mi-rule underline-offset-2 hover:text-mi-ink hover:decoration-mi-ink"
-        >
-          Explore it in the playground
-        </button>
-        {status}
-      </p>
     </div>
   );
 }

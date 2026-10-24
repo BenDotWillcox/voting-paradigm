@@ -166,6 +166,18 @@ Notes:
    scroll. The ballots and head-to-head example sets (`SLIDE_EXAMPLES`) and
    `headToHeadClaim` are unused until chapter 2.2 brings examples back.
 3. Chapter 2 and 3: comparison steps, criteria step, the three paradox
-   stories (before / change / after), gallery as reference.
+   stories (before / change / after), gallery as reference. *Implemented
+   2026-10-23.* 2.1 compares center squeeze's seven counts in one compact
+   table (each method links back to its count step); 2.2 switches between
+   center squeeze, consensus and the majority cycle with its own state,
+   not the playground's, beside the head-to-head graph. 3.1 groups the
+   eight criteria; 3.2–3.4 tell the three specimens from
+   `lib/methods/stories.ts`, with before and after counts loaded on the
+   server from specimen-resolutions.json and the "why" written from who
+   goes out first. The gallery fits by dropping its intro, sharing one row
+   between legend and definitions, tighter rows, and showing an opened
+   specimen in the table's place. The ballot-step example set and
+   `headToHeadClaim` are removed. All 21 steps of chapters 1–3 fit at
+   1280×720.
 4. Chapter 4: sample-election artifact and step, atlas framing, matrix
    reading guide, efficiency step.
