@@ -79,26 +79,6 @@ export function countsClaim(resolution: ProfileResolveResponse): Claim {
   return { title, takeaway };
 }
 
-/** Whether one candidate wins every two-way race, and who misses it. */
-export function headToHeadClaim(resolution: ProfileResolveResponse): Claim {
-  const cw = resolution.criteria.condorcet_winner;
-  if (cw === null) {
-    return {
-      title: "No candidate beats every rival one-on-one",
-      takeaway:
-        "Every candidate loses or ties at least one two-way race, so there is no majority favorite for the methods to find.",
-    };
-  }
-  const missing = resolution.results.filter((result) => result.winner !== cw).map((result) => result.method);
-  return {
-    title: `${cw} beats every rival one-on-one`,
-    takeaway:
-      missing.length === 0
-        ? `Every method here elects ${cw}, the candidate a majority prefers to each rival.`
-        : `Yet ${elects(missing)} someone else: ${missing.length === 1 ? "it does" : "they do"} not decide by two-way races.`,
-  };
-}
-
 /** The headline numbers of the simulation, from its largest candidate count. */
 export function atScaleTakeaway(summary: SimulationSummary): string {
   const group = summary.by_candidates[summary.by_candidates.length - 1];

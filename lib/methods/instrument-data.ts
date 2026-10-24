@@ -3,12 +3,15 @@ import "server-only";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
+import { encodeProfile, specimenProfile } from "@/lib/methods/profile";
 import type { ExampleSlide, SlideExample } from "@/lib/methods/sections";
+import { STORIES, type Story } from "@/lib/methods/stories";
 import type {
   AtlasCandidate,
   AtlasResponse,
   ProfileResolveResponse,
   SimulationSummary,
+  SpecimenRole,
   SpecimenSearch,
   UtilityProfile,
   VotingMethod,
@@ -26,7 +29,7 @@ export interface InstrumentPreset {
   id: string;
   label: string;
   description: string;
-  /** What to notice about this preset on each slide that shows it. */
+  /** What to notice about this preset's counts and its two-way races. */
   notes: Record<ExampleSlide, string>;
   profile: UtilityProfile;
   resolution: ProfileResolveResponse;
@@ -34,8 +37,10 @@ export interface InstrumentPreset {
 
 export interface InstrumentData {
   presets: InstrumentPreset[];
-  /** The examples on each slide that shows the shared electorate. */
-  examples: Record<ExampleSlide, SlideExample[]>;
+  /** The electorates the "change the voters" step switches between. */
+  examples: SlideExample[];
+  /** Chapter 3's paradox stories, with their counts. */
+  stories: Story[];
   /** Every gallery search: the method, criterion, bound and specimen, if any. */
   searches: SpecimenSearch[];
   /** The methods simulation's summary, with Wilson intervals. */
@@ -57,10 +62,8 @@ const PRESET_COPY: Record<string, Omit<InstrumentPreset, "id" | "profile" | "res
       "C is everyone's acceptable middle: it beats both rivals head to head but has the fewest first choices.",
     notes: {
       counts:
-        "C is everyone's acceptable middle but has the fewest first choices, so plurality and instant runoff pass it over. Plurality even elects A, the Condorcet loser: A loses both of its two-way races.",
-      "head-to-head": "C wins both of its two-way races, though fewer voters rank it first than either rival.",
-      ballots:
-        "C sits above most voters' average, so their approval ballots include it: approval elects C, where plurality elects A.",
+        "C is everyone's acceptable middle, yet plurality elects A, the Condorcet loser.",
+      "head-to-head": "C wins both of its two-way races.",
     },
   },
   "majority-cycle": {
@@ -68,20 +71,16 @@ const PRESET_COPY: Record<string, Omit<InstrumentPreset, "id" | "profile" | "res
     description:
       "Every candidate loses one head-to-head race, and the seven counts pick three different winners.",
     notes: {
-      counts: "Every candidate loses one two-way race, and the counts split three ways. Head to head shows the cycle.",
-      "head-to-head": "A beats B, B beats C, and C beats A: there is no top for the methods to find.",
-      ballots:
-        "Each voter's middle candidate sits exactly at their average, so approval approves only favorites and matches plurality.",
+      counts: "Every candidate loses one two-way race, and the counts split three ways.",
+      "head-to-head": "A beats B, B beats C, C beats A: a cycle with no top.",
     },
   },
   consensus: {
     label: "Consensus",
     description: "Voters split on their favorite, but A is everyone's first or second choice.",
     notes: {
-      counts:
-        "Voters split three ways on their favorite, but A is every voter's first or second choice, so all seven methods agree.",
-      "head-to-head": "A beats both rivals one-on-one without a majority of first choices: a clear Condorcet winner.",
-      ballots: "Two of the three voter types approve A as well as their favorite, because A sits above their average.",
+      counts: "A is every voter's first or second choice, so all seven methods agree.",
+      "head-to-head": "A wins both of its two-way races.",
     },
   },
   "ballot-shapes": {
@@ -89,49 +88,36 @@ const PRESET_COPY: Record<string, Omit<InstrumentPreset, "id" | "profile" | "res
     description: "Every voter ranks A, B, C; only how far B sits from A changes.",
     notes: {
       counts: "Every voter ranks A first, so all seven methods elect A. The differences are in the ballots.",
-      "head-to-head": "Every voter ranks A over B over C, so each two-way race is unanimous.",
-      ballots: "Every voter ranks A, then B, then C; only how far B sits from A changes.",
+      "head-to-head": "Every two-way race is unanimous.",
     },
   },
 };
 const PRESET_ORDER = Object.keys(PRESET_COPY);
 
-// Each slide's examples, in chip order. Label and note default to the
-// preset's own. The ballot shapes' voter types are a clear favorite, an
-// indifferent middle and a close second (scripts/build_methods_artifacts.py).
-const SLIDE_EXAMPLES: Record<ExampleSlide, (Partial<SlideExample> & { presetId: string })[]> = {
-  counts: [{ presetId: "center-squeeze" }, { presetId: "consensus" }, { presetId: "majority-cycle" }],
-  "head-to-head": [{ presetId: "center-squeeze" }, { presetId: "majority-cycle" }, { presetId: "consensus" }],
-  ballots: [
-    {
-      presetId: "ballot-shapes",
-      voterType: 0,
-      label: "Clear favorite",
-      note: "B sits well below this voter's average: approval leaves it out, score gives it 2, and quadratic voting spends votes against it.",
-    },
-    {
-      presetId: "ballot-shapes",
-      voterType: 1,
-      label: "Indifferent middle",
-      note: "B sits exactly at this voter's average: approval still leaves it out, score gives it 5, and quadratic voting spends nothing on it.",
-    },
-    {
-      presetId: "ballot-shapes",
-      voterType: 2,
-      label: "Close second",
-      note: "B sits just below A: approval now includes it, score gives it 9, and quadratic voting spends votes for it. The ranked ballot never changed.",
-    },
-  ],
-};
+// The "change the voters" step's examples, in chip order
+const EXAMPLES = ["center-squeeze", "consensus", "majority-cycle"];
 
-function slideExamples(presets: InstrumentPreset[]): Record<ExampleSlide, SlideExample[]> {
-  const resolve = (slide: ExampleSlide) =>
-    SLIDE_EXAMPLES[slide].map((example) => {
-      const preset = presets.find((p) => p.id === example.presetId);
-      if (!preset) throw new Error(`Example on ${slide} names a missing preset ${example.presetId}`);
-      return { label: preset.label, note: preset.notes[slide], ...example };
-    });
-  return { counts: resolve("counts"), "head-to-head": resolve("head-to-head"), ballots: resolve("ballots") };
+function examplesOf(presets: InstrumentPreset[]): SlideExample[] {
+  return EXAMPLES.map((id) => {
+    const preset = presets.find((p) => p.id === id);
+    if (!preset) throw new Error(`Example names a missing preset ${id}`);
+    return { presetId: id, label: preset.label };
+  });
+}
+
+/** Each story's specimen with its before and after counts. */
+async function loadStories(searches: SpecimenSearch[]): Promise<Story[]> {
+  const text = await readFile(join(ARTIFACTS, "specimen-resolutions.json"), "utf-8");
+  const { resolutions } = JSON.parse(text) as { resolutions: Record<string, ProfileResolveResponse> };
+  return STORIES.map(({ step, specimen: id, name }) => {
+    const specimen = searches.find((search) => search.specimen?.id === id)?.specimen;
+    const count = (role: SpecimenRole) =>
+      specimen ? resolutions[encodeProfile(specimenProfile(specimen, role))] : undefined;
+    const before = count("before");
+    const after = count("after");
+    if (!specimen || !before || !after) throw new Error(`Story ${step} is missing specimen ${id} or its counts`);
+    return { step, name, specimen, before, after };
+  });
 }
 
 interface PresetRecord {
@@ -166,7 +152,8 @@ export async function loadInstrumentData(): Promise<InstrumentData> {
 
   return {
     presets: ordered,
-    examples: slideExamples(ordered),
+    examples: examplesOf(ordered),
+    stories: await loadStories(searches),
     searches,
     simulation: JSON.parse(simulationText) as SimulationSummary,
     presetsHash: manifest.outputs["presets.json"].slice(0, 12),

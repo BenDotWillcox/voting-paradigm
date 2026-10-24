@@ -20,26 +20,20 @@ import type { CriterionId, Specimen, SpecimenSearch, VotingMethod } from "@/type
  */
 export function ParadoxGallery({
   searches,
-  activeSpecimen,
   onOpen,
 }: {
   searches: SpecimenSearch[];
-  activeSpecimen: string | null;
   onOpen: (specimen: Specimen) => void;
 }) {
   const [noted, setNoted] = useState<{ method: VotingMethod; criterion: CriterionId } | null>(null);
   const note = noted ? galleryCell(searches, noted.method, noted.criterion) : null;
   const [defined, setDefined] = useState<CriterionId | null>(null);
   const definedCriterion = CRITERIA.find((criterion) => criterion.id === defined);
+  const [searchNote, setSearchNote] = useState(false);
 
   return (
-    <div className="space-y-4">
-      <p className="max-w-3xl text-sm leading-relaxed text-mi-ink-2">
-        The numbers come from an exhaustive search over three-candidate electorates, each
-        failure re-checked against the reference implementation; open one to see it above the
-        table. A ✓ is a proof, not an empty search.
-      </p>
-      <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-mi-muted">
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-mi-muted">
         <span className="inline-flex items-center gap-1.5">
           <Swatch kind="fail" /> fails: smallest specimen, voters
         </span>
@@ -52,17 +46,25 @@ export function ParadoxGallery({
         <span className="inline-flex items-center gap-1.5">
           <Swatch kind="open" /> open: no specimen found and no proof
         </span>
+        <button
+          type="button"
+          aria-expanded={searchNote}
+          onClick={() => setSearchNote((shown) => !shown)}
+          className="underline decoration-mi-rule underline-offset-2 hover:text-mi-ink"
+        >
+          How the search works
+        </button>
+        <span className="ml-auto text-mi-ink-2" aria-live="polite">
+          {definedCriterion ? (
+            <>
+              <span className="font-medium text-mi-ink">{definedCriterion.label}:</span>{" "}
+              {definedCriterion.definition}
+            </>
+          ) : (
+            <span className="text-mi-muted">Hover over or focus a heading for its definition.</span>
+          )}
+        </span>
       </div>
-      <p className="min-h-5 text-xs text-mi-ink-2" aria-live="polite">
-        {definedCriterion ? (
-          <>
-            <span className="font-medium text-mi-ink">{definedCriterion.label}:</span>{" "}
-            {definedCriterion.definition}
-          </>
-        ) : (
-          <span className="text-mi-muted">Hover over or focus a column heading for its definition.</span>
-        )}
-      </p>
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[46rem] border-collapse text-sm">
@@ -96,24 +98,22 @@ export function ParadoxGallery({
                 <th
                   scope="rowgroup"
                   colSpan={CRITERIA.length + 1}
-                  className="pt-3 pb-1 text-left font-mi-mono text-[0.7rem] font-normal text-mi-muted"
+                  className="pt-1.5 pb-0.5 text-left font-mi-mono text-[0.7rem] font-normal text-mi-muted"
                 >
                   {group.label}
                 </th>
               </tr>
               {group.methods.map((method) => (
                 <tr key={method} className="border-b border-mi-rule last:border-0">
-                  <th scope="row" className="py-1.5 pr-3 text-left font-medium text-mi-ink">
+                  <th scope="row" className="py-0.5 pr-3 text-left font-medium text-mi-ink">
                     {METHOD_META[method].label}
                   </th>
                   {CRITERIA.map((criterion) => {
                     const cell = galleryCell(searches, method, criterion.id);
                     const active =
-                      cell.kind === "specimen"
-                        ? cell.specimen.id === activeSpecimen
-                        : noted?.method === method && noted.criterion === criterion.id;
+                      cell.kind !== "specimen" && noted?.method === method && noted.criterion === criterion.id;
                     return (
-                      <td key={criterion.id} className="px-1 py-1.5 text-center">
+                      <td key={criterion.id} className="px-1 py-0.5 text-center">
                         <CellButton
                           cell={cell}
                           label={`${METHOD_META[method].label}, ${criterion.label}`}
@@ -140,12 +140,16 @@ export function ParadoxGallery({
 
       {noted && note ? <CellNote method={noted.method} criterion={noted.criterion} cell={note} /> : null}
 
-      <p className="max-w-3xl text-xs leading-relaxed text-mi-muted">
-        Approval, score and quadratic voting read utilities, so their rows search voter types:
-        each ranking with its middle candidate at 2.5, 5 or 7.5, cast into ballots by the
-        sincere-v1 model. Their clones are exact: every voter gives the clone the original&apos;s
-        utility.
-      </p>
+      {searchNote ? (
+        <p className="max-w-3xl text-xs leading-relaxed text-mi-muted">
+          Every number comes from an exhaustive search over three-candidate electorates, each
+          failure re-checked against the reference implementation; a ✓ is a proof, not an empty
+          search. Approval, score and quadratic voting read utilities, so their rows search voter
+          types: each ranking with its middle candidate at 2.5, 5 or 7.5, cast into ballots by the
+          sincere-v1 model. Their clones are exact: every voter gives the clone the original&apos;s
+          utility.
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -177,7 +181,7 @@ function CellButton({
       aria-pressed={active}
       aria-label={`${label}: ${description}`}
       className={cn(
-        "inline-flex h-8 min-w-[3.25rem] items-center justify-center gap-1 rounded-[3px] px-2 font-mi-mono text-xs",
+        "inline-flex h-6 min-w-[3.25rem] items-center justify-center gap-1 rounded-[3px] px-2 font-mi-mono text-xs",
         "focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-mi-ink",
         failsBySpecimen && "bg-mi-ink text-mi-surface hover:opacity-85",
         failsByCitation && "border border-mi-ink text-mi-ink hover:bg-mi-wash",

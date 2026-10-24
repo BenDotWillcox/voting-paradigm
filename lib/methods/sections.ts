@@ -25,8 +25,11 @@ export const CHAPTERS = [
       "count-quadratic",
     ],
   },
-  { title: "Same voters, different winners", steps: ["comparison"] },
-  { title: "When methods break", steps: ["gallery"] },
+  { title: "Same voters, different winners", steps: ["comparison", "examples"] },
+  {
+    title: "When methods break",
+    steps: ["fairness", "paradox-spoiler", "paradox-no-show", "paradox-monotonicity", "gallery"],
+  },
   { title: "Across many elections", steps: ["atlas", "at-scale"] },
 ] as const;
 
@@ -58,15 +61,11 @@ export function linkedStep(step: string | undefined, section: string | undefined
   return section ? (SECTION_STEPS[section] ?? null) : null;
 }
 
-/** The steps that show the shared electorate, with examples to switch it. */
-export type ExampleSlide = "counts" | "head-to-head" | "ballots";
+/** What a preset's notes describe: its seven counts, and its two-way races. */
+export type ExampleSlide = "counts" | "head-to-head";
 
-/** One example on a step: a preset, and on the ballots step a voter type. */
+/** One example electorate on the "change the voters" step. */
 export interface SlideExample {
   presetId: string;
   label: string;
-  /** The voter type it selects; unset leaves the first. */
-  voterType?: number;
-  /** What to notice while the example is showing. */
-  note: string;
 }

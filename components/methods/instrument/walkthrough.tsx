@@ -1,8 +1,10 @@
 "use client";
 
 import { candidateColor } from "@/lib/methods/candidates";
-import { METHOD_META } from "@/lib/methods/instrument";
+import { CRITERIA, describeTransformation } from "@/lib/methods/gallery";
+import { METHOD_META, channelTally, criteriaChecks, type CriterionCheck } from "@/lib/methods/instrument";
 import { formatUtility } from "@/lib/methods/profile";
+import { CRITERION_GROUPS, type Story } from "@/lib/methods/stories";
 import { cn } from "@/lib/utils";
 import {
   BALLOT_RULES,
@@ -278,5 +280,191 @@ function Scoreboard({ resolution, upTo }: { resolution: ProfileResolveResponse; 
         );
       })}
     </ol>
+  );
+}
+
+/**
+ * The seven counts at one line each: what was counted, the winner, and the
+ * three single-profile criteria. Choosing a row asks to revisit its count.
+ */
+export function CompactCounts({
+  resolution,
+  onOpen,
+}: {
+  resolution: ProfileResolveResponse;
+  onOpen?: (method: VotingMethod) => void;
+}) {
+  const { criteria } = resolution;
+  const missing = [
+    criteria.majority_winner === null ? "majority winner" : null,
+    criteria.condorcet_winner === null ? "Condorcet winner" : null,
+    criteria.condorcet_loser === null ? "Condorcet loser" : null,
+  ].filter((name): name is string => name !== null);
+  return (
+    <div className="space-y-2">
+      <table className="w-full border-collapse text-sm">
+        <caption className="sr-only">The seven counts of one electorate</caption>
+        <thead>
+          <tr className="border-b border-mi-rule text-left text-xs text-mi-muted">
+            <th scope="col" className="py-1.5 pr-3 font-normal">Method</th>
+            <th scope="col" className="py-1.5 pr-3 font-normal">Counted</th>
+            <th scope="col" className="py-1.5 pr-3 font-normal">Winner</th>
+            <th scope="col" className="py-1.5 text-center font-normal" title="Elects the majority winner">Maj.</th>
+            <th scope="col" className="py-1.5 text-center font-normal" title="Elects the Condorcet winner">Cond.</th>
+            <th scope="col" className="py-1.5 text-center font-normal" title="Avoids the Condorcet loser">Loser</th>
+          </tr>
+        </thead>
+        <tbody>
+          {COUNT_ORDER.map((method) => {
+            const result = resolution.results.find((r) => r.method === method);
+            if (!result) return null;
+            const checks = criteriaChecks(result, criteria);
+            const tally = channelTally(result);
+            return (
+              <tr key={method} className="border-b border-mi-rule last:border-0">
+                <th scope="row" className="py-1 pr-3 text-left font-normal">
+                  {onOpen ? (
+                    <button
+                      type="button"
+                      onClick={() => onOpen(method)}
+                      className="text-mi-ink underline decoration-mi-rule underline-offset-2 hover:decoration-mi-ink"
+                    >
+                      {METHOD_META[method].label}
+                    </button>
+                  ) : (
+                    <span className="text-mi-ink">{METHOD_META[method].label}</span>
+                  )}
+                </th>
+                <td className="py-1 pr-3 font-mi-mono text-xs text-mi-ink-2">
+                  {tally
+                    ? resolution.rankings.candidates
+                        .filter((id) => id in tally)
+                        .map((id) => `${id} ${tally[id]}`)
+                        .join(" · ")
+                    : "two-way races"}
+                </td>
+                <td className="py-1 pr-3">
+                  <CandidateMark id={result.winner} size={12} className="font-semibold text-mi-ink" />
+                </td>
+                <CheckCell check={checks.majority} />
+                <CheckCell check={checks.condorcetWinner} />
+                <CheckCell check={checks.condorcetLoser} />
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <p className="text-xs leading-relaxed text-mi-muted">
+        Maj. elects a candidate more than half the voters rank first; Cond. elects the Condorcet
+        winner; Loser avoids the Condorcet loser (step 1.7).
+        {missing.length > 0 ? ` This electorate has no ${missing.join(" or ")}, so a dash marks nothing to check.` : ""}
+      </p>
+    </div>
+  );
+}
+
+function CheckCell({ check }: { check: CriterionCheck }) {
+  const label = check === "pass" ? "yes" : check === "fail" ? "no" : "does not apply";
+  return (
+    <td className="py-1 text-center font-mi-mono text-sm" aria-label={label} title={label}>
+      {check === "pass" ? (
+        <span className="text-mi-ink">✓</span>
+      ) : check === "fail" ? (
+        <span className="rounded-[2px] bg-mi-ink px-1 text-mi-surface">✗</span>
+      ) : (
+        <span className="text-mi-muted">–</span>
+      )}
+    </td>
+  );
+}
+
+/** The eight criteria in plain words, in three groups. */
+export function FairnessView() {
+  return (
+    <div className="grid gap-4 md:grid-cols-3">
+      {CRITERION_GROUPS.map((group) => (
+        <section key={group.title} className="rounded-[3px] border border-mi-rule p-3">
+          <h3 className="text-sm font-medium text-mi-ink">{group.title}</h3>
+          <dl className="mt-2 space-y-2">
+            {group.criteria.map((id) => {
+              const criterion = CRITERIA.find((c) => c.id === id);
+              return criterion ? (
+                <div key={id}>
+                  <dt className="text-sm text-mi-ink">{criterion.label}</dt>
+                  <dd className="text-xs leading-relaxed text-mi-ink-2">{criterion.definition}</dd>
+                </div>
+              ) : null;
+            })}
+          </dl>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+/** One paradox: the electorate and its count before, what changes, and after. */
+export function StoryView({ story, onGallery }: { story: Story; onGallery: () => void }) {
+  return (
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_12rem_minmax(0,1fr)] lg:items-start">
+      <StorySide label="Before" resolution={story.before} method={story.specimen.method} />
+      <div className="space-y-2 self-center">
+        <p className="rounded-[3px] bg-mi-wash p-3 text-sm leading-relaxed text-mi-ink">
+          <span aria-hidden className="mb-1 block font-mi-mono text-mi-muted">→</span>
+          {describeTransformation(story.specimen)}
+        </p>
+        <p className="text-xs leading-relaxed text-mi-muted">
+          The smallest electorate the search found for this failure.{" "}
+          <button
+            type="button"
+            onClick={onGallery}
+            className="underline decoration-mi-rule underline-offset-2 hover:text-mi-ink hover:decoration-mi-ink"
+          >
+            Open it in the gallery
+          </button>
+        </p>
+      </div>
+      <StorySide label="After" resolution={story.after} method={story.specimen.method} />
+    </div>
+  );
+}
+
+function StorySide({
+  label,
+  resolution,
+  method,
+}: {
+  label: string;
+  resolution: ProfileResolveResponse;
+  method: VotingMethod;
+}) {
+  const result = resolution.results.find((r) => r.method === method);
+  return (
+    <section className="min-w-0 rounded-[3px] border border-mi-rule p-3">
+      <p className="flex items-baseline justify-between text-xs text-mi-muted">
+        <span className="font-medium text-mi-ink">{label}</span>
+        <span>
+          {resolution.total_voters} voters · {METHOD_META[method].label.toLowerCase()} elects{" "}
+          <span className="font-semibold text-mi-ink">{result?.winner}</span>
+        </span>
+      </p>
+      <ul className="mt-2 space-y-0.5 font-mi-mono text-xs text-mi-ink-2">
+        {resolution.rankings.rows.map((row, index) => (
+          <li key={index} className="flex items-center gap-1">
+            <span className="w-7 text-right">{row.count} ×</span>
+            {row.ranking.map((id, position) => (
+              <span key={id} className="inline-flex items-center gap-1">
+                {position > 0 ? <span className="text-mi-muted">›</span> : null}
+                <CandidateMark id={id} size={10} />
+              </span>
+            ))}
+          </li>
+        ))}
+      </ul>
+      {result ? (
+        <div className="mt-3 border-t border-mi-rule pt-2">
+          <TraceView result={result} resolution={resolution} />
+        </div>
+      ) : null}
+    </section>
   );
 }
