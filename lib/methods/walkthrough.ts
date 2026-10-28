@@ -4,9 +4,14 @@
  * resolution, so every number on a step is the artifact's. Display only.
  */
 
-import { numberWord } from "@/lib/methods/claims";
+import { numberWord, winnersTitle } from "@/lib/methods/claims";
 import { METHOD_META } from "@/lib/methods/instrument";
-import type { ProfileMethodResult, ProfileResolveResponse, VotingMethod } from "@/types/methods";
+import type {
+  ProfileMethodResult,
+  ProfileResolveResponse,
+  SampleElection,
+  VotingMethod,
+} from "@/types/methods";
 
 /** The preset chapter 1 walks through. */
 export const WALK_PRESET = "center-squeeze";
@@ -153,7 +158,7 @@ export function countRule(method: VotingMethod, resolution: ProfileResolveRespon
       return `Each ballot gives ${top} points to its first choice, one fewer for each place down, and 0 to its last. Most points wins.`;
     }
     case "ranked_pairs":
-      return "Take every two-way race. Lock in the wins from the largest margin down, skipping any that would close a cycle. The winner is the candidate no locked win beats.";
+      return "Return a candidate who wins every two-way race, if one exists. Otherwise, lock in wins from the largest margin down, skipping any that would close a cycle. The winner is the candidate no locked win beats.";
     case "approval":
       return "Count the approvals. Most approvals wins.";
     case "score":
@@ -203,7 +208,7 @@ export function countCopy(method: VotingMethod, resolution: ProfileResolveRespon
     const cw = resolution.criteria.condorcet_winner;
     takeaway =
       cw === winner
-        ? `${winner} wins every two-way race, so nothing locked ever beats it: Ranked Pairs elects the Condorcet winner whenever there is one.`
+        ? `${winner} wins every two-way race. The package returns this Condorcet winner before entering the locking pass.`
         : `No candidate wins every race, so the locking order decides: ${winner} is the one candidate no locked win beats.`;
   } else if (trace.kind === "approval") {
     const [second, approvals] = runnerUp(trace.approvals, winner);
@@ -235,4 +240,18 @@ export function headToHeadCopy(resolution: ProfileResolveResponse): StepCopy {
 
 function signed(value: number): string {
   return value > 0 ? `+${value}` : String(value);
+}
+
+/** Step 4.1: one of the simulation's elections, before the 30,000. */
+export function sampleCopy(sample: SampleElection): StepCopy {
+  const voters = sample.voter_positions.length;
+  const share = `${sample.matching.toLocaleString("en-US")} of the ${sample.of.toLocaleString("en-US")}`;
+  return {
+    transition: "So far, chosen electorates. Now random ones.",
+    title: winnersTitle(COUNT_ORDER.map((method) => [method, sample.winners[method]])),
+    takeaway:
+      sample.id === "agree"
+        ? `${voters} voters and ${numberWord(sample.candidates)} candidates, drawn at random from one bell-shaped cloud. Here all seven methods agree, as they do in ${share} such elections.`
+        : `Another draw from the same cloud, and the counts split three ways. That happens in only ${share} such elections.`,
+  };
 }

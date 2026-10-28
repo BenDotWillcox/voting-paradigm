@@ -506,7 +506,7 @@ and geometric.
 | Reader | Passenger: scrolls through acts | Operator: edits, selects, steps |
 | Time to thesis | Builds over many screens | Under 10 seconds |
 | Type | Newsreader serif | No serif. Instrument Sans, plus a mono (JetBrains Mono or IBM Plex Mono) for every number and profile row |
-| Color | Warm paper, one ink-blue accent | Cool white, flat primaries; color means candidate only |
+| Color | Warm paper, one ink-blue accent | Cool white, flat primaries; at mark scale, color means candidate only |
 | Motif | Hemicycle, persona | Candidate glyphs, tournament graph, ballot row |
 | Motion | Timed, cinematic | Causal only, always steppable |
 | Voice | Investigative history | Claim, specimen, verified |
@@ -521,6 +521,36 @@ and geometric.
   controls. Hairline ink rules; small radii.
 - Every figure carries a provenance chip: seed, artifact hash, package SHA.
 - A dark variant is derived, not designed first.
+
+#### Design pass (2026-10-28)
+
+Ben chose the Figma "Emerald Sapphire Daybreak" palette (#F3000E, #F25016,
+#6596F3, #83B366, #D3A4EA, #EAD094, #B2DCE2, #D7EAAC) to bring the page to
+life, and kept the candidate colors. Several palette hues sit within a few
+degrees of a candidate (sapphire and A, #F25016 and B, sand and C), so the
+palette never appears at mark scale:
+
+- The pastels are section tones: 01 aqua, 02 lavender, 03 sand, 04 lime
+  (lime is farthest from every candidate and goes to the playground, which
+  can show five). They tint a section's opening band, its rule and its nav
+  tick, and, at half the band's strength, the section's body, so the band
+  and the content under it read as one section. A figure always sits on a
+  white panel, never directly on a tint.
+- The saturated colors are syntax text in the dark code editor and the
+  hero's Python session; code is never data. A line that prints candidate
+  values uses plain text and the candidate's glyph.
+- #F3000E marks the line that drives a stage, as a bar: a dot would read as
+  A's circle. #F25016 has no role.
+- The hero, the section nav and the editor are dark islands in both themes;
+  glyphs on them take the dark theme's candidate colors.
+
+The hero states the thesis from the center-squeeze preset's saved results.
+Each section band carries one small figure from that section's data. The
+code inspector shows each method's stage excerpts as one listing in file
+order, gaps folded: the current stage's lines keep their colors, the rest
+drop to grey, a red bar slides to the driving line, and `#` notes give
+values read from the saved trace. Stages still change only when the reader
+picks one, and reduced motion removes the slide.
 
 ### Routes
 

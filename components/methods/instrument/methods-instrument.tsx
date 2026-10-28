@@ -1,689 +1,212 @@
 "use client";
 
-import { ChevronUp } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-
+import { ArrowUpRight, Code2, Plus } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isReference, type AtlasView } from "@/lib/methods/atlas";
-import { atScaleTakeaway, countsClaim, numberWord } from "@/lib/methods/claims";
+import type { CountSources } from "@/lib/methods/count-inspector";
 import { CRITERIA } from "@/lib/methods/gallery";
-import { METHOD_META } from "@/lib/methods/instrument";
-import { encodeProfile, specimenProfile } from "@/lib/methods/profile";
-import { CHAPTERS, STEPS, type ExampleSlide, type SlideExample, type StepId } from "@/lib/methods/sections";
-import { storyCopy, type Story, type StoryStep } from "@/lib/methods/stories";
+import type { IRVSource } from "@/lib/methods/irv-inspector";
+import { encodeProfile, specimenProfile, totalVoters } from "@/lib/methods/profile";
+import { anchorForStep, DEMO_SECTIONS, isDemoAnchor, type DemoAnchor, type DemoSection } from "@/lib/methods/scroll-sections";
+import type { ExampleSlide, StepId } from "@/lib/methods/sections";
+import type { Story, StoryStep } from "@/lib/methods/stories";
+import { WALK_PRESET } from "@/lib/methods/walkthrough";
 import { cn } from "@/lib/utils";
-import {
-  BALLOT_RULES,
-  WALK_PRESET,
-  ballotCopy,
-  countCopy,
-  headToHeadCopy as walkHeadToHead,
-  votersCopy,
-  type BallotKind,
-} from "@/lib/methods/walkthrough";
-import type {
-  ProfileResolveResponse,
-  SimulationSummary,
-  Specimen,
-  SpecimenRole,
-  SpecimenSearch,
-  UtilityProfile,
-  VotingMethod,
-} from "@/types/methods";
-
-import { AtScale } from "./at-scale";
-import { Atlas, AtlasPointBanner, type AtlasPoint } from "./atlas";
+import type { ProfileResolveResponse, SampleElection, SimulationSummary, Specimen, SpecimenRole, SpecimenSearch, UtilityProfile, VotingMethod } from "@/types/methods";
+import { AtlasPointBanner, type AtlasPoint } from "./atlas";
 import { BallotsPanel } from "./ballots-panel";
 import { Channels } from "./channels";
-import { MethodTrace, type GalleryFailure } from "./method-trace";
-import { ParadoxGallery } from "./paradox-gallery";
-import { Playground } from "./playground";
+import { MethodExplorer } from "./method-explorer";
+import { MethodsHero } from "./methods-hero";
 import { ProfileEditor } from "./profile-editor";
-import { StepDeck, StepFrame, type Step } from "./step-deck";
+import { CONTAINER, SectionBand, TONES, type Tone } from "./section-band";
+import { CodeFigure, EfficiencyFigure, PreferenceFigure, WinnersFigure } from "./section-figures";
+import { SimulationEvidence } from "./simulation-evidence";
 import { SpecimenBanner } from "./specimen-banner";
-import { TournamentGraph } from "./tournament-graph";
-import { useElectorate, type ElectorateStatus } from "./use-electorate";
-import { VoterCounts } from "./voter-counts";
-import {
-  BallotView,
-  CompactCounts,
-  CountView,
-  FairnessView,
-  HeadToHeadView,
-  StoryView,
-  VotersView,
-} from "./walkthrough";
+import { useElectorate } from "./use-electorate";
+import { WhyItMatters } from "./why-it-matters";
 
 export interface PresetOption {
-  id: string;
-  label: string;
-  description: string;
+  id: string; label: string; description: string;
   notes: Record<ExampleSlide, string>;
   profile: UtilityProfile;
   resolution: ProfileResolveResponse;
 }
+export interface SpecimenView { id: string; role: SpecimenRole }
+const action = "inline-flex min-h-11 items-center justify-center gap-2 rounded-[4px] border border-mi-rule px-3 py-2 text-left text-sm font-medium text-mi-ink hover:bg-mi-wash focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mi-ink";
 
-export interface SpecimenView {
-  id: string;
-  role: SpecimenRole;
-}
-
-/**
- * The methods instrument: chapters of steps (lib/methods/sections.ts), one
- * step on screen at a time, and a playground that pulls up from the bottom of
- * the screen. The steps and the playground share one electorate and its
- * count.
- */
-export function MethodsInstrument({
-  presets,
-  examples,
-  stories,
-  searches,
-  simulation,
-  initialProfile,
-  initialResolution,
-  initialSpecimen,
-  initialStep,
-  initialPlay,
-  provenance,
-}: {
-  presets: PresetOption[];
-  examples: SlideExample[];
-  stories: Story[];
-  searches: SpecimenSearch[];
-  simulation: SimulationSummary;
-  initialProfile: UtilityProfile;
-  initialResolution: ProfileResolveResponse | null;
-  initialSpecimen: SpecimenView | null;
-  initialStep: StepId;
-  initialPlay: boolean;
-  provenance: { presetsHash: string; sourceHash: string };
+/** One scrolling argument: implementation, consequences, evidence, experiment. */
+export function MethodsInstrument({ presets, stories, irvSource, countSources, samples, searches, simulation, initialProfile, initialResolution, initialSpecimen, initialAnchor, initialStory, initialReference, initialInspectorMethod, initialInspectorInput, initialRankedPairsCycle, provenance }: {
+  presets: PresetOption[]; stories: Story[]; irvSource: IRVSource; countSources: CountSources;
+  samples: SampleElection[]; searches: SpecimenSearch[]; simulation: SimulationSummary;
+  initialProfile: UtilityProfile; initialResolution: ProfileResolveResponse | null;
+  initialSpecimen: SpecimenView | null; initialAnchor: DemoAnchor; initialStory?: StoryStep; initialReference?: StepId;
+  initialInspectorMethod: VotingMethod; initialInspectorInput: "reference" | "playground";
+  initialRankedPairsCycle: boolean; provenance: { presetsHash: string; sourceHash: string };
 }) {
   const electorate = useElectorate({ presets, initialProfile, initialResolution });
   const { profile, resolution, status, showing, key } = electorate;
-
-  const specimens = useMemo(
-    () =>
-      new Map(
-        searches.flatMap((search) =>
-          search.specimen ? [[search.specimen.id, search] as const] : []
-        )
-      ),
-    [searches]
-  );
-
-  const [stepIndex, setStepIndex] = useState(() => STEPS.indexOf(initialStep));
-  const showStep = (id: StepId) => setStepIndex(STEPS.indexOf(id));
-  const [method, setMethod] = useState<VotingMethod>(
-    () => specimens.get(initialSpecimen?.id ?? "")?.specimen?.method ?? "irv"
-  );
+  const ready = showing && status.kind === "ready";
+  const [inspectorMethod, setInspectorMethod] = useState(initialInspectorMethod);
+  const [inspectorInput, setInspectorInput] = useState(initialInspectorInput);
+  const [rankedPairsCycle, setRankedPairsCycle] = useState(initialRankedPairsCycle);
+  const [method, setMethod] = useState(() => searches.find((search) => search.specimen?.id === initialSpecimen?.id)?.specimen?.method ?? initialInspectorMethod);
   const [voterType, setVoterType] = useState(0);
-  const [specimenView, setSpecimenView] = useState<SpecimenView | null>(initialSpecimen);
+  const [specimenView, setSpecimenView] = useState(initialSpecimen);
   const [atlasPoint, setAtlasPoint] = useState<AtlasPoint | null>(null);
-  const [playOpen, setPlayOpen] = useState(initialPlay);
-  const [advanced, setAdvanced] = useState(false);
-  // Step 2.2 shows its own example, not the playground's electorate
-  const [exampleId, setExampleId] = useState("majority-cycle");
-
-  const selectedType = Math.min(voterType, profile.rows.length - 1);
+  const [activeSection, setActiveSection] = useState<DemoSection>("implementation");
+  const firstLocation = useRef(true);
+  const specimens = useMemo(() => new Map(searches.flatMap((search) => search.specimen ? [[search.specimen.id, search] as const] : [])), [searches]);
   const activeSearch = specimenView ? specimens.get(specimenView.id) : undefined;
+  const walk = presets.find((preset) => preset.id === WALK_PRESET) ?? presets[0];
+  const cycle = presets.find((preset) => preset.id === "majority-cycle");
   const defaultKey = encodeProfile(presets[0].profile);
+  const selectedType = Math.max(0, Math.min(voterType, profile.rows.length - 1));
+  const selectedResult = resolution.results.find((result) => result.method === method) ?? resolution.results[0];
+  const pendingMessage = status.kind === "empty" ? "Add at least one voter to count this electorate."
+    : status.kind === "offline" ? "This electorate could not be counted. Try editing it or choosing a starting point."
+    : "Counting your edited electorate in Python…";
+
+  const jumpTo = useCallback((anchor: DemoAnchor, focus = true) => {
+    const destination = document.getElementById(anchor);
+    if (!destination) return;
+    for (let parent: HTMLElement | null = destination; parent; parent = parent.parentElement) {
+      if (parent instanceof HTMLDetailsElement) parent.open = true;
+    }
+    window.requestAnimationFrame(() => {
+      destination.scrollIntoView({ block: "start", behavior: "instant" });
+      if (focus) { destination.tabIndex = -1; destination.focus({ preventScroll: true }); }
+    });
+    const url = new URL(window.location.href);
+    url.hash = anchor;
+    window.history.replaceState(null, "", url);
+  }, []);
+
+  useEffect(() => {
+    if (!firstLocation.current) return;
+    firstLocation.current = false;
+    const hash = window.location.hash.slice(1);
+    const anchor = isDemoAnchor(hash) ? hash : initialAnchor;
+    if (anchor !== "implementation") jumpTo(anchor, false);
+  }, [initialAnchor, jumpTo]);
+
+  useEffect(() => {
+    const followHash = () => {
+      const anchor = window.location.hash.slice(1);
+      if (isDemoAnchor(anchor)) jumpTo(anchor, false);
+    };
+    window.addEventListener("hashchange", followHash);
+    return () => window.removeEventListener("hashchange", followHash);
+  }, [jumpTo]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+      if (visible) setActiveSection(visible.target.id as DemoSection);
+    }, { rootMargin: "-12% 0px -65% 0px" });
+    DEMO_SECTIONS.forEach(({ id }) => { const element = document.getElementById(id); if (element) observer.observe(element); });
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const url = new URL(window.location.href);
-    for (const name of ["p", "s", "v", "step", "section", "play"]) url.searchParams.delete(name);
-    if (stepIndex > 0) url.searchParams.set("step", STEPS[stepIndex]);
-    if (specimenView) {
-      url.searchParams.set("s", specimenView.id);
-      url.searchParams.set("v", specimenView.role);
-    } else if (key !== defaultKey) {
-      url.searchParams.set("p", key);
-    }
-    if (playOpen) url.searchParams.set("play", "1");
+    for (const name of ["p", "s", "v", "step", "section", "play", "method", "input", "example"]) url.searchParams.delete(name);
+    if (specimenView) { url.searchParams.set("s", specimenView.id); url.searchParams.set("v", specimenView.role); }
+    else if (key !== defaultKey) url.searchParams.set("p", key);
+    if (inspectorMethod !== "plurality") url.searchParams.set("method", inspectorMethod);
+    if (inspectorInput === "playground") url.searchParams.set("input", "playground");
+    if (!rankedPairsCycle) url.searchParams.set("example", "condorcet");
     window.history.replaceState(null, "", url);
-  }, [key, specimenView, stepIndex, playOpen, defaultKey]);
+  }, [key, specimenView, defaultKey, inspectorMethod, inspectorInput, rankedPairsCycle]);
 
-  function edit(next: UtilityProfile) {
-    electorate.load(next);
-    setSpecimenView(null);
-    setAtlasPoint(null);
-  }
-
+  function edit(next: UtilityProfile) { electorate.load(next); setSpecimenView(null); setAtlasPoint(null); }
   function openPreset(preset: PresetOption) {
     electorate.load(preset.profile, preset.resolution);
-    setSpecimenView(null);
-    setAtlasPoint(null);
-    setVoterType(0);
+    setSpecimenView(null); setAtlasPoint(null); setVoterType(0);
   }
-
-  function openSpecimen(specimen: Specimen, role?: SpecimenRole) {
-    const shown = role ?? specimen.profiles[0].role;
-    setAtlasPoint(null);
-    setSpecimenView({ id: specimen.id, role: shown });
-    electorate.load(specimenProfile(specimen, shown));
-    setMethod(specimen.method);
-    setVoterType(0);
+  function openSpecimen(specimen: Specimen, role?: SpecimenRole, navigate = true) {
+    const selected = role ?? specimen.profiles[0].role;
+    electorate.load(specimenProfile(specimen, selected));
+    setSpecimenView({ id: specimen.id, role: selected }); setAtlasPoint(null); setVoterType(0); setMethod(specimen.method);
+    if (navigate) jumpTo("playground");
   }
-
+  function openMethod(selected: VotingMethod) {
+    setInspectorMethod(selected); setInspectorInput("reference"); setRankedPairsCycle(false); jumpTo("implementation");
+  }
+  function editInspector() {
+    setMethod(inspectorMethod); setInspectorInput("playground"); jumpTo("playground");
+  }
+  function tracePlayground() {
+    if (!ready) return;
+    setInspectorInput("playground"); setInspectorMethod(selectedResult.method); jumpTo("implementation");
+  }
   function loadAtlasPoint(response: ProfileResolveResponse, point: AtlasPoint, view: AtlasView) {
     if (response.profile.ballot_type !== "utility") return;
-    electorate.load(response.profile, response);
-    setSpecimenView(null);
-    setAtlasPoint(point);
-    setVoterType(0);
+    electorate.load(response.profile, response); setSpecimenView(null); setAtlasPoint(point); setVoterType(0);
     if (!isReference(view)) setMethod(view);
-    setPlayOpen(true);
+    jumpTo("playground");
   }
-
-  const winners = new Set(resolution.results.map((r) => r.winner));
-  const selectedResult =
-    resolution.results.find((r) => r.method === method) ?? resolution.results[0];
-  const currentPreset = presets.find((preset) => encodeProfile(preset.profile) === key);
-  const origin = activeSearch?.specimen
-    ? `Specimen · ${METHOD_META[activeSearch.specimen.method].label}, ${specimenView?.role}`
-    : atlasPoint
-      ? `Atlas point · ${atlasPoint.layout}`
-      : currentPreset
-        ? null
-        : "Your electorate";
-
-  const summary = (
-    <span aria-live="polite">
-      {resolution.total_voters} voters
-      <span className="text-mi-muted"> · </span>
-      {winners.size} {winners.size === 1 ? "winner" : "different winners"}
-      <span className="text-mi-muted"> · </span>
-      {resolution.criteria.condorcet_winner
-        ? `Condorcet winner ${resolution.criteria.condorcet_winner}`
-        : "no Condorcet winner"}
-      <StatusNote status={status} showing={showing} />
-    </span>
-  );
-
-  const counts = (
-    <div className={cn("transition-opacity", !showing && "opacity-55")}>
-      <Channels resolution={resolution} selected={method} onSelect={setMethod} />
-    </div>
-  );
-  // A method's smallest gallery failures. Opening one from the steps moves to
-  // the gallery; the playground shows the specimen's banner where it is.
-  const failuresOf = (method: VotingMethod): GalleryFailure[] =>
-    searches.flatMap(({ method: searched, criterion, specimen }) =>
-      searched === method && specimen
-        ? [
-            {
-              criterion: criterionName(criterion),
-              voters: specimen.voters,
-              onOpen: () => {
-                openSpecimen(specimen);
-                if (!playOpen) showStep("gallery");
-              },
-            },
-          ]
-        : []
-    );
-  const trace = (
-    <div className={cn("transition-opacity", !showing && "opacity-55")}>
-      <h3 className="mb-3 text-sm font-medium text-mi-ink">
-        How {METHOD_META[selectedResult.method].label.toLowerCase()} counted
-      </h3>
-      <MethodTrace result={selectedResult} resolution={resolution} failures={failuresOf(selectedResult.method)} />
-    </div>
-  );
-  const ballots = (
-    <BallotsPanel
-      profile={profile}
-      ballots={showing ? resolution.voter_ballots : null}
-      selected={selectedType}
-      onSelect={setVoterType}
-    />
-  );
-  const tournament = (
-    <TournamentGraph
-      candidates={resolution.rankings.candidates}
-      pairwise={resolution.pairwise}
-      condorcetWinner={resolution.criteria.condorcet_winner}
-    />
-  );
-
-
-  // Chapter 1 walks one preset whatever the playground holds, from its
-  // stored count, so its steps never wait on the API
-  const walk = presets.find((preset) => preset.id === WALK_PRESET) ?? presets[0];
-  const ballotStep = (kind: BallotKind) => ({
-    title: `${BALLOT_RULES[kind].name} ballot`,
-    render: (number: string) => (
-      <StepFrame number={number} {...ballotCopy(kind, walk.resolution)}>
-        <BallotView kind={kind} profile={walk.profile} resolution={walk.resolution} />
-      </StepFrame>
-    ),
-  });
-  const example = presets.find((preset) => preset.id === exampleId) ?? walk;
-  const countStepOf = (method: VotingMethod) => `count-${method.replace("_", "-")}` as StepId;
-  const storyStep = (step: StoryStep) => {
-    const story = stories.find((s) => s.step === step);
-    return {
-      title: story?.name ?? step,
-      render: (number: string) =>
-        story ? (
-          <StepFrame number={number} {...storyCopy(story)}>
-            <StoryView
-              story={story}
-              onGallery={() => {
-                openSpecimen(story.specimen);
-                showStep("gallery");
-              }}
-            />
-          </StepFrame>
-        ) : null,
-    };
-  };
-  const countStep = (method: VotingMethod) => ({
-    title: METHOD_META[method].label,
-    render: (number: string) => (
-      <StepFrame number={number} {...countCopy(method, walk.resolution)}>
-        <CountView method={method} resolution={walk.resolution} failures={failuresOf(method)} />
-      </StepFrame>
-    ),
-  });
-
-  // Each step's content, by id; CHAPTERS sets their order and numbers
-  const stepContent: Record<StepId, { title: string; render: (number: string) => React.ReactNode }> = {
-    voters: {
-      title: "The voters",
-      render: (number) => (
-        <StepFrame number={number} {...votersCopy(walk.resolution)}>
-          <VotersView profile={walk.profile} />
-        </StepFrame>
-      ),
-    },
-    "ballot-single": ballotStep("single"),
-    "count-plurality": countStep("plurality"),
-    "ballot-ranked": ballotStep("ranked"),
-    "count-irv": countStep("irv"),
-    "count-borda": countStep("borda"),
-    "head-to-head": {
-      title: "Head to head",
-      render: (number) => (
-        <StepFrame number={number} {...walkHeadToHead(walk.resolution)}>
-          <HeadToHeadView resolution={walk.resolution} />
-        </StepFrame>
-      ),
-    },
-    "count-ranked-pairs": countStep("ranked_pairs"),
-    "ballot-approval": ballotStep("approval"),
-    "count-approval": countStep("approval"),
-    "ballot-score": ballotStep("score"),
-    "count-score": countStep("score"),
-    "ballot-quadratic": ballotStep("quadratic"),
-    "count-quadratic": countStep("quadratic"),
-    comparison: {
-      title: "Seven counts",
-      render: (number) => {
-        const copy = countsClaim(walk.resolution);
-        return (
-          <StepFrame
-            number={number}
-            transition={`One electorate, counted ${numberWord(walk.resolution.results.length)} ways.`}
-            title={copy.title}
-            takeaway={copy.takeaway}
-          >
-            <CompactCounts resolution={walk.resolution} onOpen={(m) => showStep(countStepOf(m))} />
-          </StepFrame>
-        );
-      },
-    },
-    examples: {
-      title: "Other voters",
-      render: (number) => {
-        const copy = countsClaim(example.resolution);
-        return (
-          <StepFrame
-            number={number}
-            transition="Change the voters, and the split changes."
-            title={copy.title}
-            takeaway={example.notes.counts}
-          >
-            <div className="mb-3 flex flex-wrap items-center gap-1.5" role="group" aria-label="Examples">
-              <span className="text-xs text-mi-muted">Examples</span>
-              {examples.map((chip) => (
-                <button
-                  key={chip.presetId}
-                  type="button"
-                  aria-pressed={chip.presetId === example.id}
-                  onClick={() => setExampleId(chip.presetId)}
-                  className={cn(
-                    "rounded-[3px] border px-2.5 py-1 text-sm",
-                    chip.presetId === example.id
-                      ? "border-mi-ink bg-mi-ink text-mi-surface"
-                      : "border-mi-rule text-mi-ink hover:border-mi-ink"
-                  )}
-                >
-                  {chip.label}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => {
-                  openPreset(example);
-                  setPlayOpen(true);
-                }}
-                className="ml-auto text-sm text-mi-muted underline decoration-mi-rule underline-offset-2 hover:text-mi-ink hover:decoration-mi-ink"
-              >
-                Explore it in the playground
-              </button>
-            </div>
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_12rem] lg:items-start">
-              <CompactCounts resolution={example.resolution} />
-              <div className="space-y-2">
-                <TournamentGraph
-                  candidates={example.resolution.rankings.candidates}
-                  pairwise={example.resolution.pairwise}
-                  condorcetWinner={example.resolution.criteria.condorcet_winner}
-                  caption={false}
-                />
-                <p className="text-xs leading-relaxed text-mi-ink-2">{example.notes["head-to-head"]}</p>
-              </div>
-            </div>
-          </StepFrame>
-        );
-      },
-    },
-    fairness: {
-      title: "Fairness criteria",
-      render: (number) => (
-        <StepFrame
-          number={number}
-          transition="So far, what methods do. Now, what they should never do."
-          title="Eight rules a fair count is expected to keep"
-          takeaway="Voting theory names them as criteria. Every one of the seven methods breaks at least one, and the next three steps show how."
-        >
-          <FairnessView />
-        </StepFrame>
-      ),
-    },
-    "paradox-spoiler": storyStep("paradox-spoiler"),
-    "paradox-no-show": storyStep("paradox-no-show"),
-    "paradox-monotonicity": storyStep("paradox-monotonicity"),
-    gallery: {
-      title: "Paradox gallery",
-      render: (number) => (
-        <StepFrame
-          number={number}
-          transition="Those three, and every other failure the search found."
-          title="Every method fails a fairness test"
-          takeaway="Each numbered ✗ is a story like those three: the fewest voters it takes to break the rule."
-        >
-          {/* An open specimen takes the table's place, so the step still
-              fits; closing it brings the table back */}
-          {specimenView && activeSearch?.specimen ? (
-            <div className="space-y-2">
-              <SpecimenBanner
-                specimen={activeSearch.specimen}
-                role={specimenView.role}
-                maxVoters={activeSearch.max_voters}
-                onRole={(role) => {
-                  if (activeSearch.specimen) openSpecimen(activeSearch.specimen, role);
-                }}
-                onClose={() => setSpecimenView(null)}
-              />
-              <div className="flex flex-wrap gap-2">
-                <PlayButton onClick={() => setPlayOpen(true)}>Explore this electorate in the playground</PlayButton>
-                <button
-                  type="button"
-                  onClick={() => setSpecimenView(null)}
-                  className="rounded-[3px] border border-mi-rule px-2.5 py-1 text-sm text-mi-ink hover:border-mi-ink"
-                >
-                  Back to the table
-                </button>
-              </div>
-            </div>
-          ) : (
-            <ParadoxGallery
-              searches={searches}
-              onOpen={(specimen) => openSpecimen(specimen)}
-            />
-          )}
-        </StepFrame>
-      ),
-    },
-    atlas: {
-      title: "Atlas",
-      render: (number) => (
-        <StepFrame
-          number={number}
-          transition="Those were worst cases. Here is every electorate in a plane at once."
-          title="Same candidates, same voters, different maps"
-          takeaway="Each method carves the same plane of voters into a different map of winners."
-        >
-          <Atlas onLoadPoint={loadAtlasPoint} />
-        </StepFrame>
-      ),
-    },
-    "at-scale": {
-      title: "At scale",
-      render: (number) => (
-        <StepFrame
-          number={number}
-          transition="And in typical elections?"
-          title="In typical elections they still disagree"
-          takeaway={atScaleTakeaway(simulation)}
-        >
-          <AtScale summary={simulation} />
-        </StepFrame>
-      ),
-    },
-  };
-  const steps: Step[] = CHAPTERS.flatMap((chapter, at) =>
-    chapter.steps.map((id, within) => ({
-      id,
-      chapter: at,
-      title: stepContent[id].title,
-      content: stepContent[id].render(`${at + 1}.${within + 1}`),
-    }))
-  );
+  const reference = (step: StepId) => jumpTo(anchorForStep(step));
 
   return (
-    <div className="mx-auto max-w-6xl px-4 pt-6 pb-28 sm:pt-8">
-      {/* The full title opens the first step; after it, the kicker alone
-          keeps the page's name and leaves the screen to the steps */}
-      <header className="max-w-3xl">
-        <p className="font-mi-mono text-xs tracking-wide text-mi-muted">
-          Voting methods · instrument
-          {stepIndex > 0 ? <span className="text-mi-ink-2"> · Same voters, different winners</span> : null}
-        </p>
-        {stepIndex === 0 ? (
-          <>
-            <h1 className="mt-2 text-3xl font-semibold tracking-[-0.02em] text-mi-ink sm:text-[2.75rem] sm:leading-[1.08]">
-              Same voters, different winners.
-            </h1>
-            <p className="mt-3 text-base leading-relaxed text-mi-ink-2 sm:text-lg">
-              Seven voting methods count the same voters and can elect different candidates. Every
-              one of them, somewhere, breaks a rule most people take for basic fairness.
-            </p>
-          </>
-        ) : null}
-      </header>
-
-      <div className={stepIndex === 0 ? "mt-6" : "mt-3"}>
-        <StepDeck
-          chapters={CHAPTERS.map((chapter) => chapter.title)}
-          steps={steps}
-          index={stepIndex}
-          onIndex={setStepIndex}
-          keys={!playOpen}
-        />
-      </div>
-
-      <footer className="mt-10 border-t border-mi-rule pt-4">
-        <details className="group">
-          <summary className="cursor-pointer text-sm text-mi-ink-2 hover:text-mi-ink">
-            Methods &amp; provenance
-          </summary>
-          <p className="mt-2 font-mi-mono text-xs leading-relaxed text-mi-muted">
-            Ballots: {resolution.ballot_model ?? "ranked input"} (sincere voters; rules on the
-            Ballots step). Presets, specimens and atlas layouts: public/data/methods (presets
-            sha256 {provenance.presetsHash}…), built from source {provenance.sourceHash}…. Edits:
-            POST /api/voting/profile/resolve. Ties: seeded random tiebreak, seed{" "}
-            {resolution.tiebreak_seed}.
-          </p>
-        </details>
-      </footer>
-
-      <Playground
-        open={playOpen}
-        onOpenChange={setPlayOpen}
-        advanced={advanced}
-        onAdvancedChange={setAdvanced}
-        status={summary}
-        drawer={
-          <ProfileEditor profile={profile} selected={selectedType} onSelect={setVoterType} onChange={edit} />
-        }
-      >
-        <div className="mx-auto max-w-6xl space-y-5">
-          {specimenView && activeSearch?.specimen ? (
-            <SpecimenBanner
-              specimen={activeSearch.specimen}
-              role={specimenView.role}
-              maxVoters={activeSearch.max_voters}
-              onRole={(role) => {
-                if (activeSearch.specimen) openSpecimen(activeSearch.specimen, role);
-              }}
-              onClose={() => setSpecimenView(null)}
-            />
-          ) : atlasPoint ? (
-            <AtlasPointBanner
-              point={atlasPoint}
-              voters={resolution.total_voters}
-              types={profile.rows.length}
-              onBack={() => {
-                setPlayOpen(false);
-                showStep("atlas");
-              }}
-              onClose={() => setAtlasPoint(null)}
-            />
-          ) : null}
-
-          <StartingPoints presets={presets} activeKey={key} origin={origin} onPreset={openPreset} />
-
-          {/* Two columns when the space beside the drawer allows. In one
-              column the counts come first, and the electorate panel steps
-              aside while the drawer holds the same controls. */}
-          <div className="flex flex-col gap-6 @4xl:grid @4xl:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] @4xl:items-start">
-            <div className="contents @4xl:flex @4xl:flex-col @4xl:gap-6">
-              {advanced ? null : (
-                <Panel title="Electorate" className="order-1">
-                  <VoterCounts
-                    profile={profile}
-                    selected={selectedType}
-                    onSelect={setVoterType}
-                    onChange={edit}
-                  />
-                  <p className="mt-2 text-xs leading-relaxed text-mi-muted">
-                    Change how many voters hold each ranking. To move candidates on a voter&apos;s
-                    scale, or add voter types and candidates, open Advanced controls.
-                  </p>
-                </Panel>
-              )}
-              <Panel title="Ballots" className="order-4">{ballots}</Panel>
-              <Panel title="Head to head" className="order-5">{tournament}</Panel>
+    <main className="pb-16">
+      <MethodsHero label={walk.label} resolution={walk.resolution} simulation={simulation} criteria={CRITERIA.length} />
+      <nav aria-label="Demo sections" className="mi-island relative z-20 border-t border-mi-rule md:sticky md:top-0">
+        <div className={cn(CONTAINER, "grid grid-cols-2 md:grid-cols-4")}>
+          {DEMO_SECTIONS.map(({ id, label }, index) => {
+            const tone = TONES[(index + 1) as Tone];
+            return <a key={id} href={`#${id}`} onClick={(event) => { event.preventDefault(); jumpTo(id); }} aria-current={activeSection === id ? "location" : undefined} className={cn("-mt-px flex min-h-12 min-w-0 items-center gap-2.5 border-t-[3px] px-2 text-sm font-medium motion-safe:transition-colors focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-mi-ink sm:px-3 sm:text-base", activeSection === id ? cn(tone.rule, "text-mi-ink") : "border-transparent text-mi-ink-2 hover:text-mi-ink")}><span className={cn("font-mi-mono text-sm font-normal", tone.text)} aria-hidden>0{index + 1}</span>{label}</a>;
+          })}
+        </div>
+      </nav>
+      <section id="implementation" aria-labelledby="implementation-title" className={cn("scroll-mt-14", TONES[1].body)}>
+        <SectionBand tone={1} number="01" id="implementation-title" title="Explore the implementation." description="Pick a voting rule. Follow its Python code alongside the count it produces." figure={<CodeFigure source={countSources.plurality} resolution={walk.resolution} />} />
+        <div className={cn(CONTAINER, "pb-16 pt-8 sm:pb-24 sm:pt-10")}>
+          <MethodExplorer method={inspectorMethod} onMethod={setInspectorMethod} reference={walk.resolution} cycle={cycle?.resolution} useCycle={rankedPairsCycle} onCycle={setRankedPairsCycle} input={inspectorInput} onInput={setInspectorInput} playground={ready ? resolution : undefined} playgroundKey={key} pendingMessage={pendingMessage} onEdit={editInspector} sources={countSources} failures={[]} onReference={reference} />
+        </div>
+      </section>
+      <section id="why-it-matters" aria-labelledby="why-title" className={cn("scroll-mt-14", TONES[2].body)}>
+        <SectionBand tone={2} number="02" id="why-title" title="Why it matters." description="A counting rule decides which parts of people’s preferences shape the outcome. Change the rule, and the consequences can change with it." figure={<WinnersFigure label={walk.label} resolution={walk.resolution} />} />
+        <div className={cn(CONTAINER, "pb-16 pt-10 sm:pb-24 sm:pt-14")}>
+          <WhyItMatters presets={presets} stories={stories} irvSource={irvSource} searches={searches} onMethod={openMethod} onSpecimen={openSpecimen} initialExample={initialStory} initialReference={initialReference} />
+        </div>
+      </section>
+      <section id="simulation" aria-labelledby="simulation-title" className={cn("scroll-mt-14", TONES[3].body)}>
+        <SectionBand tone={3} number="03" id="simulation-title" title="From an example to evidence." description="Counterexamples reveal what can happen. Seeded simulations explore how often it happens under a specified model." figure={<EfficiencyFigure simulation={simulation} />} />
+        <div className={cn(CONTAINER, "pb-16 pt-10 sm:pb-24 sm:pt-14")}>
+          <SimulationEvidence simulation={simulation} samples={samples} onAtlasPoint={loadAtlasPoint} onImplementation={() => jumpTo("implementation")} />
+        </div>
+      </section>
+      <section id="playground" aria-labelledby="playground-title" className={cn("scroll-mt-14", TONES[4].body)}>
+        <SectionBand tone={4} number="04" id="playground-title" title="Build your own electorate." description="Change the voters, their preferences, or the candidates. The Python package counts every method on the same electorate." figure={<PreferenceFigure label={walk.label} profile={walk.profile} />} />
+        <div className={cn(CONTAINER, "space-y-5 pb-16 pt-10 sm:pb-24 sm:pt-14 [&_.text-xs]:text-sm")}>
+          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Playground starting points">
+            {presets.map((preset) => <button key={preset.id} type="button" title={preset.description} aria-pressed={key === encodeProfile(preset.profile)} onClick={() => openPreset(preset)} className={cn(action, key === encodeProfile(preset.profile) && "border-mi-ink bg-mi-ink text-mi-surface hover:bg-mi-ink")}>{preset.label}</button>)}
+            <button type="button" onClick={() => { edit({ ballot_type: "utility", candidates: ["A", "B", "C"], rows: [{ count: 1, utilities: { A: 100, B: 50, C: 0 } }] }); setVoterType(0); }} className={action}><Plus size={16} aria-hidden />New electorate</button>
+          </div>
+          {specimenView && activeSearch?.specimen ? <SpecimenBanner specimen={activeSearch.specimen} role={specimenView.role} maxVoters={activeSearch.max_voters} onRole={(role) => { if (activeSearch.specimen) openSpecimen(activeSearch.specimen, role, false); }} onClose={() => setSpecimenView(null)} /> : atlasPoint ? <AtlasPointBanner point={atlasPoint} voters={totalVoters(profile)} types={profile.rows.length} onBack={() => jumpTo("atlas")} onClose={() => setAtlasPoint(null)} /> : null}
+          <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)] xl:items-start">
+            <div className="min-w-0 space-y-4">
+              <Panel title="Your voters"><p className="mb-4 text-sm leading-relaxed text-mi-ink-2">Each row is a group of voters. Move candidates along its preference scale, then change how many voters share it.</p><ProfileEditor profile={profile} selected={selectedType} onSelect={setVoterType} onChange={edit} /></Panel>
+              <details className="min-w-0 rounded-[4px] border border-mi-rule bg-mi-surface p-4"><summary className="min-h-11 cursor-pointer text-base font-medium text-mi-ink">Inspect the ballots this creates</summary><div className="min-w-0 pt-3"><BallotsPanel profile={profile} ballots={ready ? resolution.voter_ballots : null} selected={selectedType} onSelect={setVoterType} /></div></details>
             </div>
-            <div className="contents @4xl:flex @4xl:flex-col @4xl:gap-6">
-              <Panel title="Seven counts" className="order-2">{counts}</Panel>
-              <Panel title="How it counted" className="order-3">{trace}</Panel>
+            <div className="min-w-0 space-y-4" aria-busy={status.kind === "counting"}>
+              <Panel title="Compare the methods">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><p role="status" className="text-sm leading-relaxed text-mi-ink-2">{ready ? `${resolution.total_voters} voters · ${new Set(resolution.results.map((result) => result.winner)).size} different winners · seed ${resolution.tiebreak_seed}` : pendingMessage}</p><button type="button" onClick={tracePlayground} disabled={!ready} className={cn(action, "disabled:opacity-40")}><Code2 size={16} aria-hidden />Trace this count <ArrowUpRight size={16} aria-hidden /></button></div>
+                {ready ? <Channels resolution={resolution} selected={method} onSelect={setMethod} /> : <div className="min-h-40 rounded-[4px] bg-mi-wash p-5 text-sm leading-relaxed text-mi-ink-2">{status.kind === "empty" ? "The comparison will appear here when the electorate has voters." : status.kind === "offline" ? "Your edits are preserved. Preset examples remain available." : "Updating all seven methods from the current preferences."}</div>}
+              </Panel>
             </div>
           </div>
         </div>
-      </Playground>
-    </div>
+      </section>
+      <footer className={CONTAINER}><div className="border-t border-mi-rule pt-6 text-sm leading-relaxed text-mi-ink-2">
+        <div className="flex flex-wrap items-center justify-between gap-3"><p>Inspect it. Change it. Reproduce it.</p><a href="https://github.com/BenDotWillcox/voting-paradigm" className={action}>View the Python package <ArrowUpRight size={15} aria-hidden /></a></div>
+        <details className="mt-4"><summary className="min-h-11 cursor-pointer py-3">Data &amp; provenance</summary><p className="max-w-4xl break-words">Presets, specimens and simulations are saved artifacts in <code>public/data/methods</code>. The sincere-v1 ballot model translates utilities into each ballot format; voting methods run in Python. Edited electorates use <code>POST /api/voting/profile/resolve</code>. Ties use seed {resolution.tiebreak_seed}. Presets SHA-256: <code>{provenance.presetsHash}…</code>. Artifact source: <code>{provenance.sourceHash}…</code>.</p></details>
+      </div></footer>
+    </main>
   );
 }
 
-function StartingPoints({
-  presets,
-  activeKey,
-  origin,
-  onPreset,
-}: {
-  presets: PresetOption[];
-  activeKey: string;
-  origin: string | null;
-  onPreset: (preset: PresetOption) => void;
-}) {
-  return (
-    <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Electorate">
-      <span className="text-xs text-mi-muted">Electorate</span>
-      {presets.map((preset) => {
-        const active = encodeProfile(preset.profile) === activeKey;
-        return (
-          <button
-            key={preset.id}
-            type="button"
-            aria-pressed={active}
-            title={preset.description}
-            onClick={() => onPreset(preset)}
-            className={cn(
-              "rounded-[3px] border px-2.5 py-1 text-sm",
-              active ? "border-mi-ink bg-mi-ink text-mi-surface" : "border-mi-rule text-mi-ink hover:border-mi-ink"
-            )}
-          >
-            {preset.label}
-          </button>
-        );
-      })}
-      {origin ? (
-        <span className="rounded-[3px] border border-dashed border-mi-ink px-2.5 py-1 text-sm text-mi-ink">
-          {origin}
-        </span>
-      ) : null}
-    </div>
-  );
-}
-
-/** A criterion's name mid-sentence: Condorcet keeps its capital. */
-function criterionName(id: string): string {
-  const label = CRITERIA.find((criterion) => criterion.id === id)?.label ?? id;
-  return label.startsWith("Condorcet") ? label : label.charAt(0).toLowerCase() + label.slice(1);
-}
-
-function PlayButton({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="inline-flex items-center gap-1.5 rounded-[3px] border border-mi-ink px-2.5 py-1 text-sm text-mi-ink hover:bg-mi-wash focus-visible:outline-1 focus-visible:outline-mi-ink"
-    >
-      <ChevronUp className="size-3.5" aria-hidden />
-      {children}
-    </button>
-  );
-}
-
-function StatusNote({ status, showing }: { status: ElectorateStatus; showing: boolean }) {
-  if (status.kind === "counting") return <span className="text-mi-muted"> · counting…</span>;
-  if (status.kind === "empty") return <span className="text-mi-ink"> · add at least one voter to count</span>;
-  if (status.kind === "offline")
-    return (
-      <span className="text-mi-ink">
-        {" "}
-        · {status.message} Showing the last counted electorate; the sections still work.
-      </span>
-    );
-  return showing ? null : <span className="text-mi-muted"> · showing the last count</span>;
-}
-
-function Panel({
-  title,
-  className,
-  children,
-}: {
-  title: string;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className={cn("rounded-[4px] border border-mi-rule bg-mi-surface", className)}>
-      <h3 className="border-b border-mi-rule px-4 py-2.5 text-sm font-medium text-mi-ink">{title}</h3>
-      <div className="p-4">{children}</div>
-    </section>
-  );
+function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+  return <section className="min-w-0 rounded-[4px] border border-mi-rule bg-mi-surface"><h3 className="border-b border-mi-rule px-4 py-3 text-base font-semibold text-mi-ink">{title}</h3><div className="min-w-0 p-4 sm:p-5">{children}</div></section>;
 }

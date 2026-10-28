@@ -33,15 +33,20 @@ export function ParadoxGallery({
 
   return (
     <div className="space-y-2">
+      <p className="max-w-3xl text-sm leading-relaxed text-mi-ink-2">
+        This table considers decisive counts: no result tiebreak and no simultaneous IRV
+        eliminations. Every count in a before/after comparison must meet that rule.
+        Pass claims apply within this scope; tie handling can change the outcome.
+      </p>
       <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-mi-muted">
         <span className="inline-flex items-center gap-1.5">
-          <Swatch kind="fail" /> fails: smallest specimen, voters
+          <Swatch kind="fail" /> fails: smallest decisive specimen, voters
         </span>
         <span className="inline-flex items-center gap-1.5">
           <Swatch kind="cited" /> fails: known theorem, beyond the search
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <Swatch kind="pass" /> satisfies: proof
+          <Swatch kind="pass" /> satisfies for decisive counts: proof
         </span>
         <span className="inline-flex items-center gap-1.5">
           <Swatch kind="open" /> open: no specimen found and no proof
@@ -66,12 +71,23 @@ export function ParadoxGallery({
         </span>
       </div>
 
-      <div className="overflow-x-auto">
+      <p className="text-sm text-mi-muted sm:hidden">
+        Swipe the table to compare criteria. Method names stay visible.
+      </p>
+      <div
+        className="overflow-x-auto focus-visible:outline-2 focus-visible:outline-mi-ink"
+        role="region"
+        aria-label="Voting method criteria comparison"
+        tabIndex={0}
+        onKeyDown={(event) => {
+          if (event.key === "ArrowLeft" || event.key === "ArrowRight") event.stopPropagation();
+        }}
+      >
         <table className="w-full min-w-[46rem] border-collapse text-sm">
-          <caption className="sr-only">Seven voting methods against eight criteria</caption>
+          <caption className="sr-only">Seven voting methods against eight criteria, scoped to decisive counts</caption>
           <thead>
             <tr className="border-b border-mi-rule">
-              <th className="py-2 pr-3 text-left text-xs font-normal text-mi-muted">Method</th>
+              <th className="sticky left-0 z-20 bg-mi-surface py-2 pr-3 text-left text-xs font-normal text-mi-muted">Method</th>
               {CRITERIA.map((criterion) => (
                 <th key={criterion.id} scope="col" className="px-1 py-2 text-center text-xs font-normal">
                   <button
@@ -81,7 +97,7 @@ export function ParadoxGallery({
                     onFocus={() => setDefined(criterion.id)}
                     onClick={() => setDefined(criterion.id)}
                     className={cn(
-                      "rounded-[3px] px-1 underline decoration-dotted underline-offset-2 hover:text-mi-ink",
+                      "min-h-11 min-w-11 rounded-[3px] px-1 underline decoration-dotted underline-offset-2 hover:text-mi-ink sm:min-h-0 sm:min-w-0",
                       "focus-visible:outline-1 focus-visible:outline-mi-ink",
                       defined === criterion.id ? "text-mi-ink" : "text-mi-muted"
                     )}
@@ -105,7 +121,7 @@ export function ParadoxGallery({
               </tr>
               {group.methods.map((method) => (
                 <tr key={method} className="border-b border-mi-rule last:border-0">
-                  <th scope="row" className="py-0.5 pr-3 text-left font-medium text-mi-ink">
+                  <th scope="row" className="sticky left-0 z-10 min-w-[8.5rem] bg-mi-surface py-0.5 pr-3 text-left font-medium text-mi-ink">
                     {METHOD_META[method].label}
                   </th>
                   {CRITERIA.map((criterion) => {
@@ -142,7 +158,7 @@ export function ParadoxGallery({
 
       {searchNote ? (
         <p className="max-w-3xl text-xs leading-relaxed text-mi-muted">
-          Every number comes from an exhaustive search over three-candidate electorates, each
+          Every number comes from an exhaustive search over decisive three-candidate electorates, each
           failure re-checked against the reference implementation; a ✓ is a proof, not an empty
           search. Approval, score and quadratic voting read utilities, so their rows search voter
           types: each ranking with its middle candidate at 2.5, 5 or 7.5, cast into ballots by the
@@ -168,11 +184,11 @@ function CellButton({
   const failsBySpecimen = cell.kind === "specimen";
   const failsByCitation = cell.kind === "cited" && cell.cited.verdict === "fails";
   const description = failsBySpecimen
-    ? `fails; smallest specimen has ${cell.specimen.voters} voters. Open it.`
+    ? `fails; smallest decisive specimen has ${cell.specimen.voters} voters. Open it.`
     : failsByCitation
       ? "fails by a known theorem; show why"
       : cell.kind === "cited"
-        ? "satisfies; show the proof"
+        ? "satisfies for decisive counts; show the proof and its scope"
         : "open; show why";
   return (
     <button
@@ -181,7 +197,7 @@ function CellButton({
       aria-pressed={active}
       aria-label={`${label}: ${description}`}
       className={cn(
-        "inline-flex h-6 min-w-[3.25rem] items-center justify-center gap-1 rounded-[3px] px-2 font-mi-mono text-xs",
+        "inline-flex h-11 min-w-[3.25rem] items-center justify-center gap-1 rounded-[3px] px-2 font-mi-mono text-sm sm:h-6 sm:text-xs",
         "focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-mi-ink",
         failsBySpecimen && "bg-mi-ink text-mi-surface hover:opacity-85",
         failsByCitation && "border border-mi-ink text-mi-ink hover:bg-mi-wash",
@@ -246,12 +262,12 @@ function CellNote({
     <div className="rounded-[3px] border border-mi-rule p-3 text-sm" aria-live="polite">
       <p className="font-medium text-mi-ink">
         {METHOD_META[method].label} ·{" "}
-        {cell.kind === "cited" ? `${cell.cited.verdict} ${name}` : `${name}: open`}
+        {cell.kind === "cited" ? `${cell.cited.verdict} ${name}${cell.cited.verdict === "passes" ? " for decisive counts" : ""}` : `${name}: open`}
       </p>
       <p className="mt-1 text-xs text-mi-muted">{definition?.definition}</p>
       {reason ? <p className="mt-2 text-mi-ink-2">{reason}</p> : null}
       <p className="mt-2 text-xs text-mi-muted">
-        The search found no specimen with up to {cell.maxVoters} voters
+        The search found no specimen among decisive counts with up to {cell.maxVoters} voters
         {cell.kind === "cited" && cell.cited.verdict === "passes" ? ", as the proof predicts." : "."}
       </p>
     </div>
