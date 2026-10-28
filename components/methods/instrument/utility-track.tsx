@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, type CSSProperties } from "react";
 
 import { UTILITY_SCALE, formatUtility } from "@/lib/methods/profile";
 import { cn } from "@/lib/utils";
@@ -33,6 +33,8 @@ export function UtilityTrack({
   const track = useRef<HTMLDivElement>(null);
   const dragging = useRef<string | null>(null);
   const lanes = assignLanes(candidates, utilities);
+  const mobileLanes = assignMobileLanes(candidates, utilities);
+  const mobileHeight = Math.max(96, 48 * (1 + Math.max(0, ...Object.values(mobileLanes).map(Math.abs))));
 
   function valueAt(clientX: number): number {
     const rect = track.current?.getBoundingClientRect();
@@ -47,7 +49,8 @@ export function UtilityTrack({
       ref={group}
       role="group"
       aria-label={label}
-      className="relative h-11 min-w-0 flex-1 px-2.5"
+      className="relative h-[var(--mobile-track-height)] min-w-0 flex-1 px-2.5 sm:h-11"
+      style={{ "--mobile-track-height": `${mobileHeight}px` } as CSSProperties}
       onPointerMove={(event) => {
         const id = dragging.current;
         if (id === null) return;
@@ -84,10 +87,10 @@ export function UtilityTrack({
               aria-valuetext={`${id}: ${formatUtility(value)} out of 10`}
               title={`${id}: ${formatUtility(value)}`}
               className={cn(
-                "absolute grid size-7 -translate-x-1/2 -translate-y-1/2 cursor-grab touch-none place-items-center rounded-full outline-none select-none",
+                "absolute top-[calc(var(--mobile-utility-lane)*24px)] grid size-11 -translate-x-1/2 -translate-y-1/2 cursor-grab touch-none place-items-center rounded-full outline-none select-none sm:top-[calc(var(--utility-lane)*9px)] sm:size-7",
                 "focus-visible:ring-1 focus-visible:ring-mi-ink active:cursor-grabbing"
               )}
-              style={{ left: `${value}%`, top: `${lanes[id] * 9}px` }}
+              style={{ left: `${value}%`, "--utility-lane": lanes[id], "--mobile-utility-lane": mobileLanes[id] } as CSSProperties}
               onPointerDown={(event) => {
                 if (event.button !== 0) return;
                 event.preventDefault();
@@ -138,6 +141,21 @@ function assignLanes(candidates: string[], utilities: Record<string, number>): R
     const value = utilities[id] ?? 0;
     lane = previous !== null && value - previous < CROWDED ? (lane === -1 ? 1 : -1) : 0;
     lanes[id] = lane;
+    previous = value;
+  }
+  return lanes;
+}
+
+/** Give every crowded mobile thumb its own lane, including four- or five-way ties. */
+function assignMobileLanes(candidates: string[], utilities: Record<string, number>): Record<string, number> {
+  const sorted = [...candidates].sort((a, b) => (utilities[a] ?? 0) - (utilities[b] ?? 0));
+  const lanes: Record<string, number> = {};
+  let previous: number | null = null;
+  let position = 0;
+  for (const id of sorted) {
+    const value = utilities[id] ?? 0;
+    position = previous !== null && value - previous < CROWDED ? position + 1 : 0;
+    lanes[id] = position === 0 ? 0 : Math.ceil(position / 2) * (position % 2 ? -1 : 1);
     previous = value;
   }
   return lanes;

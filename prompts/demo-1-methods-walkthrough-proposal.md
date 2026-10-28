@@ -121,6 +121,26 @@ Notes:
 - **Single-card ballot view:** the ballots panel's cards, rendered one ballot
   type at a time for all three groups.
 
+## Revision after the walkthrough (2026-10-24)
+
+Ben's review of the finished walkthrough: too much empty space on desktop,
+overlapping labels on the voters step, a jump after the first step when the
+title collapsed, and chapter tabs that hid how many steps each held.
+
+- **A scaled slide stage.** From 1024px wide, the page's title row, the
+  chapter rail, one step box and the navigation under it form a stage of a
+  fixed design size (1240×700) that scales as a whole to the window: 1.34×
+  at 1920×1080, 1.08× at 1440×900, 0.82× at 1280×720. Every step is laid
+  out once at the design size (a 410px content area, which all 25 fit), so
+  nothing moves between steps and the page grows with the screen.
+- **A rail that stays put.** The rail is top-aligned beside the box and
+  holds only the chapters, the current one open to its numbered steps.
+  Previous and next sit under the box, each naming the step it goes to,
+  with an overall counter ("1.5 · step 5 of 25") between them.
+- **One fixed box.** The title is always in the same place at the top of
+  the box; content sits under it. On small screens the deck flows as
+  before, with the chapters and steps in a menu.
+
 ## Settled decisions this reverses
 
 1. **Counts first** (narrative slice 2) → ballots and counts interleaved,

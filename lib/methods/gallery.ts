@@ -83,7 +83,8 @@ export interface CitedCell {
 
 /**
  * Cells settled by proof or citation rather than by a specimen, and open cells
- * with a reason. The rated proofs use sincere-v1's rules: approve above your
+ * with a reason. Pass claims use the search's decisive-count scope: no result
+ * tiebreaks or simultaneous IRV eliminations. The rated proofs use sincere-v1's rules: approve above your
  * average utility, score by rescaling your utilities from 0 to 10, and cast
  * quadratic votes in proportion to each utility's distance from your average.
  */
@@ -114,12 +115,13 @@ export const CITED: Record<VotingMethod, Partial<Record<CriterionId, CitedCell>>
     },
     condorcet_loser: {
       verdict: "passes",
-      reason: "The last round is a head-to-head race, which a Condorcet loser always loses.",
+      reason:
+        "For decisive counts, a Condorcet loser cannot win a majority or the final head-to-head race. The package eliminates tied last-place candidates together; those excluded rounds can elect a Condorcet loser.",
     },
     clones: {
       verdict: "passes",
       reason:
-        "When a clone is eliminated its ballots move to its twin, so the clones rise or fall together (Tideman 1987).",
+        "With one-at-a-time eliminations, a clone's ballots transfer to its twin (Tideman 1987). The package can instead eliminate tied last-place clones together and change the winner outside the clone group. That exception is excluded from the decisive counts shown here.",
     },
   },
   borda: {

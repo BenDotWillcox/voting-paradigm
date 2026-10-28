@@ -158,7 +158,7 @@ export function countRule(method: VotingMethod, resolution: ProfileResolveRespon
       return `Each ballot gives ${top} points to its first choice, one fewer for each place down, and 0 to its last. Most points wins.`;
     }
     case "ranked_pairs":
-      return "Take every two-way race. Lock in the wins from the largest margin down, skipping any that would close a cycle. The winner is the candidate no locked win beats.";
+      return "Return a candidate who wins every two-way race, if one exists. Otherwise, lock in wins from the largest margin down, skipping any that would close a cycle. The winner is the candidate no locked win beats.";
     case "approval":
       return "Count the approvals. Most approvals wins.";
     case "score":
@@ -208,7 +208,7 @@ export function countCopy(method: VotingMethod, resolution: ProfileResolveRespon
     const cw = resolution.criteria.condorcet_winner;
     takeaway =
       cw === winner
-        ? `${winner} wins every two-way race, so nothing locked ever beats it: Ranked Pairs elects the Condorcet winner whenever there is one.`
+        ? `${winner} wins every two-way race. The package returns this Condorcet winner before entering the locking pass.`
         : `No candidate wins every race, so the locking order decides: ${winner} is the one candidate no locked win beats.`;
   } else if (trace.kind === "approval") {
     const [second, approvals] = runnerUp(trace.approvals, winner);

@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  outputFileTracingIncludes: {
+    // The methods inspector reads excerpts from the actual Python package.
+    "/methods": ["./voting/methods/*.py"],
+  },
   outputFileTracingExcludes: {
     // Server code reads only small plan.json / state outline files; the
     // pipeline sources and browser-fetched geometry layers stay out of

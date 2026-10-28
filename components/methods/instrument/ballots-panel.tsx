@@ -40,7 +40,7 @@ export function BallotsPanel({
             aria-pressed={index === selected}
             onClick={() => onSelect(index)}
             className={cn(
-              "rounded-[3px] border px-2 py-0.5 font-mi-mono text-xs",
+              "min-h-11 rounded-[3px] border px-2 py-0.5 font-mi-mono text-sm sm:min-h-0 sm:text-xs",
               index === selected
                 ? "border-mi-ink bg-mi-ink text-mi-surface"
                 : "border-mi-rule text-mi-ink-2 hover:border-mi-ink"
@@ -99,26 +99,30 @@ export function BallotsPanel({
   );
 }
 
-/** What one voter type casts on one kind of ballot. */
+/** What one voter type casts on one kind of ballot, at the panel's size or a step's. */
 export function BallotBody({
   kind,
   candidates,
   cast,
+  large = false,
 }: {
   kind: BallotKind;
   candidates: string[];
   cast: VoterBallots;
+  large?: boolean;
 }) {
   switch (kind) {
     case "single":
-      return <CandidateMark id={cast.choice} size={18} className="text-lg font-semibold" />;
+      return (
+        <CandidateMark id={cast.choice} size={large ? 28 : 18} className={cn("font-semibold", large ? "text-2xl" : "text-lg")} />
+      );
     case "ranked":
       return (
-        <span className="flex flex-wrap items-center gap-1 font-mi-mono text-sm">
+        <span className={cn("flex flex-wrap items-center font-mi-mono", large ? "gap-2 text-lg" : "gap-1 text-sm")}>
           {cast.ranking.map((id, position) => (
-            <span key={id} className="inline-flex items-center gap-1">
+            <span key={id} className={cn("inline-flex items-center", large ? "gap-2" : "gap-1")}>
               {position > 0 ? <span className="text-mi-muted">›</span> : null}
-              <CandidateMark id={id} size={13} />
+              <CandidateMark id={id} size={large ? 20 : 13} />
             </span>
           ))}
         </span>
@@ -126,12 +130,12 @@ export function BallotBody({
     case "approval":
       return (
         <>
-          <ul className="flex flex-wrap gap-x-3 gap-y-1 font-mi-mono text-sm">
+          <ul className={cn("flex flex-wrap gap-x-3 gap-y-1 font-mi-mono", large ? "text-lg" : "text-sm")}>
             {candidates.map((id) => {
               const approved = cast.approvals.includes(id);
               return (
                 <li key={id} className={cn("inline-flex items-center gap-1", !approved && "text-mi-muted")}>
-                  <CandidateGlyph id={id} size={12} />
+                  <CandidateGlyph id={id} size={large ? 18 : 12} />
                   {id} {approved ? "✓" : "–"}
                 </li>
               );
@@ -144,11 +148,17 @@ export function BallotBody({
       );
     case "score":
       return (
-        <ul className="space-y-0.5">
+        <ul className={large ? "space-y-2" : "space-y-0.5"}>
           {candidates.map((id) => (
-            <li key={id} className="grid grid-cols-[2.25rem_minmax(0,1fr)_1.5rem] items-center gap-2 font-mi-mono text-sm">
-              <CandidateMark id={id} size={12} />
-              <span className="h-2">
+            <li
+              key={id}
+              className={cn(
+                "grid items-center gap-2 font-mi-mono",
+                large ? "grid-cols-[3rem_minmax(0,1fr)_2rem] text-base" : "grid-cols-[2.25rem_minmax(0,1fr)_1.5rem] text-sm"
+              )}
+            >
+              <CandidateMark id={id} size={large ? 16 : 12} />
+              <span className={large ? "h-4" : "h-2"}>
                 <span
                   className="block h-full rounded-r-[3px]"
                   style={{ width: `${(cast.scores[id] ?? 0) * 10}%`, background: candidateColor(id) }}
@@ -160,7 +170,7 @@ export function BallotBody({
         </ul>
       );
     case "quadratic":
-      return <QuadraticBallot candidates={candidates} cast={cast} />;
+      return <QuadraticBallot candidates={candidates} cast={cast} large={large} />;
   }
 }
 
@@ -179,28 +189,42 @@ function Card({
 }) {
   return (
     <section className={cn("rounded-[3px] border border-mi-rule p-2.5", wide && "sm:col-span-2")}>
-      <div className="flex items-baseline justify-between gap-2">
+      <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
         <h3 className="text-sm font-medium text-mi-ink">{title}</h3>
-        <span className="text-[0.6875rem] text-mi-muted">read by {readBy}</span>
+        <span className="text-sm text-mi-muted sm:text-[0.6875rem]">read by {readBy}</span>
       </div>
-      <p className="mb-2 text-xs text-mi-muted">{rule}</p>
+      <p className="mb-2 text-sm text-mi-muted sm:text-xs">{rule}</p>
       {children}
     </section>
   );
 }
 
-function QuadraticBallot({ candidates, cast }: { candidates: string[]; cast: VoterBallots }) {
+function QuadraticBallot({
+  candidates,
+  cast,
+  large = false,
+}: {
+  candidates: string[];
+  cast: VoterBallots;
+  large?: boolean;
+}) {
   const max = Math.max(1, ...candidates.map((id) => Math.abs(cast.allocations[id] ?? 0)));
   return (
     <div className="space-y-1">
-      <ul className="space-y-0.5">
+      <ul className={large ? "space-y-2" : "space-y-0.5"}>
         {candidates.map((id) => {
           const votes = cast.allocations[id] ?? 0;
           const width = (50 * Math.abs(votes)) / max;
           return (
-            <li key={id} className="grid grid-cols-[2.25rem_minmax(0,1fr)_2.5rem] items-center gap-2 font-mi-mono text-sm">
-              <CandidateMark id={id} size={12} />
-              <span className="relative h-2">
+            <li
+              key={id}
+              className={cn(
+                "grid items-center gap-2 font-mi-mono",
+                large ? "grid-cols-[3rem_minmax(0,1fr)_2.5rem] text-base" : "grid-cols-[2.25rem_minmax(0,1fr)_2.5rem] text-sm"
+              )}
+            >
+              <CandidateMark id={id} size={large ? 16 : 12} />
+              <span className={cn("relative", large ? "h-4" : "h-2")}>
                 <span aria-hidden className="absolute inset-y-[-3px] left-1/2 w-px bg-mi-rule" />
                 <span
                   className={cn("absolute inset-y-0", votes >= 0 ? "left-1/2 rounded-r-[3px]" : "rounded-l-[3px]")}
