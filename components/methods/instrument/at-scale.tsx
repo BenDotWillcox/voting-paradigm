@@ -298,7 +298,7 @@ function DisagreementMatrix({
         </p>
       </figcaption>
 
-      <p className="mt-2 text-sm text-mi-muted sm:hidden">Swipe across the matrix to see every method.</p>
+      <p className="mt-2 text-sm text-mi-muted min-[360px]:hidden">Swipe across the matrix to see every method.</p>
       <div
         className="mt-3 overflow-x-auto pb-2"
         tabIndex={0}
@@ -309,12 +309,13 @@ function DisagreementMatrix({
         }}
       >
       <div
-        className="grid min-w-[24rem] gap-0.5"
-        style={{ gridTemplateColumns: `minmax(6.5rem, auto) repeat(${columns.length}, minmax(0, 1fr))` }}
+        className="grid min-w-[18rem] gap-0.5 sm:min-w-[24rem]"
+        style={{ gridTemplateColumns: `minmax(3rem, auto) repeat(${columns.length}, minmax(0, 1fr))` }}
       >
         {rows.map((row, i) => (
           <div key={row} className="contents">
-            <span className="flex items-center pr-2 text-sm text-mi-ink">{METHOD_META[row].label}</span>
+            {/* Short labels on a phone, matching the columns, so the matrix fits without a swipe. */}
+            <span className="flex items-center pr-2 text-sm text-mi-ink" title={METHOD_META[row].label}><span className="font-mi-mono text-xs text-mi-ink-2 sm:hidden">{SHORT_LABELS[row]}</span><span className="hidden sm:inline">{METHOD_META[row].label}</span></span>
             {columns.map((column, j) => {
               if (j > i) return <span key={column} aria-hidden />;
               const rate = disagreement(group, row, column);

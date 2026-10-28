@@ -3,11 +3,13 @@
 import { Check, Code2, Copy } from "lucide-react";
 import { useState } from "react";
 
+import { excerptListing, type RowState } from "@/lib/methods/code-listing";
 import { buildIRVExample, type IRVPhase, type IRVSource } from "@/lib/methods/irv-inspector";
 import type { Story } from "@/lib/methods/stories";
 import { cn } from "@/lib/utils";
 import type { IRVRoundTrace } from "@/types/methods";
 
+import { CodeView } from "./code-view";
 import { CandidateMark } from "./glyph";
 
 const PHASES: { id: IRVPhase; label: string }[] = [
@@ -174,29 +176,13 @@ function keepArrowsInInspector(event: React.KeyboardEvent) {
 function SourceCode({ lines, startLine, label, highlight }: {
   lines: string[]; startLine: number; label: string; highlight?: IRVPhase;
 }) {
-  const indent = Math.min(...lines.filter((line) => line.trim()).map((line) => line.match(/^ */)![0].length));
   const emphasis = {
     count: /vote_counts\[choice\] \+=|_advance_to_active_choice\(/,
     eliminate: /min_votes =|if count == min_votes/,
     transfer: /while index|index \+=|return index, ranking/,
     winner: /majority_threshold =|if count >|winner = candidate/,
   };
-  return (
-    <div role="region" aria-label={label} tabIndex={0} onKeyDown={keepArrowsInInspector} className="max-h-[22rem] min-w-0 overflow-auto overscroll-contain rounded-[3px] border border-mi-rule bg-mi-wash py-3 focus-visible:outline-2 focus-visible:outline-mi-ink lg:max-h-[28rem]">
-      <pre className="w-max min-w-full font-mi-mono text-sm leading-6 text-mi-ink"><code>{lines.map((line, index) => (
-        <span key={index} className={cn("block pr-4", highlight && emphasis[highlight].test(line) && "bg-mi-surface font-semibold ring-1 ring-inset ring-mi-rule")}>
-          <span aria-hidden className="mr-4 inline-block w-10 select-none text-right font-normal text-mi-muted">{startLine + index}</span>
-          <PythonLine line={line.slice(Number.isFinite(indent) ? indent : 0)} />{"\n"}
-        </span>
-      ))}</code></pre>
-    </div>
-  );
-}
-
-function PythonLine({ line }: { line: string }) {
-  if (line.trimStart().startsWith("#")) return <span className="font-normal text-mi-ink-2">{line}</span>;
-  return <>{line.split(/(\b(?:if|else|elif|for|in|while|return|None|True|False|break|def)\b)/g).map((part, index) =>
-    /^(?:if|else|elif|for|in|while|return|None|True|False|break|def)$/.test(part)
-      ? <span key={index} className="text-blue-700 dark:text-blue-300">{part}</span> : part
-  )}</>;
+  const rows = excerptListing(lines, startLine);
+  const states = highlight ? rows.map((row): RowState => row.kind === "line" && emphasis[highlight].test(row.text) ? "drive" : "stage") : undefined;
+  return <CodeView rows={rows} states={states} label={label} />;
 }

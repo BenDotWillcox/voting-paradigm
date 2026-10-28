@@ -11,6 +11,7 @@ import type { ProfileResolveResponse, SampleElection, SimulationSummary } from "
 import { DisagreementStep, EfficiencyStep } from "./at-scale";
 import { Atlas, type AtlasPoint } from "./atlas";
 import { CorrectnessCheck } from "./correctness-check";
+import { Subhead } from "./section-band";
 import { SampleElectionView } from "./walkthrough";
 
 const button = "inline-flex min-h-11 items-center justify-center gap-2 rounded-[3px] border border-mi-rule px-3 py-2 text-left text-sm font-medium text-mi-ink hover:bg-mi-wash focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mi-ink";
@@ -46,7 +47,7 @@ export function SimulationEvidence({ simulation, samples, onAtlasPoint, onImplem
       <section id="efficiency" className={panel} aria-labelledby="efficiency-heading">
         <div className="mb-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start">
           <div className="space-y-3">
-            <p className="font-mi-mono text-sm text-mi-ink-2">01 / Recognizing a head-to-head winner</p>
+            <Subhead tone={3} number="03.1">Recognizing a head-to-head winner</Subhead>
             <h3 id="efficiency-heading" className="max-w-3xl text-xl font-semibold leading-snug tracking-[-0.02em] sm:text-2xl">
               {plurality && plurality.of > 0 ? `With five candidates, Plurality missed the Condorcet winner ${((1 - plurality.count / plurality.of) * 100).toFixed(1)}% of the time.` : "Which methods find the Condorcet winner?"}
             </h3>
@@ -63,7 +64,7 @@ export function SimulationEvidence({ simulation, samples, onAtlasPoint, onImplem
 
       <section id="disagreement" className={panel} aria-labelledby="disagreement-heading">
         <div className="mb-6 max-w-3xl space-y-3">
-          <p className="font-mi-mono text-sm text-mi-ink-2">02 / When methods part ways</p>
+          <Subhead tone={3} number="03.2">When methods part ways</Subhead>
           <h3 id="disagreement-heading" className="text-xl font-semibold leading-snug tracking-[-0.02em] sm:text-2xl">How often does changing the method change the winner?</h3>
           <p className="text-base leading-relaxed text-mi-ink-2">Every cell compares two methods on the same elections. Switch the number of candidates to see how their agreement changes within this study.</p>
         </div>
@@ -72,7 +73,7 @@ export function SimulationEvidence({ simulation, samples, onAtlasPoint, onImplem
 
       <section id="atlas" className={panel} aria-labelledby="atlas-heading">
         <div className="mb-6 max-w-3xl space-y-3">
-          <p className="font-mi-mono text-sm text-mi-ink-2">03 / See the geography of a decision</p>
+          <Subhead tone={3} number="03.3">See the geography of a decision</Subhead>
           <h3 id="atlas-heading" className="text-xl font-semibold leading-snug tracking-[-0.02em] sm:text-2xl">Same preference space. Different winner regions.</h3>
           <p className="text-base leading-relaxed text-mi-ink-2">Each colored point represents a voter cloud centered there. Compare the methods’ maps, then select a point to inspect that electorate in the playground. These maps use a fixed cloud moved across a grid, separate from the random elections above.</p>
         </div>

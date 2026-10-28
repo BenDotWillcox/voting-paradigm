@@ -13,6 +13,7 @@ import type { Specimen, SpecimenRole, SpecimenSearch, VotingMethod } from "@/typ
 import type { PresetOption } from "./methods-instrument";
 import { OpeningComparison, ParticipationExperiment } from "./opening";
 import { ParadoxGallery } from "./paradox-gallery";
+import { Subhead } from "./section-band";
 import { BallotView, FairnessView, HeadToHeadView, StoryView, VotersView } from "./walkthrough";
 
 const SEP = "https://plato.stanford.edu/entries/social-choice/";
@@ -55,7 +56,7 @@ export function WhyItMatters({ presets, stories, irvSource, searches, onMethod, 
     <div className="min-w-0 space-y-12 [&_.text-xs]:text-sm [&_summary]:min-h-11">
       <section id="comparison" className="min-w-0 scroll-mt-28 space-y-5" aria-labelledby="comparison-title">
         <div className="max-w-3xl space-y-3">
-          <p className="text-sm font-medium text-mi-ink-2">Same preferences. Different decisions.</p>
+          <Subhead tone={2} number="02.1">Same preferences. Different decisions.</Subhead>
           <h3 id="comparison-title" className="text-2xl font-semibold leading-tight tracking-[-0.02em] text-mi-ink sm:text-3xl">{reference.resolution.total_voters} voters. Three different winners.</h3>
           <p className="text-base leading-relaxed text-mi-ink-2">The code above decides which information counts. Here, no voter changes their mind: the method alone changes who wins.</p>
         </div>
@@ -64,7 +65,7 @@ export function WhyItMatters({ presets, stories, irvSource, searches, onMethod, 
 
       <section id="fairness" className="min-w-0 scroll-mt-28 space-y-5" aria-labelledby="criteria-title">
         <div className="max-w-3xl space-y-2">
-          <p className="text-sm font-medium text-mi-ink-2">What should a voting rule protect?</p>
+          <Subhead tone={2} number="02.2">What should a voting rule protect?</Subhead>
           <h3 id="criteria-title" className="text-xl font-semibold leading-snug text-mi-ink sm:text-2xl">Make the trade-offs explicit.</h3>
           <p className="text-base leading-relaxed text-mi-ink-2">A different winner is the observation. Criteria let us ask whether the change violates a property we wanted the rule to preserve.</p>
         </div>
@@ -87,7 +88,7 @@ export function WhyItMatters({ presets, stories, irvSource, searches, onMethod, 
       <section id="examples" className="min-w-0 scroll-mt-28 space-y-5" aria-labelledby="examples-title">
         <span id="experiment" className="block scroll-mt-28" />
         <div className="max-w-3xl space-y-2">
-          <p className="text-sm font-medium text-mi-ink-2">Change one thing.</p>
+          <Subhead tone={2} number="02.3">Change one thing.</Subhead>
           <h3 id="examples-title" className="text-xl font-semibold leading-snug text-mi-ink sm:text-2xl">Small examples expose surprising behavior.</h3>
           <p className="text-base leading-relaxed text-mi-ink-2">Each example changes one part of an electorate and reuses the same counting rule. Both outcomes are saved Python results.</p>
         </div>
