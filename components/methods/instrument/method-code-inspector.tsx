@@ -1,8 +1,9 @@
 "use client";
 
 import { Check, Copy } from "lucide-react";
-import { useId, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useId, useMemo, useState, type ReactNode } from "react";
 
+import { excerptListing, placeNotes, STAGE_EMPHASIS, stageListing, stageNotes, stageRowStates } from "@/lib/methods/code-listing";
 import { buildCountExample, type CountSource, type InspectableMethod } from "@/lib/methods/count-inspector";
 import { METHOD_META } from "@/lib/methods/instrument";
 import { inspectIRVRound, irvSourcePhase, recordedGraphSources, recordedVictoryGroups } from "@/lib/methods/inspector-state";
@@ -11,6 +12,7 @@ import type { ProfileResolveResponse, RankedPairsTrace, Victory } from "@/types/
 
 import { CandidateMark, GlyphShapeSvg } from "./glyph";
 import { additionalMethodSteps, additionalStageExplanation } from "./additional-method-stages";
+import { CodeView, keepArrowsInCode } from "./code-view";
 import { BallotTallyVisual, IRVRoundVisual, PairwiseVisual } from "./method-visualization";
 
 const button = "inline-flex min-h-11 items-center justify-center gap-2 rounded-[3px] border border-mi-rule px-3 py-2 text-sm font-medium text-mi-ink hover:bg-mi-wash focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mi-ink";
@@ -41,6 +43,7 @@ export function MethodCodeInspector({ method, resolution, source, sourceLabel = 
   const [showCheck, setShowCheck] = useState(false);
   const [showExample, setShowExample] = useState(false);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
+  const listing = useMemo(() => stageListing(source), [source]);
   const result = resolution.results.find((item) => item.method === method);
   if (!result) return null;
   const label = METHOD_META[method].label;
@@ -54,6 +57,8 @@ export function MethodCodeInspector({ method, resolution, source, sourceLabel = 
     : activePhase === "condorcet_return" && showCheck ? "condorcet"
     : activePhase === "order" && showCheck ? "priority" : activePhase;
   const excerpt = source.excerpts[sourcePhase];
+  const rowStates = stageRowStates(listing, excerpt, STAGE_EMPHASIS[sourcePhase]);
+  const notes = placeNotes(listing, rowStates, stageNotes(result, resolution, sourcePhase, inspectedRoundIndex));
   const example = buildCountExample(method, resolution, source);
   const explanation = explainStage(method, activePhase, resolution, result.winner, isCondorcet, inspectedRoundIndex);
 
@@ -90,14 +95,14 @@ export function MethodCodeInspector({ method, resolution, source, sourceLabel = 
             </div>
             {activePhase === "condorcet_return" && <button type="button" onClick={() => setShowCheck(!showCheck)} aria-pressed={showCheck} className={button}>{showCheck ? "Show the early return" : "Show the winner check"}</button>}
             {activePhase === "order" && <button type="button" onClick={() => setShowCheck(!showCheck)} aria-pressed={showCheck} className={button}>{showCheck ? "Show strength grouping" : "Show equal-strength tie handling"}</button>}
-            <PythonSource lines={excerpt.lines} startLine={excerpt.startLine} label={`${label} Python excerpt`} phase={sourcePhase} />
-            <p className="text-sm leading-relaxed text-mi-ink-2">Actual package source. Highlighted lines drive this stage.</p>
+            <CodeView rows={listing} states={rowStates} notes={notes} label={`${label} Python source, lines ${excerpt.startLine}–${excerpt.startLine + excerpt.lines.length - 1} in this stage`} />
+            <p className="text-sm leading-relaxed text-mi-ink-2">Actual package source. This stage’s lines are in color, the red mark sits beside the line that drives it, and <code className="font-mi-mono">#</code> notes show the saved result.</p>
             <details className="min-w-0 border-t border-mi-rule pt-3" open={sourceOpen} onToggle={(event) => {
               if (event.target === event.currentTarget) setSourceOpen(event.currentTarget.open);
             }}>
               <summary className="min-h-11 cursor-pointer text-sm font-medium text-mi-ink">Read the complete {label} source</summary>
               {sourceOpen && <><p className="mb-3 break-all font-mi-mono text-sm text-mi-ink-2">SHA-256 (LF): {source.sha256}</p>
-              <PythonSource lines={source.source.trimEnd().split("\n")} startLine={1} label={`Complete ${label} Python source`} /></>}
+              <CodeView rows={excerptListing(source.source.trimEnd().split("\n"), 1)} label={`Complete ${label} Python source`} /></>}
             </details>
           </section>
           <section aria-label={`${label} calculation state`} className="min-w-0 space-y-4 rounded-xl border border-mi-rule bg-mi-wash/50 p-3 sm:p-4">
@@ -205,34 +210,3 @@ function LockedGraph({ candidates, locked, skipped, winner }: { candidates: stri
   })}</svg><figcaption className="space-y-1 text-sm text-mi-ink-2"><p>Solid = locked{skipped.length > 0 ? "; dashed = skipped" : ""}. Margins appear in the recorded lists.</p>{useNumbers && candidates.map((candidate, index) => <p key={candidate} className="break-words">{index + 1}: {candidate}</p>)}</figcaption></figure>;
 }
 
-function keepArrowsInCode(event: KeyboardEvent) {
-  if (event.key === "ArrowLeft" || event.key === "ArrowRight") event.stopPropagation();
-}
-
-const EMPHASIS: Record<string, RegExp> = {
-  count: /vote_counts\[.*\] \+=|point_totals\[.*\] \+=|score_totals\[.*\] \+=|vote_totals\[.*\] \+=|points = max_points|_advance_to_active_choice\(/,
-  winner: /max_votes =|max_total =|max_approvals =|elif len\(tied\) == 1|winners = tied|sources =|winner_id = sources|majority_threshold =|if count >|winner = candidate_id/,
-  eliminate: /min_votes =|if count == min_votes|to_eliminate = candidates_with_min/,
-  eliminate_tie: /winner = tiebreak|to_eliminate =|elimination_was_tiebreak =/,
-  transfer: /while index|index \+=|return index, ranking/,
-  survivor_count: /_advance_to_active_choice\(|final_vote_counts\[choice\] \+=|final_exhausted \+=/,
-  survivor: /if len\(remaining_candidates\) == 1|final_winner =|return IRVResult|winners=\[final_winner\]/,
-  credits: /known_cost \+=|total_credits_spent \+=|total_credits_available \+=/,
-  pairwise: /pref = prefers|matrix\[.*\] \+=/,
-  condorcet: /_get_margin\(matrix|return candidate|return None/,
-  condorcet_return: /if condorcet_winner|return RankedPairsResult|winners=|locked_victories=|skipped_victories=/,
-  order: /ordered = sorted/,
-  priority: /not _stays_acyclic|priority =|open_victories.sort/,
-  lock: /_would_create_cycle\(|graph\[winner\].add|locked.append|skipped.append/,
-  cycle: /current == winner|return True|stack.extend/,
-};
-
-function PythonSource({ lines, startLine, label, phase }: { lines: string[]; startLine: number; label: string; phase?: string }) {
-  const indent = Math.min(...lines.filter((line) => line.trim()).map((line) => line.match(/^ */)![0].length));
-  return <div role="region" aria-label={label} tabIndex={0} onKeyDown={keepArrowsInCode} className="max-h-[22rem] min-w-0 overflow-auto overscroll-contain rounded-[3px] border border-mi-rule bg-mi-wash py-3 focus-visible:outline-2 focus-visible:outline-mi-ink lg:max-h-[28rem]"><pre className="w-max min-w-full font-mi-mono text-sm leading-6 text-mi-ink"><code>{lines.map((line, index) => <span key={index} className={cn("block pr-4", phase && EMPHASIS[phase]?.test(line) && "bg-mi-surface font-semibold ring-1 ring-inset ring-mi-rule")}><span aria-hidden className="mr-4 inline-block w-10 select-none text-right font-normal text-mi-muted">{startLine + index}</span><PythonLine line={line.slice(Number.isFinite(indent) ? indent : 0)} />{"\n"}</span>)}</code></pre></div>;
-}
-
-function PythonLine({ line }: { line: string }): ReactNode {
-  if (line.trimStart().startsWith("#")) return <span className="font-normal text-mi-ink-2">{line}</span>;
-  return <>{line.split(/(\b(?:if|else|elif|for|in|while|return|None|True|False|break|def|not|and|or)\b)/g).map((part, index) => /^(?:if|else|elif|for|in|while|return|None|True|False|break|def|not|and|or)$/.test(part) ? <span key={index} className="text-blue-700 dark:text-blue-300">{part}</span> : part)}</>;
-}

@@ -227,7 +227,7 @@ export function ParticipationExperiment({
           onExplore={() => onExplore("before")}
         />
         <div>
-            <div className="flex h-full min-h-64 flex-col justify-center rounded-[4px] border border-dashed border-mi-rule bg-mi-wash p-5 sm:p-6">
+            <div className="flex h-full flex-col justify-center rounded-[4px] border border-dashed border-mi-rule bg-mi-wash p-5 sm:p-6 md:min-h-64">
               <p className="text-sm font-medium text-mi-ink-2">The new voters</p>
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <span className="font-mi-mono text-2xl text-mi-ink">+{change.voters}</span>
@@ -251,14 +251,15 @@ export function ParticipationExperiment({
   if (!showInspector) return <div className="space-y-5">
     {introduction}
     <div className="grid min-w-0">
-      {/* Both states reserve their full responsive height, including controls. */}
-      <div aria-hidden={added} ref={(element) => { if (element) element.inert = added; }} className={cn("col-start-1 row-start-1 flex min-w-0 flex-col space-y-5", added && "invisible pointer-events-none")}>
+      {/* From md, both states reserve their full height, including controls, so nothing
+          moves. Stacked on a phone the after state is far taller, so only the shown one counts. */}
+      <div aria-hidden={added} ref={(element) => { if (element) element.inert = added; }} className={cn("col-start-1 row-start-1 flex min-w-0 flex-col space-y-5", added && "invisible pointer-events-none max-md:hidden")}>
         {controls(false)}
-        <div className="flex flex-1 flex-col justify-center">{beforeCounts}</div>
+        <div className="flex flex-1 flex-col md:justify-center">{beforeCounts}</div>
       </div>
-      <div id={outcomeId} aria-hidden={!added} ref={(element) => { if (element) element.inert = !added; }} className={cn("col-start-1 row-start-1 flex min-w-0 flex-col space-y-5", !added && "invisible pointer-events-none")}>
+      <div id={outcomeId} aria-hidden={!added} ref={(element) => { if (element) element.inert = !added; }} className={cn("col-start-1 row-start-1 flex min-w-0 flex-col space-y-5", !added && "invisible pointer-events-none max-md:hidden")}>
         {controls(true)}
-        <div className="flex flex-1 flex-col justify-center space-y-5">
+        <div className="flex flex-1 flex-col space-y-5 md:justify-center">
           {outcome}
           {comparison}
         </div>

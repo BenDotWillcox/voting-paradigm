@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowDown, PencilLine } from "lucide-react";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 import type { CountSources } from "@/lib/methods/count-inspector";
 import { METHOD_META } from "@/lib/methods/instrument";
@@ -42,8 +42,21 @@ export function MethodExplorer({ method, onMethod, reference, cycle, useCycle, o
   onReference?: (step: StepId) => void;
 }) {
   const methodButtons = useRef<Partial<Record<VotingMethod, HTMLButtonElement>>>({});
+  const methodStrip = useRef<HTMLDivElement>(null);
   // Changing inputs resets the inspector; retain focus on a control outside it.
   function focusMethod() { methodButtons.current[method]?.focus({ preventScroll: true }); }
+
+  // On narrow screens the methods scroll sideways; keep the selected one in
+  // view by scrolling the strip itself, never the page.
+  useEffect(() => {
+    const strip = methodStrip.current;
+    const button = methodButtons.current[method];
+    if (!strip || !button || strip.scrollWidth <= strip.clientWidth) return;
+    const left = button.offsetLeft - strip.offsetLeft;
+    if (left >= strip.scrollLeft && left + button.offsetWidth <= strip.scrollLeft + strip.clientWidth) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    strip.scrollTo({ left: Math.max(0, left - 6), behavior: reduce ? "auto" : "smooth" });
+  }, [method]);
   const showingCycle = input === "reference" && method === "ranked_pairs" && useCycle && cycle;
   const resolution = input === "playground" ? playground : showingCycle || reference;
   const context = <div className="min-w-0 space-y-4">
@@ -66,8 +79,8 @@ export function MethodExplorer({ method, onMethod, reference, cycle, useCycle, o
   </div>;
 
   return <div className="min-w-0 overflow-hidden rounded-xl border border-mi-rule bg-mi-surface">
-    <div role="group" aria-label="Choose a voting method" className="grid grid-cols-2 gap-1 border-b border-mi-rule bg-mi-ink p-1.5 min-[480px]:grid-cols-3 lg:grid-cols-7">
-      {COUNT_ORDER.map((value) => <button type="button" key={value} ref={(element) => { if (element) methodButtons.current[value] = element; }} onClick={() => onMethod(value)} aria-pressed={method === value} title={METHOD_META[value].rule} className={cn("min-h-12 min-w-0 rounded-md px-2 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mi-surface", method === value ? "bg-mi-surface text-mi-ink shadow-sm" : "text-mi-surface/85 hover:bg-mi-surface/15")}>
+    <div ref={methodStrip} role="group" aria-label="Choose a voting method" className="flex gap-1 overflow-x-auto overscroll-x-contain border-b border-mi-rule bg-mi-ink p-1.5 [scrollbar-width:none] lg:grid lg:grid-cols-7 lg:overflow-visible [&::-webkit-scrollbar]:hidden">
+      {COUNT_ORDER.map((value) => <button type="button" key={value} ref={(element) => { if (element) methodButtons.current[value] = element; }} onClick={() => onMethod(value)} aria-pressed={method === value} title={METHOD_META[value].rule} className={cn("min-h-11 shrink-0 whitespace-nowrap rounded-md px-3.5 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-mi-surface lg:min-h-12 lg:min-w-0 lg:px-2", method === value ? "bg-mi-surface text-mi-ink shadow-sm" : "text-mi-surface/85 hover:bg-mi-surface/15")}>
         {SEGMENT_LABEL[value]}
       </button>)}
     </div>

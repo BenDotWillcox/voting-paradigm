@@ -4,7 +4,7 @@ import { ArrowUpRight, Code2, Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isReference, type AtlasView } from "@/lib/methods/atlas";
 import type { CountSources } from "@/lib/methods/count-inspector";
-import { METHOD_META } from "@/lib/methods/instrument";
+import { CRITERIA } from "@/lib/methods/gallery";
 import type { IRVSource } from "@/lib/methods/irv-inspector";
 import { encodeProfile, specimenProfile, totalVoters } from "@/lib/methods/profile";
 import { anchorForStep, DEMO_SECTIONS, isDemoAnchor, type DemoAnchor, type DemoSection } from "@/lib/methods/scroll-sections";
@@ -17,11 +17,12 @@ import { AtlasPointBanner, type AtlasPoint } from "./atlas";
 import { BallotsPanel } from "./ballots-panel";
 import { Channels } from "./channels";
 import { MethodExplorer } from "./method-explorer";
-import { MethodTrace } from "./method-trace";
+import { MethodsHero } from "./methods-hero";
 import { ProfileEditor } from "./profile-editor";
+import { CONTAINER, SectionBand, TONES, type Tone } from "./section-band";
+import { CodeFigure, EfficiencyFigure, PreferenceFigure, WinnersFigure } from "./section-figures";
 import { SimulationEvidence } from "./simulation-evidence";
 import { SpecimenBanner } from "./specimen-banner";
-import { TournamentGraph } from "./tournament-graph";
 import { useElectorate } from "./use-electorate";
 import { WhyItMatters } from "./why-it-matters";
 
@@ -148,33 +149,37 @@ export function MethodsInstrument({ presets, stories, irvSource, countSources, s
   const reference = (step: StepId) => jumpTo(anchorForStep(step));
 
   return (
-    <main className="mx-auto max-w-[90rem] px-4 pb-16 sm:px-6 lg:px-10">
-      <header className="max-w-3xl space-y-2 py-6 sm:py-8">
-        <h1 className="text-3xl font-semibold leading-tight tracking-[-0.03em] text-mi-ink sm:text-4xl">Voting methods</h1>
-        <p className="text-base leading-relaxed text-mi-ink-2">Seven voting rules, one Python package. Inspect the code, compare the outcomes, and try your own electorate.</p>
-      </header>
-      <nav aria-label="Demo sections" className="relative z-20 -mx-4 grid grid-cols-2 border-b border-mi-rule bg-mi-page px-3 py-2 sm:-mx-6 sm:flex sm:flex-wrap sm:gap-x-2 sm:px-6 md:sticky md:top-0 lg:-mx-10 lg:px-10">
-        <span className="col-span-2 flex items-center px-2 pb-1 text-sm font-medium text-mi-ink-2 sm:px-3 sm:pb-0">Jump to</span>
-        {DEMO_SECTIONS.map(({ id, label }, index) => <a key={id} href={`#${id}`} onClick={(event) => { event.preventDefault(); jumpTo(id); }} aria-current={activeSection === id ? "location" : undefined} className={cn("flex min-h-11 min-w-0 items-center gap-2 rounded-[3px] px-2 text-sm focus-visible:outline-2 focus-visible:outline-mi-ink sm:px-3", activeSection === id ? "font-semibold text-mi-ink" : "text-mi-ink-2 hover:text-mi-ink")}><span className="font-mi-mono text-xs text-mi-muted" aria-hidden>0{index + 1}</span>{label}</a>)}
+    <main className="pb-16">
+      <MethodsHero label={walk.label} resolution={walk.resolution} simulation={simulation} criteria={CRITERIA.length} />
+      <nav aria-label="Demo sections" className="mi-island relative z-20 border-t border-mi-rule md:sticky md:top-0">
+        <div className={cn(CONTAINER, "grid grid-cols-2 md:grid-cols-4")}>
+          {DEMO_SECTIONS.map(({ id, label }, index) => {
+            const tone = TONES[(index + 1) as Tone];
+            return <a key={id} href={`#${id}`} onClick={(event) => { event.preventDefault(); jumpTo(id); }} aria-current={activeSection === id ? "location" : undefined} className={cn("-mt-px flex min-h-12 min-w-0 items-center gap-2.5 border-t-[3px] px-2 text-sm font-medium motion-safe:transition-colors focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-mi-ink sm:px-3 sm:text-base", activeSection === id ? cn(tone.rule, "text-mi-ink") : "border-transparent text-mi-ink-2 hover:text-mi-ink")}><span className={cn("font-mi-mono text-sm font-normal", tone.text)} aria-hidden>0{index + 1}</span>{label}</a>;
+          })}
+        </div>
       </nav>
-      <section id="implementation" aria-labelledby="implementation-title" className="scroll-mt-24 pt-7 sm:pt-10">
-        <header className="mb-5 max-w-3xl space-y-2">
-          <h2 id="implementation-title" className="text-2xl font-semibold leading-tight tracking-[-0.03em] text-mi-ink sm:text-3xl">Explore the implementation.</h2>
-          <p className="text-base leading-relaxed text-mi-ink-2">Pick a voting rule. Follow its Python code alongside the count it produces.</p>
-        </header>
-        <MethodExplorer method={inspectorMethod} onMethod={setInspectorMethod} reference={walk.resolution} cycle={cycle?.resolution} useCycle={rankedPairsCycle} onCycle={setRankedPairsCycle} input={inspectorInput} onInput={setInspectorInput} playground={ready ? resolution : undefined} playgroundKey={key} pendingMessage={pendingMessage} onEdit={editInspector} sources={countSources} failures={[]} onReference={reference} />
+      <section id="implementation" aria-labelledby="implementation-title" className={cn("scroll-mt-14", TONES[1].body)}>
+        <SectionBand tone={1} number="01" id="implementation-title" title="Explore the implementation." description="Pick a voting rule. Follow its Python code alongside the count it produces." figure={<CodeFigure source={countSources.plurality} resolution={walk.resolution} />} />
+        <div className={cn(CONTAINER, "pb-16 pt-8 sm:pb-24 sm:pt-10")}>
+          <MethodExplorer method={inspectorMethod} onMethod={setInspectorMethod} reference={walk.resolution} cycle={cycle?.resolution} useCycle={rankedPairsCycle} onCycle={setRankedPairsCycle} input={inspectorInput} onInput={setInspectorInput} playground={ready ? resolution : undefined} playgroundKey={key} pendingMessage={pendingMessage} onEdit={editInspector} sources={countSources} failures={[]} onReference={reference} />
+        </div>
       </section>
-      <section id="why-it-matters" aria-labelledby="why-title" className="mt-16 scroll-mt-24 border-t border-mi-rule pt-10 sm:mt-24 sm:pt-14">
-        <SectionHeading number="02" id="why-title" title="Why it matters." description="A counting rule decides which parts of people’s preferences shape the outcome. Change the rule, and the consequences can change with it." />
-        <WhyItMatters presets={presets} stories={stories} irvSource={irvSource} searches={searches} onMethod={openMethod} onSpecimen={openSpecimen} initialExample={initialStory} initialReference={initialReference} />
+      <section id="why-it-matters" aria-labelledby="why-title" className={cn("scroll-mt-14", TONES[2].body)}>
+        <SectionBand tone={2} number="02" id="why-title" title="Why it matters." description="A counting rule decides which parts of people’s preferences shape the outcome. Change the rule, and the consequences can change with it." figure={<WinnersFigure label={walk.label} resolution={walk.resolution} />} />
+        <div className={cn(CONTAINER, "pb-16 pt-10 sm:pb-24 sm:pt-14")}>
+          <WhyItMatters presets={presets} stories={stories} irvSource={irvSource} searches={searches} onMethod={openMethod} onSpecimen={openSpecimen} initialExample={initialStory} initialReference={initialReference} />
+        </div>
       </section>
-      <section id="simulation" aria-labelledby="simulation-title" className="mt-16 scroll-mt-24 border-t border-mi-rule pt-10 sm:mt-24 sm:pt-14">
-        <SectionHeading number="03" id="simulation-title" title="From an example to evidence." description="Counterexamples reveal what can happen. Seeded simulations explore how often it happens under a specified model." />
-        <SimulationEvidence simulation={simulation} samples={samples} onAtlasPoint={loadAtlasPoint} onImplementation={() => jumpTo("implementation")} />
+      <section id="simulation" aria-labelledby="simulation-title" className={cn("scroll-mt-14", TONES[3].body)}>
+        <SectionBand tone={3} number="03" id="simulation-title" title="From an example to evidence." description="Counterexamples reveal what can happen. Seeded simulations explore how often it happens under a specified model." figure={<EfficiencyFigure simulation={simulation} />} />
+        <div className={cn(CONTAINER, "pb-16 pt-10 sm:pb-24 sm:pt-14")}>
+          <SimulationEvidence simulation={simulation} samples={samples} onAtlasPoint={loadAtlasPoint} onImplementation={() => jumpTo("implementation")} />
+        </div>
       </section>
-      <section id="playground" aria-labelledby="playground-title" className="mt-16 scroll-mt-24 border-t border-mi-rule pt-10 sm:mt-24 sm:pt-14">
-        <SectionHeading number="04" id="playground-title" title="Build your own electorate." description="Change the voters, their preferences, or the candidates. The Python package counts every method on the same electorate." />
-        <div className="space-y-5 [&_.text-xs]:text-sm">
+      <section id="playground" aria-labelledby="playground-title" className={cn("scroll-mt-14", TONES[4].body)}>
+        <SectionBand tone={4} number="04" id="playground-title" title="Build your own electorate." description="Change the voters, their preferences, or the candidates. The Python package counts every method on the same electorate." figure={<PreferenceFigure label={walk.label} profile={walk.profile} />} />
+        <div className={cn(CONTAINER, "space-y-5 pb-16 pt-10 sm:pb-24 sm:pt-14 [&_.text-xs]:text-sm")}>
           <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Playground starting points">
             {presets.map((preset) => <button key={preset.id} type="button" title={preset.description} aria-pressed={key === encodeProfile(preset.profile)} onClick={() => openPreset(preset)} className={cn(action, key === encodeProfile(preset.profile) && "border-mi-ink bg-mi-ink text-mi-surface hover:bg-mi-ink")}>{preset.label}</button>)}
             <button type="button" onClick={() => { edit({ ballot_type: "utility", candidates: ["A", "B", "C"], rows: [{ count: 1, utilities: { A: 100, B: 50, C: 0 } }] }); setVoterType(0); }} className={action}><Plus size={16} aria-hidden />New electorate</button>
@@ -190,22 +195,18 @@ export function MethodsInstrument({ presets, stories, irvSource, countSources, s
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><p role="status" className="text-sm leading-relaxed text-mi-ink-2">{ready ? `${resolution.total_voters} voters · ${new Set(resolution.results.map((result) => result.winner)).size} different winners · seed ${resolution.tiebreak_seed}` : pendingMessage}</p><button type="button" onClick={tracePlayground} disabled={!ready} className={cn(action, "disabled:opacity-40")}><Code2 size={16} aria-hidden />Trace this count <ArrowUpRight size={16} aria-hidden /></button></div>
                 {ready ? <Channels resolution={resolution} selected={method} onSelect={setMethod} /> : <div className="min-h-40 rounded-[4px] bg-mi-wash p-5 text-sm leading-relaxed text-mi-ink-2">{status.kind === "empty" ? "The comparison will appear here when the electorate has voters." : status.kind === "offline" ? "Your edits are preserved. Preset examples remain available." : "Updating all seven methods from the current preferences."}</div>}
               </Panel>
-              {ready && <details className="min-w-0 rounded-[4px] border border-mi-rule bg-mi-surface p-4"><summary className="min-h-11 cursor-pointer text-base font-medium text-mi-ink">How {METHOD_META[selectedResult.method].label} counted</summary><div className="min-w-0 pt-3"><MethodTrace result={selectedResult} resolution={resolution} failures={[]} /><div className="mt-4 border-t border-mi-rule pt-4"><TournamentGraph candidates={resolution.rankings.candidates} pairwise={resolution.pairwise} condorcetWinner={resolution.criteria.condorcet_winner} /></div></div></details>}
             </div>
           </div>
         </div>
       </section>
-      <footer className="mt-16 border-t border-mi-rule pt-6 text-sm leading-relaxed text-mi-ink-2">
+      <footer className={CONTAINER}><div className="border-t border-mi-rule pt-6 text-sm leading-relaxed text-mi-ink-2">
         <div className="flex flex-wrap items-center justify-between gap-3"><p>Inspect it. Change it. Reproduce it.</p><a href="https://github.com/BenDotWillcox/voting-paradigm" className={action}>View the Python package <ArrowUpRight size={15} aria-hidden /></a></div>
         <details className="mt-4"><summary className="min-h-11 cursor-pointer py-3">Data &amp; provenance</summary><p className="max-w-4xl break-words">Presets, specimens and simulations are saved artifacts in <code>public/data/methods</code>. The sincere-v1 ballot model translates utilities into each ballot format; voting methods run in Python. Edited electorates use <code>POST /api/voting/profile/resolve</code>. Ties use seed {resolution.tiebreak_seed}. Presets SHA-256: <code>{provenance.presetsHash}…</code>. Artifact source: <code>{provenance.sourceHash}…</code>.</p></details>
-      </footer>
+      </div></footer>
     </main>
   );
 }
 
-function SectionHeading({ number, id, title, description }: { number: string; id: string; title: string; description: string }) {
-  return <header className="mb-7 max-w-3xl space-y-3"><p className="font-mi-mono text-sm text-mi-muted">{number}</p><h2 id={id} className="text-3xl font-semibold leading-tight tracking-[-0.03em] text-mi-ink sm:text-4xl">{title}</h2><p className="text-base leading-relaxed text-mi-ink-2">{description}</p></header>;
-}
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return <section className="min-w-0 rounded-[4px] border border-mi-rule bg-mi-surface"><h3 className="border-b border-mi-rule px-4 py-3 text-base font-semibold text-mi-ink">{title}</h3><div className="min-w-0 p-4 sm:p-5">{children}</div></section>;
 }
