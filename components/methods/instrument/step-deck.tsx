@@ -1,9 +1,17 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { referenceReturn } from "@/lib/methods/sections";
 import { cn } from "@/lib/utils";
+
+const RETURN_LABELS: Record<string, string> = {
+  comparison: "Back to comparison",
+  experiment: "Back to experiment",
+  implementation: "Back to implementation",
+  testing: "Back to testing",
+};
 
 export interface Step {
   id: string;
@@ -11,132 +19,78 @@ export interface Step {
   chapter: number;
   /** Short name, for the counter and screen readers. */
   title: string;
+  /** Reference material is outside the main demo's next/previous sequence. */
+  optional?: boolean;
   content: React.ReactNode;
 }
 
-// After the last scroll event, wait this long before reading the step
-const SETTLE_MS = 120;
-// Longest a chosen step's scroll may take before a reading counts again
-const SCROLL_GRACE_MS = 2000;
-// From this width up, each step is sized to the screen below the deck's top
-const FIT_QUERY = "(min-width: 1024px)";
-// Room kept below a fitted step for the pinned "Try it yourself" tab
-const BOTTOM_ROOM = 64;
-// A fitted step is never shorter than this, however short the window
-const MIN_STEP_HEIGHT = 320;
-
 /**
- * The chapters and their steps, one step at a time. Steps sit in a horizontal
- * scroll-snap track, so trackpads and touch swipe between them; the arrows,
- * the arrow keys anywhere outside a control, and the chapter tabs (arrow
- * keys, Home, End) move through them. On large screens each step fills the
- * window below the deck, so a step reads without scrolling the page; content
- * still too tall for that scrolls inside its step. On small screens the
- * track takes the height of the step showing. Steps off screen are inert.
+ * One step at a time, at the reader's normal text size. Content flows down
+ * the page instead of scaling or scrolling inside a fixed slide. Hidden
+ * steps stay mounted so an experiment retains its state when revisited.
  */
 export function StepDeck({
+  header,
   chapters,
   steps,
   index,
   onIndex,
   keys,
+  referenceReturnIndex,
 }: {
+  header: React.ReactNode;
   chapters: readonly string[];
   steps: Step[];
   index: number;
   onIndex: (index: number) => void;
   /** Whether the arrow keys move between steps (off while a dialog is open). */
   keys: boolean;
+  /** Return to the main part that opened a reference; direct links use its chapter default. */
+  referenceReturnIndex?: number;
 }) {
-  const root = useRef<HTMLDivElement>(null);
-  const track = useRef<HTMLDivElement>(null);
+  const navigation = useRef<HTMLDivElement>(null);
+  const menuButton = useRef<HTMLButtonElement>(null);
   const stepRefs = useRef<(HTMLElement | null)[]>([]);
-  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const settle = useRef<number | null>(null);
-  // A scroll this deck started, so readings on the way are not taken as swipes
-  const heading = useRef<{ target: number; until: number } | null>(null);
-  // Fitted to the window on large screens; null follows the step's own height
-  const [fitted, setFitted] = useState<number | null>(null);
-  const [natural, setNatural] = useState<number | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const current = steps[index];
+  const optional = Boolean(current?.optional);
+  const sequence = steps.flatMap((step, at) => (
+    optional ? step.optional && step.chapter === current.chapter : !step.optional
+  ) ? [at] : []);
+  const position = sequence.indexOf(index);
+  const previous = sequence[position - 1];
+  const next = sequence[position + 1];
+  const defaultReturnId = referenceReturn(current?.id);
+  const returnIndex = referenceReturnIndex !== undefined && steps[referenceReturnIndex] && !steps[referenceReturnIndex].optional
+    ? referenceReturnIndex
+    : steps.findIndex((step) => step.id === defaultReturnId);
+  const returnLabel = RETURN_LABELS[steps[returnIndex]?.id ?? ""] ?? "Back to the demo";
 
-  const chapter = steps[index]?.chapter ?? 0;
-  const inChapter = steps.filter((step) => step.chapter === chapter);
-  const position = inChapter.findIndex((step) => step === steps[index]);
+  const goTo = useCallback((at: number | undefined) => {
+    if (at === undefined || at < 0 || at >= steps.length) return;
+    if (menuOpen) menuButton.current?.focus({ preventScroll: true });
+    setMenuOpen(false);
+    onIndex(at);
+  }, [menuOpen, onIndex, steps.length]);
 
-  const go = useCallback(
-    (next: number) => onIndex(Math.max(0, Math.min(steps.length - 1, next))),
-    [onIndex, steps.length]
-  );
+  function labelOf(at: number | undefined) {
+    if (at === undefined) return "";
+    const step = steps[at];
+    if (step.optional) return step.title;
+    const part = steps.filter((item) => !item.optional).indexOf(step) + 1;
+    return `${part} ${step.title}`;
+  }
 
-  // Scroll to the chosen step unless a swipe already brought it into view,
-  // start it from its top, and bring the deck back into view
   useEffect(() => {
-    const element = track.current;
-    if (!element) return;
-    const target = index * element.clientWidth;
-    if (Math.abs(element.scrollLeft - target) > 2) {
-      heading.current = { target, until: performance.now() + SCROLL_GRACE_MS };
-      element.scrollTo({ left: target, behavior: "smooth" });
-    }
-    stepRefs.current[index]?.scrollTo({ top: 0 });
-    const deck = root.current;
-    if (deck && deck.getBoundingClientRect().top < 0) deck.scrollIntoView({ block: "start" });
+    const controls = navigation.current;
+    if (controls && controls.getBoundingClientRect().top < 0) controls.scrollIntoView({ block: "start" });
+    // A link inside the previous step may have opened this one. Keep focus
+    // visible instead of leaving it inside the now-hidden reference panel.
+    const focusedStep = document.activeElement?.closest("[data-methods-step]");
+    const shown = stepRefs.current[index];
+    if (shown && focusedStep && focusedStep !== shown) shown.focus({ preventScroll: true });
   }, [index]);
 
-  // On large screens a step fills the window from the track's top down
-  const measure = useCallback(() => {
-    const element = track.current;
-    if (!element) return;
-    if (!window.matchMedia(FIT_QUERY).matches) {
-      setFitted(null);
-      return;
-    }
-    const top = element.getBoundingClientRect().top + window.scrollY;
-    setFitted(Math.max(MIN_STEP_HEIGHT, Math.floor(window.innerHeight - top - BOTTOM_ROOM)));
-  }, []);
-
-  // The page's header collapses after the first step, which moves the track
-  // without resizing the page (it is at least a screen tall), so measure on
-  // every step as well as when the page or the window changes
-  useEffect(measure, [index, measure]);
-  useEffect(() => {
-    const query = window.matchMedia(FIT_QUERY);
-    const observer = new ResizeObserver(measure);
-    observer.observe(document.body);
-    window.addEventListener("resize", measure);
-    query.addEventListener("change", measure);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", measure);
-      query.removeEventListener("change", measure);
-    };
-  }, [measure]);
-
-  // On small screens the track is as tall as the step showing
-  useEffect(() => {
-    const step = stepRefs.current[index];
-    if (!step || fitted !== null) return;
-    const observer = new ResizeObserver(() => setNatural(step.offsetHeight));
-    observer.observe(step);
-    return () => observer.disconnect();
-  }, [index, fitted]);
-
-  // Keep the step in place when the track's width changes; its height
-  // changes with every step and must not interrupt a scroll
-  const width = useRef(0);
-  useEffect(() => {
-    const element = track.current;
-    if (!element) return;
-    const observer = new ResizeObserver(() => {
-      if (element.clientWidth === width.current) return;
-      width.current = element.clientWidth;
-      element.scrollTo({ left: index * element.clientWidth });
-    });
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [index]);
-
-  // The arrow keys step through the deck, except where a control uses them
   useEffect(() => {
     if (!keys) return;
     function onKey(event: KeyboardEvent) {
@@ -146,144 +100,213 @@ export function StepDeck({
       if (
         target instanceof Element &&
         target.closest(
-          "input, textarea, select, [contenteditable=true], [role=slider], [role=tablist], [role=radiogroup], [role=dialog]"
+          "input, textarea, select, button, a, summary, [contenteditable=true], [role=slider], [role=tablist], [role=radiogroup], [role=dialog]"
         )
-      ) {
-        return;
-      }
+      ) return;
+      const destination = event.key === "ArrowRight" ? next : previous;
+      if (destination === undefined) return;
       event.preventDefault();
-      go(index + (event.key === "ArrowRight" ? 1 : -1));
+      goTo(destination);
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [keys, index, go]);
-
-  function goToChapter(next: number) {
-    const first = steps.findIndex((step) => step.chapter === next);
-    if (first >= 0) go(first);
-  }
-
-  function onTabKey(event: React.KeyboardEvent, at: number) {
-    const moves: Record<string, number> = {
-      ArrowLeft: at - 1,
-      ArrowRight: at + 1,
-      Home: 0,
-      End: chapters.length - 1,
-    };
-    const next = moves[event.key];
-    if (next === undefined) return;
-    event.preventDefault();
-    const clamped = Math.max(0, Math.min(chapters.length - 1, next));
-    goToChapter(clamped);
-    tabRefs.current[clamped]?.focus();
-  }
-
-  const height = fitted ?? natural;
+  }, [keys, previous, next, goTo]);
 
   return (
-    <div ref={root} aria-roledescription="carousel" aria-label="Steps">
-      <div className="flex items-center gap-2">
-        <ArrowButton label="Previous step" disabled={index === 0} onClick={() => go(index - 1)}>
-          <ChevronLeft className="size-4" />
-        </ArrowButton>
-        <div
-          role="tablist"
-          aria-label="Chapters"
-          className="flex min-w-0 flex-1 gap-1 overflow-x-auto [scrollbar-width:none]"
-        >
-          {chapters.map((title, at) => (
-            <button
-              key={title}
-              ref={(element) => {
-                tabRefs.current[at] = element;
-              }}
-              type="button"
-              role="tab"
-              aria-selected={at === chapter}
-              aria-controls={`step-${steps[index]?.id}`}
-              tabIndex={at === chapter ? 0 : -1}
-              onClick={() => goToChapter(at)}
-              onKeyDown={(event) => onTabKey(event, at)}
-              className={cn(
-                "shrink-0 rounded-[3px] px-2.5 py-1 text-sm whitespace-nowrap",
-                "focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-mi-ink",
-                at === chapter
-                  ? "bg-mi-ink text-mi-surface"
-                  : "text-mi-ink-2 hover:bg-mi-wash hover:text-mi-ink"
-              )}
+    <div aria-label="Voting methods demo">
+      {header}
+      <div className="mt-4 grid items-start gap-x-6 gap-y-3 xl:grid-cols-[15rem_minmax(0,1fr)] xl:gap-x-8">
+        <div className="min-w-0 xl:col-start-2 xl:row-start-1">
+          {optional && returnIndex >= 0 ? (
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+              <p className="text-mi-ink-2">Reference · {chapters[current.chapter]}</p>
+              <button
+                type="button"
+                onClick={() => goTo(returnIndex)}
+                className="ml-auto inline-flex min-h-11 items-center gap-1.5 rounded-[3px] border border-mi-rule px-3 py-2 text-mi-ink hover:border-mi-ink focus-visible:outline-2 focus-visible:outline-mi-ink"
+              >
+                <ChevronLeft className="size-4" aria-hidden />
+                {returnLabel}
+              </button>
+            </div>
+          ) : null}
+          <div ref={navigation} className="scroll-mt-4">
+            <div className="hidden h-14 grid-cols-[minmax(0,1fr)_9rem_minmax(0,1fr)] items-center gap-3 xl:grid">
+              <NavButton
+                direction="previous"
+                kind={optional ? "reference" : "part"}
+                disabled={previous === undefined}
+                label={labelOf(previous)}
+                onClick={() => goTo(previous)}
+              />
+              <p className="text-center text-sm text-mi-ink-2" aria-live="polite">
+                {optional ? "Reference" : "Part"} {position + 1} of {sequence.length}
+              </p>
+              <NavButton
+                direction="next"
+                kind={optional ? "reference" : "part"}
+                disabled={next === undefined}
+                label={labelOf(next)}
+                onClick={() => goTo(next)}
+              />
+            </div>
+            <div className="flex h-14 items-center gap-2 xl:hidden">
+              <ArrowButton label={optional ? "Previous reference" : "Previous part"} disabled={previous === undefined} onClick={() => goTo(previous)}>
+                <ChevronLeft className="size-4" />
+              </ArrowButton>
+              <button
+                ref={menuButton}
+                type="button"
+                aria-expanded={menuOpen}
+                aria-controls="methods-step-menu"
+                onClick={() => setMenuOpen((open) => !open)}
+                title={`${optional ? "Reference · " : ""}${labelOf(index)}`}
+                className="flex h-14 min-w-0 flex-1 items-center justify-between gap-2 rounded-[3px] border border-mi-rule px-3 py-2 text-left text-sm text-mi-ink hover:border-mi-ink focus-visible:outline-2 focus-visible:outline-mi-ink"
+              >
+                <span className="line-clamp-2">{optional ? "Reference · " : ""}{labelOf(index)}</span>
+                <ChevronDown className={cn("size-4 shrink-0 transition-transform", menuOpen && "rotate-180")} />
+              </button>
+              <ArrowButton label={optional ? "Next reference" : "Next part"} disabled={next === undefined} onClick={() => goTo(next)}>
+                <ChevronRight className="size-4" />
+              </ArrowButton>
+            </div>
+            <p className="sr-only xl:hidden" aria-live="polite">
+              {optional ? "Reference" : "Part"} {position + 1} of {sequence.length}
+            </p>
+            <nav
+              id="methods-step-menu"
+              aria-label="Choose a part or reference"
+              hidden={!menuOpen}
+              className="mt-2 rounded-[3px] border border-mi-rule bg-mi-surface p-3 xl:hidden"
             >
-              <span className="mr-1.5 font-mi-mono text-xs opacity-70">{at + 1}</span>
-              {title}
-            </button>
+              <StepRail chapters={chapters} steps={steps} index={index} onGo={goTo} />
+            </nav>
+          </div>
+        </div>
+        <nav aria-label="Parts and references" className="hidden xl:sticky xl:top-6 xl:col-start-1 xl:row-start-2 xl:block">
+          <StepRail chapters={chapters} steps={steps} index={index} onGo={goTo} />
+        </nav>
+        <div className="min-w-0 xl:col-start-2 xl:row-start-2">
+          {steps.map((step, at) => (
+            <section
+              key={step.id}
+              ref={(element) => { stepRefs.current[at] = element; }}
+              id={`step-${step.id}`}
+              data-methods-step
+              role="group"
+              aria-roledescription={step.optional ? "reference" : "part"}
+              aria-label={step.title}
+              hidden={at !== index}
+              tabIndex={-1}
+              className="relative min-w-0 outline-none"
+            >
+              {step.content}
+            </section>
           ))}
         </div>
-        <span className="hidden shrink-0 font-mi-mono text-xs text-mi-muted sm:inline" aria-live="polite">
-          Step {position + 1} of {inChapter.length}
-        </span>
-        <ArrowButton
-          label="Next step"
-          disabled={index === steps.length - 1}
-          onClick={() => go(index + 1)}
-        >
-          <ChevronRight className="size-4" />
-        </ArrowButton>
-      </div>
-
-      <div
-        ref={track}
-        className="mt-3 flex snap-x snap-mandatory items-start overflow-x-auto overflow-y-hidden overscroll-x-contain transition-[height] duration-300 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        style={height === null ? undefined : { height }}
-        onScroll={() => {
-          if (settle.current) window.clearTimeout(settle.current);
-          settle.current = window.setTimeout(() => {
-            const element = track.current;
-            if (!element) return;
-            const scroll = heading.current;
-            if (scroll) {
-              const arrived = Math.abs(element.scrollLeft - scroll.target) <= 2;
-              if (!arrived && performance.now() < scroll.until) return;
-              heading.current = null;
-            }
-            const showing = Math.round(element.scrollLeft / element.clientWidth);
-            if (showing !== index) onIndex(showing);
-          }, SETTLE_MS);
-        }}
-      >
-        {steps.map((step, at) => (
-          <section
-            key={step.id}
-            ref={(element) => {
-              stepRefs.current[at] = element;
-              // Off-screen steps take no focus or pointer input. Set as a
-              // property: React 18 drops an unknown boolean attribute.
-              if (element) element.inert = at !== index;
-            }}
-            id={`step-${step.id}`}
-            role="group"
-            aria-roledescription="step"
-            aria-label={step.title}
-            // Relative, so absolutely positioned content (screen-reader
-            // labels among it) is clipped by the track, not the page
-            className={cn(
-              "relative w-full shrink-0 snap-start snap-always px-px",
-              fitted !== null && "overflow-y-auto overscroll-y-contain"
-            )}
-            style={fitted === null ? undefined : { height: fitted }}
-          >
-            {step.content}
-          </section>
-        ))}
       </div>
     </div>
   );
 }
 
-function ArrowButton({
-  label,
-  disabled,
-  onClick,
-  children,
-}: {
+/** Previous or next, naming the step it goes to. */
+function NavButton({ direction, kind, disabled, label, onClick }: {
+  direction: "previous" | "next";
+  kind: "part" | "reference";
+  disabled: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  const next = direction === "next";
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      aria-label={disabled ? undefined : `${next ? "Next" : "Previous"} ${kind}: ${label}`}
+      title={disabled ? undefined : label}
+      className={cn(
+        "flex h-14 min-w-0 items-center gap-2 rounded-[3px] border px-3 py-2 text-sm",
+        "focus-visible:outline-2 focus-visible:outline-mi-ink",
+        next ? "justify-end text-right" : "justify-start text-left",
+        disabled ? "invisible" : next
+          ? "border-mi-ink bg-mi-ink text-mi-surface hover:opacity-90"
+          : "border-mi-rule text-mi-ink hover:border-mi-ink"
+      )}
+    >
+      {next ? null : <ChevronLeft className="size-4 shrink-0" aria-hidden />}
+      <span className="line-clamp-2">{label}</span>
+      {next ? <ChevronRight className="size-4 shrink-0" aria-hidden /> : null}
+    </button>
+  );
+}
+
+/** Main chapters and optional references remain directly accessible. */
+function StepRail({ chapters, steps, index, onGo }: {
+  chapters: readonly string[];
+  steps: Step[];
+  index: number;
+  onGo: (index: number) => void;
+}) {
+  const current = steps[index]?.chapter ?? 0;
+  const firstOptionalChapter = steps.find((step) => step.optional)?.chapter;
+  return (
+    <ol className="space-y-2">
+      {chapters.map((title, at) => {
+        const own = steps.flatMap((step, i) => step.chapter === at ? [[step, i] as const] : []);
+        if (!own.length) return null;
+        const optional = own.every(([step]) => step.optional);
+        const open = at === current;
+        const expandable = own.length > 1;
+        return (
+          <li key={title}>
+            {at === firstOptionalChapter ? (
+              <p className="mt-6 border-t border-mi-rule px-2.5 pt-5 pb-2 text-sm font-medium text-mi-ink-2">Reference material</p>
+            ) : null}
+            <button
+              type="button"
+              aria-expanded={expandable ? open : undefined}
+              aria-current={!expandable && open ? "step" : undefined}
+              onClick={() => onGo(own[0][1])}
+              className={cn(
+                "flex min-h-11 w-full items-baseline gap-2 rounded-[3px] px-2.5 py-2.5 text-left text-base",
+                "focus-visible:outline-2 focus-visible:outline-mi-ink",
+                open ? "bg-mi-ink text-mi-surface" : "text-mi-ink hover:bg-mi-wash"
+              )}
+            >
+              {optional ? null : <span className="font-mi-mono text-sm opacity-80">{at + 1}</span>}
+              <span className="flex-1">{title}</span>
+              {expandable ? <span className="font-mi-mono text-sm opacity-80">{own.length}</span> : null}
+            </button>
+            {open && expandable ? (
+              <ol className="mt-1 mb-2 ml-3 border-l border-mi-rule pl-2">
+                {own.map(([step, i], within) => (
+                  <li key={step.id}>
+                    <button
+                      type="button"
+                      aria-current={i === index ? "step" : undefined}
+                      onClick={() => onGo(i)}
+                      className={cn(
+                        "flex min-h-11 w-full items-center gap-2 rounded-[3px] border-l-2 px-2 py-2 text-left text-sm",
+                        "focus-visible:outline-2 focus-visible:outline-mi-ink",
+                        i === index ? "border-mi-ink bg-mi-wash font-medium text-mi-ink" : "border-transparent text-mi-ink-2 hover:text-mi-ink"
+                      )}
+                    >
+                      {optional ? null : <span className="w-8 shrink-0 font-mi-mono text-mi-ink-2">{at + 1}.{within + 1}</span>}
+                      <span>{step.title}</span>
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            ) : null}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function ArrowButton({ label, disabled, onClick, children }: {
   label: string;
   disabled: boolean;
   onClick: () => void;
@@ -296,28 +319,15 @@ function ArrowButton({
       title={label}
       disabled={disabled}
       onClick={onClick}
-      className="grid size-8 shrink-0 place-items-center rounded-[3px] border border-mi-rule text-mi-ink hover:border-mi-ink focus-visible:outline-1 focus-visible:outline-mi-ink disabled:opacity-35 disabled:hover:border-mi-rule"
+      className="grid size-11 shrink-0 place-items-center rounded-[3px] border border-mi-rule text-mi-ink hover:border-mi-ink focus-visible:outline-2 focus-visible:outline-mi-ink disabled:opacity-35 disabled:hover:border-mi-rule"
     >
       {children}
     </button>
   );
 }
 
-/**
- * One step's frame: a kicker with its number and the transition from the
- * step before, the claim the step proves and its takeaway, an intro on how
- * to read it, the content, and a side column for an explainer. It fills its
- * step, so a short step still reads as a full screen.
- */
-export function StepFrame({
-  number,
-  transition,
-  title,
-  takeaway,
-  intro,
-  aside,
-  children,
-}: {
+/** A naturally sized step with a claim, its evidence, and optional context. */
+export function StepFrame({ number, transition, title, takeaway, intro, aside, children, compact = false }: {
   number: string;
   transition?: React.ReactNode;
   title: string;
@@ -325,19 +335,20 @@ export function StepFrame({
   intro?: React.ReactNode;
   aside?: React.ReactNode;
   children: React.ReactNode;
+  compact?: boolean;
 }) {
   return (
-    <div className="min-h-full rounded-[4px] border border-mi-rule bg-mi-surface p-4 sm:p-6">
-      <p className="text-xs text-mi-muted">
+    <div className={cn("rounded-[4px] border border-mi-rule bg-mi-surface p-4 sm:p-6", !compact && "lg:p-8")}>
+      {!compact && <p className="text-sm leading-relaxed text-mi-ink-2">
         <span className="font-mi-mono">{number}</span>
         {transition ? <span> · {transition}</span> : null}
-      </p>
-      <h2 className="mt-1 text-2xl font-semibold tracking-[-0.02em] text-mi-ink">{title}</h2>
-      {takeaway ? <p className="mt-2 max-w-3xl text-base leading-relaxed text-mi-ink">{takeaway}</p> : null}
-      {intro ? <div className="mt-2 max-w-3xl text-sm leading-relaxed text-mi-ink-2">{intro}</div> : null}
-      <div className={cn("mt-5 grid gap-6", aside && "lg:grid-cols-[minmax(0,1fr)_18rem]")}>
+      </p>}
+      <h2 className={cn("font-semibold leading-tight tracking-[-0.02em] text-mi-ink", compact ? "text-xl sm:text-2xl" : "mt-2 text-2xl sm:text-3xl")}>{title}</h2>
+      {takeaway ? <p className="mt-3 max-w-3xl text-base leading-relaxed text-mi-ink">{takeaway}</p> : null}
+      {intro ? <div className="mt-3 max-w-3xl text-base leading-relaxed text-mi-ink-2">{intro}</div> : null}
+      <div className={cn("grid gap-6", compact ? "mt-3" : "mt-6", aside && "xl:grid-cols-[minmax(0,1fr)_18rem]")}>
         <div className="min-w-0">{children}</div>
-        {aside ? <aside className="space-y-3 text-sm leading-relaxed text-mi-ink-2">{aside}</aside> : null}
+        {aside ? <aside className="space-y-3 text-base leading-relaxed text-mi-ink-2">{aside}</aside> : null}
       </div>
     </div>
   );

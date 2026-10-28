@@ -187,7 +187,7 @@ export function Atlas({
               aria-label={`${layout.label}, ${layout.atlas.candidates.length} candidates`}
               onClick={() => show(layout.atlas, layout.id)}
               className={cn(
-                "rounded-[3px] border px-2.5 py-1 text-sm",
+                "min-h-11 rounded-[3px] border px-2.5 py-1 text-sm sm:min-h-0",
                 layout.id === layoutId
                   ? "border-mi-ink bg-mi-ink text-mi-surface"
                   : "border-mi-rule text-mi-ink hover:border-mi-ink"
@@ -221,7 +221,7 @@ export function Atlas({
           selected={view}
           onSelect={setView}
         />
-        <p className="font-mi-mono text-[0.6875rem] leading-relaxed text-mi-muted">
+        <p className="break-words font-mi-mono text-xs leading-relaxed text-mi-muted sm:text-[0.6875rem]">
           {atlas.size} × {atlas.size} cells · {atlas.cloud.offsets.length} voter types ×{" "}
           {atlas.cloud.voters_per_type} voters on a sunflower spiral, spread {atlas.cloud.spread} ·
           utility linear in distance · ballots {atlas.ballot_model} · lighter cells: a tiebreak
@@ -399,7 +399,7 @@ function ThumbGroup({
 }) {
   return (
     <div>
-      <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-[repeat(auto-fill,minmax(4.25rem,1fr))]">
+      <div className="grid grid-cols-2 gap-2 min-[400px]:grid-cols-3 sm:grid-cols-[repeat(auto-fill,minmax(3.6rem,1fr))] sm:gap-1.5">
         {views.map((view) => (
           <button
             key={view}
@@ -421,7 +421,7 @@ function ThumbGroup({
                 className="absolute inset-0"
               />
             </span>
-            <span className="mt-0.5 block truncate text-[0.6875rem] text-mi-ink">{viewLabel(view)}</span>
+            <span className="mt-1 block break-words text-sm leading-snug text-mi-ink sm:mt-0.5 sm:truncate sm:text-[0.6875rem]">{viewLabel(view)}</span>
           </button>
         ))}
       </div>
