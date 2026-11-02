@@ -433,9 +433,22 @@ npm run api:dev                  # starts FastAPI on :8000
 
 # Run everything
 npm run dev:all                  # web + api concurrently
+
+# Districting block plans (generated data, never committed)
+npm run prepare:block-plans      # rebuild data/districting-block-plans/ from the cache
+npm run publish:block-plans      # verify and upload missing assets to R2 (--dry-run to verify only)
 ```
 
 Database URL from `.env.local` (see `drizzle.config.ts`). Python API URL from `VOTING_API_URL` (default `http://localhost:8000`).
+
+Block-plan assets (~15 GB across 520k content-addressed files, including the
+historical `.cache` payloads) are too large for git or a Vercel function.
+Locally, `/api/district-plans` streams them from `data/districting-block-plans/`
+and `BLOCK_PLAN_CACHE_ROOT`. Deployments set `BLOCK_PLAN_ASSET_ORIGIN` to the
+public R2 origin, and `next.config.ts` rewrites that route to the bucket; the
+page itself needs only the tracked manifest and final catalog. Publishing reads
+`R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` and `R2_BUCKET`
+from `.env.local`, and must run from a checkout that holds the generated bundle.
 
 ## Build phases
 
@@ -592,14 +605,11 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 
 ### Demo 3: Algorithmic districting
 
-**Status:** Tract-level 435-seat plans for all 50 states implemented (apportionment now lives in demo 4). Design doc at [`prompts/demo-3-districting.md`](prompts/demo-3-districting.md). The current slice ships simplified display artifacts, a canvas tract map with hover inspection, per-plan population-balance metrics, and the Michigan algorithm walkthrough. The enacted-map comparison, recorded solver snapshots, and block-level plans are still planned.
+**Status:** `/districts` is one page: the nine-chapter Michigan walkthrough (`prompts/demo-3-explainer.md`), ending in enacted-map and gerrymander comparisons, then the census-block explorer for all 50 states at House 435 / 574 / 692 / 1,000 (181 accepted plans, `prompts/state-block-final-catalog.md`). The block solver adds shared-edge and polygon-part connectivity repair (`districting/connectivity.py`, `districting/part_connectivity.py`); its benchmark suite, recorded water/exclave link policies and catalog builder live in `scripts/`, with reports in `prompts/`. Generated assets are served from R2 in production (see Commands). Design doc at [`prompts/demo-3-districting.md`](prompts/demo-3-districting.md); integration and verification history in `prompts/block-plan-main-integration.md`. The first slice's tract artifacts remain in `public/data/district-plans/`.
 
 **Next, in order:**
-1. Add methodology writeup page explaining the algorithm, constraints, seed policy, and limits of geometric fairness.
-2. Precompute pipeline for one state end-to-end.
-3. Scale precompute to all 50 states across cap range [435, 1000].
-4. State detail page with real district polygons + metrics (Polsby-Popper, population deviation, edge count).
-5. *(Deferred)* Live seed regeneration, block-group resolution, DC/territories, cross-demo composition with methods.
+1. Compactness metrics (Polsby-Popper or similar) beside population balance in the explorer.
+2. *(Deferred)* Live seed regeneration, DC/territories, cross-demo composition with methods.
 
 ### Demo 4: Apportionment
 

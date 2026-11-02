@@ -351,6 +351,38 @@ const response=await serve();assert.equal(response.status,503);await response.ar
 """)
 
 
+def test_deployed_manifest_without_server_index_stays_pinned_to_the_final_catalog(tmp_path):
+    run_node(tmp_path, ASSET_FIXTURE + r"""
+fs.unlinkSync(indexFile);
+const published=save('prompts/state-block-final-catalog.json',Buffer.from(JSON.stringify({status:'edited'})));
+await assert.rejects(service.loadBlockPlanManifest(fixtureRoot),/identity mismatch/);
+fs.writeFileSync(published,catalogBytes);
+assert.deepEqual(await service.loadBlockPlanManifest(fixtureRoot),JSON.parse(manifestBytes));
+const empty=path.join(path.dirname(__filename),'empty');
+fs.mkdirSync(empty);
+assert.equal(await service.loadBlockPlanManifest(empty),null);
+assert.equal((await serve()).status,503,'without an index the local route serves nothing');
+""")
+
+
+def test_asset_origin_rewrites_route_keys_to_the_bucket_only_when_configured(tmp_path):
+    run_node(tmp_path, r"""
+const configFile=path.join(ROOT,'next.config.ts');
+const load=origin=>{
+ if(origin===undefined)delete process.env.BLOCK_PLAN_ASSET_ORIGIN;else process.env.BLOCK_PLAN_ASSET_ORIGIN=origin;
+ loaded.delete(configFile);
+ return loadTs('next.config.ts').default;
+};
+assert.deepEqual(await load(undefined).rewrites(),[]);
+const rewrites=await load('https://pub-example.r2.dev/').rewrites();
+assert.deepEqual(rewrites.afterFiles,[]);assert.deepEqual(rewrites.fallback,[]);
+assert.deepEqual(rewrites.beforeFiles,[{source:'/api/district-plans/:sha([a-f0-9]{64})/:name',
+ destination:'https://pub-example.r2.dev/:sha/:name'}]);
+for(const origin of ['http://pub-example.r2.dev','https://pub-example.r2.dev/assets','pub-example.r2.dev'])
+ assert.throws(()=>load(origin),/BLOCK_PLAN_ASSET_ORIGIN/);
+""")
+
+
 def test_next_get_and_head_wrappers_forward_resolved_segments_without_changing_method(tmp_path):
     run_node(tmp_path, r"""
 const service=loadTs('lib/load-block-plans.ts'), calls=[];

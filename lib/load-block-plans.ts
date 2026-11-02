@@ -39,9 +39,12 @@ interface Bundle {
 }
 
 const INDEX_PATH = "data/districting-block-plans/server-index.json";
+const PUBLISHED_MANIFEST_PATH = "data/districting-block-plans/manifest.json";
+const PUBLISHED_CATALOG_PATH = "prompts/state-block-final-catalog.json";
 const SHA256 = /^[a-f0-9]{64}$/;
 const ASSET_NAME = /^[a-zA-Z0-9._-]+\.(geojson|json)$/;
 const bundles = new Map<string, { signature: string; promise: Promise<Bundle> }>();
+const publishedManifests = new Map<string, Promise<BlockPlanManifest>>();
 
 function hash(data: Buffer): string {
   return createHash("sha256").update(data).digest("hex");
@@ -107,11 +110,39 @@ async function getBundle(root: string): Promise<Bundle> {
   }
 }
 
+/**
+ * Deployments publish assets to object storage and ship no server index. The
+ * tracked manifest must still name the exact final catalog it was built from.
+ */
+async function readPublishedManifest(root: string): Promise<BlockPlanManifest> {
+  const [manifestBytes, catalogBytes] = await Promise.all([
+    readFile(await repositoryPath(root, PUBLISHED_MANIFEST_PATH)),
+    readFile(await repositoryPath(root, PUBLISHED_CATALOG_PATH)),
+  ]);
+  const manifest = JSON.parse(manifestBytes.toString("utf8")) as BlockPlanManifest;
+  if (manifest.schemaVersion !== 1 || manifest.catalogSha256 !== hash(catalogBytes)) {
+    throw new Error("Block-plan manifest/catalog identity mismatch");
+  }
+  return manifest;
+}
+
 /** Server components receive only the small browser manifest, never filesystem paths. */
 export async function loadBlockPlanManifest(root = process.cwd()): Promise<BlockPlanManifest | null> {
   try {
     return (await getBundle(root)).manifest;
   } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+  }
+  const key = resolve(root);
+  let published = publishedManifests.get(key);
+  if (!published) {
+    published = readPublishedManifest(key);
+    publishedManifests.set(key, published);
+  }
+  try {
+    return await published;
+  } catch (error) {
+    publishedManifests.delete(key);
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
     throw error;
   }

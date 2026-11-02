@@ -13,6 +13,14 @@ const blockPlanAutomaticTraceIgnores = [
   "**/.cache/**",
 ];
 
+// Deployments serve the content-addressed block-plan assets from object
+// storage (uploaded by scripts/publish-block-plan-assets.mjs). Leave this unset
+// locally and /api/district-plans streams the verified files from disk.
+const blockPlanAssetOrigin = process.env.BLOCK_PLAN_ASSET_ORIGIN?.replace(/\/+$/, "");
+if (blockPlanAssetOrigin !== undefined && !/^https:\/\/[^/?#]+$/.test(blockPlanAssetOrigin)) {
+  throw new Error("BLOCK_PLAN_ASSET_ORIGIN must be an https origin such as https://pub-example.r2.dev");
+}
+
 const nextConfig: NextConfig = {
   webpack(config, { dev, isServer, nextRuntime }) {
     if (dev || !isServer || nextRuntime !== "nodejs") return config;
@@ -68,6 +76,21 @@ const nextConfig: NextConfig = {
       ..."0123456789abcdef".split("").map((prefix) => `./data/districting-block-plans/assets/${prefix}*.gz`),
       "./prompts/state-block-final-catalog.json",
     ],
+  },
+  async rewrites() {
+    if (!blockPlanAssetOrigin) return [];
+    // beforeFiles shadows the local route, so asset URLs inside the manifest
+    // and nested indexes resolve to the bucket without being rewritten.
+    return {
+      beforeFiles: [
+        {
+          source: "/api/district-plans/:sha([a-f0-9]{64})/:name",
+          destination: `${blockPlanAssetOrigin}/:sha/:name`,
+        },
+      ],
+      afterFiles: [],
+      fallback: [],
+    };
   },
   async redirects() {
     // /districts used to hold both explorers behind ?tab=; apportionment is
