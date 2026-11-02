@@ -1,0 +1,121 @@
+{
+ "schemaVersion": 1,
+ "validator": {
+  "path": "scripts/final_state_plan_validation.py",
+  "sha256": "8bf5afe332b39a10cf17eda49cf9b8334009c8cb73e06e6eba202fb123ca9bc5"
+ },
+ "report": {
+  "path": "state-block-benchmark/suite-through-1000/states/26/districts-13/benchmark.json",
+  "sha256": "2a4d12aa1b3333b5e6c6ccc12880bcb6bc5fc7b1b1de7d332f3d7745de092b97"
+ },
+ "result": {
+  "status": "validated_saved_plan",
+  "state_fips": "26",
+  "district_count": 13,
+  "report_sha256": "2a4d12aa1b3333b5e6c6ccc12880bcb6bc5fc7b1b1de7d332f3d7745de092b97",
+  "checkpoint_sha256": "2ff67e3e81aae393c2d93abf02a220072fc5a80c2e21ec23520540780b9cb862",
+  "map_manifest_sha256": "56e34d2f7ef4b7b219def7bd0572bc007e7c4a07e42626aee40cd342ec94cd53",
+  "source_archive_sha256": "f14f1508e8a2921d1f660b095be7160db43c9bb95a41b9494876d09928885fba",
+  "block_count": 254730,
+  "total_population": 10077331,
+  "district_populations": [
+   775179,
+   775179,
+   775181,
+   775179,
+   775180,
+   775178,
+   775180,
+   775179,
+   775179,
+   775179,
+   775179,
+   775180,
+   775179
+  ],
+  "district_block_counts": [
+   10805,
+   11820,
+   12335,
+   31039,
+   49919,
+   13644,
+   21825,
+   14062,
+   23852,
+   15155,
+   19819,
+   15680,
+   14775
+  ],
+  "max_absolute_deviation_people": 1.6923076923076923,
+  "physical_polygon_components": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "policy_components": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "policy": "strict_shared_edge",
+  "recorded_link_count": 0,
+  "checks": {
+   "official_dbf_populations_recomputed": true,
+   "all_saved_assignments_reconciled": true,
+   "historical_artifact_hash_count": 4,
+   "compressed_payload_count": 87,
+   "full_exported_geometry_independently_checked": true,
+   "recorded_endpoint_source_parts_and_district_ownership_checked": false,
+   "saved_graph_audit_passed": true,
+   "saved_graph_audit_field": "shared_edge_components",
+   "saved_source_coverage_audit_passed": true
+  },
+  "limitations": [
+   "Source adjacency and the full source-to-district dissolve were not regenerated; their saved audits were checked.",
+   "County payload hashes were verified; every county feature was not reparsed to reconstruct assignments.",
+   "Recorded endpoint source GEOID, local polygon part, boundary coordinate and district ownership were checked; historical global part-node numbering was not regenerated.",
+   "Some legacy payloads lack a historical raw SHA; retained raw/gzip bytes were compared exactly."
+  ]
+ },
+ "officialTotals": {
+  "blockCount": 254730,
+  "residentPopulation": 10077331,
+  "blockCountSourceUrl": "https://www2.census.gov/geo/docs/maps-data/data/geo_tallies2020/State_Block_Counts_2010_2020.txt",
+  "residentPopulationSourceUrl": "https://www2.census.gov/programs-surveys/decennial/2020/data/apportionment/apportionment-2020-table02.pdf",
+  "validated": true
+ },
+ "geometry": {
+  "source_invalid_geometries": 0,
+  "dissolved_geometries_valid": true,
+  "district_coverage_is_valid": true,
+  "district_overlap_area_square_meters": 0.0,
+  "source_area_sum_minus_union_square_meters": 0.0010560532238413046
+ },
+ "strictValidation": {
+  "passed": true,
+  "issues": []
+ },
+ "tractsSplit": 299
+}

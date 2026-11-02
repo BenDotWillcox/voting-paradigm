@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ApportionmentCard } from "@/components/home/apportionment-card";
+import { DistrictingCard } from "@/components/home/districting-card";
 import { MethodsCard } from "@/components/home/methods-card";
 import {
   showcaseData,
@@ -18,18 +19,22 @@ import {
   type DemoStatus,
   type ShowcaseDemo,
 } from "@/components/home/demo-types";
+import { loadDistrictingCard, type DistrictingCardData } from "@/lib/districting-home-card";
 import { loadHomeCardAtlas, type HomeCardAtlas } from "@/lib/methods/instrument-data";
 
 /**
  * Demos with their own animated card in the demo's visual identity; the
  * rest use the shared neutral card until theirs is built. The methods card
- * draws the atlas's hub maps, read from the build artifacts on the server.
+ * draws the atlas's hub maps and the districting card Michigan's recorded
+ * solve, both read from the build artifacts on the server.
  */
 function showcaseCards(
-  methodsAtlas: HomeCardAtlas
+  methodsAtlas: HomeCardAtlas,
+  districting: DistrictingCardData
 ): Partial<Record<number, (demo: ShowcaseDemo) => React.ReactNode>> {
   return {
     1: (demo) => <MethodsCard demo={demo} atlas={methodsAtlas} />,
+    3: (demo) => <DistrictingCard demo={demo} data={districting} />,
     4: (demo) => <ApportionmentCard demo={demo} />,
   };
 }
@@ -65,14 +70,13 @@ const demos: Demo[] = [
   {
     number: 3,
     title: "Algorithmic districting",
-    tagline: "Fair, transparent district maps under explicit constraints.",
+    tagline: "A full 50-state district plan, computed rather than drawn.",
     description:
-      "Draw population-balanced congressional districts for every state with a reproducible balanced power-diagram algorithm over census tracts — no party data, no incumbents, one explicit rule.",
+      "A practical proposal for every congressional district in all 50 states, computed by one algorithm from 2020 census blocks: equal population, connected districts, and no party, race or incumbent data. An explorer shows each state's map at four House sizes, and a step-by-step walkthrough follows the algorithm through Michigan, from 254,730 blocks to 13 districts within two people of equal.",
     showcase: [
-      "Optimization",
+      "Computational geometry",
       "Graph algorithms",
       "Geo data",
-      "Fairness metrics",
     ],
     href: "/districts",
     status: "live",
@@ -116,7 +120,8 @@ const statusVariant: Record<
 };
 
 export default async function LandingPage() {
-  const cards = showcaseCards(await loadHomeCardAtlas());
+  const [methodsAtlas, districting] = await Promise.all([loadHomeCardAtlas(), loadDistrictingCard()]);
+  const cards = showcaseCards(methodsAtlas, districting);
   return (
     <div className="container mx-auto px-4 py-12 max-w-5xl">
       <header className="mb-12 space-y-4">

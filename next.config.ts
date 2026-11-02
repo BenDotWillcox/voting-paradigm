@@ -1,21 +1,78 @@
 import type { NextConfig } from "next";
+import nextPackage from "next/package.json";
+
+interface AutomaticTracePlugin {
+  constructor: { name: string };
+  compilerType?: unknown;
+  traceIgnores?: unknown;
+}
+
+const blockPlanAutomaticTraceIgnores = [
+  "**/data/districting-block-plans/**",
+  "**/.cache",
+  "**/.cache/**",
+];
 
 const nextConfig: NextConfig = {
+  webpack(config, { dev, isServer, nextRuntime }) {
+    if (dev || !isServer || nextRuntime !== "nodejs") return config;
+    // Next 15.2.8's early NFT plugin otherwise expands the loader's unknown
+    // test/runtime root into **/*/.cache and **/*/data/.../server-index.json.
+    // These search the whole repository before route includes/excludes run.
+    // Guard this private, version-pinned plugin contract instead of changing
+    // installed Next code or dropping explicitly packaged runtime assets.
+    const tracers = (config.plugins ?? []).filter(
+      (plugin: AutomaticTracePlugin | null | undefined) =>
+        plugin?.constructor?.name === "TraceEntryPointsPlugin",
+    ) as AutomaticTracePlugin[];
+    if (nextPackage.version !== "15.2.8" || tracers.length !== 1 || tracers[0].compilerType !== "server") {
+      throw new Error("Next automatic tracing contract changed; verify block-plan asset packaging before building");
+    }
+    const tracer = tracers[0];
+    const ignores = tracer.traceIgnores;
+    if (!Array.isArray(ignores) || !ignores.every((value) => typeof value === "string")) {
+      throw new Error("Next traceIgnores contract changed; verify block-plan asset packaging before building");
+    }
+    tracer.traceIgnores = [...new Set([...ignores, ...blockPlanAutomaticTraceIgnores])];
+    return config;
+  },
   outputFileTracingExcludes: {
+    // Installed Next uses this special key for shared ignores in its second
+    // NFT pass. It matches neither API nor page routes, so their explicit
+    // includes below remain intact. Cache resources retain their read-only
+    // BLOCK_PLAN_CACHE_ROOT mount contract; they are not a standalone bundle.
+    "next-server": blockPlanAutomaticTraceIgnores,
     // Server code reads only small plan.json / state outline files; the
     // pipeline sources and browser-fetched geometry layers stay out of
     // serverless bundles.
     "/*": [
-      "./data/**/*",
+      "./data/districting/**/*",
+      "./.cache/**/*",
       "./public/data/districting/**/*",
       "./public/data/district-plans/**/*.topo.json",
       "./public/data/us-states.json",
     ],
   },
+  outputFileTracingIncludes: {
+    // Resumable build fragments and publication-history backups are audit data,
+    // not runtime dependencies. Only publishable metadata/assets enter tracing.
+    "/districts": ["./data/districting-block-plans/manifest.json", "./data/districting-block-plans/server-index.json", "./prompts/state-block-final-catalog.json"],
+    "/api/district-plans/*": [
+      "./data/districting-block-plans/manifest.json",
+      "./data/districting-block-plans/server-index.json",
+      // Next 15.2 spreads each glob's results into a function call. Partition
+      // the content-hashed filenames so one 500k-file glob cannot exceed V8's
+      // argument limit; every generated gzip asset remains included.
+      ..."0123456789abcdef".split("").map((prefix) => `./data/districting-block-plans/assets/${prefix}*.gz`),
+      "./prompts/state-block-final-catalog.json",
+    ],
+  },
   async redirects() {
     // /districts used to hold both explorers behind ?tab=; apportionment is
-    // now its own demo. Keep old shared links working (first match wins;
-    // query strings pass through).
+    // now its own demo. The district explorer moved from /districts/explore
+    // back to /districts and owns ?cap at its four block anchors. Keep old
+    // shared links working (first match wins; query strings pass through, so
+    // the /districts rules must not match the explorer's own URLs).
     return [
       {
         source: "/districts/:stateFips(\\d{2})",
@@ -23,20 +80,19 @@ const nextConfig: NextConfig = {
         permanent: false,
       },
       {
-        source: "/districts",
-        has: [{ type: "query", key: "tab", value: "districting" }],
-        destination: "/districts/explore",
+        source: "/districts/explore",
+        destination: "/districts",
         permanent: false,
       },
       {
         source: "/districts",
-        has: [{ type: "query", key: "tab" }],
+        has: [{ type: "query", key: "tab", value: "(?!districting$).*" }],
         destination: "/apportionment/explore",
         permanent: false,
       },
       {
         source: "/districts",
-        has: [{ type: "query", key: "cap" }],
+        has: [{ type: "query", key: "cap", value: "(?!(?:435|574|692|1000)$).*" }],
         destination: "/apportionment/explore",
         permanent: false,
       },

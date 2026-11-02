@@ -12,6 +12,7 @@
     "api:dev": "python -m uvicorn api.main:app --reload --port 8000",
     "dev:all": "concurrently -n web,api -c blue,green \"npm run dev\" \"npm run api:dev\"",
     "fetch:map-data": "python scripts/fetch_map_data.py",
+    "prepare:block-plans": "node scripts/prepare-block-plans.mjs",
     "build:map-display": "node scripts/build-district-display.mjs"
   },
   "dependencies": {

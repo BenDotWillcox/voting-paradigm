@@ -1,6 +1,656 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Generated map payloads, allowlists and audit history contain no UI classes.
+   Exclude them only from CSS detection; runtime asset packaging is unchanged. */
+@source not "../data/districting-block-plans";
+
+/* Districting dashboard: "Peridot Sunrise Meadow" on a circuit board. Machined
+   controls, mono readouts and signal lights say the maps are computed, not
+   drawn. Values mirror lib/districts-palette.ts; --dd-olive-deep is derived for
+   text and focus rings. Selected keys are a soft blue and yellow is kept for
+   indicator lights; map hover and selection outlines are black. Map data
+   colors (districts, density, connection kinds) stay outside the palette. The
+   shadcn tokens are re-pointed so cards, buttons and inputs follow it. */
+.districts-ui {
+  --dd-signal: #fee643;
+  --dd-olive: #9ca742;
+  --dd-olive-deep: #626a0f;
+  --dd-peridot: #adb948;
+  --dd-board: #f7fffe;
+  --dd-board-soft: #fbfffe;
+  --dd-select: #b1ebfc;
+  --dd-select-edge: #6cc3df;
+  --dd-hover: #eefafe;
+  --dd-steel: #d9dee1;
+  --dd-stone: #f1f2ea;
+  --dd-ink: #464a3b;
+  --dd-ink-soft: #6a6e5c;
+  --dd-warn: #8a5a00;
+  --dd-map-derived: #00838f;
+  --dd-map-recorded: #a445a2;
+  --dd-map-exclave: #b45309;
+  --dd-mono: var(--font-dd-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --radius: 0.375rem;
+  --background: var(--dd-board);
+  --foreground: var(--dd-ink);
+  --card: #ffffff;
+  --card-foreground: var(--dd-ink);
+  --popover: #ffffff;
+  --popover-foreground: var(--dd-ink);
+  --primary: var(--dd-select);
+  --primary-foreground: var(--dd-ink);
+  --secondary: var(--dd-board-soft);
+  --secondary-foreground: var(--dd-ink);
+  --muted: var(--dd-stone);
+  --muted-foreground: var(--dd-ink-soft);
+  --accent: var(--dd-hover);
+  --accent-foreground: var(--dd-ink);
+  --border: var(--dd-steel);
+  --input: var(--dd-steel);
+  --ring: var(--dd-olive-deep);
+  background: var(--background);
+  color: var(--foreground);
+  accent-color: var(--dd-olive-deep);
+}
+
+/* The districting home card follows the home page's theme. Its land stays
+   white in both, so district colors read exactly as they do on /districts. */
+.dd-home-card {
+  --dd-card-plate: #ffffff;
+  --dd-card-grid: rgb(217 222 225 / 0.5);
+  --dd-card-trace-opacity: 0.85;
+}
+.dark .dd-home-card {
+  color-scheme: dark;
+  --dd-board: #131713;
+  --dd-steel: #333a34;
+  --dd-stone: #1c211c;
+  --dd-ink: #e9ede3;
+  --dd-ink-soft: #a9af9d;
+  --dd-olive: #a3ae4a;
+  --dd-olive-deep: #cdd77a;
+  --dd-card-plate: #181d19;
+  --dd-card-grid: rgb(233 237 227 / 0.07);
+}
+.dark .dd-home-card .dd-led:not([data-state]) { background: #3b423d; }
+
+@keyframes dd-led-pulse { 50% { opacity: 0.3; } }
+@keyframes dd-fade-in { from { opacity: 0; } }
+@keyframes dd-spin { to { transform: rotate(360deg); } }
+@keyframes dd-pulse { 50% { opacity: 0.45; } }
+@keyframes dd-grow { from { opacity: 0; stroke-width: 0; } }
+@keyframes dd-recede { to { opacity: 0.55; } }
+@keyframes dd-fade-out { to { opacity: 0; } }
+/* One run along a trace (dash length --dd-tail of 100), then a rest before the next. */
+@keyframes dd-card-electron { from { stroke-dashoffset: var(--dd-tail); } 70%, to { stroke-dashoffset: -100; } }
+
+/* One map instrument: a control rail docked to the map stage. Below lg the
+   rail's parts stack around the map (plan controls, then the map and its
+   readout, then inspect controls and layers). Resizing never remounts data. */
+@layer components {
+  .dd-instrument {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--dd-steel);
+    border-radius: 3px;
+    box-shadow: 0 1px 0 rgb(70 74 59 / 0.06), 0 18px 40px -28px rgb(70 74 59 / 0.45);
+  }
+  /* Registration brackets on the corners, like a fabrication drawing. */
+  .dd-instrument::before,
+  .dd-chapter::before,
+  .dd-map-frame::before,
+  .dd-home-card::before,
+  .dd-home-plate::before {
+    --dd-arm: 14px;
+    --dd-tick: 2px;
+    content: "";
+    position: absolute;
+    z-index: 5;
+    pointer-events: none;
+    background:
+      linear-gradient(var(--dd-bracket), var(--dd-bracket)) top left / var(--dd-arm) var(--dd-tick) no-repeat,
+      linear-gradient(var(--dd-bracket), var(--dd-bracket)) top left / var(--dd-tick) var(--dd-arm) no-repeat,
+      linear-gradient(var(--dd-bracket), var(--dd-bracket)) top right / var(--dd-arm) var(--dd-tick) no-repeat,
+      linear-gradient(var(--dd-bracket), var(--dd-bracket)) top right / var(--dd-tick) var(--dd-arm) no-repeat,
+      linear-gradient(var(--dd-bracket), var(--dd-bracket)) bottom left / var(--dd-arm) var(--dd-tick) no-repeat,
+      linear-gradient(var(--dd-bracket), var(--dd-bracket)) bottom left / var(--dd-tick) var(--dd-arm) no-repeat,
+      linear-gradient(var(--dd-bracket), var(--dd-bracket)) bottom right / var(--dd-arm) var(--dd-tick) no-repeat,
+      linear-gradient(var(--dd-bracket), var(--dd-bracket)) bottom right / var(--dd-tick) var(--dd-arm) no-repeat;
+  }
+  .dd-instrument::before, .dd-chapter::before { --dd-bracket: var(--dd-olive); inset: 0; }
+  .dd-rail { display: contents; }
+  .dd-primary { order: 1; display: flex; flex-direction: column; gap: 0.875rem; padding: 1rem 1rem 1.125rem; background: #ffffff; }
+  .dd-stage { order: 2; display: flex; flex-direction: column; min-width: 0; border-block: 1px solid var(--dd-steel); }
+  .dd-explore { order: 3; padding: 1rem; background: #ffffff; }
+  .dd-secondary { order: 4; display: flex; flex-direction: column; gap: 0.625rem; padding: 1rem; background: #ffffff; }
+  .dd-explore + .dd-secondary { padding-top: 0; }
+  @media (min-width: 1024px) {
+    .dd-instrument {
+      display: grid;
+      grid-template-columns: 21rem minmax(0, 1fr);
+      height: clamp(36rem, calc(100dvh - 9.75rem), 64rem);
+    }
+    .dd-rail {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow-y: auto;
+      border-right: 1px solid var(--dd-steel);
+      background: #ffffff;
+      scrollbar-width: thin;
+      scrollbar-gutter: stable;
+    }
+    .dd-primary { padding-bottom: 0.875rem; }
+    .dd-explore { margin-inline: 1rem; padding: 0.875rem 0 1rem; border-top: 1px solid var(--dd-steel); }
+    .dd-secondary, .dd-explore + .dd-secondary { padding-top: 1rem; border-top: 1px solid var(--dd-steel); }
+    .dd-stage { min-height: 0; border-block: 0; }
+  }
+
+  .dd-rail-head { display: grid; gap: 0.25rem; }
+  .dd-kicker { font-family: var(--dd-mono); font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dd-olive-deep); }
+  .dd-title { font-size: 1.375rem; line-height: 1.2; font-weight: 650; letter-spacing: -0.01em; }
+  .dd-sub { font-size: 0.75rem; line-height: 1.4; color: var(--dd-ink-soft); }
+  .dd-section { display: grid; gap: 0.5rem; min-width: 0; }
+  .dd-primary > .dd-section { border-top: 1px solid var(--dd-steel); padding-top: 0.875rem; }
+  .dd-label-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+  .dd-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4375rem;
+    font-family: var(--dd-mono);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--dd-ink);
+  }
+  .dd-label::before { content: ""; width: 0.375rem; height: 0.375rem; flex: none; background: var(--dd-olive); }
+  .dd-meta { font-size: 0.6875rem; line-height: 1.45; color: var(--dd-ink-soft); }
+  .dd-status { display: inline-flex; align-items: center; gap: 0.375rem; font-family: var(--dd-mono); font-size: 0.6875rem; color: var(--dd-ink-soft); }
+  .dd-group-title { font-family: var(--dd-mono); font-size: 0.625rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dd-ink-soft); }
+  .dd-link { display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; font-weight: 600; color: var(--dd-olive-deep); }
+  .dd-link:hover { text-decoration: underline; text-underline-offset: 2px; }
+  /* The header's jump past the walkthrough to the finished maps. */
+  .dd-jump { display: inline-flex; width: fit-content; align-items: center; gap: 0.5rem; margin-top: 0.25rem; padding: 0.55rem 1rem; border: 1px solid var(--dd-select-edge); border-radius: var(--radius); background: var(--dd-select); font-size: 0.9375rem; font-weight: 600; line-height: 1.2; color: var(--dd-ink); box-shadow: 0 4px 14px -10px rgb(70 74 59 / 0.6); transition: background-color 150ms ease, border-color 150ms ease; }
+  .dd-jump:hover { border-color: var(--dd-ink-soft); background: #c4f1fd; }
+  .dd-jump:focus-visible { outline: 2px solid var(--dd-ink); outline-offset: 2px; }
+
+  /* Indicator lights: off, on (lit) and busy (pulsing while a plan loads). */
+  .dd-led { display: inline-block; flex: none; width: 0.4375rem; height: 0.4375rem; border-radius: 1px; background: #c9cfd2; }
+  .dd-led[data-state="on"] { background: var(--dd-signal); box-shadow: 0 0 0 1px var(--dd-olive), 0 0 7px 1px rgb(254 230 67 / 0.9); }
+  .dd-led[data-state="busy"] { background: var(--dd-signal); box-shadow: 0 0 0 1px var(--dd-olive); animation: dd-led-pulse 0.9s ease-in-out infinite; }
+
+  .dd-segmented {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 3px;
+    padding: 3px;
+    border: 1px solid var(--dd-steel);
+    border-radius: 3px;
+    background: var(--dd-stone);
+    box-shadow: inset 0 1px 2px rgb(70 74 59 / 0.08);
+  }
+  .dd-segment {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4375rem;
+    min-width: 0;
+    padding: 0.5rem 0.25rem;
+    border-radius: 2px;
+    font-family: var(--dd-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.15;
+    text-align: center;
+    color: var(--dd-ink-soft);
+    transition: background-color 150ms, color 150ms, box-shadow 150ms;
+  }
+  .dd-segment::before { content: ""; width: 0.3125rem; height: 0.3125rem; flex: none; border-radius: 1px; background: #c9cfd2; transition: background-color 150ms; }
+  .dd-segment:hover { color: var(--dd-ink); background: #ffffff; }
+  .dd-segment[aria-pressed="true"] {
+    background: var(--dd-select);
+    color: var(--dd-ink);
+    box-shadow: inset 0 0 0 1px var(--dd-select-edge), 0 0 12px -3px rgb(108 195 223 / 0.8), 0 1px 0 rgb(70 74 59 / 0.16);
+  }
+  .dd-segment[aria-pressed="true"]::before { background: var(--dd-ink); }
+  .dd-segment:active { transform: translateY(1px); }
+  .dd-segment:focus-visible { outline: 2px solid var(--dd-olive-deep); outline-offset: 1px; }
+  .dd-segment-value { font-size: 0.9375rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .dd-field { display: grid; gap: 0.375rem; min-width: 0; font-size: 0.75rem; font-weight: 600; color: var(--dd-ink); }
+  .dd-input {
+    height: 2.25rem;
+    width: 100%;
+    min-width: 0;
+    border: 1px solid var(--dd-steel);
+    border-radius: 3px;
+    background-color: #ffffff;
+    padding-inline: 0.625rem;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    color: var(--dd-ink);
+  }
+  .dd-input::placeholder { color: #8b8f7d; }
+  .dd-input:hover:not(:disabled) { border-color: var(--dd-select-edge); }
+  .dd-input:focus-visible { outline: 2px solid var(--dd-olive-deep); outline-offset: -1px; }
+  .dd-input:disabled { opacity: 0.45; }
+  select.dd-input {
+    appearance: none;
+    padding-right: 1.75rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23464a3b' stroke-width='1.6' stroke-linecap='square'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 0.875rem;
+  }
+  .dd-chip {
+    border: 1px solid var(--dd-steel);
+    border-radius: 2px;
+    background: #ffffff;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: var(--dd-ink);
+  }
+  .dd-chip:hover { border-color: var(--dd-select-edge); background: var(--dd-hover); }
+  .dd-notice {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    border: 1px solid #efe08a;
+    border-left: 3px solid var(--dd-signal);
+    background: #fffbe0;
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
+    color: var(--dd-ink);
+  }
+
+  .dd-readout-strip {
+    display: grid;
+    grid-template-columns: minmax(9rem, 13rem) minmax(0, 1fr);
+    align-items: center;
+    gap: 0.625rem 1.25rem;
+    padding: 0.625rem 0.875rem;
+    border-top: 1px solid var(--dd-steel);
+    background: var(--dd-board-soft);
+  }
+  .dd-readout-head { display: grid; gap: 0.125rem; min-width: 0; }
+  .dd-readout-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.75rem, 1fr)); gap: 0.5rem 1rem; }
+  .dd-readout-metrics dd { font-family: var(--dd-mono); font-weight: 600; letter-spacing: -0.01em; }
+  .dd-readout-wide { grid-column: 1 / -1; }
+  @media (max-width: 767px) {
+    .dd-readout-strip { grid-template-columns: minmax(0, 1fr); }
+    .dd-readout-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  .dd-disclosure { border: 1px solid var(--dd-steel); border-radius: 3px; background: #ffffff; }
+  .dd-disclosure > summary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 0.75rem;
+    cursor: pointer;
+    list-style: none;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--dd-ink);
+  }
+  .dd-disclosure > summary::-webkit-details-marker { display: none; }
+  .dd-disclosure > summary::after {
+    content: "";
+    flex: none;
+    width: 0.4375rem;
+    height: 0.4375rem;
+    margin-left: auto;
+    margin-right: 0.25rem;
+    border-right: 1.5px solid var(--dd-olive-deep);
+    border-bottom: 1.5px solid var(--dd-olive-deep);
+    transform: rotate(-45deg);
+    transition: transform 150ms;
+  }
+  .dd-disclosure[open] > summary::after { transform: rotate(45deg); }
+  .dd-disclosure > summary:hover { background: var(--dd-hover); }
+  .dd-disclosure > summary:focus-visible { outline: 2px solid var(--dd-olive-deep); outline-offset: -2px; }
+  .dd-disclosure[open] > summary { border-bottom: 1px solid var(--dd-steel); }
+  .dd-disclosure-body { display: grid; gap: 0.875rem; padding: 0.75rem; font-size: 0.75rem; }
+  .dd-badge {
+    border-radius: 2px;
+    background: var(--dd-ink);
+    padding: 0.0625rem 0.375rem;
+    font-family: var(--dd-mono);
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--dd-signal);
+  }
+
+  .dd-stage-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-height: 3.25rem;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--dd-steel);
+    background: #ffffff;
+  }
+  .dd-crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 0.125rem; min-width: 0; font-family: var(--dd-mono); font-size: 0.75rem; }
+  .dd-crumb { border-radius: 2px; padding: 0.25rem 0.4375rem; font-weight: 500; color: var(--dd-ink-soft); }
+  button.dd-crumb:hover { background: var(--dd-hover); color: var(--dd-ink); }
+  .dd-crumb[aria-current="location"] { font-weight: 600; color: var(--dd-ink); }
+  .dd-crumb-sep { color: #a9ae9a; }
+  .dd-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem; }
+  .dd-tool-group { display: inline-flex; }
+  .dd-tool {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    height: 2rem;
+    min-width: 2rem;
+    padding-inline: 0.625rem;
+    border: 1px solid var(--dd-steel);
+    border-radius: 3px;
+    background: #ffffff;
+    font-family: var(--dd-mono);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--dd-ink);
+    box-shadow: 0 1px 0 rgb(70 74 59 / 0.08);
+    transition: background-color 150ms, border-color 150ms;
+  }
+  .dd-tool svg { width: 0.875rem; height: 0.875rem; flex: none; }
+  .dd-tool:hover:not(:disabled) { border-color: var(--dd-select-edge); background: var(--dd-hover); }
+  .dd-tool:active:not(:disabled) { transform: translateY(1px); box-shadow: none; }
+  .dd-tool:focus-visible { position: relative; outline: 2px solid var(--dd-olive-deep); outline-offset: 1px; }
+  .dd-tool:disabled { cursor: not-allowed; opacity: 0.4; }
+  .dd-tool-group > .dd-tool { width: 2rem; padding-inline: 0; border-radius: 0; }
+  .dd-tool-group > .dd-tool:first-child { border-radius: 3px 0 0 3px; }
+  .dd-tool-group > .dd-tool:last-child { border-radius: 0 3px 3px 0; }
+  .dd-tool-group > .dd-tool + .dd-tool { margin-left: -1px; }
+
+  /* The stage is see-through, so the circuit board shows around the map plate. */
+  .dd-map-area { position: relative; padding: 0.75rem; }
+  .dd-map-frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1000 / 620;
+    margin-inline: auto;
+    overflow: hidden;
+    border-radius: 2px;
+    background:
+      linear-gradient(to right, rgb(217 222 225 / 0.7) 1px, transparent 1px) 0 0 / 100px 100px,
+      linear-gradient(to bottom, rgb(217 222 225 / 0.7) 1px, transparent 1px) 0 0 / 100px 100px,
+      linear-gradient(to right, rgb(217 222 225 / 0.32) 1px, transparent 1px) 0 0 / 20px 20px,
+      linear-gradient(to bottom, rgb(217 222 225 / 0.32) 1px, transparent 1px) 0 0 / 20px 20px,
+      #ffffff;
+    box-shadow: 0 1px 2px rgb(70 74 59 / 0.12), 0 10px 24px -18px rgb(70 74 59 / 0.5);
+  }
+  .dd-map-frame[data-frame="national"] { aspect-ratio: 1000 / 650; }
+  .dd-map-frame::before { --dd-bracket: var(--dd-ink); --dd-arm: 12px; inset: 5px; opacity: 0.55; }
+  .dd-map-frame::after {
+    content: "";
+    position: absolute;
+    z-index: 5;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px var(--dd-steel);
+    pointer-events: none;
+  }
+
+  /* Demo 3's home card (components/home/districting-card.tsx): the dashboard's
+     board, brackets and signal lights on one panel, the solve on grid paper. */
+  .dd-home-card {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    border: 1px solid var(--dd-steel);
+    border-radius: 3px;
+    /* A board-colored halo lifts every line of text off the traces behind it. */
+    text-shadow: 0 0 2px var(--dd-board), 0 0 5px var(--dd-board), 0 0 9px var(--dd-board);
+    transition: box-shadow 150ms ease;
+  }
+  .dd-home-card:hover { box-shadow: 0 1px 0 rgb(70 74 59 / 0.06), 0 18px 40px -28px rgb(70 74 59 / 0.45); }
+  .dd-home-card::before { --dd-bracket: var(--dd-olive); inset: 0; }
+  .dd-home-chip { display: inline-flex; flex: none; align-items: center; gap: 0.375rem; border: 1px solid var(--dd-steel); border-radius: 2px; padding: 0.125rem 0.5rem; background: var(--dd-board); font-family: var(--dd-mono); font-size: 0.6875rem; color: var(--dd-ink); }
+  /* The /districts circuit board, cut to the card; electrons run only while the solve plays. */
+  .dd-card-circuit { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; overflow: hidden; pointer-events: none; }
+  .dd-card-board { opacity: var(--dd-card-trace-opacity); }
+  .dd-card-trace { fill: none; stroke: var(--dd-steel); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .dd-card-pad { fill: var(--dd-board); stroke: var(--dd-steel); stroke-width: 1.5; }
+  .dd-card-electron {
+    fill: none;
+    stroke: var(--dd-peridot);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-dasharray: var(--dd-tail) 200;
+    stroke-dashoffset: var(--dd-tail);
+    opacity: 0;
+    filter: drop-shadow(0 0 3px rgb(254 230 67 / 0.9));
+    animation: dd-card-electron linear infinite paused;
+    transition: opacity 300ms ease;
+  }
+  .dd-home-card[data-playing] .dd-card-electron { opacity: 1; animation-play-state: running; }
+  .dd-home-plate {
+    position: relative;
+    overflow: hidden;
+    border-radius: 2px;
+    background:
+      linear-gradient(to right, var(--dd-card-grid) 1px, transparent 1px) 0 0 / 11px 11px,
+      linear-gradient(to bottom, var(--dd-card-grid) 1px, transparent 1px) 0 0 / 11px 11px,
+      var(--dd-card-plate);
+    box-shadow: inset 0 0 0 1px var(--dd-steel);
+  }
+  .dd-home-plate::before { --dd-bracket: var(--dd-ink); --dd-arm: 9px; inset: 4px; opacity: 0.5; }
+  .dd-home-stage { display: grid; grid-template-columns: 0.4375rem minmax(0, 1fr) auto; align-items: center; column-gap: 0.5rem; color: var(--dd-ink-soft); transition: color 150ms ease; }
+  .dd-home-stage[data-active] { color: var(--dd-ink); }
+  .dd-home-stage > b { font-family: var(--dd-mono); font-size: 0.75rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .dd-home-stage > small { grid-column: 2 / -1; font-family: var(--dd-mono); font-size: 0.6875rem; line-height: 1.3; color: var(--dd-ink-soft); }
+  .dd-home-tag { border: 1px solid var(--dd-steel); border-radius: 2px; padding: 0.125rem 0.5rem; background: var(--dd-board); font-size: 0.75rem; color: var(--dd-ink-soft); }
+  @media (min-width: 1024px) {
+    .dd-map-area { flex: 1; min-height: 0; padding: 0; container-type: size; display: grid; place-items: center; }
+    .dd-map-frame { width: min(calc(100cqw - 1.5rem), calc((100cqh - 1.5rem) * 1.612903)); }
+    .dd-map-frame[data-frame="national"] { width: min(calc(100cqw - 1.5rem), calc((100cqh - 1.5rem) * 1.538462)); }
+  }
+  .dd-map-chip {
+    position: absolute;
+    z-index: 6;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    pointer-events: none;
+    border: 1px solid var(--dd-steel);
+    border-radius: 2px;
+    background: rgb(255 255 255 / 0.92);
+    padding: 0.25rem 0.5rem;
+    font-family: var(--dd-mono);
+    font-size: 0.6875rem;
+    color: var(--dd-ink);
+    box-shadow: 0 1px 2px rgb(70 74 59 / 0.1);
+  }
+
+  .dd-stage-foot {
+    display: grid;
+    gap: 0.4375rem;
+    padding: 0.625rem 0.875rem;
+    border-top: 1px solid var(--dd-steel);
+    background: #ffffff;
+    font-size: 0.6875rem;
+    line-height: 1.45;
+    color: var(--dd-ink-soft);
+  }
+  .dd-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem 1.125rem; }
+  .dd-legend-item { display: inline-flex; align-items: center; gap: 0.4375rem; color: var(--dd-ink); }
+  .dd-swatch { flex: none; width: 1.5rem; height: 0; border-top: 1.5px solid #454545; }
+  .dd-swatch[data-kind="state"] { border-top-width: 2.5px; }
+  .dd-swatch[data-kind="district"] { border-top-width: 1px; border-top-color: rgb(69 69 69 / 0.6); }
+  .dd-swatch[data-kind="county"] { border-top-style: dotted; border-top-width: 2px; opacity: 0.75; }
+  .dd-swatch[data-kind="enacted"] { border-top-style: dashed; border-top-width: 2.5px; }
+  .dd-swatch[data-kind="derived"] { border-top-style: dotted; border-top-width: 2px; border-top-color: var(--dd-map-derived); }
+  .dd-swatch[data-kind="recorded"] { border-top-style: dashed; border-top-width: 2px; border-top-color: var(--dd-map-recorded); }
+  .dd-swatch[data-kind="exclave"] { border-top-style: dashed; border-top-width: 2px; border-top-color: var(--dd-map-exclave); }
+  .dd-swatch[data-kind="city"] { width: 0.625rem; height: 0.625rem; border: 1.5px solid #454545; border-radius: 999px; background: #ffffff; }
+
+  /* Walkthrough chapters: the explorer's machined panel, a step rail docked to a figure. */
+  .dd-walkthrough { display: grid; gap: 1.25rem; padding-top: 1.75rem; }
+  .dd-walkthrough-head { display: grid; gap: 0.25rem; }
+  .dd-chapter {
+    position: relative;
+    overflow: hidden;
+    scroll-margin-top: 1rem;
+    border: 1px solid var(--dd-steel);
+    border-radius: 3px;
+    background: #ffffff;
+    box-shadow: 0 1px 0 rgb(70 74 59 / 0.06), 0 18px 40px -28px rgb(70 74 59 / 0.45);
+  }
+  .dd-chapter-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.875rem; padding: 0.875rem 1rem; border-bottom: 1px solid var(--dd-steel); }
+  .dd-chapter-number { font-family: var(--dd-mono); font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dd-olive-deep); }
+  .dd-chapter-title { font-size: 1.125rem; font-weight: 650; letter-spacing: -0.01em; }
+  .dd-chapter-body { display: flex; flex-direction: column-reverse; }
+  .dd-steps { display: flex; flex-direction: column; min-height: 0; border-top: 1px solid var(--dd-steel); }
+  .dd-step-list { margin: 0; padding: 0; list-style: none; }
+  .dd-step { border-bottom: 1px solid var(--dd-steel); }
+  .dd-step > button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.6875rem 0.875rem;
+    text-align: left;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--dd-ink);
+  }
+  .dd-step > button:hover, .dd-step[data-active] > button, .dd-step[data-active] > .dd-step-body { background: var(--dd-hover); }
+  .dd-step > button:focus-visible { outline: 2px solid var(--dd-olive-deep); outline-offset: -2px; }
+  .dd-step-index { font-family: var(--dd-mono); font-size: 0.6875rem; font-weight: 500; color: var(--dd-ink-soft); }
+  .dd-step-body { padding: 0 0.875rem 0.875rem 2.6rem; font-size: 0.8125rem; line-height: 1.6; color: var(--dd-ink); }
+  .dd-step-controls { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.75rem 0.875rem; }
+  .dd-chapter-stage { position: relative; }
+  .dd-stage-badge { position: absolute; z-index: 7; top: 1.25rem; right: 1.25rem; pointer-events: none; }
+  .dd-badge[data-phase="before"] { background: var(--dd-ink-soft); }
+  .dd-badge[data-phase="after"] { background: var(--dd-olive-deep); }
+  .dd-fade-in { animation: dd-fade-in 380ms ease both; }
+  /* The block graph growing out of its blocks, then the blocks receding behind it. */
+  .dd-graph-hold .dd-grow { opacity: 0; }
+  .dd-graph-build .dd-grow { animation: dd-grow 520ms ease-out both; }
+  .dd-recede { animation: dd-recede 900ms ease 300ms both; }
+  /* Labels sized for a zoomed-out opening view, gone once the camera flies in. */
+  .dd-fade-late { animation: dd-fade-out 700ms ease 1100ms both; }
+  .dd-stage-card {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    border: 1px solid var(--dd-steel);
+    border-radius: 3px;
+    background: rgb(255 255 255 / 0.95);
+    box-shadow: 0 6px 18px -12px rgb(70 74 59 / 0.5);
+  }
+  @media (min-width: 1024px) {
+    .dd-chapter-body { display: grid; grid-template-columns: 21rem minmax(0, 1fr); height: clamp(30rem, 72dvh, 42rem); }
+    /* The step list scrolls; Prev and Next stay pinned at the bottom of the sidebar. */
+    .dd-steps { border-top: 0; border-right: 1px solid var(--dd-steel); overflow: hidden; }
+    .dd-step-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+    .dd-step-controls { flex: none; border-top: 1px solid var(--dd-steel); background: var(--dd-board-soft); }
+    .dd-stage-card { position: absolute; z-index: 7; left: 1.5rem; bottom: 1.5rem; margin: 0; max-width: 20rem; }
+    .dd-stage-card[data-at="top-left"] { top: 1.5rem; bottom: auto; }
+    .dd-stage-card[data-at="bottom-right"] { left: auto; right: 1.5rem; max-width: 22rem; }
+    .dd-stage-card[data-wide] { max-width: calc(100% - 3rem); }
+    .dd-stage-card[data-wide] .dd-card-metrics dd, .dd-stage-card[data-wide] .dd-meta { white-space: nowrap; }
+  }
+  .dd-card-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem 1rem; }
+  .dd-card-metrics dt { font-family: var(--dd-mono); font-size: 0.5625rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dd-ink-soft); }
+  .dd-card-metrics dd { font-family: var(--dd-mono); font-size: 0.875rem; font-weight: 600; color: var(--dd-ink); }
+  .dd-geoid { display: flex; flex-wrap: wrap; gap: 3px; }
+  .dd-geoid > span { display: grid; gap: 1px; padding: 0.25rem 0.375rem; border: 1px solid var(--dd-steel); border-radius: 2px; background: var(--dd-stone); }
+  .dd-geoid b { font-family: var(--dd-mono); font-size: 1rem; font-weight: 600; letter-spacing: 0.04em; color: var(--dd-ink); }
+  .dd-geoid small { font-size: 0.5625rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dd-ink-soft); }
+  .dd-geoid small + small { text-transform: none; letter-spacing: 0; font-size: 0.6875rem; }
+  .dd-code { border-radius: 2px; background: var(--dd-stone); padding: 0 0.25rem; font-family: var(--dd-mono); color: var(--dd-ink); }
+
+  /* Chapter 04: the rules take the stage. */
+  .dd-rules-hero { padding: 1.75rem 1.5rem 1.4rem; border-bottom: 1px solid var(--dd-steel); background: linear-gradient(180deg, var(--dd-board-soft), transparent); }
+  .dd-rules-headline { margin-top: 0.5rem; max-width: 54rem; font-size: clamp(1.25rem, 1.05rem + 0.9vw, 1.75rem); line-height: 1.3; font-weight: 600; letter-spacing: -0.01em; color: var(--dd-ink); }
+  .dd-rules-body { display: grid; }
+  .dd-rules-inputs { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--dd-steel); background: var(--dd-board-soft); }
+  .dd-rule-list { margin: 0; padding: 0; list-style: none; }
+  .dd-rule-row { display: grid; grid-template-columns: 2.25rem 4.5rem minmax(0, 1fr); gap: 1rem; align-items: start; padding: 1.1rem 1.5rem; border-bottom: 1px solid var(--dd-steel); }
+  .dd-rule-row:last-child { border-bottom: 0; }
+  .dd-rule-number { font-family: var(--dd-mono); font-size: 1.5rem; font-weight: 600; line-height: 1; color: var(--dd-olive-deep); }
+  .dd-rule-art { width: 4.5rem; height: auto; }
+  .dd-rule-title { font-size: 1.125rem; font-weight: 600; line-height: 1.3; color: var(--dd-ink); }
+  .dd-rule-fact { margin-top: 0.15rem; font-family: var(--dd-mono); font-size: 0.8125rem; color: var(--dd-ink); }
+  .dd-rule-fact b { font-weight: 700; }
+  .dd-rule-why { margin-top: 0.4rem; font-size: 0.8125rem; line-height: 1.5; color: var(--dd-ink-soft); }
+  .dd-rule-why > span:first-child { margin-right: 0.5rem; font-family: var(--dd-mono); font-size: 0.5625rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dd-olive-deep); }
+  @media (min-width: 1024px) {
+    .dd-rules-body { grid-template-columns: 17rem minmax(0, 1fr); }
+    .dd-rules-inputs { border-bottom: 0; border-right: 1px solid var(--dd-steel); }
+  }
+  @media (max-width: 639px) {
+    .dd-rule-row { grid-template-columns: 2rem minmax(0, 1fr); padding-inline: 1rem; }
+    .dd-rule-art { display: none; }
+  }
+  .dd-rules { display: grid; gap: 0.5rem; margin: 0.75rem 0 0; padding: 0; list-style: none; }
+  .dd-rule { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: 0.5rem; font-size: 0.8125rem; }
+  .dd-rule:not([data-on]) .font-medium { color: var(--dd-ink-soft); text-decoration: line-through; text-decoration-color: rgb(106 110 92 / 0.5); }
+  .dd-chapter-note { padding: 0.75rem 1rem; border-top: 1px solid var(--dd-steel); background: var(--dd-board-soft); font-size: 0.75rem; line-height: 1.5; color: var(--dd-ink-soft); }
+  /* Time-lapse: formulas, the round player and the population bars. */
+  .dd-formula { margin: 0.5rem 0; padding: 0.375rem 0.625rem; border-left: 2px solid var(--dd-olive); background: var(--dd-stone); font-family: var(--dd-mono); font-size: 0.75rem; line-height: 1.6; color: var(--dd-ink); }
+  /* A formula that reads only on one line; tight tracking keeps it inside the rail. */
+  .dd-formula-line { white-space: nowrap; letter-spacing: -0.02em; overflow-x: auto; }
+  .dd-player { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 0.625rem; margin-top: 0.75rem; }
+  .dd-scrub { width: 100%; accent-color: var(--dd-olive-deep); cursor: pointer; }
+  .dd-bars { position: relative; display: grid; grid-template-columns: repeat(13, minmax(0, 1fr)); gap: 2px; height: 3.5rem; border-block: 1px solid var(--dd-steel); }
+  .dd-bars::after { content: ""; position: absolute; inset-inline: 0; top: 50%; border-top: 1px solid var(--dd-ink); opacity: 0.55; }
+  .dd-bar { position: relative; }
+  .dd-bar > span { position: absolute; inset-inline: 0; min-height: 1px; }
+  .dd-compare { width: 100%; border-collapse: collapse; font-family: var(--dd-mono); font-size: 0.6875rem; }
+  .dd-compare th, .dd-compare td { padding: 0.25rem 0.375rem; border-bottom: 1px solid var(--dd-steel); text-align: right; white-space: nowrap; }
+  .dd-compare th:first-child { padding-left: 0; }
+  .dd-compare td:last-child { padding-right: 0; }
+  .dd-compare thead th { font-size: 0.5625rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dd-ink-soft); font-weight: 500; }
+  .dd-compare tbody th { text-align: left; white-space: normal; font-family: inherit; font-weight: 500; color: var(--dd-ink-soft); }
+  .dd-compare td { font-weight: 600; color: var(--dd-ink); }
+  .dd-measure { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: help; }
+  .dd-measure svg { width: 0.75rem; height: 0.75rem; flex: none; opacity: 0.6; }
+  .dd-measure:hover svg, .dd-measure:focus-visible svg { opacity: 1; }
+  .dd-measure:focus-visible { outline: 1px solid var(--dd-ink); outline-offset: 2px; }
+  .dd-compare tr:last-child > * { border-bottom: 0; }
+  /* Chapter 09: design decisions and the sourced gerrymandering cases. */
+  .dd-decisions, .dd-sources { display: grid; gap: 0.6rem; margin: 0; padding: 0; list-style: none; font-size: 0.8125rem; }
+  .dd-decisions > li, .dd-sources > li { position: relative; padding-left: 0.9rem; }
+  .dd-decisions > li::before, .dd-sources > li::before { content: ""; position: absolute; left: 0; top: 0.5em; width: 0.375rem; height: 0.375rem; background: var(--dd-olive); }
+  .dd-sources { margin-top: 0.6rem; line-height: 1.5; color: var(--dd-ink-soft); }
+  .dd-sources a { color: var(--dd-ink); font-family: var(--dd-mono); font-size: 0.6875rem; }
+  .dd-segmented-2 { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Loading: chapter and explorer skeletons with a spinner on the map plate. */
+  .dd-spinner { display: inline-block; width: 1.75rem; height: 1.75rem; border-radius: 50%; border: 2px solid var(--dd-steel); border-top-color: var(--dd-olive-deep); animation: dd-spin 0.9s linear infinite; }
+  .dd-skeleton-frame { display: grid; place-content: center; justify-items: center; gap: 0.75rem; min-height: 14rem; }
+  .dd-skeleton-rail { display: grid; align-content: start; gap: 0.85rem; padding: 1.1rem 1rem; }
+  .dd-skeleton-line { display: block; height: 0.7rem; border-radius: 2px; background: var(--dd-stone); animation: dd-pulse 1.6s ease-in-out infinite; }
+  .dd-explorer-skeleton { display: grid; place-content: center; justify-items: center; gap: 0.75rem; min-height: clamp(36rem, calc(100dvh - 9.75rem), 64rem); border: 1px solid var(--dd-steel); border-radius: 3px; background: var(--dd-board-soft); }
+  .dd-district-chip { display: inline-block; flex: none; width: 0.625rem; height: 0.625rem; border: 1px solid rgb(69 69 69 / 0.55); }
+  .dd-heat { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); height: 0.625rem; border: 1px solid var(--dd-steel); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .districts-ui .dd-led[data-state="busy"], .districts-ui .dd-fade-in, .districts-ui .dd-graph-build .dd-grow, .districts-ui .dd-recede { animation: none; }
+  .districts-ui .dd-graph-hold .dd-grow { opacity: 1; }
+  .districts-ui .dd-spinner, .districts-ui .dd-skeleton-line { animation: none; }
+  .districts-ui .dd-card-electron { display: none; }
+  .districts-ui .dd-fade-late { display: none; }
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
