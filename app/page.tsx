@@ -40,7 +40,7 @@ const demos: Demo[] = [
     title: "Voting methods",
     tagline: "Same voters, different winners.",
     description:
-      "An instrument for seven voting methods. Edit an electorate and watch plurality, instant runoff, Borda, Ranked Pairs, approval, score and quadratic voting count it side by side, open the smallest elections in which each fails a fairness criterion, map who wins where across a plane of voters, and read 30,000 simulated elections.",
+      "Seven voting methods, one Python package. A code explorer steps through each method's actual source beside the count it produces. Then see why the methods disagree on the same voters, open the smallest elections in which each fails a fairness criterion, map who wins where across a plane of voters, read 30,000 seeded simulations, and build your own electorate.",
     showcase: ["Voting theory", "Exhaustive search", "Spatial models", "Simulation"],
     href: "/methods",
     status: "live",

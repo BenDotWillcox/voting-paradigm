@@ -53,12 +53,12 @@ export function VoterCounts({
               type="button"
               onClick={() => onSelect(index)}
               aria-label={`Voter type ${index + 1}: ${rankingOf(profile.candidates, row).join(" over ")}`}
-              className="flex min-w-0 flex-1 items-center gap-1 rounded-[3px] px-1 py-1 text-left font-mi-mono text-xs text-mi-ink-2 hover:text-mi-ink"
+              className="flex min-h-11 min-w-0 flex-1 flex-wrap items-center gap-1 rounded-[3px] px-1 py-1 text-left font-mi-mono text-sm text-mi-ink-2 hover:text-mi-ink sm:min-h-0 sm:text-xs"
             >
               {rankingOf(profile.candidates, row).map((id, position) => (
                 <span key={id} className="inline-flex items-center gap-0.5">
                   {position > 0 ? <span aria-hidden>›</span> : null}
-                  <CandidateGlyph id={id} size={10} />
+                  <CandidateGlyph id={id} size={10} className="size-3.5 sm:size-2.5" />
                   {id}
                 </span>
               ))}

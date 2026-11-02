@@ -152,100 +152,83 @@ export function Atlas({
   const dragging = layoutKey(positions) !== layoutKey(atlas.candidates);
 
   return (
-    <div className="space-y-4">
-      <p className="max-w-3xl text-sm leading-relaxed text-mi-ink-2">
-        Each point on a map is an electorate of{" "}
-        {atlas.cloud.offsets.length * atlas.cloud.voters_per_type} voters scattered around it,
-        colored by who wins. Drag a candidate to recount every map, or click a point to open its
-        electorate in the playground.
-      </p>
-
-      <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Atlas layouts">
-        {layouts?.map((layout) => (
-          <button
-            key={layout.id}
-            type="button"
-            aria-pressed={layout.id === layoutId}
-            aria-label={`${layout.label}, ${layout.atlas.candidates.length} candidates`}
-            onClick={() => show(layout.atlas, layout.id)}
-            className={cn(
-              "rounded-[3px] border px-2.5 py-1 text-sm",
-              layout.id === layoutId
-                ? "border-mi-ink bg-mi-ink text-mi-surface"
-                : "border-mi-rule text-mi-ink hover:border-mi-ink"
-            )}
-          >
-            {layout.label}
-            <span className="ml-1 text-xs opacity-75">· {layout.atlas.candidates.length} candidates</span>
-          </button>
-        ))}
-        {layoutId === null ? (
-          <span className="rounded-[3px] border border-dashed border-mi-ink px-2.5 py-1 text-sm text-mi-ink">
-            Your layout
-          </span>
-        ) : null}
+    // One screen: the map on the left; the layouts, what to notice, the
+    // map's legend, every method's map and the provenance on the right
+    <div className="grid gap-5 lg:grid-cols-[minmax(0,16rem)_minmax(0,1fr)]">
+      <div className="space-y-2">
+        <MainMap
+          atlas={atlas}
+          view={view}
+          positions={positions}
+          cell={cell}
+          stale={dragging || status.kind === "counting"}
+          onMove={setPositions}
+          onCommit={recount}
+          onPick={loadPoint}
+        />
+        <p className="font-mi-mono text-xs text-mi-muted" aria-live="polite">
+          {status.kind === "counting"
+            ? "Counting 4,096 electorates…"
+            : status.kind === "offline"
+              ? status.message
+              : loadingPoint
+                ? "Loading that electorate…"
+                : "Drag a candidate, or click a point to open it in the playground."}
+        </p>
       </div>
-      {current?.headline ? (
-        <div className="max-w-3xl text-sm leading-relaxed">
-          <p className="text-mi-ink">{current.headline}</p>
-          {current.detail ? (
-            <details className="mt-1">
-              <summary className="cursor-pointer text-mi-muted hover:text-mi-ink">More on this layout</summary>
-              <p className="mt-1 text-mi-ink-2">{current.detail}</p>
-            </details>
+
+      <div className="min-w-0 space-y-3">
+        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Atlas layouts">
+          {layouts?.map((layout) => (
+            <button
+              key={layout.id}
+              type="button"
+              aria-pressed={layout.id === layoutId}
+              aria-label={`${layout.label}, ${layout.atlas.candidates.length} candidates`}
+              onClick={() => show(layout.atlas, layout.id)}
+              className={cn(
+                "min-h-11 rounded-[3px] border px-2.5 py-1 text-sm sm:min-h-0",
+                layout.id === layoutId
+                  ? "border-mi-ink bg-mi-ink text-mi-surface"
+                  : "border-mi-rule text-mi-ink hover:border-mi-ink"
+              )}
+            >
+              {layout.label}
+              <span className="ml-1 font-mi-mono text-xs opacity-75">· {layout.atlas.candidates.length}</span>
+            </button>
+          ))}
+          {layoutId === null ? (
+            <span className="rounded-[3px] border border-dashed border-mi-ink px-2.5 py-1 text-sm text-mi-ink">
+              Your layout
+            </span>
           ) : null}
         </div>
-      ) : null}
-
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
-        <div className="space-y-3">
-          <MainMap
-            atlas={atlas}
-            view={view}
-            positions={positions}
-            cell={cell}
-            stale={dragging || status.kind === "counting"}
-            onMove={setPositions}
-            onCommit={recount}
-            onPick={loadPoint}
-          />
-          <Legend atlas={atlas} view={view} />
-          <p className="font-mi-mono text-xs text-mi-muted" aria-live="polite">
-            {status.kind === "counting"
-              ? "Counting 4,096 electorates…"
-              : status.kind === "offline"
-                ? status.message
-                : loadingPoint
-                  ? "Loading that electorate…"
-                  : "Drag a candidate, or click a point."}
-          </p>
-        </div>
-
-        <div className="space-y-4">
-          <ThumbGroup
-            title="Methods"
-            views={ATLAS_METHOD_VIEWS}
-            atlas={atlas}
-            selected={view}
-            onSelect={setView}
-          />
-          <ThumbGroup
-            title="References"
-            views={ATLAS_REFERENCES.map((r) => r.id)}
-            atlas={atlas}
-            selected={view}
-            onSelect={setView}
-          />
-        </div>
+        {current?.headline ? (
+          <div className="text-sm leading-relaxed">
+            <p className="text-mi-ink">{current.headline}</p>
+            {current.detail ? (
+              <details className="mt-1">
+                <summary className="cursor-pointer text-mi-muted hover:text-mi-ink">More on this layout</summary>
+                <p className="mt-1 text-mi-ink-2">{current.detail}</p>
+              </details>
+            ) : null}
+          </div>
+        ) : null}
+        <Legend atlas={atlas} view={view} />
+        <ThumbGroup
+          views={[...ATLAS_METHOD_VIEWS, ...ATLAS_REFERENCES.map((r) => r.id)]}
+          atlas={atlas}
+          selected={view}
+          onSelect={setView}
+        />
+        <p className="break-words font-mi-mono text-xs leading-relaxed text-mi-muted sm:text-[0.6875rem]">
+          {atlas.size} × {atlas.size} cells · {atlas.cloud.offsets.length} voter types ×{" "}
+          {atlas.cloud.voters_per_type} voters on a sunflower spiral, spread {atlas.cloud.spread} ·
+          utility linear in distance · ballots {atlas.ballot_model} · lighter cells: a tiebreak
+          (seed {atlas.tiebreak_seed}) decided.
+          {layoutId ? " Curated layouts: public/data/methods/atlas.json." : " Counted live: POST /api/voting/atlas."}
+        </p>
       </div>
-
-      <p className="font-mi-mono text-xs leading-relaxed text-mi-muted">
-        {atlas.size} × {atlas.size} cells · {atlas.cloud.offsets.length} voter types ×{" "}
-        {atlas.cloud.voters_per_type} voters on a sunflower spiral, spread {atlas.cloud.spread} ·
-        utility linear in distance · ballots {atlas.ballot_model} · every cell counted by the
-        reference methods · lighter cells: a tiebreak (seed {atlas.tiebreak_seed}) decided.
-        {layoutId ? " Curated layouts: public/data/methods/atlas.json." : " Counted live: POST /api/voting/atlas."}
-      </p>
     </div>
   );
 }
@@ -402,14 +385,13 @@ function MainMap({
   );
 }
 
+/** Every view as a small map: the seven methods, then the three references. */
 function ThumbGroup({
-  title,
   views,
   atlas,
   selected,
   onSelect,
 }: {
-  title: string;
   views: AtlasView[];
   atlas: AtlasResponse;
   selected: AtlasView;
@@ -417,8 +399,7 @@ function ThumbGroup({
 }) {
   return (
     <div>
-      <p className="mb-1.5 font-mi-mono text-xs text-mi-muted">{title}</p>
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 min-[400px]:grid-cols-3 sm:grid-cols-[repeat(auto-fill,minmax(3.6rem,1fr))] sm:gap-1.5">
         {views.map((view) => (
           <button
             key={view}
@@ -440,7 +421,7 @@ function ThumbGroup({
                 className="absolute inset-0"
               />
             </span>
-            <span className="mt-1 block truncate text-xs text-mi-ink">{viewLabel(view)}</span>
+            <span className="mt-1 block break-words text-sm leading-snug text-mi-ink sm:mt-0.5 sm:truncate sm:text-[0.6875rem]">{viewLabel(view)}</span>
           </button>
         ))}
       </div>

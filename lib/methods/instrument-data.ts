@@ -10,6 +10,7 @@ import type {
   AtlasCandidate,
   AtlasResponse,
   ProfileResolveResponse,
+  SampleElection,
   SimulationSummary,
   SpecimenRole,
   SpecimenSearch,
@@ -45,6 +46,8 @@ export interface InstrumentData {
   searches: SpecimenSearch[];
   /** The methods simulation's summary, with Wilson intervals. */
   simulation: SimulationSummary;
+  /** Two of the simulation's elections, shown whole. */
+  samples: SampleElection[];
   /** First 12 hex digits of presets.json's SHA-256, from the manifest. */
   presetsHash: string;
   /** First 12 hex digits of the source the artifacts were built from. */
@@ -126,11 +129,12 @@ interface PresetRecord {
 }
 
 export async function loadInstrumentData(): Promise<InstrumentData> {
-  const [presetsText, specimensText, manifestText, simulationText] = await Promise.all([
+  const [presetsText, specimensText, manifestText, simulationText, samplesText] = await Promise.all([
     readFile(join(ARTIFACTS, "presets.json"), "utf-8"),
     readFile(join(ARTIFACTS, "specimens.json"), "utf-8"),
     readFile(join(ARTIFACTS, "manifest.json"), "utf-8"),
     readFile(join(ARTIFACTS, "simulation.json"), "utf-8"),
+    readFile(join(ARTIFACTS, "samples.json"), "utf-8"),
   ]);
   const { presets } = JSON.parse(presetsText) as { presets: PresetRecord[] };
   const { searches } = JSON.parse(specimensText) as { searches: SpecimenSearch[] };
@@ -156,6 +160,7 @@ export async function loadInstrumentData(): Promise<InstrumentData> {
     stories: await loadStories(searches),
     searches,
     simulation: JSON.parse(simulationText) as SimulationSummary,
+    samples: (JSON.parse(samplesText) as { samples: SampleElection[] }).samples,
     presetsHash: manifest.outputs["presets.json"].slice(0, 12),
     sourceHash: manifest.source_sha256.slice(0, 12),
   };

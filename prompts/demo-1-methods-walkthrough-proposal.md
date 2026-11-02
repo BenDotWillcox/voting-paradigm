@@ -121,6 +121,26 @@ Notes:
 - **Single-card ballot view:** the ballots panel's cards, rendered one ballot
   type at a time for all three groups.
 
+## Revision after the walkthrough (2026-10-24)
+
+Ben's review of the finished walkthrough: too much empty space on desktop,
+overlapping labels on the voters step, a jump after the first step when the
+title collapsed, and chapter tabs that hid how many steps each held.
+
+- **A scaled slide stage.** From 1024px wide, the page's title row, the
+  chapter rail, one step box and the navigation under it form a stage of a
+  fixed design size (1240×700) that scales as a whole to the window: 1.34×
+  at 1920×1080, 1.08× at 1440×900, 0.82× at 1280×720. Every step is laid
+  out once at the design size (a 410px content area, which all 25 fit), so
+  nothing moves between steps and the page grows with the screen.
+- **A rail that stays put.** The rail is top-aligned beside the box and
+  holds only the chapters, the current one open to its numbered steps.
+  Previous and next sit under the box, each naming the step it goes to,
+  with an overall counter ("1.5 · step 5 of 25") between them.
+- **One fixed box.** The title is always in the same place at the top of
+  the box; content sits under it. On small screens the deck flows as
+  before, with the chapters and steps in a menu.
+
 ## Settled decisions this reverses
 
 1. **Counts first** (narrative slice 2) → ballots and counts interleaved,
@@ -180,4 +200,15 @@ Notes:
    `headToHeadClaim` are removed. All 21 steps of chapters 1–3 fit at
    1280×720.
 4. Chapter 4: sample-election artifact and step, atlas framing, matrix
-   reading guide, efficiency step.
+   reading guide, efficiency step. *Implemented 2026-10-24.* The builder
+   writes `samples.json`: the first three-candidate election of the study
+   where all seven methods agree (election 0) and the first where they
+   split three ways (election 444), each with every position, its winners
+   and how many of the 10,000 match its rule; `eval/tests` holds both to
+   `elections.csv.gz`. 4.1 draws one in the plane with its seven winners;
+   the atlas fits one screen with the map on the left and layouts, legend,
+   thumbnails and provenance on the right; at scale becomes 4.3
+   disagreement, with the most-disagreeing cell outlined and read aloud,
+   and 4.4 Condorcet efficiency, titled from the data ("Only Ranked Pairs
+   always finds the Condorcet winner"). `?step=at-scale` and
+   `?section=at-scale` open 4.3. Every step fits at 1280×720.

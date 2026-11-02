@@ -41,8 +41,8 @@ export function ProfileEditor({
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
-        <div className="flex items-center gap-2">
-          <span className="text-mi-ink-2">Candidates</span>
+        <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto">
+          <span className="w-full text-mi-ink-2 sm:w-auto">Candidates</span>
           <IconButton
             label="Remove the last candidate"
             disabled={profile.candidates.length <= MIN_CANDIDATES}
@@ -50,7 +50,7 @@ export function ProfileEditor({
           >
             <Minus className="size-3.5" />
           </IconButton>
-          <span className="flex gap-2">
+          <span className="flex min-w-0 flex-1 flex-wrap gap-2 sm:flex-none">
             {profile.candidates.map((id) => (
               <CandidateMark key={id} id={id} size={13} className="text-sm" />
             ))}
@@ -69,7 +69,7 @@ export function ProfileEditor({
       </div>
 
       {/* Same columns as a row, so the labels sit over the track's 0, 5 and 10 */}
-      <div className="flex items-center gap-1 pl-1" aria-hidden>
+      <div className="hidden items-center gap-1 pl-1 sm:flex" aria-hidden>
         <span className="w-[5.75rem] shrink-0" />
         <span className="relative mx-2.5 h-4 flex-1 font-mi-mono text-[0.6875rem] text-mi-muted">
           <span className="absolute left-0">0 worst</span>
@@ -90,29 +90,36 @@ export function ProfileEditor({
             onPointerDownCapture={() => onSelect(index)}
             onFocusCapture={() => onSelect(index)}
           >
-            <div className="flex items-center gap-1">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:gap-x-1">
               <CountInput
                 value={row.count}
                 label={`Voters of type ${index + 1}`}
                 onChange={(count) => onChange(setRowCount(profile, index, count))}
               />
-              <UtilityTrack
-                candidates={profile.candidates}
-                utilities={row.utilities}
-                label={`Voter type ${index + 1}: utilities`}
-                onChange={(candidate, value) =>
-                  onChange(setUtility(profile, index, candidate, value))
-                }
-              />
-              <IconButton
-                label={`Remove voter type ${index + 1}`}
-                disabled={profile.rows.length <= 1}
-                onClick={() => onChange(removeRow(profile, index))}
-              >
-                <X className="size-3.5" />
-              </IconButton>
+              <div className="col-span-2 row-start-2 min-w-0 sm:col-span-1 sm:col-start-2 sm:row-start-1">
+                <div className="mt-2 flex justify-between px-2.5 font-mi-mono text-xs text-mi-muted sm:hidden" aria-hidden>
+                  <span>0 worst</span><span>5</span><span>best 10</span>
+                </div>
+                <UtilityTrack
+                  candidates={profile.candidates}
+                  utilities={row.utilities}
+                  label={`Voter type ${index + 1}: utilities`}
+                  onChange={(candidate, value) =>
+                    onChange(setUtility(profile, index, candidate, value))
+                  }
+                />
+              </div>
+              <div className="col-start-2 row-start-1 sm:col-start-3">
+                <IconButton
+                  label={`Remove voter type ${index + 1}`}
+                  disabled={profile.rows.length <= 1}
+                  onClick={() => onChange(removeRow(profile, index))}
+                >
+                  <X className="size-3.5" />
+                </IconButton>
+              </div>
             </div>
-            <p className="ml-[6.875rem] flex items-center gap-1 font-mi-mono text-[0.6875rem] text-mi-muted">
+            <p className="ml-2.5 flex flex-wrap items-center gap-1 font-mi-mono text-xs text-mi-muted sm:ml-[6.875rem] sm:text-[0.6875rem]">
               <span className="sr-only">Ranking:</span>
               {rankingOf(profile.candidates, row).map((id, position) => (
                 <span key={id} className="inline-flex items-center gap-0.5">
@@ -132,7 +139,7 @@ export function ProfileEditor({
           onChange(addRow(profile));
           onSelect(profile.rows.length);
         }}
-        className="inline-flex items-center gap-1.5 rounded-[3px] border border-mi-rule px-2.5 py-1 text-sm text-mi-ink hover:bg-mi-wash focus-visible:outline-1 focus-visible:outline-mi-ink"
+        className="inline-flex min-h-11 items-center gap-1.5 rounded-[3px] border border-mi-rule px-2.5 py-1 text-sm text-mi-ink hover:bg-mi-wash focus-visible:outline-1 focus-visible:outline-mi-ink sm:min-h-0"
       >
         <Plus className="size-3.5" aria-hidden /> Add a voter type
       </button>
@@ -170,7 +177,7 @@ export function CountInput({
           onChange(Number.isFinite(next) ? next : 0);
         }}
         className={cn(
-          "h-8 w-11 rounded-[3px] border border-mi-rule bg-mi-surface text-center font-mi-mono text-sm text-mi-ink",
+          "h-11 w-12 rounded-[3px] border border-mi-rule bg-mi-surface text-center font-mi-mono text-base text-mi-ink sm:h-8 sm:w-11 sm:text-sm",
           "[appearance:textfield] focus-visible:border-mi-ink focus-visible:outline-none",
           "[&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
         )}
@@ -207,7 +214,7 @@ export function IconButton({
       title={label}
       disabled={disabled}
       onClick={onClick}
-      className={`grid shrink-0 ${compact ? "size-6" : "size-7"} place-items-center rounded-[3px] text-mi-ink-2 hover:bg-mi-wash hover:text-mi-ink focus-visible:outline-1 focus-visible:outline-mi-ink disabled:opacity-35 disabled:hover:bg-transparent`}
+      className={`grid size-11 shrink-0 ${compact ? "sm:size-6" : "sm:size-7"} place-items-center rounded-[3px] text-mi-ink-2 hover:bg-mi-wash hover:text-mi-ink focus-visible:outline-1 focus-visible:outline-mi-ink disabled:opacity-35 disabled:hover:bg-transparent`}
     >
       {children}
     </button>

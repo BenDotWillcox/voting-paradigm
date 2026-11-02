@@ -1,11 +1,12 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
 
 import { candidateColor } from "@/lib/methods/candidates";
 import { methodDescriptions } from "@/lib/methods/method-descriptions";
 import { positionCounts } from "@/lib/methods/profile";
+import { cn } from "@/lib/utils";
 import type {
   ApprovalTrace,
   BordaTrace,
@@ -19,6 +20,10 @@ import type {
 } from "@/types/methods";
 
 import { CandidateMark } from "./glyph";
+
+// Whether a trace draws at the walkthrough's step size: thicker bars and
+// larger numbers, where the count is the whole screen
+const Large = createContext(false);
 
 /** One of a method's smallest failures in the paradox gallery. */
 export interface GalleryFailure {
@@ -68,10 +73,20 @@ export function MethodTrace({
 export function TraceView({
   result,
   resolution,
+  large = false,
 }: {
   result: ProfileMethodResult;
   resolution: ProfileResolveResponse;
+  large?: boolean;
 }) {
+  return (
+    <Large.Provider value={large}>
+      <TraceBody result={result} resolution={resolution} />
+    </Large.Provider>
+  );
+}
+
+function TraceBody({ result, resolution }: { result: ProfileMethodResult; resolution: ProfileResolveResponse }) {
   const trace = result.trace;
   return trace.kind === "plurality" ? (
     <PluralityView trace={trace} resolution={resolution} winner={result.winner} />
@@ -165,15 +180,20 @@ function Bars({
   struck?: string[];
   suffix?: (id: string) => React.ReactNode;
 }) {
+  const large = useContext(Large);
   return (
-    <ul className="space-y-1.5">
+    <ul className={large ? "space-y-3" : "space-y-1.5"}>
       {candidates.map((id) => {
         const value = values[id] ?? 0;
         const out = struck.includes(id);
         return (
           <li key={id} className="grid grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-3">
-            <CandidateMark id={id} className={out ? "text-mi-muted" : "text-mi-ink"} />
-            <span className="h-3 w-full">
+            <CandidateMark
+              id={id}
+              size={large ? 17 : 14}
+              className={cn(out ? "text-mi-muted" : "text-mi-ink", large && "text-base")}
+            />
+            <span className={cn("w-full", large ? "h-6" : "h-3")}>
               <span
                 className="block h-full rounded-r-[4px]"
                 style={{
@@ -184,9 +204,11 @@ function Bars({
               />
             </span>
             <span
-              className={`min-w-[4.5rem] text-right font-mi-mono text-sm ${
+              className={cn(
+                "min-w-[4.5rem] text-right font-mi-mono",
+                large ? "text-base" : "text-sm",
                 id === winner ? "font-semibold text-mi-ink" : "text-mi-ink-2"
-              }`}
+              )}
             >
               {value}
               {suffix ? suffix(id) : null}
@@ -306,36 +328,38 @@ function BordaView({
   resolution: ProfileResolveResponse;
   winner: string;
 }) {
+  const large = useContext(Large);
+  const cell = large ? "py-2.5" : "py-1.5";
   const candidates = resolution.rankings.candidates;
   const positions = positionCounts(resolution.rankings);
   const weights = candidates.map((_, position) => trace.max_points_per_ballot - position);
   return (
     <div className="overflow-x-auto">
-      <table className="w-full border-collapse font-mi-mono text-sm">
+      <table className={cn("w-full border-collapse font-mi-mono", large ? "text-base" : "text-sm")}>
         <caption className="sr-only">Borda: voters at each position and points</caption>
         <thead>
           <tr className="border-b border-mi-rule text-xs text-mi-muted">
-            <th className="py-1.5 text-left font-normal">Ranked</th>
+            <th className={cn(cell, "text-left font-normal")}>Ranked</th>
             {weights.map((weight, position) => (
-              <th key={position} className="px-2 py-1.5 text-right font-normal">
+              <th key={position} className={cn(cell, "px-2 text-right font-normal")}>
                 {ordinal(position + 1)} ×{weight}
               </th>
             ))}
-            <th className="py-1.5 pl-3 text-right font-normal">Points</th>
+            <th className={cn(cell, "pl-3 text-right font-normal")}>Points</th>
           </tr>
         </thead>
         <tbody>
           {candidates.map((id) => (
             <tr key={id} className="border-b border-mi-rule last:border-0">
-              <th scope="row" className="py-1.5 text-left font-normal">
-                <CandidateMark id={id} />
+              <th scope="row" className={cn(cell, "text-left font-normal")}>
+                <CandidateMark id={id} size={large ? 17 : 14} />
               </th>
               {positions[id].map((count, position) => (
-                <td key={position} className="px-2 py-1.5 text-right text-mi-ink-2">
+                <td key={position} className={cn(cell, "px-2 text-right text-mi-ink-2")}>
                   {count}
                 </td>
               ))}
-              <td className={`py-1.5 pl-3 text-right ${id === winner ? "font-semibold text-mi-ink" : "text-mi-ink-2"}`}>
+              <td className={cn(cell, "pl-3 text-right", id === winner ? "font-semibold text-mi-ink" : "text-mi-ink-2")}>
                 {trace.points[id] ?? 0}
               </td>
             </tr>
@@ -510,17 +534,18 @@ function QuadraticView({
   resolution: ProfileResolveResponse;
   winner: string;
 }) {
+  const large = useContext(Large);
   const candidates = resolution.rankings.candidates;
   const max = Math.max(1, ...candidates.map((id) => Math.abs(trace.net_votes[id] ?? 0)));
   return (
     <div className="space-y-2">
-      <ul className="space-y-1.5">
+      <ul className={large ? "space-y-3" : "space-y-1.5"}>
         {candidates.map((id) => {
           const votes = trace.net_votes[id] ?? 0;
           return (
             <li key={id} className="grid grid-cols-[2.5rem_minmax(0,1fr)_4.5rem] items-center gap-3">
-              <CandidateMark id={id} />
-              <span className="relative h-3">
+              <CandidateMark id={id} size={large ? 17 : 14} className={large ? "text-base" : undefined} />
+              <span className={cn("relative", large ? "h-6" : "h-3")}>
                 <span aria-hidden className="absolute inset-y-[-3px] left-1/2 w-px bg-mi-rule" />
                 <span
                   className={
@@ -536,9 +561,11 @@ function QuadraticView({
                 />
               </span>
               <span
-                className={`text-right font-mi-mono text-sm ${
+                className={cn(
+                  "text-right font-mi-mono",
+                  large ? "text-base" : "text-sm",
                   id === winner ? "font-semibold text-mi-ink" : "text-mi-ink-2"
-                }`}
+                )}
               >
                 {votes > 0 ? `+${votes}` : votes}
               </span>
@@ -568,13 +595,13 @@ function Stepper({
   onForward: () => void;
 }) {
   const button =
-    "grid size-7 place-items-center rounded-[3px] border border-mi-rule text-mi-ink hover:bg-mi-wash disabled:opacity-35 disabled:hover:bg-transparent";
+    "grid size-11 shrink-0 place-items-center rounded-[3px] border border-mi-rule text-mi-ink hover:bg-mi-wash disabled:opacity-35 disabled:hover:bg-transparent sm:size-7";
   return (
     <div className="flex items-center gap-2">
       <button type="button" className={button} disabled={!canBack} onClick={onBack} aria-label="Previous round">
         <ChevronLeft className="size-4" />
       </button>
-      <span className="min-w-[7.5rem] text-center font-mi-mono text-sm text-mi-ink">{label}</span>
+      <span className="min-w-0 flex-1 text-center font-mi-mono text-sm text-mi-ink sm:min-w-[7.5rem] sm:flex-none">{label}</span>
       <button type="button" className={button} disabled={!canForward} onClick={onForward} aria-label="Next round">
         <ChevronRight className="size-4" />
       </button>

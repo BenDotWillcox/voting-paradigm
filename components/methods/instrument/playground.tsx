@@ -109,39 +109,41 @@ export function Playground({
           open ? "translate-y-0" : "pointer-events-none translate-y-full"
         )}
       >
-        <header className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 border-b border-mi-rule px-4 py-3 sm:px-6">
+        <header className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-2 gap-y-2 border-b border-mi-rule px-4 py-3 sm:flex sm:flex-wrap sm:gap-x-4 sm:px-6">
           <h2
             ref={heading}
             id="playground-title"
             tabIndex={-1}
-            className="text-lg font-semibold tracking-[-0.01em] text-mi-ink outline-none"
+            className="min-w-0 text-lg font-semibold tracking-[-0.01em] text-mi-ink outline-none"
           >
             Playground
           </h2>
           {/* Its own row on small screens, beside the title on larger ones */}
-          <div className="order-last basis-full font-mi-mono text-xs text-mi-ink-2 sm:order-none sm:min-w-0 sm:flex-1 sm:basis-auto">
+          <div className="col-span-3 row-start-2 min-w-0 font-mi-mono text-xs text-mi-ink-2 sm:flex-1">
             {status}
           </div>
           <button
             type="button"
+            aria-label="Advanced controls"
             aria-pressed={advanced}
             onClick={() => onAdvancedChange(!advanced)}
             className={cn(
-              "ml-auto inline-flex items-center gap-1.5 rounded-[3px] border px-2.5 py-1 text-sm sm:ml-0",
+              "col-start-2 row-start-1 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[3px] border px-2.5 py-1 text-sm sm:min-h-0",
               advanced
                 ? "border-mi-ink bg-mi-ink text-mi-surface"
                 : "border-mi-rule text-mi-ink hover:border-mi-ink"
             )}
           >
             <SlidersHorizontal className="size-3.5" aria-hidden />
-            Advanced controls
+            <span className="sm:hidden">Advanced</span>
+            <span className="hidden sm:inline">Advanced controls</span>
           </button>
           <button
             type="button"
             onClick={() => onOpenChange(false)}
             aria-label="Close the playground"
             title="Close the playground"
-            className="grid size-8 place-items-center rounded-[3px] text-mi-ink-2 hover:bg-mi-wash hover:text-mi-ink"
+            className="col-start-3 row-start-1 grid size-11 place-items-center rounded-[3px] text-mi-ink-2 hover:bg-mi-wash hover:text-mi-ink sm:size-8"
           >
             <X className="size-4" />
           </button>
@@ -173,7 +175,7 @@ export function Playground({
                 onClick={() => onAdvancedChange(false)}
                 aria-label="Close advanced controls"
                 title="Close advanced controls"
-                className="grid size-7 place-items-center rounded-[3px] text-mi-ink-2 hover:bg-mi-wash hover:text-mi-ink"
+                className="grid size-11 place-items-center rounded-[3px] text-mi-ink-2 hover:bg-mi-wash hover:text-mi-ink sm:size-7"
               >
                 <X className="size-4" />
               </button>

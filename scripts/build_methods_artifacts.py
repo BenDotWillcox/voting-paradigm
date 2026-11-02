@@ -25,9 +25,14 @@ and writes JSON to public/data/methods/:
 - atlas.json      the atlas's curated layouts, each with its full response
                   from POST /api/voting/atlas (every method's winner in every
                   cell), so the atlas renders them without the API
+- samples.json    two elections of the methods simulation
+                  (eval/methods_simulation.py), each with every voter's and
+                  candidate's position and the seven winners, chosen by a
+                  declared rule, so the page can show what one simulated
+                  election is before it shows 30,000 of them
 - manifest.json   a hash of the source that produced the outputs (the voting
-                  package and the API's profile-resolution service) and output
-                  SHA-256 hashes
+                  package, the API's profile-resolution service and the
+                  simulation's election sampler) and output SHA-256 hashes
 
 Deterministic: the same voting package produces byte-identical outputs.
 Searches run in parallel, one process per method and criterion.
@@ -71,6 +76,13 @@ from api.schemas.voting import (  # noqa: E402
 )
 from api.services.atlas import atlas_response  # noqa: E402
 from api.services.profile_resolution import resolve_profile_request  # noqa: E402
+from eval.methods_simulation import (  # noqa: E402
+    METHODS as SIMULATED_METHODS,
+    SimulationConfig,
+    election_rng,
+    run_election,
+)
+from voting.spatial import sample_spatial_election  # noqa: E402
 
 OUT = ROOT / "public" / "data" / "methods"
 ARTIFACT_VERSION = 1
@@ -155,6 +167,7 @@ def main() -> int:
         "presets.json": build_presets(),
         "specimen-resolutions.json": build_specimen_resolutions(specimens),
         "atlas.json": build_atlas(),
+        "samples.json": build_samples(),
     }
     outputs: dict[str, str] = {}
     for name, payload in artifacts.items():
@@ -258,6 +271,61 @@ def preset_resolution(
     return response
 
 
+
+# The page's sample elections: three candidates, and the first index under
+# each rule, scanning the simulation's elections in order. Only elections
+# every method decided without a tiebreak qualify.
+SAMPLE_CANDIDATES = 3
+SAMPLE_RULES = (
+    ("agree", "the first election in which all seven methods elect the same candidate", 1),
+    ("split", "the first election in which they elect three different candidates", 3),
+)
+
+
+def build_samples() -> dict[str, Any]:
+    config = SimulationConfig()
+    # One pass over the elections: each rule's first match, and how many match
+    first: dict[str, int] = {}
+    matching = {sample_id: 0 for sample_id, _, _ in SAMPLE_RULES}
+    for index in range(config.elections):
+        record = run_election(config, SAMPLE_CANDIDATES, index)
+        for sample_id, _, distinct in SAMPLE_RULES:
+            if all(record.decisive) and len(set(record.winners)) == distinct:
+                matching[sample_id] += 1
+                first.setdefault(sample_id, index)
+    samples = []
+    for sample_id, rule, _ in SAMPLE_RULES:
+        if sample_id not in first:
+            raise SystemExit(f"No {sample_id} sample among {config.elections} elections")
+        index = first[sample_id]
+        record = run_election(config, SAMPLE_CANDIDATES, index)
+        election = sample_spatial_election(
+            election_rng(config, SAMPLE_CANDIDATES, index), config.voters, SAMPLE_CANDIDATES
+        )
+        samples.append({
+            "id": sample_id,
+            "rule": rule,
+            "candidates": SAMPLE_CANDIDATES,
+            "index": index,
+            "candidate_positions": {
+                c: [round(x, 4), round(y, 4)]
+                for c, (x, y) in zip(election.candidates, election.candidate_positions)
+            },
+            "voter_positions": [[round(x, 4), round(y, 4)] for x, y in election.voter_positions],
+            "winners": dict(zip(SIMULATED_METHODS, record.winners)),
+            "condorcet": record.condorcet,
+            # Elections, of the study's three-candidate ones, that match the rule
+            "matching": matching[sample_id],
+            "of": config.elections,
+        })
+    return {
+        "artifact_version": ARTIFACT_VERSION,
+        "study": "methods_simulation_v1",
+        "seed": config.seed,
+        "voters": config.voters,
+        "samples": samples,
+    }
+
 def build_specimen_resolutions(specimens: dict[str, Any]) -> dict[str, Any]:
     """Each specimen profile as the instrument loads it, resolved and keyed."""
     resolutions: dict[str, Any] = {}
@@ -334,14 +402,15 @@ RESOLUTION_SOURCES = (
     "api/schemas/voting.py",
     "api/services/atlas.py",
     "api/services/profile_resolution.py",
+    "eval/methods_simulation.py",
 )
 
 
 def source_sha256() -> str:
     """
     Hash of the source that produced the outputs: the voting package (tests
-    excluded) and the API's profile-resolution and atlas modules, line endings
-    normalized.
+    excluded), the API's profile-resolution and atlas modules, and the
+    simulation's election sampler, line endings normalized.
     """
     digest = hashlib.sha256()
     paths = [p for p in (ROOT / "voting").rglob("*.py") if "tests" not in p.parts]

@@ -37,36 +37,31 @@ function elects(methods: VotingMethod[]): string {
   return `${listOf(methods.map(methodName))} ${methods.length === 1 ? "elects" : "elect"}`;
 }
 
-/** Each winner with the methods that elect it, in result order. */
-function winnerGroups(resolution: ProfileResolveResponse): [string, VotingMethod[]][] {
-  const groups = new Map<string, VotingMethod[]>();
-  for (const result of resolution.results) {
-    groups.set(result.winner, [...(groups.get(result.winner) ?? []), result.method]);
-  }
-  return [...groups.entries()];
+/** Who each method elects, e.g. "Plurality elects A, instant runoff elects B, the other five elect C". */
+export function winnersTitle(winners: [VotingMethod, string][]): string {
+  const n = winners.length;
+  // Each winner with the methods that elect it, in method order
+  const byWinner = new Map<string, VotingMethod[]>();
+  for (const [method, winner] of winners) byWinner.set(winner, [...(byWinner.get(winner) ?? []), method]);
+  const groups = [...byWinner.entries()];
+
+  if (groups.length === 1) return `All ${numberWord(n)} methods elect ${groups[0][0]}`;
+  if (groups.length > 3) return `${capitalize(numberWord(n))} counts, ${numberWord(groups.length)} different winners`;
+  // The largest group, when it is a clear majority of methods, reads as "the other k"
+  const largest = groups.reduce((a, b) => (b[1].length > a[1].length ? b : a));
+  const others = largest[1].length >= 3 ? largest : null;
+  const parts = groups
+    .filter((group) => group !== others)
+    .map(([winner, methods]) => `${elects(methods)} ${winner}`);
+  if (others) parts.push(`the other ${numberWord(others[1].length)} elect ${others[0]}`);
+  return capitalize(parts.join(", "));
 }
 
-/** Who each method elects, e.g. "Plurality elects A, instant runoff elects B, the other five elect C". */
+/** The claim for one electorate's seven counts. */
 export function countsClaim(resolution: ProfileResolveResponse): Claim {
   const n = resolution.results.length;
-  const groups = winnerGroups(resolution);
   const cw = resolution.criteria.condorcet_winner;
-
-  let title: string;
-  if (groups.length === 1) {
-    title = `All ${numberWord(n)} methods elect ${groups[0][0]}`;
-  } else if (groups.length <= 3) {
-    // The largest group, when it is a clear majority of methods, reads as "the other k"
-    const largest = groups.reduce((a, b) => (b[1].length > a[1].length ? b : a));
-    const others = largest[1].length >= 3 ? largest : null;
-    const parts = groups
-      .filter((group) => group !== others)
-      .map(([winner, methods]) => `${elects(methods)} ${winner}`);
-    if (others) parts.push(`the other ${numberWord(others[1].length)} elect ${others[0]}`);
-    title = capitalize(parts.join(", "));
-  } else {
-    title = `${capitalize(numberWord(n))} counts, ${numberWord(groups.length)} different winners`;
-  }
+  const title = winnersTitle(resolution.results.map((result) => [result.method, result.winner]));
 
   const electing = resolution.results.filter((result) => result.winner === cw).length;
   const takeaway =
@@ -79,20 +74,35 @@ export function countsClaim(resolution: ProfileResolveResponse): Claim {
   return { title, takeaway };
 }
 
-/** The headline numbers of the simulation, from its largest candidate count. */
-export function atScaleTakeaway(summary: SimulationSummary): string {
+/** How often the methods disagree, from the simulation's largest candidate count. */
+export function disagreementTakeaway(summary: SimulationSummary): string {
   const group = summary.by_candidates[summary.by_candidates.length - 1];
   const most = group.disagreement.reduce((a, b) => ((b.rate ?? 0) > (a.rate ?? 0) ? b : a));
-  const methods = Object.keys(group.condorcet_efficiency) as VotingMethod[];
+  return (
+    `With ${group.candidates} candidates, ${methodName(most.a)} and ${methodName(most.b)} elect ` +
+    `different winners in ${((most.rate ?? 0) * 100).toFixed(0)}% of ` +
+    `${group.elections.toLocaleString("en-US")} random elections.`
+  );
+}
+
+/** Which methods always find the Condorcet winner, and how often the worst misses it. */
+export function efficiencyClaim(summary: SimulationSummary): Claim {
+  const methods = summary.methods;
+  const always = methods.filter((method) =>
+    summary.by_candidates.every((g) => g.condorcet_efficiency[method].rate === 1)
+  );
+  const group = summary.by_candidates[summary.by_candidates.length - 1];
   const worst = methods.reduce((a, b) =>
     (group.condorcet_efficiency[b].rate ?? 1) < (group.condorcet_efficiency[a].rate ?? 1) ? b : a
   );
   const missed = 1 - (group.condorcet_efficiency[worst].rate ?? 1);
-  return (
-    `With ${group.candidates} candidates, ${methodName(most.a)} and ${methodName(most.b)} elect ` +
-    `different winners in ${((most.rate ?? 0) * 100).toFixed(0)}% of ` +
-    `${group.elections.toLocaleString("en-US")} elections, and ${methodName(worst)} misses the ` +
-    `Condorcet winner in ${(missed * 100).toFixed(0)}% of those that have one. ` +
-    "Cycles are rare in this model; disagreement is not."
-  );
+  return {
+    title:
+      always.length === 0
+        ? "No method always finds the Condorcet winner"
+        : `Only ${listOf(always.map(methodName))} always ${always.length === 1 ? "finds" : "find"} the Condorcet winner`,
+    takeaway: `With ${group.candidates} candidates, ${methodName(worst)} misses the Condorcet winner in ${(
+      missed * 100
+    ).toFixed(0)}% of the elections that have one.`,
+  };
 }

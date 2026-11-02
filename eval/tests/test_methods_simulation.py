@@ -24,6 +24,7 @@ from eval.methods_simulation import (
 ROOT = Path(__file__).resolve().parents[2]
 BENCHMARK = ROOT / "eval" / "benchmarks" / "methods_simulation_v1"
 PAGE = ROOT / "public" / "data" / "methods" / "simulation.json"
+SAMPLES = ROOT / "public" / "data" / "methods" / "samples.json"
 SMALL = SimulationConfig(elections=30, candidate_counts=(3, 5))
 
 
@@ -99,3 +100,30 @@ class TestCommittedBenchmark:
 
         for index in range(0, config.elections, 997):
             assert run_election(config, candidates, index) == records[(candidates, index)]
+
+
+class TestPageSamples:
+    """The page's sample elections (scripts/build_methods_artifacts.py) are the study's."""
+
+    def samples(self) -> list[dict]:
+        return json.loads(SAMPLES.read_text(encoding="utf-8"))["samples"]
+
+    def test_each_sample_is_the_committed_election(self):
+        records = {(r.candidates, r.index): r for r in committed_records()}
+        for sample in self.samples():
+            record = records[(sample["candidates"], sample["index"])]
+
+            assert sample["winners"] == dict(zip(METHODS, record.winners)), sample["id"]
+            assert sample["condorcet"] == record.condorcet
+            assert len(sample["voter_positions"]) == SimulationConfig().voters
+
+    def test_each_sample_is_the_first_to_match_its_rule(self):
+        distinct = {"agree": 1, "split": 3}
+        records = [r for r in committed_records() if r.candidates == 3]
+        for sample in self.samples():
+            matches = [
+                r for r in records if all(r.decisive) and len(set(r.winners)) == distinct[sample["id"]]
+            ]
+
+            assert sample["index"] == matches[0].index, sample["id"]
+            assert (sample["matching"], sample["of"]) == (len(matches), len(records)), sample["id"]

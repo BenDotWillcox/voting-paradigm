@@ -565,9 +565,10 @@
 
 /* ------------------------------------------------------------------------
  * Methods instrument ("drafting table"; components/methods/instrument).
- * Cool white, hairline ink rules, flat candidate colors. Color always means
- * a candidate and position always means a method; text never wears a
- * candidate color.
+ * Cool white, hairline ink rules, flat candidate colors. At mark scale, color
+ * always means a candidate and position always means a method; text never
+ * wears a candidate color. Section tones and code syntax are the only other
+ * colors, and stay off marks (see the tokens below).
  *
  * Candidate colors are validated with the dataviz validate_palette.js
  * against --mi-surface with --pairs all, since any candidate can sit beside
@@ -584,6 +585,31 @@
   --color-mi-rule: var(--mi-rule);
   --color-mi-grid: var(--mi-grid);
   --color-mi-wash: var(--mi-wash);
+  --color-mi-island: var(--mi-island);
+  --color-mi-tone-1: var(--mi-tone-1);
+  --color-mi-tone-2: var(--mi-tone-2);
+  --color-mi-tone-3: var(--mi-tone-3);
+  --color-mi-tone-4: var(--mi-tone-4);
+  --color-mi-band-1: var(--mi-band-1);
+  --color-mi-band-2: var(--mi-band-2);
+  --color-mi-band-3: var(--mi-band-3);
+  --color-mi-band-4: var(--mi-band-4);
+  --color-mi-body-1: var(--mi-body-1);
+  --color-mi-body-2: var(--mi-body-2);
+  --color-mi-body-3: var(--mi-body-3);
+  --color-mi-body-4: var(--mi-body-4);
+  --color-mi-code: var(--mi-code);
+  --color-mi-code-plain: var(--mi-code-plain);
+  --color-mi-code-dim: var(--mi-code-dim);
+  --color-mi-code-comment: var(--mi-code-comment);
+  --color-mi-code-keyword: var(--mi-code-keyword);
+  --color-mi-code-number: var(--mi-code-number);
+  --color-mi-code-call: var(--mi-code-call);
+  --color-mi-code-type: var(--mi-code-type);
+  --color-mi-code-string: var(--mi-code-string);
+  --color-mi-code-note: var(--mi-code-note);
+  --color-mi-code-drive: var(--mi-code-drive);
+  --color-mi-code-run: var(--mi-code-run);
   --font-mi-sans: var(--font-instrument-sans), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mi-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
@@ -605,6 +631,49 @@
   --mi-cand-d: #14957a;
   --mi-cand-e: #a8479e;
 
+  /*
+   * Section tones (the Emerald Sapphire Daybreak pastels). Surfaces only: a
+   * header band, the section's body behind it (half the band's tint, mixed
+   * into the page), a rule, a nav tick. Never a mark; figures keep their
+   * white panels, so a tone cannot be read as a candidate. Lime, the
+   * farthest from every candidate hue, goes to the playground, which can
+   * show all five.
+   */
+  --mi-tone-1: #b2dce2;
+  --mi-tone-2: #d3a4ea;
+  --mi-tone-3: #ead094;
+  --mi-tone-4: #d7eaac;
+  --mi-band-1: #ecf6f8;
+  --mi-band-2: #f4e8fa;
+  --mi-band-3: #faf3e4;
+  --mi-band-4: #f5faea;
+  --mi-body-1: #edf3f5;
+  --mi-body-2: #f1ecf6;
+  --mi-body-3: #f4f2eb;
+  --mi-body-4: #f2f5ee;
+
+  /* Dark islands (hero, section nav) and the code editor stay dark in both themes. */
+  --mi-island: #15171a;
+
+  /*
+   * Code editor. The palette's saturated colors appear only here, as syntax
+   * text: code is never data. Lines outside the current stage drop to one
+   * grey; #f3000e marks the line that drives the stage, drawn as a bar
+   * because a dot would read as candidate A's circle.
+   */
+  --mi-code: #121418;
+  --mi-code-plain: #eceef0;
+  --mi-code-dim: #9aa0a8;
+  --mi-code-comment: #7d838c;
+  --mi-code-keyword: #6596f3;
+  --mi-code-number: #ead094;
+  --mi-code-call: #d3a4ea;
+  --mi-code-type: #83b366;
+  --mi-code-string: #d7eaac;
+  --mi-code-note: #b2dce2;
+  --mi-code-drive: rgb(178 220 226 / 0.11);
+  --mi-code-run: #f3000e;
+
   background: var(--mi-page);
   color: var(--mi-ink);
 }
@@ -625,6 +694,35 @@
   --mi-cand-c: #ad8c00;
   --mi-cand-d: #199e80;
   --mi-cand-e: #b665c4;
+
+  --mi-band-1: #1e2427;
+  --mi-band-2: #221f28;
+  --mi-band-3: #24231f;
+  --mi-band-4: #222621;
+  --mi-body-1: #161a1c;
+  --mi-body-2: #18171d;
+  --mi-body-3: #191a18;
+  --mi-body-4: #181b1a;
+  --mi-island: #08090b;
+  --mi-code: #08090b;
+}
+
+/* The dark theme's tokens, for dark islands inside the light theme. */
+.methods-instrument .mi-island {
+  color-scheme: dark;
+  --mi-surface: #141619;
+  --mi-ink: #eceef0;
+  --mi-ink-2: #b9bec5;
+  --mi-muted: #8c929a;
+  --mi-rule: rgb(236 238 240 / 0.14);
+  --mi-wash: rgb(236 238 240 / 0.06);
+  --mi-cand-a: #3987e5;
+  --mi-cand-b: #e34f5f;
+  --mi-cand-c: #ad8c00;
+  --mi-cand-d: #199e80;
+  --mi-cand-e: #b665c4;
+  background: var(--mi-island);
+  color: var(--mi-ink);
 }
 
 /* Drafting grid, behind figures only. */

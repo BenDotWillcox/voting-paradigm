@@ -327,3 +327,19 @@ export interface SimulationSummary {
   benchmark: string;
   source_sha256: string;
 }
+
+/** One of the simulation's elections, shown whole (public/data/methods/samples.json). */
+export interface SampleElection {
+  id: "agree" | "split";
+  /** How it was chosen: the first election that matches. */
+  rule: string;
+  candidates: number;
+  index: number;
+  candidate_positions: Record<string, [number, number]>;
+  voter_positions: [number, number][];
+  winners: Record<VotingMethod, string>;
+  condorcet: string | null;
+  /** How many of the study's elections with this many candidates match the rule. */
+  matching: number;
+  of: number;
+}
