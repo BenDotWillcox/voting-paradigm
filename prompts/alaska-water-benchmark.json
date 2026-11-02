@@ -1,0 +1,1017 @@
+{
+  "schema_version": 1,
+  "state": "Alaska",
+  "status": "complete",
+  "generated_at": "2026-10-26T18:04:56.031656+00:00",
+  "validation_note": "Independently reloaded original source DBF and normalized polygon parts; verified assignments, replayed moves, induced graph connectivity, full polygon coverage, same-district water-link ownership, every compressed district/county artifact and saved seam reconstruction. Original evidence and frozen runtime hashes unchanged; summary-only tests recorded separately. Browser checks are recorded separately in qa/browser-qa.json. The first summary attempt passed the expensive plan checks but stopped at a reporting-only shared-preflight lookup assumption; its evidence is preserved under summary-history/attempt-1. This corrected full audit is not a benchmark retry. Separate summary audit timings are recorded in summary-validation-history.json.",
+  "scope": "2020 census blocks, K1 for House 435/574 and K2 for House 692/1000; 49 explicit water links, continuous-longitude normalization, 1,000 inner and 80 outer iterations for K2.",
+  "source": {
+    "archive_sha256": "6fe96f3a8bbaf78945ee3a3897264ed74f1b72bc0cb46ffd434039729dccf493",
+    "block_count": 28568,
+    "population": 733391,
+    "part_count": 28706,
+    "physical_component_count": 50
+  },
+  "runs": [
+    {
+      "district_count": 1,
+      "house_sizes": [
+        435,
+        574
+      ],
+      "status": "complete_under_recorded_water_policy",
+      "accepted_plan": true,
+      "map_url": "http://127.0.0.1:8770/policies/alaska-water-v1/states/02/districts-1/maps/",
+      "pipeline_seconds": 268.61642660000143,
+      "solve_seconds": null,
+      "direct_assignment_seconds": 0.13054810000176076,
+      "export_seconds": 181.27208249999967,
+      "peak_process_working_set_bytes": 924426240,
+      "process_wall_seconds": 269.67637450000257,
+      "phases": {
+        "preservation_and_configuration": {
+          "wall_seconds": 0.2827450000004319,
+          "cpu_seconds": 0.28125,
+          "sampled_peak_rss_bytes": 77185024
+        },
+        "load_source_and_normalize_longitudes": {
+          "wall_seconds": 20.65131929999916,
+          "cpu_seconds": 20.640625,
+          "sampled_peak_rss_bytes": 437583872
+        },
+        "build_physical_part_graph": {
+          "wall_seconds": 17.79005270000198,
+          "cpu_seconds": 17.765625,
+          "sampled_peak_rss_bytes": 440598528
+        },
+        "independently_verify_and_add_recorded_water_connections": {
+          "wall_seconds": 47.6359603000019,
+          "cpu_seconds": 47.34375,
+          "sampled_peak_rss_bytes": 689938432
+        },
+        "direct_assignment": {
+          "wall_seconds": 0.13054810000176076,
+          "cpu_seconds": 0.125,
+          "sampled_peak_rss_bytes": 374743040
+        },
+        "repair_and_rebalance": {
+          "wall_seconds": 0.34781629999997676,
+          "cpu_seconds": 0.34375,
+          "sampled_peak_rss_bytes": 374751232
+        },
+        "save_and_audit_final_assignments": {
+          "wall_seconds": 0.24845929999719374,
+          "cpu_seconds": 0.21875,
+          "sampled_peak_rss_bytes": 374751232
+        },
+        "independent_polygon_and_seam_validation_map_export": {
+          "wall_seconds": 181.27208249999967,
+          "cpu_seconds": 180.515625,
+          "sampled_peak_rss_bytes": 924368896
+        },
+        "final_preservation_validation": {
+          "wall_seconds": 0.16469169999982114,
+          "cpu_seconds": 0.15625,
+          "sampled_peak_rss_bytes": 555016192
+        }
+      },
+      "optimizer_trace": null,
+      "report": "benchmark.json",
+      "report_sha256": "e3770f180937c789580efe27832121963150c70b26dae6c09ba01cd097e8428c",
+      "water_link_count": 49,
+      "total_water_link_distance_m": 1550164.4155883673,
+      "population": {
+        "source": "Original source archive DBF GEOID20/POP20, read independently of runner aggregation",
+        "all_source_geoids_assigned_exactly_once": true,
+        "block_count": 28568,
+        "total_population": 733391,
+        "district_populations": [
+          733391
+        ],
+        "district_block_counts": [
+          28568
+        ],
+        "deviation_numerators": [
+          0
+        ],
+        "deviation_denominator": 1,
+        "max_absolute_deviation_people": 0.0,
+        "max_absolute_deviation_percent": 0.0,
+        "physical_part_components": [
+          50
+        ],
+        "policy_part_components": [
+          1
+        ]
+      },
+      "assignment_stages": {
+        "initial": {
+          "source": "Original source archive DBF GEOID20/POP20, read independently of runner aggregation",
+          "all_source_geoids_assigned_exactly_once": true,
+          "block_count": 28568,
+          "total_population": 733391,
+          "district_populations": [
+            733391
+          ],
+          "district_block_counts": [
+            28568
+          ],
+          "deviation_numerators": [
+            0
+          ],
+          "deviation_denominator": 1,
+          "max_absolute_deviation_people": 0.0,
+          "max_absolute_deviation_percent": 0.0,
+          "physical_part_components": [
+            50
+          ],
+          "policy_part_components": [
+            1
+          ]
+        },
+        "after_repair": {
+          "source": "Original source archive DBF GEOID20/POP20, read independently of runner aggregation",
+          "all_source_geoids_assigned_exactly_once": true,
+          "block_count": 28568,
+          "total_population": 733391,
+          "district_populations": [
+            733391
+          ],
+          "district_block_counts": [
+            28568
+          ],
+          "deviation_numerators": [
+            0
+          ],
+          "deviation_denominator": 1,
+          "max_absolute_deviation_people": 0.0,
+          "max_absolute_deviation_percent": 0.0,
+          "physical_part_components": [
+            50
+          ],
+          "policy_part_components": [
+            1
+          ]
+        },
+        "final": {
+          "source": "Original source archive DBF GEOID20/POP20, read independently of runner aggregation",
+          "all_source_geoids_assigned_exactly_once": true,
+          "block_count": 28568,
+          "total_population": 733391,
+          "district_populations": [
+            733391
+          ],
+          "district_block_counts": [
+            28568
+          ],
+          "deviation_numerators": [
+            0
+          ],
+          "deviation_denominator": 1,
+          "max_absolute_deviation_people": 0.0,
+          "max_absolute_deviation_percent": 0.0,
+          "physical_part_components": [
+            50
+          ],
+          "policy_part_components": [
+            1
+          ]
+        }
+      },
+      "maps": {
+        "independent_polygon_and_link_audit": {
+          "passed": true,
+          "districts": [
+            {
+              "district_id": 0,
+              "physical_polygon_components": 50,
+              "connected_components_after_links": 1,
+              "used_link_ids": [
+                "ak-water-001",
+                "ak-water-002",
+                "ak-water-003",
+                "ak-water-004",
+                "ak-water-005",
+                "ak-water-006",
+                "ak-water-007",
+                "ak-water-008",
+                "ak-water-009",
+                "ak-water-010",
+                "ak-water-011",
+                "ak-water-012",
+                "ak-water-013",
+                "ak-water-014",
+                "ak-water-015",
+                "ak-water-016",
+                "ak-water-017",
+                "ak-water-018",
+                "ak-water-019",
+                "ak-water-020",
+                "ak-water-021",
+                "ak-water-022",
+                "ak-water-023",
+                "ak-water-024",
+                "ak-water-025",
+                "ak-water-026",
+                "ak-water-027",
+                "ak-water-028",
+                "ak-water-029",
+                "ak-water-030",
+                "ak-water-031",
+                "ak-water-032",
+                "ak-water-033",
+                "ak-water-034",
+                "ak-water-035",
+                "ak-water-036",
+                "ak-water-037",
+                "ak-water-038",
+                "ak-water-039",
+                "ak-water-040",
+                "ak-water-041",
+                "ak-water-042",
+                "ak-water-043",
+                "ak-water-044",
+                "ak-water-045",
+                "ak-water-046",
+                "ak-water-047",
+                "ak-water-048",
+                "ak-water-049"
+              ]
+            }
+          ],
+          "source_polygon_components": 50,
+          "source_coverage_preserved_exactly": true,
+          "independent_source_coverage_valid": true,
+          "independent_district_coverage_valid": true,
+          "validation_basis": "unsimplified normalized polygon union and source-part endpoint ownership; no graph traversal reused",
+          "used_link_ids": [
+            "ak-water-001",
+            "ak-water-002",
+            "ak-water-003",
+            "ak-water-004",
+            "ak-water-005",
+            "ak-water-006",
+            "ak-water-007",
+            "ak-water-008",
+            "ak-water-009",
+            "ak-water-010",
+            "ak-water-011",
+            "ak-water-012",
+            "ak-water-013",
+            "ak-water-014",
+            "ak-water-015",
+            "ak-water-016",
+            "ak-water-017",
+            "ak-water-018",
+            "ak-water-019",
+            "ak-water-020",
+            "ak-water-021",
+            "ak-water-022",
+            "ak-water-023",
+            "ak-water-024",
+            "ak-water-025",
+            "ak-water-026",
+            "ak-water-027",
+            "ak-water-028",
+            "ak-water-029",
+            "ak-water-030",
+            "ak-water-031",
+            "ak-water-032",
+            "ak-water-033",
+            "ak-water-034",
+            "ak-water-035",
+            "ak-water-036",
+            "ak-water-037",
+            "ak-water-038",
+            "ak-water-039",
+            "ak-water-040",
+            "ak-water-041",
+            "ak-water-042",
+            "ak-water-043",
+            "ak-water-044",
+            "ak-water-045",
+            "ak-water-046",
+            "ak-water-047",
+            "ak-water-048",
+            "ak-water-049"
+          ],
+          "unused_link_ids": [],
+          "endpoint_boundary_tolerance_degrees": 1e-09
+        },
+        "physical_polygon_components": [
+          50
+        ],
+        "compressed_payload_count": 68,
+        "all_county_blocks_verified": 28568,
+        "working_and_wrapped_seams_verified": true,
+        "payloads": {
+          "national_gzip_bytes": 15227,
+          "state_gzip_bytes": 46807,
+          "full_gzip_bytes": 122100,
+          "connections_gzip_bytes": 9333,
+          "all_county_working_gzip_bytes": 53140682,
+          "maximum_county_working_gzip_bytes": 6682814,
+          "default_map_and_links_gzip_bytes": 24560,
+          "index_html_bytes": 17400,
+          "manifest_json_bytes": 63853,
+          "wrapped_national_gzip_bytes": 15462,
+          "note": "Geometry gzip bytes; HTML and manifest listed separately. County detail is loaded on demand; the whole state block payload is not needed for the initial view."
+        }
+      },
+      "postprocessing": {
+        "replayed_repair_and_rebalance": true,
+        "stop_reason": "local_optimum",
+        "repair_move_count": 0,
+        "part_repair_move_count": 0,
+        "rebalance_move_count": 0
+      },
+      "outer_termination": null,
+      "solver_kind": "direct_all_blocks_assignment"
+    },
+    {
+      "district_count": 2,
+      "house_sizes": [
+        692,
+        1000
+      ],
+      "status": "complete_under_recorded_water_policy",
+      "accepted_plan": true,
+      "map_url": "http://127.0.0.1:8770/policies/alaska-water-v1/states/02/districts-2/maps/",
+      "pipeline_seconds": 268.54037529999914,
+      "solve_seconds": 0.4912189999995462,
+      "direct_assignment_seconds": null,
+      "export_seconds": 180.856230100002,
+      "peak_process_working_set_bytes": 719417344,
+      "process_wall_seconds": 269.58753389999765,
+      "phases": {
+        "preservation_and_configuration": {
+          "wall_seconds": 0.2687164999988454,
+          "cpu_seconds": 0.265625,
+          "sampled_peak_rss_bytes": 76496896
+        },
+        "load_source_and_normalize_longitudes": {
+          "wall_seconds": 20.41920029999892,
+          "cpu_seconds": 20.40625,
+          "sampled_peak_rss_bytes": 437239808
+        },
+        "build_physical_part_graph": {
+          "wall_seconds": 17.410466900000756,
+          "cpu_seconds": 17.40625,
+          "sampled_peak_rss_bytes": 330776576
+        },
+        "independently_verify_and_add_recorded_water_connections": {
+          "wall_seconds": 48.214169999999285,
+          "cpu_seconds": 48.078125,
+          "sampled_peak_rss_bytes": 688275456
+        },
+        "solve": {
+          "wall_seconds": 0.4912189999995462,
+          "cpu_seconds": 0.453125,
+          "sampled_peak_rss_bytes": 375705600
+        },
+        "repair_and_rebalance": {
+          "wall_seconds": 0.33413540000037756,
+          "cpu_seconds": 0.328125,
+          "sampled_peak_rss_bytes": 375713792
+        },
+        "save_and_audit_final_assignments": {
+          "wall_seconds": 0.2717564999984461,
+          "cpu_seconds": 0.25,
+          "sampled_peak_rss_bytes": 375713792
+        },
+        "independent_polygon_and_seam_validation_map_export": {
+          "wall_seconds": 180.856230100002,
+          "cpu_seconds": 180.4375,
+          "sampled_peak_rss_bytes": 674910208
+        },
+        "final_preservation_validation": {
+          "wall_seconds": 0.15864760000113165,
+          "cpu_seconds": 0.15625,
+          "sampled_peak_rss_bytes": 564539392
+        }
+      },
+      "optimizer_trace": {
+        "passed": true,
+        "pass_count": 6,
+        "passes": [
+          {
+            "balance_pass": 1,
+            "optimizer": {
+              "success": true,
+              "status": 0,
+              "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+              "iterations": 10,
+              "function_evaluations": 39,
+              "iteration_limit_reached": false,
+              "actual_maxiter": 1000
+            },
+            "initial_objective": -0.0,
+            "terminal_objective": -0.0776939587115702,
+            "objective_improvement": 0.0776939587115702,
+            "initial_max_deviation_people": 305490.5,
+            "terminal_max_deviation_people": 45.5,
+            "terminal_max_deviation_percent": 0.01240811518003357,
+            "trace_wall_seconds": 0.06088629999794648,
+            "wrapper_wall_seconds": 0.06152459999793791
+          },
+          {
+            "balance_pass": 2,
+            "optimizer": {
+              "success": true,
+              "status": 0,
+              "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+              "iterations": 10,
+              "function_evaluations": 37,
+              "iteration_limit_reached": false,
+              "actual_maxiter": 1000
+            },
+            "initial_objective": 0.12052925722186329,
+            "terminal_objective": -0.002048082406858531,
+            "objective_improvement": 0.12257733962872182,
+            "initial_max_deviation_people": 309102.5,
+            "terminal_max_deviation_people": 125.5,
+            "terminal_max_deviation_percent": 0.03422458143064205,
+            "trace_wall_seconds": 0.05555810000078054,
+            "wrapper_wall_seconds": 0.05615830000169808
+          },
+          {
+            "balance_pass": 3,
+            "optimizer": {
+              "success": true,
+              "status": 0,
+              "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+              "iterations": 5,
+              "function_evaluations": 35,
+              "iteration_limit_reached": false,
+              "actual_maxiter": 1000
+            },
+            "initial_objective": -0.0020428084263150815,
+            "terminal_objective": -0.0020429229169364065,
+            "objective_improvement": 1.1449062132509388e-07,
+            "initial_max_deviation_people": 2613.5,
+            "terminal_max_deviation_people": 2.5,
+            "terminal_max_deviation_percent": 0.0006817645703315148,
+            "trace_wall_seconds": 0.05135370000061812,
+            "wrapper_wall_seconds": 0.05196359999899869
+          },
+          {
+            "balance_pass": 4,
+            "optimizer": {
+              "success": true,
+              "status": 0,
+              "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+              "iterations": 5,
+              "function_evaluations": 29,
+              "iteration_limit_reached": false,
+              "actual_maxiter": 1000
+            },
+            "initial_objective": -0.002049882501837873,
+            "terminal_objective": -0.0020498989223153106,
+            "objective_improvement": 1.642047743740868e-08,
+            "initial_max_deviation_people": 709.5,
+            "terminal_max_deviation_people": 12.5,
+            "terminal_max_deviation_percent": 0.003408822851657574,
+            "trace_wall_seconds": 0.04343150000204332,
+            "wrapper_wall_seconds": 0.04404179999983171
+          },
+          {
+            "balance_pass": 5,
+            "optimizer": {
+              "success": true,
+              "status": 0,
+              "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+              "iterations": 3,
+              "function_evaluations": 40,
+              "iteration_limit_reached": false,
+              "actual_maxiter": 1000
+            },
+            "initial_objective": -0.002050574734226681,
+            "terminal_objective": -0.0020505747613980573,
+            "objective_improvement": 2.7171376260071156e-11,
+            "initial_max_deviation_people": 12.5,
+            "terminal_max_deviation_people": 12.5,
+            "terminal_max_deviation_percent": 0.003408822851657574,
+            "trace_wall_seconds": 0.058112799997616094,
+            "wrapper_wall_seconds": 0.058734399997774744
+          },
+          {
+            "balance_pass": 6,
+            "optimizer": {
+              "success": true,
+              "status": 0,
+              "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+              "iterations": 1,
+              "function_evaluations": 23,
+              "iteration_limit_reached": false,
+              "actual_maxiter": 1000
+            },
+            "initial_objective": -0.002050574761398057,
+            "terminal_objective": -0.0020505747613982247,
+            "objective_improvement": 1.6783449630075609e-16,
+            "initial_max_deviation_people": 12.5,
+            "terminal_max_deviation_people": 12.5,
+            "terminal_max_deviation_percent": 0.003408822851657574,
+            "trace_wall_seconds": 0.03457219999836525,
+            "wrapper_wall_seconds": 0.035185699998692144
+          }
+        ],
+        "accepted_iteration_count": 34,
+        "all_inner_passes_succeeded": true,
+        "recorded_elapsed_seconds": 0.3403593000002729,
+        "observed_overhead_seconds": 0.007630899996001972,
+        "scope": "Observer consistency and population reconstruction from existing optimizer gradients; these are intermediate point assignments, not accepted connected districts.",
+        "maximum_inner_iterations": 10
+      },
+      "report": "benchmark.json",
+      "report_sha256": "737ecef4f35c2dc22692bca804c8b4fa89ca1142b6dcef58618f236048532de5",
+      "water_link_count": 49,
+      "total_water_link_distance_m": 1550164.4155883673,
+      "population": {
+        "source": "Original source archive DBF GEOID20/POP20, read independently of runner aggregation",
+        "all_source_geoids_assigned_exactly_once": true,
+        "block_count": 28568,
+        "total_population": 733391,
+        "district_populations": [
+          366695,
+          366696
+        ],
+        "district_block_counts": [
+          15281,
+          13287
+        ],
+        "deviation_numerators": [
+          -1,
+          1
+        ],
+        "deviation_denominator": 2,
+        "max_absolute_deviation_people": 0.5,
+        "max_absolute_deviation_percent": 0.00013635291406630297,
+        "physical_part_components": [
+          2,
+          49
+        ],
+        "policy_part_components": [
+          1,
+          1
+        ]
+      },
+      "assignment_stages": {
+        "initial": {
+          "source": "Original source archive DBF GEOID20/POP20, read independently of runner aggregation",
+          "all_source_geoids_assigned_exactly_once": true,
+          "block_count": 28568,
+          "total_population": 733391,
+          "district_populations": [
+            366683,
+            366708
+          ],
+          "district_block_counts": [
+            15297,
+            13271
+          ],
+          "deviation_numerators": [
+            -25,
+            25
+          ],
+          "deviation_denominator": 2,
+          "max_absolute_deviation_people": 12.5,
+          "max_absolute_deviation_percent": 0.003408822851657574,
+          "physical_part_components": [
+            18,
+            57
+          ],
+          "policy_part_components": [
+            17,
+            9
+          ]
+        },
+        "after_repair": {
+          "source": "Original source archive DBF GEOID20/POP20, read independently of runner aggregation",
+          "all_source_geoids_assigned_exactly_once": true,
+          "block_count": 28568,
+          "total_population": 733391,
+          "district_populations": [
+            366313,
+            367078
+          ],
+          "district_block_counts": [
+            15281,
+            13287
+          ],
+          "deviation_numerators": [
+            -765,
+            765
+          ],
+          "deviation_denominator": 2,
+          "max_absolute_deviation_people": 382.5,
+          "max_absolute_deviation_percent": 0.10430997926072177,
+          "physical_part_components": [
+            2,
+            49
+          ],
+          "policy_part_components": [
+            1,
+            1
+          ]
+        },
+        "final": {
+          "source": "Original source archive DBF GEOID20/POP20, read independently of runner aggregation",
+          "all_source_geoids_assigned_exactly_once": true,
+          "block_count": 28568,
+          "total_population": 733391,
+          "district_populations": [
+            366695,
+            366696
+          ],
+          "district_block_counts": [
+            15281,
+            13287
+          ],
+          "deviation_numerators": [
+            -1,
+            1
+          ],
+          "deviation_denominator": 2,
+          "max_absolute_deviation_people": 0.5,
+          "max_absolute_deviation_percent": 0.00013635291406630297,
+          "physical_part_components": [
+            2,
+            49
+          ],
+          "policy_part_components": [
+            1,
+            1
+          ]
+        }
+      },
+      "maps": {
+        "independent_polygon_and_link_audit": {
+          "passed": true,
+          "districts": [
+            {
+              "district_id": 0,
+              "physical_polygon_components": 2,
+              "connected_components_after_links": 1,
+              "used_link_ids": [
+                "ak-water-043"
+              ]
+            },
+            {
+              "district_id": 1,
+              "physical_polygon_components": 49,
+              "connected_components_after_links": 1,
+              "used_link_ids": [
+                "ak-water-001",
+                "ak-water-002",
+                "ak-water-003",
+                "ak-water-004",
+                "ak-water-005",
+                "ak-water-006",
+                "ak-water-007",
+                "ak-water-008",
+                "ak-water-009",
+                "ak-water-010",
+                "ak-water-011",
+                "ak-water-012",
+                "ak-water-013",
+                "ak-water-014",
+                "ak-water-015",
+                "ak-water-016",
+                "ak-water-017",
+                "ak-water-018",
+                "ak-water-019",
+                "ak-water-020",
+                "ak-water-021",
+                "ak-water-022",
+                "ak-water-023",
+                "ak-water-024",
+                "ak-water-025",
+                "ak-water-026",
+                "ak-water-027",
+                "ak-water-028",
+                "ak-water-029",
+                "ak-water-030",
+                "ak-water-031",
+                "ak-water-032",
+                "ak-water-033",
+                "ak-water-034",
+                "ak-water-035",
+                "ak-water-036",
+                "ak-water-037",
+                "ak-water-038",
+                "ak-water-039",
+                "ak-water-040",
+                "ak-water-041",
+                "ak-water-042",
+                "ak-water-044",
+                "ak-water-045",
+                "ak-water-046",
+                "ak-water-047",
+                "ak-water-048",
+                "ak-water-049"
+              ]
+            }
+          ],
+          "source_polygon_components": 50,
+          "source_coverage_preserved_exactly": true,
+          "independent_source_coverage_valid": true,
+          "independent_district_coverage_valid": true,
+          "validation_basis": "unsimplified normalized polygon union and source-part endpoint ownership; no graph traversal reused",
+          "used_link_ids": [
+            "ak-water-043",
+            "ak-water-001",
+            "ak-water-002",
+            "ak-water-003",
+            "ak-water-004",
+            "ak-water-005",
+            "ak-water-006",
+            "ak-water-007",
+            "ak-water-008",
+            "ak-water-009",
+            "ak-water-010",
+            "ak-water-011",
+            "ak-water-012",
+            "ak-water-013",
+            "ak-water-014",
+            "ak-water-015",
+            "ak-water-016",
+            "ak-water-017",
+            "ak-water-018",
+            "ak-water-019",
+            "ak-water-020",
+            "ak-water-021",
+            "ak-water-022",
+            "ak-water-023",
+            "ak-water-024",
+            "ak-water-025",
+            "ak-water-026",
+            "ak-water-027",
+            "ak-water-028",
+            "ak-water-029",
+            "ak-water-030",
+            "ak-water-031",
+            "ak-water-032",
+            "ak-water-033",
+            "ak-water-034",
+            "ak-water-035",
+            "ak-water-036",
+            "ak-water-037",
+            "ak-water-038",
+            "ak-water-039",
+            "ak-water-040",
+            "ak-water-041",
+            "ak-water-042",
+            "ak-water-044",
+            "ak-water-045",
+            "ak-water-046",
+            "ak-water-047",
+            "ak-water-048",
+            "ak-water-049"
+          ],
+          "unused_link_ids": [],
+          "endpoint_boundary_tolerance_degrees": 1e-09
+        },
+        "physical_polygon_components": [
+          2,
+          49
+        ],
+        "compressed_payload_count": 68,
+        "all_county_blocks_verified": 28568,
+        "working_and_wrapped_seams_verified": true,
+        "payloads": {
+          "national_gzip_bytes": 21200,
+          "state_gzip_bytes": 94176,
+          "full_gzip_bytes": 680201,
+          "connections_gzip_bytes": 9340,
+          "all_county_working_gzip_bytes": 53146723,
+          "maximum_county_working_gzip_bytes": 6684256,
+          "default_map_and_links_gzip_bytes": 30540,
+          "index_html_bytes": 17400,
+          "manifest_json_bytes": 64889,
+          "wrapped_national_gzip_bytes": 21700,
+          "note": "Geometry gzip bytes; HTML and manifest listed separately. County detail is loaded on demand; the whole state block payload is not needed for the initial view."
+        }
+      },
+      "postprocessing": {
+        "replayed_repair_and_rebalance": true,
+        "stop_reason": "local_optimum",
+        "repair_move_count": 24,
+        "part_repair_move_count": 0,
+        "rebalance_move_count": 2
+      },
+      "outer_termination": {
+        "status": "center_tolerance_met",
+        "outer_iterations": 5,
+        "configured_max_outer_iterations": 80,
+        "centers_converged": true,
+        "outer_iteration_limit_reached": false,
+        "disclosure": "The outer loop met its center-convergence tolerance after 5 iterations. Successful inner optimizer passes do not establish outer convergence. Final population balance and connectivity are assessed separately after repair/rebalancing."
+      },
+      "solver_kind": "balanced_power_diagram"
+    }
+  ],
+  "strict_originals": [
+    {
+      "district_count": 1,
+      "status": "unsupported_antimeridian_topology",
+      "report": "states/02/districts-1/benchmark.json",
+      "sha256": "e2e35d7c24f03ab22f341d67a391123bcd0cb2b1c5682ec7f7bb4ffa9bb44cfe",
+      "solver_ran": false,
+      "shared_state_preflight_reused_without_launching_solver": false
+    },
+    {
+      "district_count": 2,
+      "status": "unsupported_antimeridian_topology",
+      "report": "states/02/districts-1/benchmark.json",
+      "sha256": "e2e35d7c24f03ab22f341d67a391123bcd0cb2b1c5682ec7f7bb4ffa9bb44cfe",
+      "solver_ran": false,
+      "shared_state_preflight_reused_without_launching_solver": true
+    }
+  ],
+  "process_check": {
+    "all_recorded_processes_exited": true,
+    "recorded_pids": [
+      9644,
+      11984,
+      16764,
+      22804,
+      30960,
+      34320,
+      36020
+    ],
+    "parent_exit_record": {
+      "exit_code": 0,
+      "finished_at": "2026-10-26T17:36:36.879397+00:00",
+      "launcher_pid": 11984
+    },
+    "observed_at": "2026-10-26T17:54:04.962165+00:00",
+    "observations": [
+      {
+        "active": false,
+        "pid": 9644
+      },
+      {
+        "active": false,
+        "pid": 11984
+      },
+      {
+        "active": false,
+        "pid": 16764
+      },
+      {
+        "active": false,
+        "pid": 22804
+      },
+      {
+        "active": false,
+        "pid": 30960
+      },
+      {
+        "active": false,
+        "pid": 34320
+      },
+      {
+        "active": false,
+        "pid": 36020
+      }
+    ],
+    "state02_lock_acquired_and_held_during_validation": true,
+    "scope": "Recorded launcher, parent, direct child and benchmark PIDs plus the state02 OS lock; no full-system process inventory claimed."
+  },
+  "preservation": {
+    "files_rehashed": 31,
+    "all_original_files_unchanged": true,
+    "frozen_runtime_unchanged": true,
+    "runtime_code_sha256": {
+      "scripts/benchmark_alaska_water.py": "dfceb4ec51f36d31edba40e0497968dd3111e45f1aa5f374c141645f44bcb80e",
+      "scripts/run_alaska_water_suite.py": "06f0089ea33a4bb21479e3f79809333384926f0b76b08d46b3c5a09c4ea3c32f",
+      "scripts/alaska_geometry.py": "b2d59754fe6fad28b08051e1869f0f89e491be3aaf545061e0751cd0f7fb59d0",
+      "scripts/alaska_recorded_links.py": "1fe7dd53b3f79d9194d075418f685371db7657a0fa8000d9935da9d5ed43d4eb",
+      "scripts/alaska_map_export.py": "2f25ac845c789fcdf028b9d4de7cebdccbbbb0cda5769d900dc90f275eabe5e8",
+      "scripts/assets/alaska-block-viewer.html": "977d4db04c1413e450fa53a07ce86714ad4166741dc1992f3cb217d67f6a1282",
+      "scripts/diagnose_alaska_topology.py": "8932ea20ce00b70ebd074dee72be0befbaabd55175a7d875cd1490db7cd34dce",
+      "scripts/hawaii_population_links.py": "b512c901f00b62864eb84f7b5cfed2e8d4fe5915ffe3cc87e50c93345e581519",
+      "scripts/district_block_island_links.py": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+      "scripts/diagnose_hawaii_topology.py": "ba3f9402adf4113e32006be457b96cd88e5faf4b08bcc85042f92995297ee08f",
+      "scripts/district_optimizer_trace.py": "d8256b6f8ba55faca704374238ca66c6230c7e9edbc44bea704012ac92108f2c",
+      "scripts/correct_state_block_parts.py": "b4006afd905ac6f9ff72c6ba95ac73cf1c807695e33bf2bc4cdf68233028bacd",
+      "scripts/benchmark_kansas_anchors.py": "adf92735dfcf5fb703c15a1e7d9f1a8f76b203d037e441b3560d2bc0573b50a7",
+      "scripts/benchmark_kansas_blocks.py": "20da6d6f95e4b6706341eb97f01c3518e3d58b07e1852a0537e9c85c5dab31bf",
+      "scripts/state_block_execution_lock.py": "861c5a915ca9bc7d7065df4c10afae48c641febd680b25133c05d64f4268c6ff",
+      "districting/__init__.py": "baf0b8848dc6fffc7ab83fbe1eb2f6a45f6f67e622fda941b62c818d88f8e548",
+      "districting/algorithm.py": "a1b264a2bb855675ab3b633a5b47a38b77f4929e29b7a4086cfb889436e244ac",
+      "districting/connectivity.py": "2d6788d73fac4e2eb550cff4db36dd4b5b430f131254809805c53317bb8cbfed",
+      "districting/part_connectivity.py": "a127aad254e65dc7b8be69f1fe7403aad6f9d18e0a15b8723e32358f9ef833d5",
+      "scripts/district_block_sources.py": "dd041755be227ea77abfed20bbc6c7a9a10050bf8f6a66aaeed2a07c96a1cbbb",
+      "scripts/benchmark_state_blocks.py": "8a1f05e5e428437ff87434408c315e8d94a4df64df5dffa821a7fc952b77a414",
+      "scripts/district_block_part_graph.py": "49b43929897184c04a5332f4530cd7cf722f9ac604008657855a65694024c490",
+      "scripts/district_block_adjacency.py": "8e3bd87629631e5452b6294bb94789dffa733a7b490db8a5238687a7609c0efc",
+      "scripts/district_block_graph_cache.py": "46d0c64da93123c23c3a05136ab2c4b3f096122627990f0a25c4c2e1c75b6c7e",
+      "scripts/district_block_map_export.py": "05e29bdfea353a1819fd4000b2e9ebc350fd8b9c6bdccf299d7531a7002499cf",
+      "scripts/state_block_map_export.py": "b31d08a7d1db70dffbc174080d2feff6b6b614caef6cd918a6aaddbf7a61af28",
+      "districting/apportionment.py": "07eb27ebc88d89647dfad66784d4fb3b9623b7919ed6e837122111bfe4323eae",
+      "districting/precompute.py": "a44589ffeeb53f44619e1c81188878969977902ef10f20a3e945ff8cc86cf988",
+      "districting/data/apportionment_2020.py": "86a8ee34675d78aa99ed7edcb0c686fbb3aebd34d04655a106cae10dfbb0461d"
+    }
+  },
+  "prelaunch_tests": {
+    "path": ".cache/state-block-benchmark/suite-through-1000/policies/alaska-water-v1/prelaunch-tests.json",
+    "sha256": "30087e1d108e70f3d8bad72f9874bc064752e65a2b11bfcd2da7c2ca998e7248",
+    "record": {
+      "command": [
+        "C:\\Users\\benja\\projects\\voting_paradigm\\venv\\Scripts\\python.exe",
+        "-X",
+        "utf8",
+        "-m",
+        "pytest",
+        "districting/tests",
+        "scripts/tests",
+        "-q"
+      ],
+      "started_at": "2026-10-26T17:26:46.828044+00:00",
+      "finished_at": "2026-10-26T17:27:23.052195+00:00",
+      "exit_code": 0,
+      "wall_seconds": 36.22384840000086,
+      "runtime_code_sha256": {
+        "scripts/benchmark_alaska_water.py": "dfceb4ec51f36d31edba40e0497968dd3111e45f1aa5f374c141645f44bcb80e",
+        "scripts/run_alaska_water_suite.py": "06f0089ea33a4bb21479e3f79809333384926f0b76b08d46b3c5a09c4ea3c32f",
+        "scripts/alaska_geometry.py": "b2d59754fe6fad28b08051e1869f0f89e491be3aaf545061e0751cd0f7fb59d0",
+        "scripts/alaska_recorded_links.py": "1fe7dd53b3f79d9194d075418f685371db7657a0fa8000d9935da9d5ed43d4eb",
+        "scripts/alaska_map_export.py": "2f25ac845c789fcdf028b9d4de7cebdccbbbb0cda5769d900dc90f275eabe5e8",
+        "scripts/assets/alaska-block-viewer.html": "977d4db04c1413e450fa53a07ce86714ad4166741dc1992f3cb217d67f6a1282",
+        "scripts/diagnose_alaska_topology.py": "8932ea20ce00b70ebd074dee72be0befbaabd55175a7d875cd1490db7cd34dce",
+        "scripts/hawaii_population_links.py": "b512c901f00b62864eb84f7b5cfed2e8d4fe5915ffe3cc87e50c93345e581519",
+        "scripts/district_block_island_links.py": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+        "scripts/diagnose_hawaii_topology.py": "ba3f9402adf4113e32006be457b96cd88e5faf4b08bcc85042f92995297ee08f",
+        "scripts/district_optimizer_trace.py": "d8256b6f8ba55faca704374238ca66c6230c7e9edbc44bea704012ac92108f2c",
+        "scripts/correct_state_block_parts.py": "b4006afd905ac6f9ff72c6ba95ac73cf1c807695e33bf2bc4cdf68233028bacd",
+        "scripts/benchmark_kansas_anchors.py": "adf92735dfcf5fb703c15a1e7d9f1a8f76b203d037e441b3560d2bc0573b50a7",
+        "scripts/benchmark_kansas_blocks.py": "20da6d6f95e4b6706341eb97f01c3518e3d58b07e1852a0537e9c85c5dab31bf",
+        "scripts/state_block_execution_lock.py": "861c5a915ca9bc7d7065df4c10afae48c641febd680b25133c05d64f4268c6ff",
+        "districting/__init__.py": "baf0b8848dc6fffc7ab83fbe1eb2f6a45f6f67e622fda941b62c818d88f8e548",
+        "districting/algorithm.py": "a1b264a2bb855675ab3b633a5b47a38b77f4929e29b7a4086cfb889436e244ac",
+        "districting/connectivity.py": "2d6788d73fac4e2eb550cff4db36dd4b5b430f131254809805c53317bb8cbfed",
+        "districting/part_connectivity.py": "a127aad254e65dc7b8be69f1fe7403aad6f9d18e0a15b8723e32358f9ef833d5",
+        "scripts/district_block_sources.py": "dd041755be227ea77abfed20bbc6c7a9a10050bf8f6a66aaeed2a07c96a1cbbb",
+        "scripts/benchmark_state_blocks.py": "8a1f05e5e428437ff87434408c315e8d94a4df64df5dffa821a7fc952b77a414",
+        "scripts/district_block_part_graph.py": "49b43929897184c04a5332f4530cd7cf722f9ac604008657855a65694024c490",
+        "scripts/district_block_adjacency.py": "8e3bd87629631e5452b6294bb94789dffa733a7b490db8a5238687a7609c0efc",
+        "scripts/district_block_graph_cache.py": "46d0c64da93123c23c3a05136ab2c4b3f096122627990f0a25c4c2e1c75b6c7e",
+        "scripts/district_block_map_export.py": "05e29bdfea353a1819fd4000b2e9ebc350fd8b9c6bdccf299d7531a7002499cf",
+        "scripts/state_block_map_export.py": "b31d08a7d1db70dffbc174080d2feff6b6b614caef6cd918a6aaddbf7a61af28",
+        "districting/apportionment.py": "07eb27ebc88d89647dfad66784d4fb3b9623b7919ed6e837122111bfe4323eae",
+        "districting/precompute.py": "a44589ffeeb53f44619e1c81188878969977902ef10f20a3e945ff8cc86cf988",
+        "districting/data/apportionment_2020.py": "86a8ee34675d78aa99ed7edcb0c686fbb3aebd34d04655a106cae10dfbb0461d"
+      },
+      "runtime_code_unchanged": true,
+      "passed": 1347,
+      "pytest_elapsed_seconds": 35.45,
+      "log_sha256": "2e5df7c2b95a68b88569b4951d4b1431054d382778b3bf54160dcf1ab0c2006f",
+      "passed_count_source": "preserved prelaunch-tests.log pytest footer"
+    }
+  },
+  "summary_tests": {
+    "path": ".cache/state-block-benchmark/suite-through-1000/policies/alaska-water-v1/summary-validation-tests.json",
+    "sha256": "434705e81dd723fcc0c81422e26ba3f4588101524915bc57854c589a4a8b9c64",
+    "record": {
+      "phase": "summary-only follow-up; report-only shared-preflight correction",
+      "command": [
+        "C:\\Users\\benja\\projects\\voting_paradigm\\venv\\Scripts\\python.exe",
+        "-X",
+        "utf8",
+        "-m",
+        "pytest",
+        "scripts/tests/test_summarize_alaska_water.py",
+        "-q"
+      ],
+      "started_at": "2026-10-26T17:53:59.742750+00:00",
+      "finished_at": "2026-10-26T17:54:02.279106+00:00",
+      "exit_code": 0,
+      "wall_seconds": 2.5367418999994698,
+      "passed": 43,
+      "superseded_evidence_preserved_at": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\policies\\alaska-water-v1\\summary-history\\attempt-1\\summary-validation-tests.json",
+      "superseded_evidence_sha256": "df0a4e01b23d735cab16b15dc31dad2e1445e3c06bee6f1c8800388fff98270a",
+      "code_sha256": {
+        "scripts/summarize_alaska_water.py": "7a4f91de071f8544147429a11e1ad84d0b9ffb590b7c9fe277a567f4ddf8535d",
+        "scripts/tests/test_summarize_alaska_water.py": "c6e661b56b5ea57b1c59b73b46a7c8b9af19ee17bd44a7aff12078a8399fdb49"
+      }
+    }
+  },
+  "validation_checkpoint_directory": ".cache/state-block-benchmark/suite-through-1000/policies/alaska-water-v1/summary-checkpoints/20261026T175404962165Z",
+  "timing": {
+    "parent_elapsed_seconds": 540.4950210000025,
+    "serial_child_process_seconds": 539.2639084000002,
+    "independent_summary_validation_seconds": 651.552050600003
+  },
+  "limits": [
+    "K1 is a direct assignment of every block; it has no solver runtime or convergence result.",
+    "The strict batch ran K1 preflight and reused its antimeridian rejection for unstarted K2; no solver ran and there is no solved strict-plan baseline.",
+    "Physical shared-edge connectivity is separate from connectivity through same-district recorded links.",
+    "Regional ocean evidence and Alaska source-interior checks do not certify a global land mask, foreign-land clearance or navigability.",
+    "All source polygons and populations are preserved. Seam cuts affect displayed longitude representation, not physical graph connectivity.",
+    "Original NAD83 source coordinates are retained; no WGS84 datum conversion or strict RFC7946 claim.",
+    "The existing population-centered equirectangular solver distance model is approximate across Alaska.",
+    "Pipeline timings include source reading, repeated graph/policy verification and map export; trace observation overhead is included. Independent summary time is separate.",
+    "K2 inner optimizer success, outer center convergence and final whole-block population balance are separate findings."
+  ]
+}

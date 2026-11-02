@@ -1,0 +1,1982 @@
+{
+  "status": "complete",
+  "state": "Kansas",
+  "source_year": 2020,
+  "unit": "census_block",
+  "house_size": 435,
+  "district_count": 4,
+  "configuration": {
+    "seed": 20200955,
+    "max_outer_iterations": 80,
+    "inner_max_iterations": 300,
+    "center_tolerance_m": 0.0001,
+    "max_rebalance_moves": 1000,
+    "adjacency_rule": "Disjoint polygon interiors and shared boundary dimension 1; DE-9IM F***1****",
+    "solver_sha256": "1e3f5772b6cfa51d3bbccb33f218425abcecfd49657c9c0b0e0e0babeb6caafc",
+    "connectivity_sha256": "f5b6fcf481f9d9d2957b77b90dfe12cd2ef03a4a76f98f58f2e8ab34857ac483",
+    "adjacency_builder_sha256": "8e3bd87629631e5452b6294bb94789dffa733a7b490db8a5238687a7609c0efc",
+    "exporter_sha256": "05e29bdfea353a1819fd4000b2e9ebc350fd8b9c6bdccf299d7531a7002499cf"
+  },
+  "environment": {
+    "python": "3.11.3 (tags/v3.11.3:f3909b8, Apr  4 2023, 23:49:59) [MSC v.1934 64 bit (AMD64)]",
+    "platform": "Windows-10-10.0.19045-SP0",
+    "packages": {
+      "numpy": "2.4.4",
+      "scipy": "1.17.1",
+      "pyshp": "3.0.3",
+      "shapely": "2.1.2"
+    }
+  },
+  "notes": [
+    "One local run; compare with prior desktop observation, not a controlled multi-run benchmark.",
+    "Source archive cached; all geometry adjacency rebuilt and timed in this run.",
+    "Original numerical solver unchanged; its docstrings now distinguish power cells from whole-block polygons.",
+    "Every accepted rebalance move decreases maximum deviation or, at the same maximum, squared population error.",
+    "Graph correction makes these assignments a postprocessed district plan, not an exact power diagram.",
+    "Overall peak is OS-reported Python working set; phase memory sampled every 100 ms."
+  ],
+  "source": {
+    "url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_20_tabblock20.zip",
+    "archive_sha256": "a0ccda5300d1994008b51bf345c77bc1b04adc8df6219b226c64b80d3a611198",
+    "archive_bytes": 162837181,
+    "downloaded_in_timed_pipeline": false,
+    "extracted_bytes": 162836239,
+    "crs_wkt": "GEOGCS[\"GCS_North_American_1983\",DATUM[\"D_North_American_1983\",SPHEROID[\"GRS_1980\",6378137,298.257222101]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]"
+  },
+  "input": {
+    "block_count": 172529,
+    "populated_block_count": 109149,
+    "zero_population_block_count": 63380,
+    "water_only_block_count": 3210,
+    "tract_count": 829,
+    "total_population": 2937880,
+    "largest_block_population": 1932,
+    "projection": {
+      "kind": "population-centered-equirectangular",
+      "lon0": -96.40239114842356,
+      "lat0": 38.48098490104514
+    },
+    "location_source": "TIGER INTPT internal points, not household locations or population centroids"
+  },
+  "solver_iterations": 22,
+  "centers_converged": true,
+  "comparison": {
+    "same_source_archive": true,
+    "initial_assignments_identical_to_original_run": true,
+    "original_report": "prompts/kansas-block-benchmark.json"
+  },
+  "graph": {
+    "definition": "disjoint interiors and shared boundary of positive length",
+    "de9im_pattern": "F***1****",
+    "source_coordinates_modified": false,
+    "all_source_geometries_valid": true,
+    "node_count": 172529,
+    "edge_count": 408475,
+    "candidate_pair_count": 710957,
+    "excluded_corner_pair_count": 202624,
+    "interior_overlap_pair_count": 0,
+    "component_count": 1,
+    "component_sizes": [
+      172529
+    ],
+    "isolated_node_count": 0,
+    "isolated_node_geoids": [],
+    "multipart_block_count": 0,
+    "source_coordinate_count": 8005191,
+    "query_batch_size": 2000,
+    "query_batch_count": 87,
+    "max_batch_candidate_pair_count": 16012,
+    "geometry_load_seconds": 27.53369869999733,
+    "topology_build_seconds": 18.103860300001543,
+    "graph_validation_seconds": 0.1656552999993437,
+    "elapsed_seconds": 45.80321509999703
+  },
+  "initial_plan": {
+    "district_populations": [
+      734523,
+      734458,
+      734537,
+      734362
+    ],
+    "district_block_counts": [
+      44171,
+      14678,
+      79359,
+      34321
+    ],
+    "shared_edge_components": [
+      3,
+      5,
+      3,
+      11
+    ],
+    "all_districts_shared_edge_connected": false,
+    "all_blocks_assigned_once": true,
+    "population_sum_matches_source": true,
+    "target_population": 734470,
+    "deviations_people": [
+      53,
+      -12,
+      67,
+      -108
+    ],
+    "max_absolute_deviation_people": 108,
+    "max_absolute_deviation_percent": 0.014704480782060533,
+    "total_range_people": 175,
+    "total_range_percent": 0.02382670497093142,
+    "tracts_split_across_districts": 60
+  },
+  "after_repair": {
+    "district_populations": [
+      734523,
+      734701,
+      734537,
+      734119
+    ],
+    "district_block_counts": [
+      44170,
+      14678,
+      79364,
+      34317
+    ],
+    "shared_edge_components": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "all_districts_shared_edge_connected": true,
+    "all_blocks_assigned_once": true,
+    "population_sum_matches_source": true,
+    "target_population": 734470,
+    "deviations_people": [
+      53,
+      231,
+      67,
+      -351
+    ],
+    "max_absolute_deviation_people": 351,
+    "max_absolute_deviation_percent": 0.04778956254169674,
+    "total_range_people": 582,
+    "total_range_percent": 0.0792408131033262,
+    "tracts_split_across_districts": 60
+  },
+  "final_plan": {
+    "district_populations": [
+      734470,
+      734470,
+      734470,
+      734470
+    ],
+    "district_block_counts": [
+      44168,
+      14682,
+      79361,
+      34318
+    ],
+    "shared_edge_components": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "all_districts_shared_edge_connected": true,
+    "all_blocks_assigned_once": true,
+    "population_sum_matches_source": true,
+    "target_population": 734470,
+    "deviations_people": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "max_absolute_deviation_people": 0,
+    "max_absolute_deviation_percent": 0.0,
+    "total_range_people": 0,
+    "total_range_percent": 0.0,
+    "tracts_split_across_districts": 61
+  },
+  "repair_move_count": 18,
+  "rebalance_move_count": 9,
+  "stop_reason": "local_optimum",
+  "blocks_changed_vs_initial": 28,
+  "population_reassigned_vs_initial": 675,
+  "maps": {
+    "shapely_version": "2.1.2",
+    "source_bbox": [
+      -102.051769,
+      36.993016,
+      -94.588387,
+      40.003166
+    ],
+    "district_outlines": {
+      "full": {
+        "path": "districts-full.geojson",
+        "gzip_path": "districts-full.geojson.gz",
+        "raw_bytes": 1090366,
+        "gzip_bytes": 298040,
+        "coordinate_count": 47746
+      },
+      "state": {
+        "path": "districts-state.geojson",
+        "gzip_path": "districts-state.geojson.gz",
+        "raw_bytes": 252684,
+        "gzip_bytes": 76142,
+        "coordinate_count": 9776
+      },
+      "national": {
+        "path": "districts-national.geojson",
+        "gzip_path": "districts-national.geojson.gz",
+        "raw_bytes": 51563,
+        "gzip_bytes": 13706,
+        "coordinate_count": 1971
+      }
+    },
+    "block_index": {
+      "path": "block-index.json",
+      "gzip_path": "block-index.json.gz",
+      "raw_bytes": 23990,
+      "gzip_bytes": 5077
+    },
+    "county_blocks": [
+      {
+        "county_fips": "001",
+        "block_count": 1773,
+        "population": 12526,
+        "bbox": [
+          -95.525501,
+          37.732356,
+          -95.077876,
+          38.038594
+        ],
+        "path": "blocks/county-001.geojson",
+        "gzip_path": "blocks/county-001.geojson.gz",
+        "raw_bytes": 1978019,
+        "gzip_bytes": 485264
+      },
+      {
+        "county_fips": "003",
+        "block_count": 1256,
+        "population": 7836,
+        "bbox": [
+          -95.51897,
+          38.037692,
+          -95.064895,
+          38.390464
+        ],
+        "path": "blocks/county-003.geojson",
+        "gzip_path": "blocks/county-003.geojson.gz",
+        "raw_bytes": 1791034,
+        "gzip_bytes": 455959
+      },
+      {
+        "county_fips": "005",
+        "block_count": 1208,
+        "population": 16348,
+        "bbox": [
+          -95.570351,
+          39.418786,
+          -94.968973,
+          39.653054
+        ],
+        "path": "blocks/county-005.geojson",
+        "gzip_path": "blocks/county-005.geojson.gz",
+        "raw_bytes": 1704253,
+        "gzip_bytes": 432571
+      },
+      {
+        "county_fips": "007",
+        "block_count": 1057,
+        "population": 4228,
+        "bbox": [
+          -99.012598,
+          36.997969,
+          -98.347149,
+          37.471051
+        ],
+        "path": "blocks/county-007.geojson",
+        "gzip_path": "blocks/county-007.geojson.gz",
+        "raw_bytes": 1570317,
+        "gzip_bytes": 413049
+      },
+      {
+        "county_fips": "009",
+        "block_count": 2276,
+        "population": 25493,
+        "bbox": [
+          -99.03343,
+          38.26079,
+          -98.479507,
+          38.696916
+        ],
+        "path": "blocks/county-009.geojson",
+        "gzip_path": "blocks/county-009.geojson.gz",
+        "raw_bytes": 1284997,
+        "gzip_bytes": 280743
+      },
+      {
+        "county_fips": "011",
+        "block_count": 1645,
+        "population": 14360,
+        "bbox": [
+          -95.088111,
+          37.673105,
+          -94.614011,
+          38.037706
+        ],
+        "path": "blocks/county-011.geojson",
+        "gzip_path": "blocks/county-011.geojson.gz",
+        "raw_bytes": 2228742,
+        "gzip_bytes": 566475
+      },
+      {
+        "county_fips": "013",
+        "block_count": 1583,
+        "population": 9508,
+        "bbox": [
+          -95.789051,
+          39.652746,
+          -95.339634,
+          40.000474
+        ],
+        "path": "blocks/county-013.geojson",
+        "gzip_path": "blocks/county-013.geojson.gz",
+        "raw_bytes": 2650573,
+        "gzip_bytes": 675498
+      },
+      {
+        "county_fips": "015",
+        "block_count": 3544,
+        "population": 67380,
+        "bbox": [
+          -97.15345,
+          37.475375,
+          -96.522782,
+          38.087704
+        ],
+        "path": "blocks/county-015.geojson",
+        "gzip_path": "blocks/county-015.geojson.gz",
+        "raw_bytes": 5972366,
+        "gzip_bytes": 1528622
+      },
+      {
+        "county_fips": "017",
+        "block_count": 848,
+        "population": 2572,
+        "bbox": [
+          -96.841274,
+          38.085554,
+          -96.35362,
+          38.522473
+        ],
+        "path": "blocks/county-017.geojson",
+        "gzip_path": "blocks/county-017.geojson.gz",
+        "raw_bytes": 2426806,
+        "gzip_bytes": 655246
+      },
+      {
+        "county_fips": "019",
+        "block_count": 796,
+        "population": 3379,
+        "bbox": [
+          -96.525771,
+          36.998643,
+          -95.964096,
+          37.30273
+        ],
+        "path": "blocks/county-019.geojson",
+        "gzip_path": "blocks/county-019.geojson.gz",
+        "raw_bytes": 1968901,
+        "gzip_bytes": 520553
+      },
+      {
+        "county_fips": "021",
+        "block_count": 2035,
+        "population": 19362,
+        "bbox": [
+          -95.075324,
+          36.99859,
+          -94.617658,
+          37.340003
+        ],
+        "path": "blocks/county-021.geojson",
+        "gzip_path": "blocks/county-021.geojson.gz",
+        "raw_bytes": 2312726,
+        "gzip_bytes": 568402
+      },
+      {
+        "county_fips": "023",
+        "block_count": 803,
+        "population": 2616,
+        "bbox": [
+          -102.051769,
+          39.568178,
+          -101.409838,
+          40.003166
+        ],
+        "path": "blocks/county-023.geojson",
+        "gzip_path": "blocks/county-023.geojson.gz",
+        "raw_bytes": 843342,
+        "gzip_bytes": 201496
+      },
+      {
+        "county_fips": "025",
+        "block_count": 718,
+        "population": 1991,
+        "bbox": [
+          -100.107437,
+          36.999529,
+          -99.541114,
+          37.474836
+        ],
+        "path": "blocks/county-025.geojson",
+        "gzip_path": "blocks/county-025.geojson.gz",
+        "raw_bytes": 1320562,
+        "gzip_bytes": 354969
+      },
+      {
+        "county_fips": "027",
+        "block_count": 1262,
+        "population": 8117,
+        "bbox": [
+          -97.371225,
+          39.131961,
+          -96.958632,
+          39.567025
+        ],
+        "path": "blocks/county-027.geojson",
+        "gzip_path": "blocks/county-027.geojson.gz",
+        "raw_bytes": 1977591,
+        "gzip_bytes": 510924
+      },
+      {
+        "county_fips": "029",
+        "block_count": 1469,
+        "population": 9032,
+        "bbox": [
+          -97.931964,
+          39.306011,
+          -97.368374,
+          39.654043
+        ],
+        "path": "blocks/county-029.geojson",
+        "gzip_path": "blocks/county-029.geojson.gz",
+        "raw_bytes": 2135153,
+        "gzip_bytes": 539232
+      },
+      {
+        "county_fips": "031",
+        "block_count": 1754,
+        "population": 8360,
+        "bbox": [
+          -95.959308,
+          38.037938,
+          -95.507474,
+          38.434532
+        ],
+        "path": "blocks/county-031.geojson",
+        "gzip_path": "blocks/county-031.geojson.gz",
+        "raw_bytes": 3216443,
+        "gzip_bytes": 822345
+      },
+      {
+        "county_fips": "033",
+        "block_count": 500,
+        "population": 1689,
+        "bbox": [
+          -99.544792,
+          36.999221,
+          -99.000301,
+          37.384296
+        ],
+        "path": "blocks/county-033.geojson",
+        "gzip_path": "blocks/county-033.geojson.gz",
+        "raw_bytes": 788579,
+        "gzip_bytes": 205908
+      },
+      {
+        "county_fips": "035",
+        "block_count": 2672,
+        "population": 34549,
+        "bbox": [
+          -97.153331,
+          36.99871,
+          -96.5247,
+          37.476643
+        ],
+        "path": "blocks/county-035.geojson",
+        "gzip_path": "blocks/county-035.geojson.gz",
+        "raw_bytes": 4383022,
+        "gzip_bytes": 1126585
+      },
+      {
+        "county_fips": "037",
+        "block_count": 2730,
+        "population": 38972,
+        "bbox": [
+          -95.088518,
+          37.338254,
+          -94.616724,
+          37.674911
+        ],
+        "path": "blocks/county-037.geojson",
+        "gzip_path": "blocks/county-037.geojson.gz",
+        "raw_bytes": 2077884,
+        "gzip_bytes": 487973
+      },
+      {
+        "county_fips": "039",
+        "block_count": 862,
+        "population": 2764,
+        "bbox": [
+          -100.741115,
+          39.566886,
+          -100.177794,
+          40.002269
+        ],
+        "path": "blocks/county-039.geojson",
+        "gzip_path": "blocks/county-039.geojson.gz",
+        "raw_bytes": 893644,
+        "gzip_bytes": 214550
+      },
+      {
+        "county_fips": "041",
+        "block_count": 2465,
+        "population": 18402,
+        "bbox": [
+          -97.381215,
+          38.608974,
+          -96.890019,
+          39.133513
+        ],
+        "path": "blocks/county-041.geojson",
+        "gzip_path": "blocks/county-041.geojson.gz",
+        "raw_bytes": 3157576,
+        "gzip_bytes": 802779
+      },
+      {
+        "county_fips": "043",
+        "block_count": 921,
+        "population": 7510,
+        "bbox": [
+          -95.339959,
+          39.615063,
+          -94.859035,
+          40.0
+        ],
+        "path": "blocks/county-043.geojson",
+        "gzip_path": "blocks/county-043.geojson.gz",
+        "raw_bytes": 1740348,
+        "gzip_bytes": 452098
+      },
+      {
+        "county_fips": "045",
+        "block_count": 2693,
+        "population": 118785,
+        "bbox": [
+          -95.5019,
+          38.738265,
+          -95.055848,
+          39.069783
+        ],
+        "path": "blocks/county-045.geojson",
+        "gzip_path": "blocks/county-045.geojson.gz",
+        "raw_bytes": 3200094,
+        "gzip_bytes": 798880
+      },
+      {
+        "county_fips": "047",
+        "block_count": 833,
+        "population": 2907,
+        "bbox": [
+          -99.570576,
+          37.73297,
+          -99.013303,
+          38.0882
+        ],
+        "path": "blocks/county-047.geojson",
+        "gzip_path": "blocks/county-047.geojson.gz",
+        "raw_bytes": 642261,
+        "gzip_bytes": 149218
+      },
+      {
+        "county_fips": "049",
+        "block_count": 846,
+        "population": 2483,
+        "bbox": [
+          -96.526327,
+          37.299232,
+          -95.961002,
+          37.607261
+        ],
+        "path": "blocks/county-049.geojson",
+        "gzip_path": "blocks/county-049.geojson.gz",
+        "raw_bytes": 1563940,
+        "gzip_bytes": 407450
+      },
+      {
+        "county_fips": "051",
+        "block_count": 2296,
+        "population": 28934,
+        "bbox": [
+          -99.598323,
+          38.696514,
+          -99.0375,
+          39.133324
+        ],
+        "path": "blocks/county-051.geojson",
+        "gzip_path": "blocks/county-051.geojson.gz",
+        "raw_bytes": 1982031,
+        "gzip_bytes": 484316
+      },
+      {
+        "county_fips": "053",
+        "block_count": 1205,
+        "population": 6376,
+        "bbox": [
+          -98.48614,
+          38.521625,
+          -97.924269,
+          38.871548
+        ],
+        "path": "blocks/county-053.geojson",
+        "gzip_path": "blocks/county-053.geojson.gz",
+        "raw_bytes": 1258539,
+        "gzip_bytes": 313609
+      },
+      {
+        "county_fips": "055",
+        "block_count": 1664,
+        "population": 38470,
+        "bbox": [
+          -101.103778,
+          37.736275,
+          -100.225031,
+          38.265202
+        ],
+        "path": "blocks/county-055.geojson",
+        "gzip_path": "blocks/county-055.geojson.gz",
+        "raw_bytes": 1728688,
+        "gzip_bytes": 404972
+      },
+      {
+        "county_fips": "057",
+        "block_count": 2215,
+        "population": 34287,
+        "bbox": [
+          -100.227491,
+          37.467041,
+          -99.556119,
+          37.914018
+        ],
+        "path": "blocks/county-057.geojson",
+        "gzip_path": "blocks/county-057.geojson.gz",
+        "raw_bytes": 1566814,
+        "gzip_bytes": 363904
+      },
+      {
+        "county_fips": "059",
+        "block_count": 1859,
+        "population": 25996,
+        "bbox": [
+          -95.509014,
+          38.389456,
+          -95.056327,
+          38.738915
+        ],
+        "path": "blocks/county-059.geojson",
+        "gzip_path": "blocks/county-059.geojson.gz",
+        "raw_bytes": 2734366,
+        "gzip_bytes": 693395
+      },
+      {
+        "county_fips": "061",
+        "block_count": 1489,
+        "population": 36739,
+        "bbox": [
+          -96.963688,
+          38.869704,
+          -96.500962,
+          39.220156
+        ],
+        "path": "blocks/county-061.geojson",
+        "gzip_path": "blocks/county-061.geojson.gz",
+        "raw_bytes": 2441599,
+        "gzip_bytes": 630858
+      },
+      {
+        "county_fips": "063",
+        "block_count": 827,
+        "population": 2718,
+        "bbox": [
+          -100.818795,
+          38.697341,
+          -100.14794,
+          39.133455
+        ],
+        "path": "blocks/county-063.geojson",
+        "gzip_path": "blocks/county-063.geojson.gz",
+        "raw_bytes": 868572,
+        "gzip_bytes": 209127
+      },
+      {
+        "county_fips": "065",
+        "block_count": 798,
+        "population": 2415,
+        "bbox": [
+          -100.164347,
+          39.131676,
+          -99.601623,
+          39.567447
+        ],
+        "path": "blocks/county-065.geojson",
+        "gzip_path": "blocks/county-065.geojson.gz",
+        "raw_bytes": 1213360,
+        "gzip_bytes": 306366
+      },
+      {
+        "county_fips": "067",
+        "block_count": 874,
+        "population": 7352,
+        "bbox": [
+          -101.52707,
+          37.387719,
+          -101.089363,
+          37.736476
+        ],
+        "path": "blocks/county-067.geojson",
+        "gzip_path": "blocks/county-067.geojson.gz",
+        "raw_bytes": 603673,
+        "gzip_bytes": 128600
+      },
+      {
+        "county_fips": "069",
+        "block_count": 954,
+        "population": 5653,
+        "bbox": [
+          -100.665172,
+          37.474608,
+          -100.214637,
+          38.002533
+        ],
+        "path": "blocks/county-069.geojson",
+        "gzip_path": "blocks/county-069.geojson.gz",
+        "raw_bytes": 768798,
+        "gzip_bytes": 175795
+      },
+      {
+        "county_fips": "071",
+        "block_count": 436,
+        "population": 1284,
+        "bbox": [
+          -102.045253,
+          38.262322,
+          -101.567059,
+          38.699679
+        ],
+        "path": "blocks/county-071.geojson",
+        "gzip_path": "blocks/county-071.geojson.gz",
+        "raw_bytes": 313581,
+        "gzip_bytes": 66911
+      },
+      {
+        "county_fips": "073",
+        "block_count": 1433,
+        "population": 6016,
+        "bbox": [
+          -96.525979,
+          37.603761,
+          -95.958134,
+          38.172903
+        ],
+        "path": "blocks/county-073.geojson",
+        "gzip_path": "blocks/county-073.geojson.gz",
+        "raw_bytes": 3190714,
+        "gzip_bytes": 841160
+      },
+      {
+        "county_fips": "075",
+        "block_count": 624,
+        "population": 2518,
+        "bbox": [
+          -102.044833,
+          37.736235,
+          -101.526961,
+          38.263207
+        ],
+        "path": "blocks/county-075.geojson",
+        "gzip_path": "blocks/county-075.geojson.gz",
+        "raw_bytes": 592645,
+        "gzip_bytes": 140760
+      },
+      {
+        "county_fips": "077",
+        "block_count": 1357,
+        "population": 5485,
+        "bbox": [
+          -98.349804,
+          36.997684,
+          -97.801967,
+          37.386298
+        ],
+        "path": "blocks/county-077.geojson",
+        "gzip_path": "blocks/county-077.geojson.gz",
+        "raw_bytes": 900025,
+        "gzip_bytes": 206901
+      },
+      {
+        "county_fips": "079",
+        "block_count": 2032,
+        "population": 34024,
+        "bbox": [
+          -97.702213,
+          37.911325,
+          -97.152476,
+          38.175081
+        ],
+        "path": "blocks/county-079.geojson",
+        "gzip_path": "blocks/county-079.geojson.gz",
+        "raw_bytes": 2202939,
+        "gzip_bytes": 540144
+      },
+      {
+        "county_fips": "081",
+        "block_count": 833,
+        "population": 3780,
+        "bbox": [
+          -101.090526,
+          37.387149,
+          -100.652224,
+          37.73679
+        ],
+        "path": "blocks/county-081.geojson",
+        "gzip_path": "blocks/county-081.geojson.gz",
+        "raw_bytes": 569557,
+        "gzip_bytes": 122111
+      },
+      {
+        "county_fips": "083",
+        "block_count": 660,
+        "population": 1723,
+        "bbox": [
+          -100.227137,
+          37.91269,
+          -99.569508,
+          38.262239
+        ],
+        "path": "blocks/county-083.geojson",
+        "gzip_path": "blocks/county-083.geojson.gz",
+        "raw_bytes": 695055,
+        "gzip_bytes": 171859
+      },
+      {
+        "county_fips": "085",
+        "block_count": 1300,
+        "population": 13232,
+        "bbox": [
+          -96.036181,
+          39.216081,
+          -95.564111,
+          39.65318
+        ],
+        "path": "blocks/county-085.geojson",
+        "gzip_path": "blocks/county-085.geojson.gz",
+        "raw_bytes": 2100474,
+        "gzip_bytes": 533173
+      },
+      {
+        "county_fips": "087",
+        "block_count": 1545,
+        "population": 18368,
+        "bbox": [
+          -95.598348,
+          39.031552,
+          -95.179827,
+          39.420919
+        ],
+        "path": "blocks/county-087.geojson",
+        "gzip_path": "blocks/county-087.geojson.gz",
+        "raw_bytes": 2984643,
+        "gzip_bytes": 785518
+      },
+      {
+        "county_fips": "089",
+        "block_count": 1149,
+        "population": 2932,
+        "bbox": [
+          -98.505295,
+          39.566903,
+          -97.931481,
+          40.002662
+        ],
+        "path": "blocks/county-089.geojson",
+        "gzip_path": "blocks/county-089.geojson.gz",
+        "raw_bytes": 1650052,
+        "gzip_bytes": 420020
+      },
+      {
+        "county_fips": "091",
+        "block_count": 8235,
+        "population": 609863,
+        "bbox": [
+          -95.056497,
+          38.738078,
+          -94.607382,
+          39.061388
+        ],
+        "path": "blocks/county-091.geojson",
+        "gzip_path": "blocks/county-091.geojson.gz",
+        "raw_bytes": 8501622,
+        "gzip_bytes": 2106559
+      },
+      {
+        "county_fips": "093",
+        "block_count": 798,
+        "population": 3983,
+        "bbox": [
+          -101.542757,
+          37.7361,
+          -101.089667,
+          38.264557
+        ],
+        "path": "blocks/county-093.geojson",
+        "gzip_path": "blocks/county-093.geojson.gz",
+        "raw_bytes": 1038066,
+        "gzip_bytes": 256957
+      },
+      {
+        "county_fips": "095",
+        "block_count": 1481,
+        "population": 7470,
+        "bbox": [
+          -98.465038,
+          37.383953,
+          -97.806717,
+          37.733895
+        ],
+        "path": "blocks/county-095.geojson",
+        "gzip_path": "blocks/county-095.geojson.gz",
+        "raw_bytes": 1296157,
+        "gzip_bytes": 318202
+      },
+      {
+        "county_fips": "097",
+        "block_count": 711,
+        "population": 2460,
+        "bbox": [
+          -99.559656,
+          37.381022,
+          -99.011499,
+          37.734925
+        ],
+        "path": "blocks/county-097.geojson",
+        "gzip_path": "blocks/county-097.geojson.gz",
+        "raw_bytes": 807649,
+        "gzip_bytes": 202029
+      },
+      {
+        "county_fips": "099",
+        "block_count": 2321,
+        "population": 20184,
+        "bbox": [
+          -95.522935,
+          36.999232,
+          -95.073497,
+          37.38436
+        ],
+        "path": "blocks/county-099.geojson",
+        "gzip_path": "blocks/county-099.geojson.gz",
+        "raw_bytes": 2186176,
+        "gzip_bytes": 533747
+      },
+      {
+        "county_fips": "101",
+        "block_count": 507,
+        "population": 1574,
+        "bbox": [
+          -100.688006,
+          38.262134,
+          -100.244249,
+          38.700226
+        ],
+        "path": "blocks/county-101.geojson",
+        "gzip_path": "blocks/county-101.geojson.gz",
+        "raw_bytes": 563470,
+        "gzip_bytes": 135865
+      },
+      {
+        "county_fips": "103",
+        "block_count": 2203,
+        "population": 81881,
+        "bbox": [
+          -95.187963,
+          38.953836,
+          -94.775532,
+          39.419221
+        ],
+        "path": "blocks/county-103.geojson",
+        "gzip_path": "blocks/county-103.geojson.gz",
+        "raw_bytes": 2503763,
+        "gzip_bytes": 636209
+      },
+      {
+        "county_fips": "105",
+        "block_count": 832,
+        "population": 2939,
+        "bbox": [
+          -98.490265,
+          38.870407,
+          -97.928326,
+          39.21978
+        ],
+        "path": "blocks/county-105.geojson",
+        "gzip_path": "blocks/county-105.geojson.gz",
+        "raw_bytes": 1060974,
+        "gzip_bytes": 271334
+      },
+      {
+        "county_fips": "107",
+        "block_count": 1545,
+        "population": 9591,
+        "bbox": [
+          -95.077887,
+          38.036786,
+          -94.612463,
+          38.389945
+        ],
+        "path": "blocks/county-107.geojson",
+        "gzip_path": "blocks/county-107.geojson.gz",
+        "raw_bytes": 2560786,
+        "gzip_bytes": 660145
+      },
+      {
+        "county_fips": "109",
+        "block_count": 700,
+        "population": 2762,
+        "bbox": [
+          -101.484383,
+          38.698922,
+          -100.811628,
+          39.135518
+        ],
+        "path": "blocks/county-109.geojson",
+        "gzip_path": "blocks/county-109.geojson.gz",
+        "raw_bytes": 593979,
+        "gzip_bytes": 139755
+      },
+      {
+        "county_fips": "111",
+        "block_count": 2482,
+        "population": 32179,
+        "bbox": [
+          -96.357277,
+          38.170939,
+          -95.945661,
+          38.739265
+        ],
+        "path": "blocks/county-111.geojson",
+        "gzip_path": "blocks/county-111.geojson.gz",
+        "raw_bytes": 3852151,
+        "gzip_bytes": 995650
+      },
+      {
+        "county_fips": "113",
+        "block_count": 2375,
+        "population": 30223,
+        "bbox": [
+          -97.925256,
+          38.17336,
+          -97.371592,
+          38.610094
+        ],
+        "path": "blocks/county-113.geojson",
+        "gzip_path": "blocks/county-113.geojson.gz",
+        "raw_bytes": 2201059,
+        "gzip_bytes": 529111
+      },
+      {
+        "county_fips": "115",
+        "block_count": 2098,
+        "population": 11823,
+        "bbox": [
+          -97.37209,
+          38.08561,
+          -96.819475,
+          38.60956
+        ],
+        "path": "blocks/county-115.geojson",
+        "gzip_path": "blocks/county-115.geojson.gz",
+        "raw_bytes": 3113318,
+        "gzip_bytes": 797394
+      },
+      {
+        "county_fips": "117",
+        "block_count": 2143,
+        "population": 10038,
+        "bbox": [
+          -96.806742,
+          39.565925,
+          -96.238969,
+          40.001541
+        ],
+        "path": "blocks/county-117.geojson",
+        "gzip_path": "blocks/county-117.geojson.gz",
+        "raw_bytes": 3445003,
+        "gzip_bytes": 893291
+      },
+      {
+        "county_fips": "119",
+        "block_count": 1035,
+        "population": 4055,
+        "bbox": [
+          -100.652728,
+          37.000022,
+          -100.089155,
+          37.475391
+        ],
+        "path": "blocks/county-119.geojson",
+        "gzip_path": "blocks/county-119.geojson.gz",
+        "raw_bytes": 1006457,
+        "gzip_bytes": 241905
+      },
+      {
+        "county_fips": "121",
+        "block_count": 2065,
+        "population": 34191,
+        "bbox": [
+          -95.066041,
+          38.388718,
+          -94.60908,
+          38.738636
+        ],
+        "path": "blocks/county-121.geojson",
+        "gzip_path": "blocks/county-121.geojson.gz",
+        "raw_bytes": 2750365,
+        "gzip_bytes": 699538
+      },
+      {
+        "county_fips": "123",
+        "block_count": 1189,
+        "population": 5796,
+        "bbox": [
+          -98.49015,
+          39.218757,
+          -97.928462,
+          39.567522
+        ],
+        "path": "blocks/county-123.geojson",
+        "gzip_path": "blocks/county-123.geojson.gz",
+        "raw_bytes": 2348941,
+        "gzip_bytes": 599207
+      },
+      {
+        "county_fips": "125",
+        "block_count": 3150,
+        "population": 31486,
+        "bbox": [
+          -95.964748,
+          36.999074,
+          -95.517967,
+          37.386668
+        ],
+        "path": "blocks/county-125.geojson",
+        "gzip_path": "blocks/county-125.geojson.gz",
+        "raw_bytes": 2505597,
+        "gzip_bytes": 591037
+      },
+      {
+        "county_fips": "127",
+        "block_count": 1112,
+        "population": 5386,
+        "bbox": [
+          -96.933924,
+          38.521538,
+          -96.35261,
+          38.870352
+        ],
+        "path": "blocks/county-127.geojson",
+        "gzip_path": "blocks/county-127.geojson.gz",
+        "raw_bytes": 2041854,
+        "gzip_bytes": 527566
+      },
+      {
+        "county_fips": "129",
+        "block_count": 712,
+        "population": 2701,
+        "bbox": [
+          -102.04218,
+          36.993016,
+          -101.555246,
+          37.38932
+        ],
+        "path": "blocks/county-129.geojson",
+        "gzip_path": "blocks/county-129.geojson.gz",
+        "raw_bytes": 736669,
+        "gzip_bytes": 174289
+      },
+      {
+        "county_fips": "131",
+        "block_count": 1725,
+        "population": 10273,
+        "bbox": [
+          -96.239772,
+          39.565883,
+          -95.788071,
+          40.00093
+        ],
+        "path": "blocks/county-131.geojson",
+        "gzip_path": "blocks/county-131.geojson.gz",
+        "raw_bytes": 2371678,
+        "gzip_bytes": 596651
+      },
+      {
+        "county_fips": "133",
+        "block_count": 1680,
+        "population": 15904,
+        "bbox": [
+          -95.526136,
+          37.38372,
+          -95.087632,
+          37.734202
+        ],
+        "path": "blocks/county-133.geojson",
+        "gzip_path": "blocks/county-133.geojson.gz",
+        "raw_bytes": 2232319,
+        "gzip_bytes": 560148
+      },
+      {
+        "county_fips": "135",
+        "block_count": 920,
+        "population": 2687,
+        "bbox": [
+          -100.248657,
+          38.261455,
+          -99.584207,
+          38.69818
+        ],
+        "path": "blocks/county-135.geojson",
+        "gzip_path": "blocks/county-135.geojson.gz",
+        "raw_bytes": 954042,
+        "gzip_bytes": 235971
+      },
+      {
+        "county_fips": "137",
+        "block_count": 1070,
+        "population": 5459,
+        "bbox": [
+          -100.180456,
+          39.566798,
+          -99.625324,
+          40.001859
+        ],
+        "path": "blocks/county-137.geojson",
+        "gzip_path": "blocks/county-137.geojson.gz",
+        "raw_bytes": 1228824,
+        "gzip_bytes": 306158
+      },
+      {
+        "county_fips": "139",
+        "block_count": 1814,
+        "population": 15766,
+        "bbox": [
+          -95.950282,
+          38.433544,
+          -95.500439,
+          38.870054
+        ],
+        "path": "blocks/county-139.geojson",
+        "gzip_path": "blocks/county-139.geojson.gz",
+        "raw_bytes": 3135966,
+        "gzip_bytes": 805076
+      },
+      {
+        "county_fips": "141",
+        "block_count": 1149,
+        "population": 3500,
+        "bbox": [
+          -99.04864,
+          39.132695,
+          -98.487377,
+          39.568114
+        ],
+        "path": "blocks/county-141.geojson",
+        "gzip_path": "blocks/county-141.geojson.gz",
+        "raw_bytes": 1378980,
+        "gzip_bytes": 350664
+      },
+      {
+        "county_fips": "143",
+        "block_count": 979,
+        "population": 5735,
+        "bbox": [
+          -97.931614,
+          38.957852,
+          -97.369839,
+          39.306774
+        ],
+        "path": "blocks/county-143.geojson",
+        "gzip_path": "blocks/county-143.geojson.gz",
+        "raw_bytes": 1956664,
+        "gzip_bytes": 500018
+      },
+      {
+        "county_fips": "145",
+        "block_count": 1202,
+        "population": 6253,
+        "bbox": [
+          -99.584803,
+          37.999813,
+          -98.91236,
+          38.350719
+        ],
+        "path": "blocks/county-145.geojson",
+        "gzip_path": "blocks/county-145.geojson.gz",
+        "raw_bytes": 875743,
+        "gzip_bytes": 203415
+      },
+      {
+        "county_fips": "147",
+        "block_count": 1327,
+        "population": 4981,
+        "bbox": [
+          -99.62824,
+          39.567222,
+          -99.066184,
+          40.002352
+        ],
+        "path": "blocks/county-147.geojson",
+        "gzip_path": "blocks/county-147.geojson.gz",
+        "raw_bytes": 1364568,
+        "gzip_bytes": 338482
+      },
+      {
+        "county_fips": "149",
+        "block_count": 1910,
+        "population": 25348,
+        "bbox": [
+          -96.728327,
+          39.126527,
+          -96.034612,
+          39.566344
+        ],
+        "path": "blocks/county-149.geojson",
+        "gzip_path": "blocks/county-149.geojson.gz",
+        "raw_bytes": 4065451,
+        "gzip_bytes": 1064311
+      },
+      {
+        "county_fips": "151",
+        "block_count": 1300,
+        "population": 9157,
+        "bbox": [
+          -99.015359,
+          37.470037,
+          -98.464663,
+          37.825435
+        ],
+        "path": "blocks/county-151.geojson",
+        "gzip_path": "blocks/county-151.geojson.gz",
+        "raw_bytes": 1212037,
+        "gzip_bytes": 286702
+      },
+      {
+        "county_fips": "153",
+        "block_count": 766,
+        "population": 2561,
+        "bbox": [
+          -101.413913,
+          39.567726,
+          -100.738651,
+          40.002702
+        ],
+        "path": "blocks/county-153.geojson",
+        "gzip_path": "blocks/county-153.geojson.gz",
+        "raw_bytes": 905691,
+        "gzip_bytes": 224021
+      },
+      {
+        "county_fips": "155",
+        "block_count": 3763,
+        "population": 61898,
+        "bbox": [
+          -98.473104,
+          37.732456,
+          -97.698692,
+          38.173918
+        ],
+        "path": "blocks/county-155.geojson",
+        "gzip_path": "blocks/county-155.geojson.gz",
+        "raw_bytes": 5647779,
+        "gzip_bytes": 1403048
+      },
+      {
+        "county_fips": "157",
+        "block_count": 1350,
+        "population": 4674,
+        "bbox": [
+          -97.933418,
+          39.65336,
+          -97.368492,
+          40.002259
+        ],
+        "path": "blocks/county-157.geojson",
+        "gzip_path": "blocks/county-157.geojson.gz",
+        "raw_bytes": 1822940,
+        "gzip_bytes": 461997
+      },
+      {
+        "county_fips": "159",
+        "block_count": 1595,
+        "population": 9427,
+        "bbox": [
+          -98.480649,
+          38.15875,
+          -97.922116,
+          38.522755
+        ],
+        "path": "blocks/county-159.geojson",
+        "gzip_path": "blocks/county-159.geojson.gz",
+        "raw_bytes": 1222531,
+        "gzip_bytes": 287298
+      },
+      {
+        "county_fips": "161",
+        "block_count": 2039,
+        "population": 71959,
+        "bbox": [
+          -96.961693,
+          39.043232,
+          -96.389043,
+          39.566606
+        ],
+        "path": "blocks/county-161.geojson",
+        "gzip_path": "blocks/county-161.geojson.gz",
+        "raw_bytes": 3687714,
+        "gzip_bytes": 948186
+      },
+      {
+        "county_fips": "163",
+        "block_count": 1302,
+        "population": 4919,
+        "bbox": [
+          -99.605491,
+          39.132357,
+          -99.044128,
+          39.568127
+        ],
+        "path": "blocks/county-163.geojson",
+        "gzip_path": "blocks/county-163.geojson.gz",
+        "raw_bytes": 1228662,
+        "gzip_bytes": 302912
+      },
+      {
+        "county_fips": "165",
+        "block_count": 1026,
+        "population": 2956,
+        "bbox": [
+          -99.586604,
+          38.34833,
+          -99.032408,
+          38.697065
+        ],
+        "path": "blocks/county-165.geojson",
+        "gzip_path": "blocks/county-165.geojson.gz",
+        "raw_bytes": 867821,
+        "gzip_bytes": 207005
+      },
+      {
+        "county_fips": "167",
+        "block_count": 1299,
+        "population": 6691,
+        "bbox": [
+          -99.042626,
+          38.696699,
+          -98.483716,
+          39.13351
+        ],
+        "path": "blocks/county-167.geojson",
+        "gzip_path": "blocks/county-167.geojson.gz",
+        "raw_bytes": 2806507,
+        "gzip_bytes": 724867
+      },
+      {
+        "county_fips": "169",
+        "block_count": 2304,
+        "population": 54303,
+        "bbox": [
+          -97.928967,
+          38.608923,
+          -97.371614,
+          38.958395
+        ],
+        "path": "blocks/county-169.geojson",
+        "gzip_path": "blocks/county-169.geojson.gz",
+        "raw_bytes": 2822329,
+        "gzip_bytes": 689913
+      },
+      {
+        "county_fips": "171",
+        "block_count": 723,
+        "population": 5151,
+        "bbox": [
+          -101.128393,
+          38.264137,
+          -100.6845,
+          38.700603
+        ],
+        "path": "blocks/county-171.geojson",
+        "gzip_path": "blocks/county-171.geojson.gz",
+        "raw_bytes": 595841,
+        "gzip_bytes": 135380
+      },
+      {
+        "county_fips": "173",
+        "block_count": 12158,
+        "population": 523824,
+        "bbox": [
+          -97.808358,
+          37.474184,
+          -97.152145,
+          37.912733
+        ],
+        "path": "blocks/county-173.geojson",
+        "gzip_path": "blocks/county-173.geojson.gz",
+        "raw_bytes": 8702997,
+        "gzip_bytes": 2055190
+      },
+      {
+        "county_fips": "175",
+        "block_count": 1351,
+        "population": 21964,
+        "bbox": [
+          -101.068112,
+          36.997922,
+          -100.633,
+          37.387883
+        ],
+        "path": "blocks/county-175.geojson",
+        "gzip_path": "blocks/county-175.geojson.gz",
+        "raw_bytes": 1046844,
+        "gzip_bytes": 238198
+      },
+      {
+        "county_fips": "177",
+        "block_count": 5007,
+        "population": 178909,
+        "bbox": [
+          -96.03906,
+          38.868867,
+          -95.500236,
+          39.216958
+        ],
+        "path": "blocks/county-177.geojson",
+        "gzip_path": "blocks/county-177.geojson.gz",
+        "raw_bytes": 7132730,
+        "gzip_bytes": 1758080
+      },
+      {
+        "county_fips": "179",
+        "block_count": 839,
+        "population": 2447,
+        "bbox": [
+          -100.72157,
+          39.131992,
+          -100.161667,
+          39.568102
+        ],
+        "path": "blocks/county-179.geojson",
+        "gzip_path": "blocks/county-179.geojson.gz",
+        "raw_bytes": 819098,
+        "gzip_bytes": 192613
+      },
+      {
+        "county_fips": "181",
+        "block_count": 1103,
+        "population": 5927,
+        "bbox": [
+          -102.049769,
+          39.133147,
+          -101.389068,
+          39.568504
+        ],
+        "path": "blocks/county-181.geojson",
+        "gzip_path": "blocks/county-181.geojson.gz",
+        "raw_bytes": 727041,
+        "gzip_bytes": 158038
+      },
+      {
+        "county_fips": "183",
+        "block_count": 1269,
+        "population": 3570,
+        "bbox": [
+          -99.067128,
+          39.567379,
+          -98.503975,
+          40.002553
+        ],
+        "path": "blocks/county-183.geojson",
+        "gzip_path": "blocks/county-183.geojson.gz",
+        "raw_bytes": 1198116,
+        "gzip_bytes": 289785
+      },
+      {
+        "county_fips": "185",
+        "block_count": 1347,
+        "population": 4072,
+        "bbox": [
+          -99.022627,
+          37.824223,
+          -98.471915,
+          38.261285
+        ],
+        "path": "blocks/county-185.geojson",
+        "gzip_path": "blocks/county-185.geojson.gz",
+        "raw_bytes": 1154971,
+        "gzip_bytes": 273742
+      },
+      {
+        "county_fips": "187",
+        "block_count": 602,
+        "population": 2084,
+        "bbox": [
+          -102.042155,
+          37.388384,
+          -101.525751,
+          37.738541
+        ],
+        "path": "blocks/county-187.geojson",
+        "gzip_path": "blocks/county-187.geojson.gz",
+        "raw_bytes": 476582,
+        "gzip_bytes": 104316
+      },
+      {
+        "county_fips": "189",
+        "block_count": 868,
+        "population": 5250,
+        "bbox": [
+          -101.556776,
+          36.995324,
+          -101.066451,
+          37.388797
+        ],
+        "path": "blocks/county-189.geojson",
+        "gzip_path": "blocks/county-189.geojson.gz",
+        "raw_bytes": 636131,
+        "gzip_bytes": 139490
+      },
+      {
+        "county_fips": "191",
+        "block_count": 3232,
+        "population": 22382,
+        "bbox": [
+          -97.8076,
+          36.998546,
+          -97.147714,
+          37.477276
+        ],
+        "path": "blocks/county-191.geojson",
+        "gzip_path": "blocks/county-191.geojson.gz",
+        "raw_bytes": 2973716,
+        "gzip_bytes": 740736
+      },
+      {
+        "county_fips": "193",
+        "block_count": 1281,
+        "population": 7930,
+        "bbox": [
+          -101.391762,
+          39.133012,
+          -100.719902,
+          39.56867
+        ],
+        "path": "blocks/county-193.geojson",
+        "gzip_path": "blocks/county-193.geojson.gz",
+        "raw_bytes": 963809,
+        "gzip_bytes": 216380
+      },
+      {
+        "county_fips": "195",
+        "block_count": 913,
+        "population": 2808,
+        "bbox": [
+          -100.153823,
+          38.696264,
+          -99.591776,
+          39.132493
+        ],
+        "path": "blocks/county-195.geojson",
+        "gzip_path": "blocks/county-195.geojson.gz",
+        "raw_bytes": 1077664,
+        "gzip_bytes": 273371
+      },
+      {
+        "county_fips": "197",
+        "block_count": 1168,
+        "population": 6877,
+        "bbox": [
+          -96.501722,
+          38.738773,
+          -95.945799,
+          39.212279
+        ],
+        "path": "blocks/county-197.geojson",
+        "gzip_path": "blocks/county-197.geojson.gz",
+        "raw_bytes": 2768480,
+        "gzip_bytes": 726821
+      },
+      {
+        "county_fips": "199",
+        "block_count": 417,
+        "population": 1512,
+        "bbox": [
+          -102.047161,
+          38.697567,
+          -101.478195,
+          39.134799
+        ],
+        "path": "blocks/county-199.geojson",
+        "gzip_path": "blocks/county-199.geojson.gz",
+        "raw_bytes": 505550,
+        "gzip_bytes": 122343
+      },
+      {
+        "county_fips": "201",
+        "block_count": 1622,
+        "population": 5530,
+        "bbox": [
+          -97.369244,
+          39.566345,
+          -96.805693,
+          40.002034
+        ],
+        "path": "blocks/county-201.geojson",
+        "gzip_path": "blocks/county-201.geojson.gz",
+        "raw_bytes": 2733029,
+        "gzip_bytes": 709729
+      },
+      {
+        "county_fips": "203",
+        "block_count": 615,
+        "population": 2152,
+        "bbox": [
+          -101.567489,
+          38.263122,
+          -101.125436,
+          38.701608
+        ],
+        "path": "blocks/county-203.geojson",
+        "gzip_path": "blocks/county-203.geojson.gz",
+        "raw_bytes": 494079,
+        "gzip_bytes": 110025
+      },
+      {
+        "county_fips": "205",
+        "block_count": 1504,
+        "population": 8624,
+        "bbox": [
+          -95.962662,
+          37.383933,
+          -95.524896,
+          37.734482
+        ],
+        "path": "blocks/county-205.geojson",
+        "gzip_path": "blocks/county-205.geojson.gz",
+        "raw_bytes": 1919280,
+        "gzip_bytes": 489221
+      },
+      {
+        "county_fips": "207",
+        "block_count": 842,
+        "population": 3115,
+        "bbox": [
+          -95.961598,
+          37.732727,
+          -95.518951,
+          38.040195
+        ],
+        "path": "blocks/county-207.geojson",
+        "gzip_path": "blocks/county-207.geojson.gz",
+        "raw_bytes": 1538412,
+        "gzip_bytes": 393755
+      },
+      {
+        "county_fips": "209",
+        "block_count": 3355,
+        "population": 169245,
+        "bbox": [
+          -94.908867,
+          38.991401,
+          -94.588387,
+          39.202911
+        ],
+        "path": "blocks/county-209.geojson",
+        "gzip_path": "blocks/county-209.geojson.gz",
+        "raw_bytes": 2496654,
+        "gzip_bytes": 584120
+      }
+    ],
+    "load_scenarios": {
+      "national_kansas_only": {
+        "path": "districts-national.geojson",
+        "gzip_path": "districts-national.geojson.gz",
+        "raw_bytes": 51563,
+        "gzip_bytes": 13706,
+        "coordinate_count": 1971
+      },
+      "state_entry_outlines_and_detail_index": {
+        "raw_bytes": 276674,
+        "gzip_bytes": 81219
+      },
+      "all_county_detail_shards": {
+        "raw_bytes": 211058624,
+        "gzip_bytes": 52714254
+      },
+      "largest_county_detail_shard": {
+        "county_fips": "091",
+        "block_count": 8235,
+        "population": 609863,
+        "bbox": [
+          -95.056497,
+          38.738078,
+          -94.607382,
+          39.061388
+        ],
+        "path": "blocks/county-091.geojson",
+        "gzip_path": "blocks/county-091.geojson.gz",
+        "raw_bytes": 8501622,
+        "gzip_bytes": 2106559
+      }
+    },
+    "quality": {
+      "source_blocks": 172529,
+      "assigned_source_blocks": 172529,
+      "zero_population_blocks": 63380,
+      "source_coordinate_count": 8005191,
+      "source_invalid_geometries": 0,
+      "source_invalid_geoid_examples": [],
+      "source_multipart_blocks": 0,
+      "invalid_geometry_policy": "make_valid, retain polygonal components; fail if empty or still invalid",
+      "repaired_source_area_change_square_meters": 0.0,
+      "dissolved_geometries_valid": true,
+      "district_coverage_is_valid": true,
+      "source_block_area_sum_square_meters": 212932324040.94113,
+      "source_union_area_square_meters": 212932324040.93875,
+      "source_area_sum_minus_union_square_meters": 0.0023721116357712548,
+      "district_overlap_area_square_meters": 0.0,
+      "coverage_reference": "all supplied source blocks; no independent state boundary comparison",
+      "area_measurement": "approximate state-centered equirectangular plane, including water",
+      "projection_center": {
+        "longitude": -98.320078,
+        "latitude": 38.498091
+      },
+      "districts": {
+        "0": {
+          "polygon_components": 1,
+          "largest_component_area_fraction": 1.0,
+          "population": 734470,
+          "block_count": 44168
+        },
+        "1": {
+          "polygon_components": 1,
+          "largest_component_area_fraction": 1.0,
+          "population": 734470,
+          "block_count": 14682
+        },
+        "2": {
+          "polygon_components": 1,
+          "largest_component_area_fraction": 1.0,
+          "population": 734470,
+          "block_count": 79361
+        },
+        "3": {
+          "polygon_components": 1,
+          "largest_component_area_fraction": 1.0,
+          "population": 734470,
+          "block_count": 34318
+        }
+      },
+      "simplification": {
+        "state": {
+          "method": "shared-edge Visvalingam-Whyatt coverage simplification",
+          "tolerance_meters": 30.0,
+          "tolerance_meaning": "square root of removed triangle area",
+          "geometries_valid": true,
+          "coverage_is_valid": true,
+          "overlap_square_meters": 0.0008594607375982807,
+          "union_symmetric_difference_square_meters": 703666.5403727293,
+          "changes_assignments_or_population": false
+        },
+        "national": {
+          "method": "shared-edge Visvalingam-Whyatt coverage simplification",
+          "tolerance_meters": 250.0,
+          "tolerance_meaning": "square root of removed triangle area",
+          "geometries_valid": true,
+          "coverage_is_valid": true,
+          "overlap_square_meters": 0.0,
+          "union_symmetric_difference_square_meters": 12083517.741452146,
+          "changes_assignments_or_population": false
+        }
+      }
+    },
+    "timing_seconds": {
+      "read_blocks_write_detail_and_partial_dissolve": 138.2113915000009,
+      "total_export": 224.5843344999994
+    },
+    "notes": [
+      "Gzip sizes are measured bytes for these saved artifacts, not browser memory or latency.",
+      "County shards are fetched lazily after state selection; detailed block coordinates are not needed for national or state outline views.",
+      "Detail shards retain source coordinate precision. District display simplification changes geometry only, never block assignments or populations.",
+      "Polygon component counts describe geometric fragmentation; no adjacency repair is performed by this exporter."
+    ]
+  },
+  "phases": {
+    "source_acquisition": {
+      "wall_seconds": 0.21428149999701418,
+      "cpu_seconds": 0.203125,
+      "sampled_peak_rss_bytes": 75161600
+    },
+    "source_extraction": {
+      "wall_seconds": 0.31078960000013467,
+      "cpu_seconds": 0.296875,
+      "sampled_peak_rss_bytes": 75739136
+    },
+    "load_and_validate_block_records": {
+      "wall_seconds": 3.170861100003094,
+      "cpu_seconds": 3.109375,
+      "sampled_peak_rss_bytes": 159191040
+    },
+    "solve": {
+      "wall_seconds": 23.94095659999948,
+      "cpu_seconds": 23.78125,
+      "sampled_peak_rss_bytes": 185634816
+    },
+    "build_shared_edge_graph": {
+      "wall_seconds": 45.80579720000242,
+      "cpu_seconds": 45.46875,
+      "sampled_peak_rss_bytes": 420433920
+    },
+    "audit_initial_connectivity": {
+      "wall_seconds": 0.27323669999896083,
+      "cpu_seconds": 0.265625,
+      "sampled_peak_rss_bytes": 180379648
+    },
+    "repair_and_rebalance": {
+      "wall_seconds": 2.3863207000031252,
+      "cpu_seconds": 2.390625,
+      "sampled_peak_rss_bytes": 190558208
+    },
+    "audit_corrected_connectivity": {
+      "wall_seconds": 0.5471107000012125,
+      "cpu_seconds": 0.546875,
+      "sampled_peak_rss_bytes": 183758848
+    },
+    "geometry_validation_and_map_export": {
+      "wall_seconds": 224.6024942999975,
+      "cpu_seconds": 222.703125,
+      "sampled_peak_rss_bytes": 601731072
+    }
+  },
+  "timed_pipeline_wall_seconds": 301.73732670000027,
+  "peak_process_working_set_bytes": 601735168,
+  "script_sha256": "af33bafc907e7c07df535d7fc0c6c536c4e3225a8d19b2695ede03fa6802fd10"
+}

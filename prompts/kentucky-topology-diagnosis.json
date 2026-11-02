@@ -1,0 +1,951 @@
+{
+  "status": "diagnostic_complete_no_district_plans_generated",
+  "question": "What disconnects Kentucky, why, and can the same recorded-connection approach resolve it?",
+  "components": [
+    {
+      "id": 0,
+      "label": "Main Kentucky coverage",
+      "population": 4505827,
+      "block_count": 132657,
+      "part_count": 132664,
+      "water_only_block_count": 6807,
+      "zero_population_block_count": 41086,
+      "land_area_m2": 102237593729,
+      "water_area_m2": 2343598457,
+      "bounds": [
+        -89.417275,
+        36.497058,
+        -81.964788,
+        39.147732
+      ],
+      "county_fips": [
+        "001",
+        "003",
+        "005",
+        "007",
+        "009",
+        "011",
+        "013",
+        "015",
+        "017",
+        "019",
+        "021",
+        "023",
+        "025",
+        "027",
+        "029",
+        "031",
+        "033",
+        "035",
+        "037",
+        "039",
+        "041",
+        "043",
+        "045",
+        "047",
+        "049",
+        "051",
+        "053",
+        "055",
+        "057",
+        "059",
+        "061",
+        "063",
+        "065",
+        "067",
+        "069",
+        "071",
+        "073",
+        "075",
+        "077",
+        "079",
+        "081",
+        "083",
+        "085",
+        "087",
+        "089",
+        "091",
+        "093",
+        "095",
+        "097",
+        "099",
+        "101",
+        "103",
+        "105",
+        "107",
+        "109",
+        "111",
+        "113",
+        "115",
+        "117",
+        "119",
+        "121",
+        "123",
+        "125",
+        "127",
+        "129",
+        "131",
+        "133",
+        "135",
+        "137",
+        "139",
+        "141",
+        "143",
+        "145",
+        "147",
+        "149",
+        "151",
+        "153",
+        "155",
+        "157",
+        "159",
+        "161",
+        "163",
+        "165",
+        "167",
+        "169",
+        "171",
+        "173",
+        "175",
+        "177",
+        "179",
+        "181",
+        "183",
+        "185",
+        "187",
+        "189",
+        "191",
+        "193",
+        "195",
+        "197",
+        "199",
+        "201",
+        "203",
+        "205",
+        "207",
+        "209",
+        "211",
+        "213",
+        "215",
+        "217",
+        "219",
+        "221",
+        "223",
+        "225",
+        "227",
+        "229",
+        "231",
+        "233",
+        "235",
+        "237",
+        "239"
+      ],
+      "example_geoids": [
+        "210170306001002",
+        "210170303002063",
+        "210719202002009",
+        "210719205001037",
+        "210719210023037"
+      ],
+      "population_definition": "Whole-block population, only blocks exclusively owned by this physical component.",
+      "representative_point": [
+        -84.7288449510809,
+        37.8224045
+      ],
+      "polygon_component_count": 1
+    },
+    {
+      "id": 1,
+      "label": "Kentucky Bend (Madrid Bend)",
+      "population": 9,
+      "block_count": 5,
+      "part_count": 5,
+      "water_only_block_count": 2,
+      "zero_population_block_count": 4,
+      "land_area_m2": 45202351,
+      "water_area_m2": 24427246,
+      "bounds": [
+        -89.571203,
+        36.497491,
+        -89.46539,
+        36.58171
+      ],
+      "county_fips": [
+        "075"
+      ],
+      "example_geoids": [
+        "210759602004104",
+        "210759602004101",
+        "210759602004102",
+        "210759602004105",
+        "210759602004103"
+      ],
+      "population_definition": "Whole-block population, only blocks exclusively owned by this physical component.",
+      "representative_point": [
+        -89.51674439132822,
+        36.5394385
+      ],
+      "polygon_component_count": 1
+    }
+  ],
+  "plans": [
+    {
+      "district_count": 6,
+      "house_sizes": [
+        435
+      ],
+      "ideal_population": 750972.6666666666,
+      "strict_population_bound": {
+        "feasible_seat_allocation": true,
+        "best_max_deviation_pct": 99.99880155425097,
+        "deviation_fraction": [
+          2252891,
+          2252918
+        ],
+        "seat_counts": [
+          5,
+          1
+        ],
+        "ideal_population": 750972.6666666666,
+        "group_ideal_seats": [
+          5.99998801554251,
+          1.1984457490241544e-05
+        ],
+        "is_constructed_plan": false,
+        "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+      },
+      "policy_population_bound": {
+        "feasible_seat_allocation": true,
+        "best_max_deviation_pct": 0.0,
+        "deviation_fraction": [
+          0,
+          1
+        ],
+        "seat_counts": [
+          6
+        ],
+        "ideal_population": 750972.6666666666,
+        "group_ideal_seats": [
+          6.0
+        ],
+        "is_constructed_plan": false,
+        "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+      },
+      "selected_link_ids": [
+        "ky-candidate-00-01"
+      ],
+      "augmented_component_count": 1,
+      "policy": {
+        "policy": "population-aware-rooted-boundary-forest-v1",
+        "district_count": 6,
+        "population_tolerance": 0.01,
+        "ideal_population": 750972.6666666666,
+        "minimum_root_population": 743462.94,
+        "eligible_root_component_ids": [
+          0
+        ],
+        "no_individual_root_fallback": false,
+        "selected_link_ids": [
+          "ky-candidate-00-01"
+        ],
+        "selected_total_distance_m": 5144.856912662275,
+        "groups": [
+          {
+            "group_id": 0,
+            "component_ids": [
+              0,
+              1
+            ],
+            "population": 4505836,
+            "root_component_ids": [
+              0
+            ],
+            "district_count": 6
+          }
+        ],
+        "population_bound": {
+          "feasible_seat_allocation": true,
+          "best_max_deviation_pct": 0.0,
+          "deviation_fraction": [
+            0,
+            1
+          ],
+          "seat_counts": [
+            6
+          ],
+          "ideal_population": 750972.6666666666,
+          "group_ideal_seats": [
+            6.0
+          ],
+          "is_constructed_plan": false,
+          "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+        },
+        "selection_priority": [
+          "Retain the most independently population-compatible original root groups.",
+          "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+          "Break ties by stable candidate IDs and component IDs."
+        ],
+        "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+        "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+        "groupings_examined": 1,
+        "population_feasible_groupings": 1,
+        "geometrically_unconnectable_groupings": 0
+      },
+      "actual_district_plan_generated": false,
+      "augmented_graph_validation": {
+        "independent_full_graph_traversal": true,
+        "node_count": 132669,
+        "physical_component_count": 2,
+        "augmented_component_count": 1,
+        "component_sizes": [
+          132669
+        ],
+        "inserted_part_edge_pairs": [
+          [
+            130538,
+            122447
+          ]
+        ],
+        "all_source_parts_reached": true,
+        "physical_adjacency_modified": false
+      }
+    },
+    {
+      "district_count": 8,
+      "house_sizes": [
+        574
+      ],
+      "ideal_population": 563229.5,
+      "strict_population_bound": {
+        "feasible_seat_allocation": true,
+        "best_max_deviation_pct": 99.99840207233464,
+        "deviation_fraction": [
+          1126441,
+          1126459
+        ],
+        "seat_counts": [
+          7,
+          1
+        ],
+        "ideal_population": 563229.5,
+        "group_ideal_seats": [
+          7.999984020723346,
+          1.5979276653655392e-05
+        ],
+        "is_constructed_plan": false,
+        "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+      },
+      "policy_population_bound": {
+        "feasible_seat_allocation": true,
+        "best_max_deviation_pct": 0.0,
+        "deviation_fraction": [
+          0,
+          1
+        ],
+        "seat_counts": [
+          8
+        ],
+        "ideal_population": 563229.5,
+        "group_ideal_seats": [
+          8.0
+        ],
+        "is_constructed_plan": false,
+        "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+      },
+      "selected_link_ids": [
+        "ky-candidate-00-01"
+      ],
+      "augmented_component_count": 1,
+      "policy": {
+        "policy": "population-aware-rooted-boundary-forest-v1",
+        "district_count": 8,
+        "population_tolerance": 0.01,
+        "ideal_population": 563229.5,
+        "minimum_root_population": 557597.205,
+        "eligible_root_component_ids": [
+          0
+        ],
+        "no_individual_root_fallback": false,
+        "selected_link_ids": [
+          "ky-candidate-00-01"
+        ],
+        "selected_total_distance_m": 5144.856912662275,
+        "groups": [
+          {
+            "group_id": 0,
+            "component_ids": [
+              0,
+              1
+            ],
+            "population": 4505836,
+            "root_component_ids": [
+              0
+            ],
+            "district_count": 8
+          }
+        ],
+        "population_bound": {
+          "feasible_seat_allocation": true,
+          "best_max_deviation_pct": 0.0,
+          "deviation_fraction": [
+            0,
+            1
+          ],
+          "seat_counts": [
+            8
+          ],
+          "ideal_population": 563229.5,
+          "group_ideal_seats": [
+            8.0
+          ],
+          "is_constructed_plan": false,
+          "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+        },
+        "selection_priority": [
+          "Retain the most independently population-compatible original root groups.",
+          "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+          "Break ties by stable candidate IDs and component IDs."
+        ],
+        "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+        "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+        "groupings_examined": 1,
+        "population_feasible_groupings": 1,
+        "geometrically_unconnectable_groupings": 0
+      },
+      "actual_district_plan_generated": false,
+      "augmented_graph_validation": {
+        "independent_full_graph_traversal": true,
+        "node_count": 132669,
+        "physical_component_count": 2,
+        "augmented_component_count": 1,
+        "component_sizes": [
+          132669
+        ],
+        "inserted_part_edge_pairs": [
+          [
+            130538,
+            122447
+          ]
+        ],
+        "all_source_parts_reached": true,
+        "physical_adjacency_modified": false
+      }
+    },
+    {
+      "district_count": 9,
+      "house_sizes": [
+        692
+      ],
+      "ideal_population": 500648.44444444444,
+      "strict_population_bound": {
+        "feasible_seat_allocation": true,
+        "best_max_deviation_pct": 99.99820233137646,
+        "deviation_fraction": [
+          4505755,
+          4505836
+        ],
+        "seat_counts": [
+          8,
+          1
+        ],
+        "ideal_population": 500648.44444444444,
+        "group_ideal_seats": [
+          8.999982023313764,
+          1.7976686235362316e-05
+        ],
+        "is_constructed_plan": false,
+        "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+      },
+      "policy_population_bound": {
+        "feasible_seat_allocation": true,
+        "best_max_deviation_pct": 0.0,
+        "deviation_fraction": [
+          0,
+          1
+        ],
+        "seat_counts": [
+          9
+        ],
+        "ideal_population": 500648.44444444444,
+        "group_ideal_seats": [
+          9.0
+        ],
+        "is_constructed_plan": false,
+        "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+      },
+      "selected_link_ids": [
+        "ky-candidate-00-01"
+      ],
+      "augmented_component_count": 1,
+      "policy": {
+        "policy": "population-aware-rooted-boundary-forest-v1",
+        "district_count": 9,
+        "population_tolerance": 0.01,
+        "ideal_population": 500648.44444444444,
+        "minimum_root_population": 495641.96,
+        "eligible_root_component_ids": [
+          0
+        ],
+        "no_individual_root_fallback": false,
+        "selected_link_ids": [
+          "ky-candidate-00-01"
+        ],
+        "selected_total_distance_m": 5144.856912662275,
+        "groups": [
+          {
+            "group_id": 0,
+            "component_ids": [
+              0,
+              1
+            ],
+            "population": 4505836,
+            "root_component_ids": [
+              0
+            ],
+            "district_count": 9
+          }
+        ],
+        "population_bound": {
+          "feasible_seat_allocation": true,
+          "best_max_deviation_pct": 0.0,
+          "deviation_fraction": [
+            0,
+            1
+          ],
+          "seat_counts": [
+            9
+          ],
+          "ideal_population": 500648.44444444444,
+          "group_ideal_seats": [
+            9.0
+          ],
+          "is_constructed_plan": false,
+          "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+        },
+        "selection_priority": [
+          "Retain the most independently population-compatible original root groups.",
+          "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+          "Break ties by stable candidate IDs and component IDs."
+        ],
+        "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+        "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+        "groupings_examined": 1,
+        "population_feasible_groupings": 1,
+        "geometrically_unconnectable_groupings": 0
+      },
+      "actual_district_plan_generated": false,
+      "augmented_graph_validation": {
+        "independent_full_graph_traversal": true,
+        "node_count": 132669,
+        "physical_component_count": 2,
+        "augmented_component_count": 1,
+        "component_sizes": [
+          132669
+        ],
+        "inserted_part_edge_pairs": [
+          [
+            130538,
+            122447
+          ]
+        ],
+        "all_source_parts_reached": true,
+        "physical_adjacency_modified": false
+      }
+    },
+    {
+      "district_count": 14,
+      "house_sizes": [
+        1000
+      ],
+      "ideal_population": 321845.4285714286,
+      "strict_population_bound": {
+        "feasible_seat_allocation": true,
+        "best_max_deviation_pct": 99.9972036265856,
+        "deviation_fraction": [
+          2252855,
+          2252918
+        ],
+        "seat_counts": [
+          13,
+          1
+        ],
+        "ideal_population": 321845.4285714286,
+        "group_ideal_seats": [
+          13.999972036265856,
+          2.7963734143896936e-05
+        ],
+        "is_constructed_plan": false,
+        "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+      },
+      "policy_population_bound": {
+        "feasible_seat_allocation": true,
+        "best_max_deviation_pct": 0.0,
+        "deviation_fraction": [
+          0,
+          1
+        ],
+        "seat_counts": [
+          14
+        ],
+        "ideal_population": 321845.4285714286,
+        "group_ideal_seats": [
+          14.0
+        ],
+        "is_constructed_plan": false,
+        "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+      },
+      "selected_link_ids": [
+        "ky-candidate-00-01"
+      ],
+      "augmented_component_count": 1,
+      "policy": {
+        "policy": "population-aware-rooted-boundary-forest-v1",
+        "district_count": 14,
+        "population_tolerance": 0.01,
+        "ideal_population": 321845.4285714286,
+        "minimum_root_population": 318626.97428571427,
+        "eligible_root_component_ids": [
+          0
+        ],
+        "no_individual_root_fallback": false,
+        "selected_link_ids": [
+          "ky-candidate-00-01"
+        ],
+        "selected_total_distance_m": 5144.856912662275,
+        "groups": [
+          {
+            "group_id": 0,
+            "component_ids": [
+              0,
+              1
+            ],
+            "population": 4505836,
+            "root_component_ids": [
+              0
+            ],
+            "district_count": 14
+          }
+        ],
+        "population_bound": {
+          "feasible_seat_allocation": true,
+          "best_max_deviation_pct": 0.0,
+          "deviation_fraction": [
+            0,
+            1
+          ],
+          "seat_counts": [
+            14
+          ],
+          "ideal_population": 321845.4285714286,
+          "group_ideal_seats": [
+            14.0
+          ],
+          "is_constructed_plan": false,
+          "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+        },
+        "selection_priority": [
+          "Retain the most independently population-compatible original root groups.",
+          "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+          "Break ties by stable candidate IDs and component IDs."
+        ],
+        "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+        "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+        "groupings_examined": 1,
+        "population_feasible_groupings": 1,
+        "geometrically_unconnectable_groupings": 0
+      },
+      "actual_district_plan_generated": false,
+      "augmented_graph_validation": {
+        "independent_full_graph_traversal": true,
+        "node_count": 132669,
+        "physical_component_count": 2,
+        "augmented_component_count": 1,
+        "component_sizes": [
+          132669
+        ],
+        "inserted_part_edge_pairs": [
+          [
+            130538,
+            122447
+          ]
+        ],
+        "all_source_parts_reached": true,
+        "physical_adjacency_modified": false
+      }
+    }
+  ],
+  "candidate": {
+    "id": "ky-candidate-00-01",
+    "component_ids": [
+      0,
+      1
+    ],
+    "distance_m": 5144.856912662275,
+    "planar_candidate_distance_m": 5063.300447424077,
+    "endpoints": [
+      {
+        "geoid": "210759602004000",
+        "part_node": 130538,
+        "part_index": 0,
+        "coordinate": [
+          -89.41230144260315,
+          36.51117494957951
+        ],
+        "source_boundary_error_degrees": 1.7110407666062239e-15,
+        "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+      },
+      {
+        "geoid": "210759602004105",
+        "part_node": 122447,
+        "part_index": 0,
+        "coordinate": [
+          -89.467715,
+          36.523724
+        ],
+        "source_boundary_error_degrees": 0.0,
+        "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+      }
+    ],
+    "selected_k": [
+      6,
+      8,
+      9,
+      14
+    ],
+    "classification": "positive_gap",
+    "source_boundaries_intersect": false,
+    "exact_geographic_distance_degrees": 0.05600524983122607,
+    "intervening_component_ids": [],
+    "endpoint_component_interior_crossings": [],
+    "endpoint_interior_intersection_length_degrees": {
+      "0": 0.0,
+      "1": 0.0
+    },
+    "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+    "eligible_positive_gap": true,
+    "projection": {
+      "kind": "per-pair-bbox-centered-equirectangular",
+      "lon0": -85.7679955,
+      "lat0": 37.822395
+    }
+  },
+  "crossing_context": {
+    "status": "complete",
+    "analysis": "candidate_line_in_missouri_census_coverage",
+    "source_archive": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\29\\tl_2020_29_tabblock20.zip",
+    "source_archive_sha256": "555aa3e4ed39934cb7560050c873307d71a6e7e4b345995e17004cf87a5d9e66",
+    "source_archive_matches_preserved_manifest": true,
+    "source_archive_byte_identical_before_after": true,
+    "source_url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_29_tabblock20.zip",
+    "script_sha256": "95dc77875cc2189d0f8f440e873c7877cdcc62e367af8e8aebb02524d0777711",
+    "shapely_version": "2.1.2",
+    "geos_version": "3.13.1",
+    "source_geometry_modified": false,
+    "source_archive_extracted": false,
+    "candidate_endpoints": [
+      [
+        -89.41230144260315,
+        36.51117494957951
+      ],
+      [
+        -89.467715,
+        36.523724
+      ]
+    ],
+    "candidate_planar_length_m": 5144.85700363884,
+    "missouri_interior_coverage_m": 5144.85700363884,
+    "uncovered_candidate_length_m": 0.0,
+    "coverage_fraction": 1.0,
+    "coverage_by_whole_block_area_class_m": {
+      "mixed_land_water": 5144.85700363884
+    },
+    "crossed_missouri_blocks": [
+      {
+        "state": "Missouri",
+        "geoid": "291439602001201",
+        "land_area_m2": 48883709,
+        "water_area_m2": 653047,
+        "population": 0,
+        "block_area_class": "mixed_land_water",
+        "candidate_interior_length_m": 3339.9715683396184,
+        "intersection_geometry": {
+          "type": "LineString",
+          "coordinates": [
+            [
+              -89.42132651102833,
+              36.513218782244955
+            ],
+            [
+              -89.45730024286871,
+              36.521365456017314
+            ]
+          ]
+        }
+      },
+      {
+        "state": "Missouri",
+        "geoid": "291439602001204",
+        "land_area_m2": 92484,
+        "water_area_m2": 22879995,
+        "population": 0,
+        "block_area_class": "mixed_land_water",
+        "candidate_interior_length_m": 1804.8854352992212,
+        "intersection_geometry": {
+          "type": "MultiLineString",
+          "coordinates": [
+            [
+              [
+                -89.41230144260315,
+                36.51117494957951
+              ],
+              [
+                -89.42132651102833,
+                36.513218782244955
+              ]
+            ],
+            [
+              [
+                -89.45730024286871,
+                36.521365456017314
+              ],
+              [
+                -89.467715,
+                36.523724
+              ]
+            ]
+          ]
+        }
+      }
+    ],
+    "measurement": "Local equirectangular lengths; exact source-polygon intersections are unioned as linear-reference intervals on the candidate to avoid collinear overlay roundoff.",
+    "limits": [
+      "Block ALAND20/AWATER20 totals do not locate water within mixed land/water blocks.",
+      "This is a conceptual policy connection, not an established bridge, ferry, travel route, or boundary change.",
+      "Displayed contextual blocks are clipped and simplified; the intersection audit uses unsimplified source geometry."
+    ]
+  },
+  "area_water_audit": {
+    "status": "complete",
+    "classification": "crosses_mapped_water_and_land",
+    "candidate_id": "ky-candidate-00-01",
+    "candidate_endpoints": [
+      [
+        -89.41230144260315,
+        36.51117494957951
+      ],
+      [
+        -89.467715,
+        36.523724
+      ]
+    ],
+    "candidate_planar_length_m": 5144.85700363884,
+    "mapped_water_length_m": 1804.8854352990725,
+    "outside_mapped_water_length_m": 3339.9715683397676,
+    "mapped_water_fraction": 0.3508135277661786,
+    "water_only_under_2020_census_area_water": false,
+    "water_intervals_normalized": [
+      [
+        0.0,
+        0.1628675156251308
+      ],
+      [
+        0.8120539878589522,
+        1.0
+      ]
+    ],
+    "outside_water_intervals_normalized": [
+      [
+        0.1628675156251308,
+        0.8120539878589522
+      ]
+    ],
+    "crossed_water_features": [
+      {
+        "name": "Mississippi Riv",
+        "hydroid": "1103714749572",
+        "mtfcc": "H3010"
+      }
+    ],
+    "county_fips": "29143",
+    "county": "New Madrid County, Missouri",
+    "source_url": "https://www2.census.gov/geo/tiger/TIGER2020/AREAWATER/tl_2020_29143_areawater.zip",
+    "source_archive": ".cache/state-block-benchmark/suite-through-1000/diagnostics/kentucky/context-source/tl_2020_29143_areawater.zip",
+    "source_archive_sha256": "987001cceff747e1c087283e9522f71962364b6c7bb35c353a0a41395919a4bb",
+    "source_archive_bytes": 218315,
+    "source_archive_byte_identical_before_after": true,
+    "source_geometry_modified": false,
+    "county_area_water_feature_count": 271,
+    "candidate_file_sha256": "20ed82660a0ea247de667dd7956d29f816fdacf1035a3f9e18aecbf35dc0a97f",
+    "script_sha256": "bbae2e28e062a450eba5e7f6efd5fc0d49930cfcb85e67ab99f694ffb4212f20",
+    "shapely_version": "2.1.2",
+    "geos_version": "3.13.1",
+    "measurement": "Local equirectangular lengths of line intervals intersected with exact 2020 area-water polygons.",
+    "interpretation": "The nearest Kentucky census-coverage connection crosses the Mississippi River twice and Missouri land between those crossings; it is not water-only in the 2020 Census geography.",
+    "limits": [
+      "The water layer describes 2020 mapped geography, not current river levels, navigability, or a travel route.",
+      "This audit checks the nearest straight candidate; it does not search for a longer curved route that stays over water.",
+      "Displayed water polygons are clipped and simplified; line intersections use unsimplified source polygons."
+    ]
+  },
+  "geographic_context": {
+    "state": "Kentucky",
+    "reviewed_on": "2026-10-23",
+    "geographic_identification": {
+      "component_id": 1,
+      "name": "Kentucky Bend / Madrid Bend",
+      "county": "Fulton County",
+      "county_fips": "075",
+      "basis": "The detached component's exact Census bounds (-89.571203, 36.497491, -89.465390, 36.581710) locate it on the Mississippi peninsula in western Fulton County. Kentucky Historical Society's Madrid Bend marker identifies the region and its connection to Tennessee.",
+      "interpretation": "A real state-boundary exclave, rather than a numerical optimizer failure or omitted zero-population blocks."
+    },
+    "sources": [
+      {
+        "title": "Madrid Bend historical marker",
+        "publisher": "Kentucky Historical Society",
+        "url": "https://history.ky.gov/markers/madrid-bend",
+        "access": "Full page read",
+        "supports": "Kentucky's claim followed the westernmost middle of the Mississippi River; the Tennessee boundary was settled through the Cox-Peebles survey of 1858-1859. The peninsula's neck joins Tennessee."
+      },
+      {
+        "title": "Fulton County official welcome page",
+        "publisher": "Fulton County, Kentucky",
+        "url": "https://fultoncounty.ky.gov/Pages/index.aspx",
+        "access": "Search excerpt read; direct fetch returned HTTP 502",
+        "supports": "The county identifies Madrid Bend as a portion accessible by travelling through Tennessee."
+      },
+      {
+        "title": "Groundwater Resources of Fulton County: Topography",
+        "publisher": "Kentucky Geological Survey, University of Kentucky",
+        "url": "https://www.uky.edu/KGS/water/library/gwatlas/Fulton/Topography.htm",
+        "access": "Full page read",
+        "supports": "Fulton County's western and part of its northern boundary follow the Mississippi River; the river floodplain includes ponds, sloughs, marshes and sand bars."
+      }
+    ],
+    "limits": [
+      "These sources establish geographic context; all reported component populations, block counts, areas, boundaries and distances come from the saved 2020 Census files and computed diagnosis.",
+      "A shortest connection between Kentucky coverage components is not necessarily a water-only route. Its intervening jurisdiction and land/water character require separate source geometry inspection.",
+      "A recorded graph connection neither annexes intervening territory nor establishes a physical bridge, ferry route, road route, or strictly shared-edge district."
+    ]
+  },
+  "conclusion": "The same population-aware grouping and one recorded edge connect the source graph. The nearest edge crosses Missouri land as well as river, requiring an explicit exclave connection rather than a water-only claim. No balanced district plan has been constructed.",
+  "source_hashes": {
+    "diagnosis.json": "4c179da7207752f210de8378e48ac4c9308a355544c86d044d2ed6db4cd32673",
+    "geography-context.json": "6ac631c72ec8a623d00f1ed96d6f13d3c820c907baf7b69b1ac50dba55fb335f",
+    "missouri-connection-context.json": "72a6acc4ed007b3225912d9666ae90ab771a8c7e2b9f5e986d7a7ac359c2aa95",
+    "area-water-audit.json": "a03a31c43ebab7bf820a5efe78a966dc8f28fd04fc195affb75e2a07d6f63c14"
+  },
+  "original_preservation": {
+    "original_strict_files_byte_identical": true,
+    "national_suite_byte_identical": true,
+    "source_archive_byte_identical": true,
+    "preserved_file_count": 5
+  },
+  "independent_checks": [
+    "Original file and diagnostic artifact hashes match.",
+    "Component totals reconcile to official resident and block counts.",
+    "Strict population bounds independently recomputed as 1 - 9*K/4505836.",
+    "Identical candidate endpoints used in Kentucky, Missouri and area-water audits.",
+    "Mapped water and outside-water lengths reconcile to the complete candidate segment.",
+    "All 132669 polygon parts reachable after the selected edge, for every requested anchor."
+  ]
+}

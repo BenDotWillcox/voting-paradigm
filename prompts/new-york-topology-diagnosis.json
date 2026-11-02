@@ -1,0 +1,1890 @@
+{
+  "generated_at": "2026-10-23T20:29:13.094107+00:00",
+  "status": "diagnostic_only_no_district_plans",
+  "source_population_audit": {
+    "block_count": 288819,
+    "resident_population": 20201249,
+    "zero_population_block_count": 58480,
+    "selected_source_records": {
+      "360610001001001": {
+        "GEOID20": "360610001001001",
+        "ALAND20": 57438,
+        "AWATER20": 0,
+        "HOUSING20": 0,
+        "POP20": 0
+      },
+      "360610001001000": {
+        "GEOID20": "360610001001000",
+        "ALAND20": 18951,
+        "AWATER20": 0,
+        "HOUSING20": 0,
+        "POP20": 0
+      },
+      "360610005000003": {
+        "GEOID20": "360610005000003",
+        "ALAND20": 0,
+        "AWATER20": 2628930,
+        "HOUSING20": 0,
+        "POP20": 0
+      }
+    }
+  },
+  "diagnosis": {
+    "schema_version": 1,
+    "state": "New York",
+    "state_fips": "36",
+    "status": "diagnostic_complete_no_district_plans_generated",
+    "total_population": 20201249,
+    "block_count": 288819,
+    "part_count": 288841,
+    "physical_component_count": 3,
+    "original_whole_block_component_count": 3,
+    "source": {
+      "schema": 1,
+      "state_fips": "36",
+      "state": "New York",
+      "url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_36_tabblock20.zip",
+      "archive_sha256": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+      "archive_bytes": 325849613,
+      "extracted_file_sha256": {
+        "tl_2020_36_tabblock20.cpg": "3ad3031f5503a4404af825262ee8232cc04d4ea6683d42c5dd0a2f2a27ac9824",
+        "tl_2020_36_tabblock20.dbf": "7974555de141bd5c1aa249da81c8227a5f22caf516689ba332293e6ddc15bb83",
+        "tl_2020_36_tabblock20.prj": "0b9041e921d9ebb43247d314608fe9e38a0b008ee793067fc1806199ea1fb9dd",
+        "tl_2020_36_tabblock20.shp": "9eff19746d07b054923a2b0c98392121545a647fda5a133fc4f48f375a2d13de",
+        "tl_2020_36_tabblock20.shp.ea.iso.xml": "bfec33140cc7684b1385347718c27347f615d446ae774ab89ef16e900b413d40",
+        "tl_2020_36_tabblock20.shx": "82b83662912e3cd806b76a606058d1eff15c3feea69faec0130eaa5c4384f64d",
+        "tl_2020_36_tabblock20.shp.iso.xml": "98d50f01ba3643e4b591fd0bd8583e574520f2b0c2820c96a799e1867f3d04b5"
+      },
+      "download": {
+        "attempts": 1,
+        "etag": null,
+        "expected_bytes": 325849613,
+        "last_modified": "Fri, 06 Jan 2023 21:46:06 GMT",
+        "received_bytes": 325849613,
+        "resumed_bytes": 0,
+        "url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_36_tabblock20.zip"
+      },
+      "hash_provenance": "Locally computed SHA-256; no publisher checksum is provided.",
+      "archive_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\36\\tl_2020_36_tabblock20.zip",
+      "extraction_dir": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\36\\tl_2020_36_tabblock20",
+      "source_shapefile_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\36\\tl_2020_36_tabblock20\\tl_2020_36_tabblock20.shp",
+      "manifest_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\36\\tl_2020_36_tabblock20.manifest.json",
+      "downloaded_in_timed_pipeline": false,
+      "extracted_files_reused": false,
+      "extracted_bytes": 325848671,
+      "crs_wkt": "GEOGCS[\"GCS_North_American_1983\",DATUM[\"D_North_American_1983\",SPHEROID[\"GRS_1980\",6378137,298.257222101]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]"
+    },
+    "input": {
+      "state_fips": "36",
+      "state": "New York",
+      "block_count": 288819,
+      "populated_block_count": 230339,
+      "zero_population_block_count": 58480,
+      "water_only_block_count": 7660,
+      "tract_count": 5411,
+      "total_population": 20201249,
+      "largest_block_population": 5091,
+      "source_bbox": [
+        -79.76259,
+        40.476578,
+        -71.777491,
+        45.015865
+      ],
+      "longitude_span_degrees": 7.985099000000005,
+      "source_crosses_antimeridian": false,
+      "shared_edge_antimeridian_normalization_supported": true,
+      "projection": {
+        "kind": "population-centered-equirectangular",
+        "lon0": -74.60875785924357,
+        "lat0": 41.47178345026116,
+        "dateline_unwrapped": false,
+        "distance_model": "approximate local plane; distortion increases across broad states"
+      },
+      "location_source": "TIGER INTPT internal points, not household locations or population centroids",
+      "official_totals_validated": true,
+      "expected_totals": {
+        "block_count": 288819,
+        "resident_population": 20201249
+      },
+      "block_count_source_url": "https://www2.census.gov/geo/docs/maps-data/data/geo_tallies2020/State_Block_Counts_2010_2020.txt",
+      "resident_population_source_url": "https://www2.census.gov/programs-surveys/decennial/2020/data/apportionment/apportionment-2020-table02.pdf"
+    },
+    "part_graph": {
+      "definition": "source Polygon parts with disjoint interiors and shared boundary of positive length",
+      "de9im_pattern": "F***1****",
+      "source_coordinates_modified": false,
+      "all_source_geometries_valid": true,
+      "synthetic_ownership_edges": false,
+      "part_order": "ordered GEOIDs, then source MultiPolygon parts",
+      "block_count": 288819,
+      "node_count": 288841,
+      "part_count": 288841,
+      "edge_count": 712458,
+      "multipart_block_count": 12,
+      "candidate_pair_count": 1342871,
+      "excluded_corner_pair_count": 266713,
+      "interior_overlap_pair_count": 0,
+      "component_count": 3,
+      "component_sizes": [
+        288839,
+        1,
+        1
+      ],
+      "isolated_part_count": 2,
+      "isolated_part_indices": [
+        59971,
+        113983
+      ],
+      "isolated_part_geoids": [
+        "360610001001001",
+        "360610001001000"
+      ],
+      "source_coordinate_count": 16731948,
+      "query_batch_size": 2000,
+      "query_batch_count": 145,
+      "max_batch_candidate_pair_count": 17876,
+      "geometry_load_seconds": 45.45224589999998,
+      "topology_build_seconds": 32.685502699998324,
+      "graph_validation_seconds": 2.7481410000036703,
+      "elapsed_seconds": 80.8858903000073
+    },
+    "part_graph_cache": {
+      "status": "built",
+      "cache_hit": false,
+      "key": "801e39e984a9d1a5ca79a4155403e907a703908865d55779719b8edc498245f9",
+      "path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\graph-cache\\36\\shared-edge-parts-801e39e984a9d1a5ca79a4155403e907a703908865d55779719b8edc498245f9.npz",
+      "identity": {
+        "schema": 1,
+        "topology_rule": "polygon parts; F***1****; original coordinates; no synthetic ownership edges",
+        "source_archive_sha256": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+        "ordered_geoids_sha256": "a271de0a32e44778b81d9491b76b494ca1ff844ff155c322e1acf1eec2c7a365",
+        "block_count": 288819,
+        "part_builder_sha256": "49b43929897184c04a5332f4530cd7cf722f9ac604008657855a65694024c490",
+        "part_domain_sha256": "a127aad254e65dc7b8be69f1fe7403aad6f9d18e0a15b8723e32358f9ef833d5",
+        "shapely_version": "2.1.2",
+        "geos_version": "3.13.1",
+        "pyshp_version": "3.0.3"
+      },
+      "bytes": 5229481,
+      "load_seconds": 4.430000262800604e-05,
+      "build_seconds": 80.92073050000181,
+      "write_seconds": 5.460699799994472,
+      "total_seconds": 86.62480789999245,
+      "source_hash_verified_by_caller": true,
+      "original_build_timing_reused": false,
+      "invalid_cache_reason": null
+    },
+    "components": [
+      {
+        "id": 0,
+        "label": "Main New York coverage",
+        "population": 20201249,
+        "block_count": 288817,
+        "part_count": 288839,
+        "water_only_block_count": 7660,
+        "zero_population_block_count": 58478,
+        "land_area_m2": 122049444472,
+        "water_area_m2": 19256750161,
+        "bounds": [
+          -79.76259,
+          40.476578,
+          -71.777491,
+          45.015865
+        ],
+        "county_fips": [
+          "001",
+          "003",
+          "005",
+          "007",
+          "009",
+          "011",
+          "013",
+          "015",
+          "017",
+          "019",
+          "021",
+          "023",
+          "025",
+          "027",
+          "029",
+          "031",
+          "033",
+          "035",
+          "037",
+          "039",
+          "041",
+          "043",
+          "045",
+          "047",
+          "049",
+          "051",
+          "053",
+          "055",
+          "057",
+          "059",
+          "061",
+          "063",
+          "065",
+          "067",
+          "069",
+          "071",
+          "073",
+          "075",
+          "077",
+          "079",
+          "081",
+          "083",
+          "085",
+          "087",
+          "089",
+          "091",
+          "093",
+          "095",
+          "097",
+          "099",
+          "101",
+          "103",
+          "105",
+          "107",
+          "109",
+          "111",
+          "113",
+          "115",
+          "117",
+          "119",
+          "121",
+          "123"
+        ],
+        "example_geoids": [
+          "360830517021049",
+          "360730406033033",
+          "360179705011061",
+          "360179706023011",
+          "361031235002010"
+        ],
+        "population_definition": "Whole-block population, only blocks exclusively owned by this physical component.",
+        "representative_point": [
+          -76.21290990371142,
+          42.748037999999994
+        ],
+        "polygon_component_count": 1
+      },
+      {
+        "id": 1,
+        "label": "Detached New York component 1",
+        "population": 0,
+        "block_count": 1,
+        "part_count": 1,
+        "water_only_block_count": 0,
+        "zero_population_block_count": 1,
+        "land_area_m2": 57438,
+        "water_area_m2": 0,
+        "bounds": [
+          -74.047207,
+          40.688508,
+          -74.043455,
+          40.691125
+        ],
+        "county_fips": [
+          "061"
+        ],
+        "example_geoids": [
+          "360610001001001"
+        ],
+        "population_definition": "Whole-block population, only blocks exclusively owned by this physical component.",
+        "representative_point": [
+          -74.04517137192335,
+          40.689856
+        ],
+        "polygon_component_count": 1
+      },
+      {
+        "id": 2,
+        "label": "Detached New York component 2",
+        "population": 0,
+        "block_count": 1,
+        "part_count": 1,
+        "water_only_block_count": 0,
+        "zero_population_block_count": 1,
+        "land_area_m2": 18951,
+        "water_area_m2": 0,
+        "bounds": [
+          -74.040747,
+          40.69859,
+          -74.038368,
+          40.700215
+        ],
+        "county_fips": [
+          "061"
+        ],
+        "example_geoids": [
+          "360610001001000"
+        ],
+        "population_definition": "Whole-block population, only blocks exclusively owned by this physical component.",
+        "representative_point": [
+          -74.03959515,
+          40.699402000000006
+        ],
+        "polygon_component_count": 1
+      }
+    ],
+    "links": [
+      {
+        "id": "ny-candidate-00-01",
+        "component_ids": [
+          0,
+          1
+        ],
+        "distance_m": 795.2682330091204,
+        "planar_candidate_distance_m": 774.1447935977649,
+        "endpoints": [
+          {
+            "geoid": "360610005000003",
+            "part_node": 272183,
+            "part_index": 0,
+            "coordinate": [
+              -74.03495160556861,
+              40.685939310772014
+            ],
+            "source_boundary_error_degrees": 3.413126338774593e-15,
+            "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+          },
+          {
+            "geoid": "360610001001001",
+            "part_node": 59971,
+            "part_index": 0,
+            "coordinate": [
+              -74.043619,
+              40.68876
+            ],
+            "source_boundary_error_degrees": 0.0,
+            "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+          }
+        ],
+        "selected_k": [
+          26,
+          35,
+          42,
+          61
+        ],
+        "classification": "positive_gap",
+        "source_boundaries_intersect": false,
+        "exact_geographic_distance_degrees": 0.008878034353130539,
+        "intervening_component_ids": [],
+        "endpoint_component_interior_crossings": [],
+        "endpoint_interior_intersection_length_degrees": {
+          "0": 0.0,
+          "1": 0.0
+        },
+        "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+        "eligible_positive_gap": true,
+        "projection": {
+          "kind": "per-pair-bbox-centered-equirectangular",
+          "lon0": -75.7700405,
+          "lat0": 42.746221500000004
+        }
+      },
+      {
+        "id": "ny-candidate-00-02",
+        "component_ids": [
+          0,
+          2
+        ],
+        "distance_m": 852.0261479723722,
+        "planar_candidate_distance_m": 829.5126827760413,
+        "endpoints": [
+          {
+            "geoid": "360610005000003",
+            "part_node": 272183,
+            "part_index": 0,
+            "coordinate": [
+              -74.02908780665521,
+              40.695641431154876
+            ],
+            "source_boundary_error_degrees": 7.347373392151231e-16,
+            "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+          },
+          {
+            "geoid": "360610001001000",
+            "part_node": 113983,
+            "part_index": 0,
+            "coordinate": [
+              -74.038372,
+              40.698669
+            ],
+            "source_boundary_error_degrees": 0.0,
+            "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+          }
+        ],
+        "selected_k": [
+          26,
+          35,
+          42,
+          61
+        ],
+        "classification": "positive_gap",
+        "source_boundaries_intersect": false,
+        "exact_geographic_distance_degrees": 0.009511262497346112,
+        "intervening_component_ids": [],
+        "endpoint_component_interior_crossings": [],
+        "endpoint_interior_intersection_length_degrees": {
+          "0": 0.0,
+          "2": 0.0
+        },
+        "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+        "eligible_positive_gap": true,
+        "projection": {
+          "kind": "per-pair-bbox-centered-equirectangular",
+          "lon0": -75.7700405,
+          "lat0": 42.746221500000004
+        }
+      },
+      {
+        "id": "ny-candidate-01-02",
+        "component_ids": [
+          1,
+          2
+        ],
+        "distance_m": 973.0490513691004,
+        "planar_candidate_distance_m": 973.0503137011425,
+        "endpoints": [
+          {
+            "geoid": "360610001001001",
+            "part_node": 59971,
+            "part_index": 0,
+            "coordinate": [
+              -74.045427,
+              40.690895
+            ],
+            "source_boundary_error_degrees": 0.0,
+            "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+          },
+          {
+            "geoid": "360610001001000",
+            "part_node": 113983,
+            "part_index": 0,
+            "coordinate": [
+              -74.039931,
+              40.69859
+            ],
+            "source_boundary_error_degrees": 0.0,
+            "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+          }
+        ],
+        "selected_k": [],
+        "classification": "positive_gap",
+        "source_boundaries_intersect": false,
+        "exact_geographic_distance_degrees": 0.009271866414181928,
+        "intervening_component_ids": [],
+        "endpoint_component_interior_crossings": [],
+        "endpoint_interior_intersection_length_degrees": {
+          "1": 0.0,
+          "2": 0.0
+        },
+        "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+        "eligible_positive_gap": true,
+        "projection": {
+          "kind": "per-pair-bbox-centered-equirectangular",
+          "lon0": -74.0427875,
+          "lat0": 40.6943615
+        }
+      }
+    ],
+    "plans": [
+      {
+        "district_count": 26,
+        "house_sizes": [
+          435
+        ],
+        "ideal_population": 776971.1153846154,
+        "strict_population_bound": {
+          "feasible_seat_allocation": true,
+          "best_max_deviation_pct": 100.0,
+          "deviation_fraction": [
+            1,
+            1
+          ],
+          "seat_counts": [
+            13,
+            1,
+            12
+          ],
+          "ideal_population": 776971.1153846154,
+          "group_ideal_seats": [
+            26.0,
+            0.0,
+            0.0
+          ],
+          "is_constructed_plan": false,
+          "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+        },
+        "policy_population_bound": {
+          "feasible_seat_allocation": true,
+          "best_max_deviation_pct": 0.0,
+          "deviation_fraction": [
+            0,
+            1
+          ],
+          "seat_counts": [
+            26
+          ],
+          "ideal_population": 776971.1153846154,
+          "group_ideal_seats": [
+            26.0
+          ],
+          "is_constructed_plan": false,
+          "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+        },
+        "selected_link_ids": [
+          "ny-candidate-00-01",
+          "ny-candidate-00-02"
+        ],
+        "augmented_component_count": 1,
+        "policy": {
+          "policy": "population-aware-rooted-boundary-forest-v1",
+          "district_count": 26,
+          "population_tolerance": 0.01,
+          "ideal_population": 776971.1153846154,
+          "minimum_root_population": 769201.4042307693,
+          "eligible_root_component_ids": [
+            0
+          ],
+          "no_individual_root_fallback": false,
+          "selected_link_ids": [
+            "ny-candidate-00-01",
+            "ny-candidate-00-02"
+          ],
+          "selected_total_distance_m": 1647.2943809814926,
+          "groups": [
+            {
+              "group_id": 0,
+              "component_ids": [
+                0,
+                1,
+                2
+              ],
+              "population": 20201249,
+              "root_component_ids": [
+                0
+              ],
+              "district_count": 26
+            }
+          ],
+          "population_bound": {
+            "feasible_seat_allocation": true,
+            "best_max_deviation_pct": 0.0,
+            "deviation_fraction": [
+              0,
+              1
+            ],
+            "seat_counts": [
+              26
+            ],
+            "ideal_population": 776971.1153846154,
+            "group_ideal_seats": [
+              26.0
+            ],
+            "is_constructed_plan": false,
+            "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+          },
+          "selection_priority": [
+            "Retain the most independently population-compatible original root groups.",
+            "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+            "Break ties by stable candidate IDs and component IDs."
+          ],
+          "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+          "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+          "groupings_examined": 1,
+          "population_feasible_groupings": 1,
+          "geometrically_unconnectable_groupings": 0
+        },
+        "actual_district_plan_generated": false,
+        "augmented_graph_validation": {
+          "independent_full_graph_traversal": true,
+          "node_count": 288841,
+          "physical_component_count": 3,
+          "augmented_component_count": 1,
+          "component_sizes": [
+            288841
+          ],
+          "inserted_part_edge_pairs": [
+            [
+              272183,
+              59971
+            ],
+            [
+              272183,
+              113983
+            ]
+          ],
+          "all_source_parts_reached": true,
+          "physical_adjacency_modified": false
+        }
+      },
+      {
+        "district_count": 35,
+        "house_sizes": [
+          574
+        ],
+        "ideal_population": 577178.5428571429,
+        "strict_population_bound": {
+          "feasible_seat_allocation": true,
+          "best_max_deviation_pct": 100.0,
+          "deviation_fraction": [
+            1,
+            1
+          ],
+          "seat_counts": [
+            18,
+            1,
+            16
+          ],
+          "ideal_population": 577178.5428571429,
+          "group_ideal_seats": [
+            35.0,
+            0.0,
+            0.0
+          ],
+          "is_constructed_plan": false,
+          "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+        },
+        "policy_population_bound": {
+          "feasible_seat_allocation": true,
+          "best_max_deviation_pct": 0.0,
+          "deviation_fraction": [
+            0,
+            1
+          ],
+          "seat_counts": [
+            35
+          ],
+          "ideal_population": 577178.5428571429,
+          "group_ideal_seats": [
+            35.0
+          ],
+          "is_constructed_plan": false,
+          "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+        },
+        "selected_link_ids": [
+          "ny-candidate-00-01",
+          "ny-candidate-00-02"
+        ],
+        "augmented_component_count": 1,
+        "policy": {
+          "policy": "population-aware-rooted-boundary-forest-v1",
+          "district_count": 35,
+          "population_tolerance": 0.01,
+          "ideal_population": 577178.5428571429,
+          "minimum_root_population": 571406.7574285715,
+          "eligible_root_component_ids": [
+            0
+          ],
+          "no_individual_root_fallback": false,
+          "selected_link_ids": [
+            "ny-candidate-00-01",
+            "ny-candidate-00-02"
+          ],
+          "selected_total_distance_m": 1647.2943809814926,
+          "groups": [
+            {
+              "group_id": 0,
+              "component_ids": [
+                0,
+                1,
+                2
+              ],
+              "population": 20201249,
+              "root_component_ids": [
+                0
+              ],
+              "district_count": 35
+            }
+          ],
+          "population_bound": {
+            "feasible_seat_allocation": true,
+            "best_max_deviation_pct": 0.0,
+            "deviation_fraction": [
+              0,
+              1
+            ],
+            "seat_counts": [
+              35
+            ],
+            "ideal_population": 577178.5428571429,
+            "group_ideal_seats": [
+              35.0
+            ],
+            "is_constructed_plan": false,
+            "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+          },
+          "selection_priority": [
+            "Retain the most independently population-compatible original root groups.",
+            "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+            "Break ties by stable candidate IDs and component IDs."
+          ],
+          "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+          "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+          "groupings_examined": 1,
+          "population_feasible_groupings": 1,
+          "geometrically_unconnectable_groupings": 0
+        },
+        "actual_district_plan_generated": false,
+        "augmented_graph_validation": {
+          "independent_full_graph_traversal": true,
+          "node_count": 288841,
+          "physical_component_count": 3,
+          "augmented_component_count": 1,
+          "component_sizes": [
+            288841
+          ],
+          "inserted_part_edge_pairs": [
+            [
+              272183,
+              59971
+            ],
+            [
+              272183,
+              113983
+            ]
+          ],
+          "all_source_parts_reached": true,
+          "physical_adjacency_modified": false
+        }
+      },
+      {
+        "district_count": 42,
+        "house_sizes": [
+          692
+        ],
+        "ideal_population": 480982.11904761905,
+        "strict_population_bound": {
+          "feasible_seat_allocation": true,
+          "best_max_deviation_pct": 100.0,
+          "deviation_fraction": [
+            1,
+            1
+          ],
+          "seat_counts": [
+            21,
+            1,
+            20
+          ],
+          "ideal_population": 480982.11904761905,
+          "group_ideal_seats": [
+            42.0,
+            0.0,
+            0.0
+          ],
+          "is_constructed_plan": false,
+          "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+        },
+        "policy_population_bound": {
+          "feasible_seat_allocation": true,
+          "best_max_deviation_pct": 0.0,
+          "deviation_fraction": [
+            0,
+            1
+          ],
+          "seat_counts": [
+            42
+          ],
+          "ideal_population": 480982.11904761905,
+          "group_ideal_seats": [
+            42.0
+          ],
+          "is_constructed_plan": false,
+          "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+        },
+        "selected_link_ids": [
+          "ny-candidate-00-01",
+          "ny-candidate-00-02"
+        ],
+        "augmented_component_count": 1,
+        "policy": {
+          "policy": "population-aware-rooted-boundary-forest-v1",
+          "district_count": 42,
+          "population_tolerance": 0.01,
+          "ideal_population": 480982.11904761905,
+          "minimum_root_population": 476172.29785714287,
+          "eligible_root_component_ids": [
+            0
+          ],
+          "no_individual_root_fallback": false,
+          "selected_link_ids": [
+            "ny-candidate-00-01",
+            "ny-candidate-00-02"
+          ],
+          "selected_total_distance_m": 1647.2943809814926,
+          "groups": [
+            {
+              "group_id": 0,
+              "component_ids": [
+                0,
+                1,
+                2
+              ],
+              "population": 20201249,
+              "root_component_ids": [
+                0
+              ],
+              "district_count": 42
+            }
+          ],
+          "population_bound": {
+            "feasible_seat_allocation": true,
+            "best_max_deviation_pct": 0.0,
+            "deviation_fraction": [
+              0,
+              1
+            ],
+            "seat_counts": [
+              42
+            ],
+            "ideal_population": 480982.11904761905,
+            "group_ideal_seats": [
+              42.0
+            ],
+            "is_constructed_plan": false,
+            "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+          },
+          "selection_priority": [
+            "Retain the most independently population-compatible original root groups.",
+            "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+            "Break ties by stable candidate IDs and component IDs."
+          ],
+          "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+          "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+          "groupings_examined": 1,
+          "population_feasible_groupings": 1,
+          "geometrically_unconnectable_groupings": 0
+        },
+        "actual_district_plan_generated": false,
+        "augmented_graph_validation": {
+          "independent_full_graph_traversal": true,
+          "node_count": 288841,
+          "physical_component_count": 3,
+          "augmented_component_count": 1,
+          "component_sizes": [
+            288841
+          ],
+          "inserted_part_edge_pairs": [
+            [
+              272183,
+              59971
+            ],
+            [
+              272183,
+              113983
+            ]
+          ],
+          "all_source_parts_reached": true,
+          "physical_adjacency_modified": false
+        }
+      },
+      {
+        "district_count": 61,
+        "house_sizes": [
+          1000
+        ],
+        "ideal_population": 331168.01639344264,
+        "strict_population_bound": {
+          "feasible_seat_allocation": true,
+          "best_max_deviation_pct": 100.0,
+          "deviation_fraction": [
+            1,
+            1
+          ],
+          "seat_counts": [
+            31,
+            1,
+            29
+          ],
+          "ideal_population": 331168.01639344264,
+          "group_ideal_seats": [
+            61.0,
+            0.0,
+            0.0
+          ],
+          "is_constructed_plan": false,
+          "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+        },
+        "policy_population_bound": {
+          "feasible_seat_allocation": true,
+          "best_max_deviation_pct": 0.0,
+          "deviation_fraction": [
+            0,
+            1
+          ],
+          "seat_counts": [
+            61
+          ],
+          "ideal_population": 331168.01639344264,
+          "group_ideal_seats": [
+            61.0
+          ],
+          "is_constructed_plan": false,
+          "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+        },
+        "selected_link_ids": [
+          "ny-candidate-00-01",
+          "ny-candidate-00-02"
+        ],
+        "augmented_component_count": 1,
+        "policy": {
+          "policy": "population-aware-rooted-boundary-forest-v1",
+          "district_count": 61,
+          "population_tolerance": 0.01,
+          "ideal_population": 331168.01639344264,
+          "minimum_root_population": 327856.3362295082,
+          "eligible_root_component_ids": [
+            0
+          ],
+          "no_individual_root_fallback": false,
+          "selected_link_ids": [
+            "ny-candidate-00-01",
+            "ny-candidate-00-02"
+          ],
+          "selected_total_distance_m": 1647.2943809814926,
+          "groups": [
+            {
+              "group_id": 0,
+              "component_ids": [
+                0,
+                1,
+                2
+              ],
+              "population": 20201249,
+              "root_component_ids": [
+                0
+              ],
+              "district_count": 61
+            }
+          ],
+          "population_bound": {
+            "feasible_seat_allocation": true,
+            "best_max_deviation_pct": 0.0,
+            "deviation_fraction": [
+              0,
+              1
+            ],
+            "seat_counts": [
+              61
+            ],
+            "ideal_population": 331168.01639344264,
+            "group_ideal_seats": [
+              61.0
+            ],
+            "is_constructed_plan": false,
+            "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+          },
+          "selection_priority": [
+            "Retain the most independently population-compatible original root groups.",
+            "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+            "Break ties by stable candidate IDs and component IDs."
+          ],
+          "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+          "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+          "groupings_examined": 1,
+          "population_feasible_groupings": 1,
+          "geometrically_unconnectable_groupings": 0
+        },
+        "actual_district_plan_generated": false,
+        "augmented_graph_validation": {
+          "independent_full_graph_traversal": true,
+          "node_count": 288841,
+          "physical_component_count": 3,
+          "augmented_component_count": 1,
+          "component_sizes": [
+            288841
+          ],
+          "inserted_part_edge_pairs": [
+            [
+              272183,
+              59971
+            ],
+            [
+              272183,
+              113983
+            ]
+          ],
+          "all_source_parts_reached": true,
+          "physical_adjacency_modified": false
+        }
+      }
+    ],
+    "original_runs": [
+      {
+        "district_count": 26,
+        "house_sizes": [
+          435
+        ],
+        "status": "unsupported_topology",
+        "unsupported_reason": {
+          "code": "disconnected_source_graph",
+          "message": "The current workflow requires one connected, nonoverlapping shared-edge graph before computing district plans.",
+          "component_count": 3,
+          "required_next_step": "Inspect the saved source components and explicitly choose a geographic policy; no synthetic edges were added."
+        },
+        "source_components": [
+          {
+            "block_count": 288817,
+            "population": 20201249,
+            "example_geoid": "360830517021049"
+          },
+          {
+            "block_count": 1,
+            "population": 0,
+            "example_geoid": "360610001001000"
+          },
+          {
+            "block_count": 1,
+            "population": 0,
+            "example_geoid": "360610001001001"
+          }
+        ],
+        "elapsed_seconds": 99.36156880001363,
+        "path": "states/36/districts-26/benchmark.json",
+        "individual_report_exists": true,
+        "reused_topology_exception": false,
+        "suite_job": {
+          "district_count": 26,
+          "house_sizes": [
+            435
+          ],
+          "relative_output": "states/36/districts-26",
+          "status": "unsupported_topology",
+          "started_at": "2026-10-23T07:46:13.319164+00:00",
+          "log": "states/36/districts-26.log",
+          "pid": 36612,
+          "latest_progress": "Report: C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\states\\36\\districts-26\\benchmark.json",
+          "process_exit_code": 0,
+          "finished_at": "2026-10-23T07:47:54.091798+00:00",
+          "report": "states/36/districts-26/benchmark.json",
+          "timed_pipeline_wall_seconds": 99.36156880001363,
+          "peak_process_working_set_bytes": 802680832,
+          "graph_cache": {
+            "status": "built",
+            "cache_hit": false,
+            "key": "957d1f3494b683ddb46b807c474a862fe8729b04643478d75d86b29d4cb27418",
+            "path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\graph-cache\\36\\shared-edge-957d1f3494b683ddb46b807c474a862fe8729b04643478d75d86b29d4cb27418.npz",
+            "identity": {
+              "schema": 1,
+              "topology_rule": "F***1****; original source coordinates; no snapping or buffering",
+              "source_archive_sha256": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+              "ordered_geoids_sha256": "a271de0a32e44778b81d9491b76b494ca1ff844ff155c322e1acf1eec2c7a365",
+              "node_count": 288819,
+              "adjacency_builder_sha256": "8e3bd87629631e5452b6294bb94789dffa733a7b490db8a5238687a7609c0efc",
+              "shapely_version": "2.1.2",
+              "geos_version": "3.13.1"
+            },
+            "bytes": 4791547,
+            "load_seconds": 8.81000014487654e-05,
+            "build_seconds": 82.35503180000524,
+            "write_seconds": 3.1814841000013985,
+            "total_seconds": 85.66410419999738,
+            "source_hash_verified_by_caller": true,
+            "original_build_timing_reused": false,
+            "invalid_cache_reason": null
+          },
+          "source_components": [
+            {
+              "block_count": 288817,
+              "population": 20201249,
+              "example_geoid": "360830517021049"
+            },
+            {
+              "block_count": 1,
+              "population": 0,
+              "example_geoid": "360610001001000"
+            },
+            {
+              "block_count": 1,
+              "population": 0,
+              "example_geoid": "360610001001001"
+            }
+          ],
+          "unsupported_reason": {
+            "code": "disconnected_source_graph",
+            "message": "The current workflow requires one connected, nonoverlapping shared-edge graph before computing district plans.",
+            "component_count": 3,
+            "required_next_step": "Inspect the saved source components and explicitly choose a geographic policy; no synthetic edges were added."
+          }
+        }
+      },
+      {
+        "district_count": 35,
+        "house_sizes": [
+          574
+        ],
+        "status": "unsupported_topology",
+        "unsupported_reason": {
+          "code": "disconnected_source_graph",
+          "message": "The current workflow requires one connected, nonoverlapping shared-edge graph before computing district plans.",
+          "component_count": 3,
+          "required_next_step": "Inspect the saved source components and explicitly choose a geographic policy; no synthetic edges were added."
+        },
+        "source_components": [
+          {
+            "block_count": 288817,
+            "population": 20201249,
+            "example_geoid": "360830517021049"
+          },
+          {
+            "block_count": 1,
+            "population": 0,
+            "example_geoid": "360610001001000"
+          },
+          {
+            "block_count": 1,
+            "population": 0,
+            "example_geoid": "360610001001001"
+          }
+        ],
+        "elapsed_seconds": null,
+        "path": null,
+        "individual_report_exists": false,
+        "reused_topology_exception": true,
+        "suite_job": {
+          "district_count": 35,
+          "house_sizes": [
+            574
+          ],
+          "relative_output": "states/36/districts-35",
+          "status": "unsupported_topology",
+          "topology_report": "states/36/districts-26/benchmark.json"
+        }
+      },
+      {
+        "district_count": 42,
+        "house_sizes": [
+          692
+        ],
+        "status": "unsupported_topology",
+        "unsupported_reason": {
+          "code": "disconnected_source_graph",
+          "message": "The current workflow requires one connected, nonoverlapping shared-edge graph before computing district plans.",
+          "component_count": 3,
+          "required_next_step": "Inspect the saved source components and explicitly choose a geographic policy; no synthetic edges were added."
+        },
+        "source_components": [
+          {
+            "block_count": 288817,
+            "population": 20201249,
+            "example_geoid": "360830517021049"
+          },
+          {
+            "block_count": 1,
+            "population": 0,
+            "example_geoid": "360610001001000"
+          },
+          {
+            "block_count": 1,
+            "population": 0,
+            "example_geoid": "360610001001001"
+          }
+        ],
+        "elapsed_seconds": null,
+        "path": null,
+        "individual_report_exists": false,
+        "reused_topology_exception": true,
+        "suite_job": {
+          "district_count": 42,
+          "house_sizes": [
+            692
+          ],
+          "relative_output": "states/36/districts-42",
+          "status": "unsupported_topology",
+          "topology_report": "states/36/districts-26/benchmark.json"
+        }
+      },
+      {
+        "district_count": 61,
+        "house_sizes": [
+          1000
+        ],
+        "status": "unsupported_topology",
+        "unsupported_reason": {
+          "code": "disconnected_source_graph",
+          "message": "The current workflow requires one connected, nonoverlapping shared-edge graph before computing district plans.",
+          "component_count": 3,
+          "required_next_step": "Inspect the saved source components and explicitly choose a geographic policy; no synthetic edges were added."
+        },
+        "source_components": [
+          {
+            "block_count": 288817,
+            "population": 20201249,
+            "example_geoid": "360830517021049"
+          },
+          {
+            "block_count": 1,
+            "population": 0,
+            "example_geoid": "360610001001000"
+          },
+          {
+            "block_count": 1,
+            "population": 0,
+            "example_geoid": "360610001001001"
+          }
+        ],
+        "elapsed_seconds": null,
+        "path": null,
+        "individual_report_exists": false,
+        "reused_topology_exception": true,
+        "suite_job": {
+          "district_count": 61,
+          "house_sizes": [
+            1000
+          ],
+          "relative_output": "states/36/districts-61",
+          "status": "unsupported_topology",
+          "topology_report": "states/36/districts-26/benchmark.json"
+        }
+      }
+    ],
+    "blocks_spanning_components": [],
+    "population_assignment_ambiguity": {
+      "positive_population_blocks_spanning_components": 0,
+      "zero_population_blocks_spanning_components": 0,
+      "area_weighted_population_estimates_used": false
+    },
+    "strict_feasibility": {
+      "positive_population_component_count": 1,
+      "minimum_required_districts": 3,
+      "interpretation": "Every physical source component requires one or more districts under exact shared-edge connectivity; population bounds assume divisible population and ignore whole-block/internal geometry."
+    },
+    "policy": {
+      "name": "population-aware-rooted-boundary-forest-v1",
+      "population_tolerance": 0.01,
+      "source_geometry_modified": false,
+      "adapter_status": "Analytical selector reused unchanged; New York benchmark adapter not implemented; no district plans generated."
+    },
+    "distance_model": {
+      "candidate_search": "Per-pair bounding-box-centered equirectangular nearest boundary points.",
+      "reported_length": "Spherical great-circle distance between candidate endpoints.",
+      "earth_radius_m": 6371000.0,
+      "certified_geodesic_minimum": false,
+      "all_endpoints_verified_on_original_source_parts": true,
+      "meaning": "Distances between included census-coverage boundaries, not shoreline distances, bridges, or ferry routes."
+    },
+    "independent_dissolved_polygon_check_passed": true,
+    "map_simplification_degrees": 0.00025,
+    "limitations": [
+      "Connected augmented source graph does not guarantee a balanced whole-block connected district partition.",
+      "A recorded connection supports a district only if both exact endpoint blocks share that district.",
+      "No optimizer, repair, district polygon validation, or district maps ran in this diagnosis.",
+      "Positive gap does not by itself establish that its path is exclusively water; geography requires separately attributed context."
+    ],
+    "preservation": {
+      "original_strict_files_byte_identical": true,
+      "national_suite_byte_identical": true,
+      "source_archive_byte_identical": true,
+      "preserved_file_count": 5
+    },
+    "code_sha256": {
+      "scripts/diagnose_new_york_topology.py": "04721f16786645351fcdc4b055551f061b4e5a8f1966999a0814da4ef6755efb",
+      "scripts/district_block_part_graph.py": "49b43929897184c04a5332f4530cd7cf722f9ac604008657855a65694024c490",
+      "scripts/hawaii_population_links.py": "b512c901f00b62864eb84f7b5cfed2e8d4fe5915ffe3cc87e50c93345e581519"
+    },
+    "artifact_sha256": {
+      "components.geojson": "ee71b998fea077928a44c075094c3d857c3da5db5ddb5c55c3543b4308b64233",
+      "candidates.geojson": "5fc0c012241dd2079b17970154fa60647c46e9230d08a8cb32566cfcec2bf95c",
+      "detail-blocks.geojson": "6b3a11868281503a97363c276c4ee5a857bb9df474d79fd87264d4fa58a69f37",
+      "preserved-file-inventory.json": "2223ca1290dacabd4f7fab364f0e94ec4bebea3ea0a2d477b4469d08ea6f74a3",
+      "candidate-links.json": "960425feb448677b723481da6cb57f066744995b7bed8ae94b13a9aa2d7489de"
+    },
+    "elapsed_seconds": 152.86196209999616,
+    "analysis_seconds": 152.86196209999616,
+    "report_postprocessing": {
+      "description": "Final candidate-links.json now includes the selected_k annotations already present in diagnosis.links; numeric geometry, graph, population and selection results unchanged. Generator updated to perform this final serialization in future diagnostics.",
+      "generator_sha256_after_serialization_fix": "cb0e85d668e29b6eabae6bb6acbfc074568d434733d6ffdeab33ce283940555c",
+      "analysis_execution_code_sha256_retained": true
+    }
+  },
+  "connection_geography": {
+    "status": "complete",
+    "source_year": 2020,
+    "analysis": "new_york_harbor_candidate_water_and_land_classification",
+    "links": [
+      {
+        "candidate_id": "ny-candidate-00-01",
+        "candidate_endpoints": [
+          [
+            -74.03495160556861,
+            40.685939310772014
+          ],
+          [
+            -74.043619,
+            40.68876
+          ]
+        ],
+        "selected_k": [
+          26,
+          35,
+          42,
+          61
+        ],
+        "component_ids": [
+          0,
+          1
+        ],
+        "distance_m": 795.2682330091204,
+        "candidate_planar_length_m": 795.2682334995897,
+        "new_jersey_interior_coverage_fraction": 1.0,
+        "new_jersey_interior_coverage_m": 795.2682334995897,
+        "crossed_new_jersey_blocks": [
+          {
+            "geoid": "340179801001017",
+            "population": 0,
+            "land_area_m2": 0,
+            "water_area_m2": 1355954,
+            "candidate_interior_length_m": 795.2682334995897
+          }
+        ],
+        "mapped_water_fraction": 0.9999999999982763,
+        "mapped_water_length_m": 795.2682334982188,
+        "outside_mapped_water_length_m": 1.3708295158248595e-09,
+        "water_only_under_2020_census_area_water": true,
+        "classification": "mapped_water_only",
+        "water_intervals_normalized": [
+          [
+            0.0,
+            0.9999999999982763
+          ]
+        ],
+        "outside_water_intervals_normalized": [
+          [
+            0.9999999999982763,
+            1.0
+          ]
+        ],
+        "crossed_water_features": [
+          {
+            "name": "Hudson Riv",
+            "hydroid": "1108476069011",
+            "mtfcc": "H3010"
+          }
+        ]
+      },
+      {
+        "candidate_id": "ny-candidate-00-02",
+        "candidate_endpoints": [
+          [
+            -74.02908780665521,
+            40.695641431154876
+          ],
+          [
+            -74.038372,
+            40.698669
+          ]
+        ],
+        "selected_k": [
+          26,
+          35,
+          42,
+          61
+        ],
+        "component_ids": [
+          0,
+          2
+        ],
+        "distance_m": 852.0261479723722,
+        "candidate_planar_length_m": 852.0261485758558,
+        "new_jersey_interior_coverage_fraction": 1.0,
+        "new_jersey_interior_coverage_m": 852.0261485758558,
+        "crossed_new_jersey_blocks": [
+          {
+            "geoid": "340179801001000",
+            "population": 0,
+            "land_area_m2": 0,
+            "water_area_m2": 2528781,
+            "candidate_interior_length_m": 826.505857505817
+          },
+          {
+            "geoid": "340179801001001",
+            "population": 0,
+            "land_area_m2": 109419,
+            "water_area_m2": 0,
+            "candidate_interior_length_m": 25.520291070114638
+          }
+        ],
+        "mapped_water_fraction": 0.9700475259912639,
+        "mapped_water_length_m": 826.5058575058739,
+        "outside_mapped_water_length_m": 25.52029106998187,
+        "water_only_under_2020_census_area_water": false,
+        "classification": "crosses_mapped_water_and_new_jersey_land",
+        "water_intervals_normalized": [
+          [
+            0.0,
+            0.9700475259912639
+          ]
+        ],
+        "outside_water_intervals_normalized": [
+          [
+            0.9700475259912639,
+            1.0
+          ]
+        ],
+        "crossed_water_features": [
+          {
+            "name": "Hudson Riv",
+            "hydroid": "1108476069011",
+            "mtfcc": "H3010"
+          }
+        ]
+      },
+      {
+        "candidate_id": "ny-candidate-01-02",
+        "candidate_endpoints": [
+          [
+            -74.045427,
+            40.690895
+          ],
+          [
+            -74.039931,
+            40.69859
+          ]
+        ],
+        "selected_k": [],
+        "component_ids": [
+          1,
+          2
+        ],
+        "distance_m": 973.0490513691004,
+        "candidate_planar_length_m": 973.0490519388167,
+        "new_jersey_interior_coverage_fraction": 1.0,
+        "new_jersey_interior_coverage_m": 973.0490519388167,
+        "crossed_new_jersey_blocks": [
+          {
+            "geoid": "340179801001000",
+            "population": 0,
+            "land_area_m2": 0,
+            "water_area_m2": 2528781,
+            "candidate_interior_length_m": 288.8137243988954
+          },
+          {
+            "geoid": "340179801001001",
+            "population": 0,
+            "land_area_m2": 109419,
+            "water_area_m2": 0,
+            "candidate_interior_length_m": 151.40711750830465
+          },
+          {
+            "geoid": "340179801001017",
+            "population": 0,
+            "land_area_m2": 0,
+            "water_area_m2": 1355954,
+            "candidate_interior_length_m": 532.828210031729
+          }
+        ],
+        "mapped_water_fraction": 0.844399296000144,
+        "mapped_water_length_m": 821.6419344307443,
+        "outside_mapped_water_length_m": 151.40711750807236,
+        "water_only_under_2020_census_area_water": false,
+        "classification": "crosses_mapped_water_and_new_jersey_land",
+        "water_intervals_normalized": [
+          [
+            0.0,
+            0.7782584087967858
+          ],
+          [
+            0.9313543788008553,
+            0.9974952660042135
+          ]
+        ],
+        "outside_water_intervals_normalized": [
+          [
+            0.7782584087967858,
+            0.9313543788008553
+          ],
+          [
+            0.9974952660042135,
+            1.0
+          ]
+        ],
+        "crossed_water_features": [
+          {
+            "name": "Hudson Riv",
+            "hydroid": "1108476069011",
+            "mtfcc": "H3010"
+          }
+        ]
+      }
+    ],
+    "isolated_island_water_access": [
+      {
+        "geoid": "360610001001000",
+        "population": 0,
+        "housing_units": 0,
+        "land_area_m2": 18951,
+        "water_area_m2": 0,
+        "minimum_distance_to_hudson_county_mapped_water_m": 2.3396330402527297,
+        "water_intersects_island": false,
+        "source_boundary_length_m": 712.9204742092372,
+        "boundary_touching_new_jersey_nonwater_m": 712.9204742092372,
+        "entire_boundary_touches_new_jersey_nonwater": true,
+        "nearest_water_endpoint_coordinates": [
+          [
+            -74.039931,
+            40.69859
+          ],
+          [
+            -74.03995052179404,
+            40.698575044459524
+          ]
+        ],
+        "interpretation": "Positive separation means any connection from this source block to mapped harbor water must first cross a nonwater gap."
+      },
+      {
+        "geoid": "360610001001001",
+        "population": 0,
+        "housing_units": 0,
+        "land_area_m2": 57438,
+        "water_area_m2": 0,
+        "minimum_distance_to_hudson_county_mapped_water_m": 0.0,
+        "water_intersects_island": true,
+        "source_boundary_length_m": 952.9013207200319,
+        "boundary_touching_new_jersey_nonwater_m": 178.6133868804345,
+        "entire_boundary_touches_new_jersey_nonwater": false,
+        "nearest_water_endpoint_coordinates": [
+          [
+            -74.047207,
+            40.690893
+          ],
+          [
+            -74.047207,
+            40.690893
+          ]
+        ],
+        "interpretation": "The source block boundary reaches mapped harbor water."
+      }
+    ],
+    "new_jersey_source_feature_count": 137972,
+    "hudson_county_area_water_feature_count": 127,
+    "source_archive_sha256": {
+      ".cache/state-block-benchmark/source/34/tl_2020_34_tabblock20.zip": "33e5475f232d0f01c6a6448fb041fc38bd23eee1f8f5f5a2878cfb116690ce88",
+      ".cache/state-block-benchmark/source/36/tl_2020_36_tabblock20.zip": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+      ".cache/state-block-benchmark/suite-through-1000/diagnostics/new-york/context-source/tl_2020_34017_areawater.zip": "6b4b4f89aa45cca7f6eed0bbe540550a69043721f8c938dee8298696bc148d61"
+    },
+    "source_archives_byte_identical_before_after": true,
+    "source_geometry_modified": false,
+    "candidate_file_sha256": "960425feb448677b723481da6cb57f066744995b7bed8ae94b13a9aa2d7489de",
+    "diagnosis_file_sha256": "c0c6328e9abecac3622fd2c439b5a016be35690778ee6978e815672c0bc59c63",
+    "script_sha256": "577e6ceb3a1d8eb7a09a9acba40dc56447a657da753974727269b298d571a917",
+    "shapely_version": "2.1.2",
+    "geos_version": "3.13.1",
+    "source_urls": [
+      "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_36_tabblock20.zip",
+      "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_34_tabblock20.zip",
+      "https://www2.census.gov/geo/tiger/TIGER2020/AREAWATER/tl_2020_34017_areawater.zip"
+    ],
+    "geographic_explanation": {
+      "liberty_island": "Liberty Island belongs to New York, while surrounding water belongs to New Jersey under the 1834 compact. Its nearest selected boundary connection is mapped water-only.",
+      "ellis_island": "The original Ellis Island and main building belong to New York; most expanded island area belongs to New Jersey. The Census New York source block is enclosed by mapped New Jersey land, so the proposed connection includes a short land crossing.",
+      "primary_context_sources": [
+        {
+          "title": "National Park Service: Statue of Liberty frequently asked questions",
+          "url": "https://www.nps.gov/stli/planyourvisit/frequently-asked-questions-statue-of-liberty.htm"
+        },
+        {
+          "title": "National Park Service: Ellis Island frequently asked questions",
+          "url": "https://www.nps.gov/elis/faqs.htm"
+        }
+      ],
+      "territory_assignment": "Connections grant adjacency only between the two New York source blocks. New Jersey land and water remain outside the New York assignments."
+    },
+    "policy_assessments": [
+      {
+        "district_count": 26,
+        "recorded_geometric_selection": {
+          "policy": "population-aware-rooted-boundary-forest-v1",
+          "district_count": 26,
+          "population_tolerance": 0.01,
+          "ideal_population": 776971.1153846154,
+          "minimum_root_population": 769201.4042307693,
+          "eligible_root_component_ids": [
+            0
+          ],
+          "no_individual_root_fallback": false,
+          "selected_link_ids": [
+            "ny-candidate-00-01",
+            "ny-candidate-00-02"
+          ],
+          "selected_total_distance_m": 1647.2943809814926,
+          "groups": [
+            {
+              "group_id": 0,
+              "component_ids": [
+                0,
+                1,
+                2
+              ],
+              "population": 20201249,
+              "root_component_ids": [
+                0
+              ],
+              "district_count": 26
+            }
+          ],
+          "population_bound": {
+            "feasible_seat_allocation": true,
+            "best_max_deviation_pct": 0.0,
+            "deviation_fraction": [
+              0,
+              1
+            ],
+            "seat_counts": [
+              26
+            ],
+            "ideal_population": 776971.1153846154,
+            "group_ideal_seats": [
+              26.0
+            ],
+            "is_constructed_plan": false,
+            "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+          },
+          "selection_priority": [
+            "Retain the most independently population-compatible original root groups.",
+            "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+            "Break ties by stable candidate IDs and component IDs."
+          ],
+          "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+          "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+          "groupings_examined": 1,
+          "population_feasible_groupings": 1,
+          "geometrically_unconnectable_groupings": 0
+        },
+        "water_only_selection": {
+          "status": "no_connecting_water_only_forest",
+          "reason": "No population-compatible forest can connect the source components using permitted positive-length water gaps."
+        }
+      },
+      {
+        "district_count": 35,
+        "recorded_geometric_selection": {
+          "policy": "population-aware-rooted-boundary-forest-v1",
+          "district_count": 35,
+          "population_tolerance": 0.01,
+          "ideal_population": 577178.5428571429,
+          "minimum_root_population": 571406.7574285715,
+          "eligible_root_component_ids": [
+            0
+          ],
+          "no_individual_root_fallback": false,
+          "selected_link_ids": [
+            "ny-candidate-00-01",
+            "ny-candidate-00-02"
+          ],
+          "selected_total_distance_m": 1647.2943809814926,
+          "groups": [
+            {
+              "group_id": 0,
+              "component_ids": [
+                0,
+                1,
+                2
+              ],
+              "population": 20201249,
+              "root_component_ids": [
+                0
+              ],
+              "district_count": 35
+            }
+          ],
+          "population_bound": {
+            "feasible_seat_allocation": true,
+            "best_max_deviation_pct": 0.0,
+            "deviation_fraction": [
+              0,
+              1
+            ],
+            "seat_counts": [
+              35
+            ],
+            "ideal_population": 577178.5428571429,
+            "group_ideal_seats": [
+              35.0
+            ],
+            "is_constructed_plan": false,
+            "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+          },
+          "selection_priority": [
+            "Retain the most independently population-compatible original root groups.",
+            "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+            "Break ties by stable candidate IDs and component IDs."
+          ],
+          "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+          "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+          "groupings_examined": 1,
+          "population_feasible_groupings": 1,
+          "geometrically_unconnectable_groupings": 0
+        },
+        "water_only_selection": {
+          "status": "no_connecting_water_only_forest",
+          "reason": "No population-compatible forest can connect the source components using permitted positive-length water gaps."
+        }
+      },
+      {
+        "district_count": 42,
+        "recorded_geometric_selection": {
+          "policy": "population-aware-rooted-boundary-forest-v1",
+          "district_count": 42,
+          "population_tolerance": 0.01,
+          "ideal_population": 480982.11904761905,
+          "minimum_root_population": 476172.29785714287,
+          "eligible_root_component_ids": [
+            0
+          ],
+          "no_individual_root_fallback": false,
+          "selected_link_ids": [
+            "ny-candidate-00-01",
+            "ny-candidate-00-02"
+          ],
+          "selected_total_distance_m": 1647.2943809814926,
+          "groups": [
+            {
+              "group_id": 0,
+              "component_ids": [
+                0,
+                1,
+                2
+              ],
+              "population": 20201249,
+              "root_component_ids": [
+                0
+              ],
+              "district_count": 42
+            }
+          ],
+          "population_bound": {
+            "feasible_seat_allocation": true,
+            "best_max_deviation_pct": 0.0,
+            "deviation_fraction": [
+              0,
+              1
+            ],
+            "seat_counts": [
+              42
+            ],
+            "ideal_population": 480982.11904761905,
+            "group_ideal_seats": [
+              42.0
+            ],
+            "is_constructed_plan": false,
+            "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+          },
+          "selection_priority": [
+            "Retain the most independently population-compatible original root groups.",
+            "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+            "Break ties by stable candidate IDs and component IDs."
+          ],
+          "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+          "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+          "groupings_examined": 1,
+          "population_feasible_groupings": 1,
+          "geometrically_unconnectable_groupings": 0
+        },
+        "water_only_selection": {
+          "status": "no_connecting_water_only_forest",
+          "reason": "No population-compatible forest can connect the source components using permitted positive-length water gaps."
+        }
+      },
+      {
+        "district_count": 61,
+        "recorded_geometric_selection": {
+          "policy": "population-aware-rooted-boundary-forest-v1",
+          "district_count": 61,
+          "population_tolerance": 0.01,
+          "ideal_population": 331168.01639344264,
+          "minimum_root_population": 327856.3362295082,
+          "eligible_root_component_ids": [
+            0
+          ],
+          "no_individual_root_fallback": false,
+          "selected_link_ids": [
+            "ny-candidate-00-01",
+            "ny-candidate-00-02"
+          ],
+          "selected_total_distance_m": 1647.2943809814926,
+          "groups": [
+            {
+              "group_id": 0,
+              "component_ids": [
+                0,
+                1,
+                2
+              ],
+              "population": 20201249,
+              "root_component_ids": [
+                0
+              ],
+              "district_count": 61
+            }
+          ],
+          "population_bound": {
+            "feasible_seat_allocation": true,
+            "best_max_deviation_pct": 0.0,
+            "deviation_fraction": [
+              0,
+              1
+            ],
+            "seat_counts": [
+              61
+            ],
+            "ideal_population": 331168.01639344264,
+            "group_ideal_seats": [
+              61.0
+            ],
+            "is_constructed_plan": false,
+            "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+          },
+          "selection_priority": [
+            "Retain the most independently population-compatible original root groups.",
+            "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+            "Break ties by stable candidate IDs and component IDs."
+          ],
+          "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+          "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+          "groupings_examined": 1,
+          "population_feasible_groupings": 1,
+          "geometrically_unconnectable_groupings": 0
+        },
+        "water_only_selection": {
+          "status": "no_connecting_water_only_forest",
+          "reason": "No population-compatible forest can connect the source components using permitted positive-length water gaps."
+        }
+      }
+    ],
+    "conditional_partition_extension": {
+      "main_anchor_block_geoid": "360610005000003",
+      "main_anchor_population": 0,
+      "main_anchor_land_area_m2": 0,
+      "main_anchor_water_area_m2": 2628930,
+      "main_anchor_polygon_part_count": 1,
+      "zero_population_island_blocks": [
+        "360610001001000",
+        "360610001001001"
+      ],
+      "statement": "Any valid part-connected partition of the main source component extends to these islands by assigning both zero-population island blocks to the district containing the common anchor block. Every district population stays unchanged, and the two recorded links connect that district under the augmented policy.",
+      "prerequisite": "Explicit permission for the Ellis cross-New-Jersey-land exclave link, as well as the Liberty water link.",
+      "limits": "This conditional construction does not produce or prove the quality/existence of a balanced main-component district plan. Physical polygon connectivity remains separate, and full graph/polygon-plus-link validation remains necessary."
+    },
+    "measurement": "Local equirectangular lengths of exact source-polygon intersections. Overlapping intersections are merged as normalized intervals; no geometry is buffered or repaired.",
+    "limits": [
+      "Area-water is mapped 2020 geography, not present water levels or navigability.",
+      "Connection lines are graph-policy proposals, not existing roads, bridges, ferries, or changes to state boundaries.",
+      "Water/land classification is independent of population-aware graph selection and final district validation.",
+      "Context display polygons are clipped and simplified; calculations use full unsimplified source geometry."
+    ]
+  },
+  "historical_sources": {
+    "Ellis Island geography": "https://www.nps.gov/elis/faqs.htm",
+    "Liberty Island geography": "https://www.nps.gov/stli/planyourvisit/frequently-asked-questions-statue-of-liberty.htm"
+  },
+  "preserved_file_count_independently_verified": 5,
+  "evidence_sha256": {
+    "diagnosis.json": "c0c6328e9abecac3622fd2c439b5a016be35690778ee6978e815672c0bc59c63",
+    "geography-context.json": "3ef1f218718f63348d7f73d6e910cc5cd6977649694f8e50b1d866ed66b7e92f"
+  },
+  "conclusion": "Population-aware selection resolves the source-graph obstruction with one water link and one explicitly recorded exclave link; water-only eligibility does not resolve Ellis Island.",
+  "conditional_extension": "Both zero-population island blocks can join the district containing their shared water-block endpoint. This extends any valid main-component partition without changing district populations; it does not construct such a partition."
+}

@@ -1,0 +1,1907 @@
+{
+  "schema_version": 1,
+  "scope": "California exact source topology and proposed population-aware water forest; no district plans generated.",
+  "map_url": "http://127.0.0.1:8770/diagnostics/california/",
+  "total_population": 39538223,
+  "block_count": 519723,
+  "part_count": 520659,
+  "physical_component_count": 7,
+  "detached_population": 3878,
+  "components": [
+    {
+      "id": 0,
+      "label": "Mainland California coverage",
+      "population": 39534345,
+      "block_count": 519554,
+      "part_count": 520344,
+      "water_only_block_count": 7864,
+      "zero_population_block_count": 142021,
+      "land_area_m2": 402762095140,
+      "water_area_m2": 16774480010,
+      "bounds": [
+        -124.482003,
+        32.528832,
+        -114.131211,
+        42.009503
+      ],
+      "county_fips": [
+        "001",
+        "003",
+        "005",
+        "007",
+        "009",
+        "011",
+        "013",
+        "015",
+        "017",
+        "019",
+        "021",
+        "023",
+        "025",
+        "027",
+        "029",
+        "031",
+        "033",
+        "035",
+        "037",
+        "039",
+        "041",
+        "043",
+        "045",
+        "047",
+        "049",
+        "051",
+        "053",
+        "055",
+        "057",
+        "059",
+        "061",
+        "063",
+        "065",
+        "067",
+        "069",
+        "071",
+        "073",
+        "075",
+        "077",
+        "079",
+        "081",
+        "083",
+        "085",
+        "087",
+        "089",
+        "091",
+        "093",
+        "095",
+        "097",
+        "099",
+        "101",
+        "103",
+        "105",
+        "107",
+        "109",
+        "111",
+        "113",
+        "115"
+      ],
+      "example_geoids": [
+        "060650406112004",
+        "060650402014001",
+        "061130101032011",
+        "061130115001002",
+        "061130107041021"
+      ],
+      "population_definition": "Whole-block population, only blocks exclusively owned by this physical component.",
+      "representative_point": [
+        -120.02510468431335,
+        37.2695355
+      ],
+      "polygon_component_count": 1
+    },
+    {
+      "id": 1,
+      "label": "Northern Channel Islands coverage",
+      "population": 3,
+      "block_count": 50,
+      "part_count": 184,
+      "water_only_block_count": 20,
+      "zero_population_block_count": 49,
+      "land_area_m2": 506857288,
+      "water_area_m2": 1709132120,
+      "bounds": [
+        -120.582264,
+        33.84158,
+        -119.293112,
+        34.160569
+      ],
+      "county_fips": [
+        "083",
+        "111"
+      ],
+      "example_geoids": [
+        "060839801001005",
+        "060839801001007",
+        "060839801001009",
+        "060839801001033",
+        "060839801001004"
+      ],
+      "population_definition": "Whole-block population, only blocks exclusively owned by this physical component.",
+      "representative_point": [
+        -119.90232913565706,
+        34.0028475
+      ],
+      "polygon_component_count": 1
+    },
+    {
+      "id": 2,
+      "label": "Santa Catalina Island coverage",
+      "population": 3715,
+      "block_count": 81,
+      "part_count": 81,
+      "water_only_block_count": 9,
+      "zero_population_block_count": 25,
+      "land_area_m2": 193706490,
+      "water_area_m2": 567992734,
+      "bounds": [
+        -118.668203,
+        33.248083,
+        -118.241051,
+        33.532321
+      ],
+      "county_fips": [
+        "037"
+      ],
+      "example_geoids": [
+        "060375990004007",
+        "060375991002022",
+        "060375991002027",
+        "060375991002041",
+        "060375990001001"
+      ],
+      "population_definition": "Whole-block population, only blocks exclusively owned by this physical component.",
+      "representative_point": [
+        -118.43811637060716,
+        33.390357
+      ],
+      "polygon_component_count": 1
+    },
+    {
+      "id": 3,
+      "label": "San Clemente Island coverage",
+      "population": 160,
+      "block_count": 25,
+      "part_count": 26,
+      "water_only_block_count": 6,
+      "zero_population_block_count": 24,
+      "land_area_m2": 146821156,
+      "water_area_m2": 531145894,
+      "bounds": [
+        -118.678551,
+        32.75004,
+        -118.288784,
+        33.087111
+      ],
+      "county_fips": [
+        "037"
+      ],
+      "example_geoids": [
+        "060375991001004",
+        "060375991001007",
+        "060375991001022",
+        "060375991001023",
+        "060375991001018"
+      ],
+      "population_definition": "Whole-block population, only blocks exclusively owned by this physical component.",
+      "representative_point": [
+        -118.49957281617804,
+        32.919589
+      ],
+      "polygon_component_count": 1
+    },
+    {
+      "id": 4,
+      "label": "Farallon Islands coverage",
+      "population": 0,
+      "block_count": 3,
+      "part_count": 12,
+      "water_only_block_count": 1,
+      "zero_population_block_count": 3,
+      "land_area_m2": 419323,
+      "water_area_m2": 247501289,
+      "bounds": [
+        -123.173825,
+        37.63983,
+        -122.93571,
+        37.823058
+      ],
+      "county_fips": [
+        "075"
+      ],
+      "example_geoids": [
+        "060759804011001",
+        "060759804011002",
+        "060759804011000"
+      ],
+      "population_definition": "Whole-block population, only blocks exclusively owned by this physical component.",
+      "representative_point": [
+        -123.04664112024903,
+        37.7291735
+      ],
+      "polygon_component_count": 1
+    },
+    {
+      "id": 5,
+      "label": "San Nicolas Island coverage",
+      "population": 0,
+      "block_count": 7,
+      "part_count": 7,
+      "water_only_block_count": 2,
+      "zero_population_block_count": 7,
+      "land_area_m2": 58634146,
+      "water_area_m2": 301413764,
+      "bounds": [
+        -119.636302,
+        33.163493,
+        -119.360133,
+        33.335259
+      ],
+      "county_fips": [
+        "111"
+      ],
+      "example_geoids": [
+        "061119800001003",
+        "061119800001005",
+        "061119800001004",
+        "061119800001002",
+        "061119901000011"
+      ],
+      "population_definition": "Whole-block population, only blocks exclusively owned by this physical component.",
+      "representative_point": [
+        -119.49807236681222,
+        33.2494675
+      ],
+      "polygon_component_count": 1
+    },
+    {
+      "id": 6,
+      "label": "Santa Barbara Island coverage",
+      "population": 0,
+      "block_count": 3,
+      "part_count": 5,
+      "water_only_block_count": 2,
+      "zero_population_block_count": 3,
+      "land_area_m2": 2662495,
+      "water_area_m2": 162468019,
+      "bounds": [
+        -119.118949,
+        33.411024,
+        -118.962728,
+        33.540116
+      ],
+      "county_fips": [
+        "083"
+      ],
+      "example_geoids": [
+        "060839801001036",
+        "060839900000034",
+        "060839801001037"
+      ],
+      "population_definition": "Whole-block population, only blocks exclusively owned by this physical component.",
+      "representative_point": [
+        -119.0360617923177,
+        33.477173500000006
+      ],
+      "polygon_component_count": 1
+    }
+  ],
+  "selected_links": [
+    {
+      "id": "ca-candidate-00-01",
+      "component_ids": [
+        0,
+        1
+      ],
+      "distance_m": 7700.771358809755,
+      "planar_candidate_distance_m": 7474.373772689427,
+      "endpoints": [
+        {
+          "geoid": "061119901000008",
+          "part_node": 516415,
+          "part_index": 0,
+          "coordinate": [
+            -119.23271772186301,
+            34.08202532712146
+          ],
+          "source_boundary_error_degrees": 1.6713411593633635e-15,
+          "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+        },
+        {
+          "geoid": "061119901000013",
+          "part_node": 504465,
+          "part_index": 0,
+          "coordinate": [
+            -119.305153,
+            34.047449
+          ],
+          "source_boundary_error_degrees": 0.0,
+          "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+        }
+      ],
+      "selected_k": [
+        52,
+        69,
+        83,
+        120
+      ],
+      "classification": "positive_gap",
+      "source_boundaries_intersect": false,
+      "exact_geographic_distance_degrees": 0.07865485672009148,
+      "intervening_component_ids": [],
+      "endpoint_component_interior_crossings": [],
+      "endpoint_interior_intersection_length_degrees": {
+        "0": 0.0,
+        "1": 0.0
+      },
+      "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+      "eligible_positive_gap": true,
+      "projection": {
+        "kind": "per-pair-bbox-centered-equirectangular",
+        "lon0": -119.306607,
+        "lat0": 37.2691675
+      },
+      "component_labels": [
+        "Mainland California coverage",
+        "Northern Channel Islands coverage"
+      ]
+    },
+    {
+      "id": "ca-candidate-00-02",
+      "component_ids": [
+        0,
+        2
+      ],
+      "distance_m": 20193.431745567246,
+      "planar_candidate_distance_m": 19935.61897557587,
+      "endpoints": [
+        {
+          "geoid": "060379903000007",
+          "part_node": 506959,
+          "part_index": 0,
+          "coordinate": [
+            -118.345415,
+            33.663427
+          ],
+          "source_boundary_error_degrees": 0.0,
+          "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+        },
+        {
+          "geoid": "060375991002000",
+          "part_node": 506053,
+          "part_index": 0,
+          "coordinate": [
+            -118.462853,
+            33.510427
+          ],
+          "source_boundary_error_degrees": 0.0,
+          "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+        }
+      ],
+      "selected_k": [
+        52,
+        69,
+        83,
+        120
+      ],
+      "classification": "positive_gap",
+      "source_boundaries_intersect": false,
+      "exact_geographic_distance_degrees": 0.18905665235584415,
+      "intervening_component_ids": [],
+      "endpoint_component_interior_crossings": [],
+      "endpoint_interior_intersection_length_degrees": {
+        "0": 0.0,
+        "2": 0.0
+      },
+      "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+      "eligible_positive_gap": true,
+      "projection": {
+        "kind": "per-pair-bbox-centered-equirectangular",
+        "lon0": -119.306607,
+        "lat0": 37.2691675
+      },
+      "component_labels": [
+        "Mainland California coverage",
+        "Santa Catalina Island coverage"
+      ]
+    },
+    {
+      "id": "ca-candidate-00-04",
+      "component_ids": [
+        0,
+        4
+      ],
+      "distance_m": 14540.758606580059,
+      "planar_candidate_distance_m": 14553.360199990244,
+      "endpoints": [
+        {
+          "geoid": "060419901000023",
+          "part_node": 512754,
+          "part_index": 0,
+          "coordinate": [
+            -123.041121,
+            37.945465
+          ],
+          "source_boundary_error_degrees": 0.0,
+          "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+        },
+        {
+          "geoid": "060759804011000",
+          "part_node": 505033,
+          "part_index": 0,
+          "coordinate": [
+            -123.09460508270404,
+            37.82169749593502
+          ],
+          "source_boundary_error_degrees": 1.9026623383433822e-15,
+          "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+        }
+      ],
+      "selected_k": [
+        52,
+        69,
+        83,
+        120
+      ],
+      "classification": "positive_gap",
+      "source_boundaries_intersect": false,
+      "exact_geographic_distance_degrees": 0.13354440655231625,
+      "intervening_component_ids": [],
+      "endpoint_component_interior_crossings": [],
+      "endpoint_interior_intersection_length_degrees": {
+        "0": 0.0,
+        "4": 0.0
+      },
+      "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+      "eligible_positive_gap": true,
+      "projection": {
+        "kind": "per-pair-bbox-centered-equirectangular",
+        "lon0": -119.306607,
+        "lat0": 37.2691675
+      },
+      "component_labels": [
+        "Mainland California coverage",
+        "Farallon Islands coverage"
+      ]
+    },
+    {
+      "id": "ca-candidate-02-03",
+      "component_ids": [
+        2,
+        3
+      ],
+      "distance_m": 22835.263532286583,
+      "planar_candidate_distance_m": 22836.42290402703,
+      "endpoints": [
+        {
+          "geoid": "060375991002015",
+          "part_node": 499596,
+          "part_index": 0,
+          "coordinate": [
+            -118.486688,
+            33.276905
+          ],
+          "source_boundary_error_degrees": 0.0,
+          "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+        },
+        {
+          "geoid": "060375991001000",
+          "part_node": 494853,
+          "part_index": 0,
+          "coordinate": [
+            -118.56941187934976,
+            33.08356559687665
+          ],
+          "source_boundary_error_degrees": 3.272351212229003e-15,
+          "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+        }
+      ],
+      "selected_k": [
+        52,
+        69,
+        83,
+        120
+      ],
+      "classification": "positive_gap",
+      "source_boundaries_intersect": false,
+      "exact_geographic_distance_degrees": 0.20894912707402813,
+      "intervening_component_ids": [],
+      "endpoint_component_interior_crossings": [],
+      "endpoint_interior_intersection_length_degrees": {
+        "2": 0.0,
+        "3": 0.0
+      },
+      "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+      "eligible_positive_gap": true,
+      "projection": {
+        "kind": "per-pair-bbox-centered-equirectangular",
+        "lon0": -118.459801,
+        "lat0": 33.141180500000004
+      },
+      "component_labels": [
+        "Santa Catalina Island coverage",
+        "San Clemente Island coverage"
+      ]
+    },
+    {
+      "id": "ca-candidate-02-06",
+      "component_ids": [
+        2,
+        6
+      ],
+      "distance_m": 27317.03688321999,
+      "planar_candidate_distance_m": 27345.860717412743,
+      "endpoints": [
+        {
+          "geoid": "060375991002000",
+          "part_node": 506053,
+          "part_index": 0,
+          "coordinate": [
+            -118.668203,
+            33.485937
+          ],
+          "source_boundary_error_degrees": 0.0,
+          "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+        },
+        {
+          "geoid": "060839900000034",
+          "part_node": 497357,
+          "part_index": 0,
+          "coordinate": [
+            -118.962759,
+            33.485205
+          ],
+          "source_boundary_error_degrees": 0.0,
+          "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+        }
+      ],
+      "selected_k": [
+        52,
+        69,
+        83,
+        120
+      ],
+      "classification": "positive_gap",
+      "source_boundaries_intersect": false,
+      "exact_geographic_distance_degrees": 0.2945569074557561,
+      "intervening_component_ids": [],
+      "endpoint_component_interior_crossings": [],
+      "endpoint_interior_intersection_length_degrees": {
+        "2": 0.0,
+        "6": 0.0
+      },
+      "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+      "eligible_positive_gap": true,
+      "projection": {
+        "kind": "per-pair-bbox-centered-equirectangular",
+        "lon0": -118.68,
+        "lat0": 33.394099499999996
+      },
+      "component_labels": [
+        "Santa Catalina Island coverage",
+        "Santa Barbara Island coverage"
+      ]
+    },
+    {
+      "id": "ca-candidate-05-06",
+      "component_ids": [
+        5,
+        6
+      ],
+      "distance_m": 31783.419831147017,
+      "planar_candidate_distance_m": 31781.959564935278,
+      "endpoints": [
+        {
+          "geoid": "061119901000011",
+          "part_node": 514042,
+          "part_index": 0,
+          "coordinate": [
+            -119.375938,
+            33.264756
+          ],
+          "source_boundary_error_degrees": 0.0,
+          "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+        },
+        {
+          "geoid": "060839900000034",
+          "part_node": 497357,
+          "part_index": 0,
+          "coordinate": [
+            -119.094128,
+            33.426872
+          ],
+          "source_boundary_error_degrees": 0.0,
+          "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+        }
+      ],
+      "selected_k": [
+        52,
+        69,
+        83,
+        120
+      ],
+      "classification": "positive_gap",
+      "source_boundaries_intersect": false,
+      "exact_geographic_distance_degrees": 0.32245758552869747,
+      "intervening_component_ids": [],
+      "endpoint_component_interior_crossings": [],
+      "endpoint_interior_intersection_length_degrees": {
+        "5": 0.0,
+        "6": 0.0
+      },
+      "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+      "eligible_positive_gap": true,
+      "projection": {
+        "kind": "per-pair-bbox-centered-equirectangular",
+        "lon0": -119.299515,
+        "lat0": 33.3518045
+      },
+      "component_labels": [
+        "San Nicolas Island coverage",
+        "Santa Barbara Island coverage"
+      ]
+    }
+  ],
+  "plans": [
+    {
+      "district_count": 52,
+      "house_sizes": [
+        435
+      ],
+      "ideal_population": 760350.4423076923,
+      "strict_population_bound": {
+        "feasible_seat_allocation": true,
+        "best_max_deviation_pct": 100.0,
+        "deviation_fraction": [
+          1,
+          1
+        ],
+        "seat_counts": [
+          26,
+          1,
+          1,
+          1,
+          1,
+          1,
+          21
+        ],
+        "ideal_population": 760350.4423076923,
+        "group_ideal_seats": [
+          51.9948997202024,
+          3.945549095618182e-06,
+          0.004885904963407182,
+          0.00021042928509963638,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "is_constructed_plan": false,
+        "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+      },
+      "policy_population_bound": {
+        "feasible_seat_allocation": true,
+        "best_max_deviation_pct": 0.0,
+        "deviation_fraction": [
+          0,
+          1
+        ],
+        "seat_counts": [
+          52
+        ],
+        "ideal_population": 760350.4423076923,
+        "group_ideal_seats": [
+          52.0
+        ],
+        "is_constructed_plan": false,
+        "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+      },
+      "selected_link_ids": [
+        "ca-candidate-00-01",
+        "ca-candidate-00-04",
+        "ca-candidate-00-02",
+        "ca-candidate-02-03",
+        "ca-candidate-02-06",
+        "ca-candidate-05-06"
+      ],
+      "augmented_component_count": 1,
+      "policy": {
+        "policy": "population-aware-rooted-boundary-forest-v1",
+        "district_count": 52,
+        "population_tolerance": 0.01,
+        "ideal_population": 760350.4423076923,
+        "minimum_root_population": 752746.9378846154,
+        "eligible_root_component_ids": [
+          0
+        ],
+        "no_individual_root_fallback": false,
+        "selected_link_ids": [
+          "ca-candidate-00-01",
+          "ca-candidate-00-04",
+          "ca-candidate-00-02",
+          "ca-candidate-02-03",
+          "ca-candidate-02-06",
+          "ca-candidate-05-06"
+        ],
+        "selected_total_distance_m": 124370.68195761065,
+        "groups": [
+          {
+            "group_id": 0,
+            "component_ids": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "population": 39538223,
+            "root_component_ids": [
+              0
+            ],
+            "district_count": 52
+          }
+        ],
+        "population_bound": {
+          "feasible_seat_allocation": true,
+          "best_max_deviation_pct": 0.0,
+          "deviation_fraction": [
+            0,
+            1
+          ],
+          "seat_counts": [
+            52
+          ],
+          "ideal_population": 760350.4423076923,
+          "group_ideal_seats": [
+            52.0
+          ],
+          "is_constructed_plan": false,
+          "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+        },
+        "selection_priority": [
+          "Retain the most independently population-compatible original root groups.",
+          "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+          "Break ties by stable candidate IDs and component IDs."
+        ],
+        "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+        "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+        "groupings_examined": 1,
+        "population_feasible_groupings": 1,
+        "geometrically_unconnectable_groupings": 0
+      },
+      "actual_district_plan_generated": false,
+      "augmented_graph_validation": {
+        "independent_full_graph_traversal": true,
+        "node_count": 520659,
+        "physical_component_count": 7,
+        "augmented_component_count": 1,
+        "component_sizes": [
+          520659
+        ],
+        "inserted_part_edge_pairs": [
+          [
+            516415,
+            504465
+          ],
+          [
+            506959,
+            506053
+          ],
+          [
+            512754,
+            505033
+          ],
+          [
+            499596,
+            494853
+          ],
+          [
+            506053,
+            497357
+          ],
+          [
+            514042,
+            497357
+          ]
+        ],
+        "all_source_parts_reached": true,
+        "physical_adjacency_modified": false
+      }
+    },
+    {
+      "district_count": 69,
+      "house_sizes": [
+        574
+      ],
+      "ideal_population": 573017.7246376812,
+      "strict_population_bound": {
+        "feasible_seat_allocation": true,
+        "best_max_deviation_pct": 100.0,
+        "deviation_fraction": [
+          1,
+          1
+        ],
+        "seat_counts": [
+          35,
+          1,
+          1,
+          1,
+          1,
+          1,
+          29
+        ],
+        "ideal_population": 573017.7246376812,
+        "group_ideal_seats": [
+          68.9932323210378,
+          5.235440146108742e-06,
+          0.006483220047597991,
+          0.0002792234744591329,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "is_constructed_plan": false,
+        "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+      },
+      "policy_population_bound": {
+        "feasible_seat_allocation": true,
+        "best_max_deviation_pct": 0.0,
+        "deviation_fraction": [
+          0,
+          1
+        ],
+        "seat_counts": [
+          69
+        ],
+        "ideal_population": 573017.7246376812,
+        "group_ideal_seats": [
+          69.0
+        ],
+        "is_constructed_plan": false,
+        "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+      },
+      "selected_link_ids": [
+        "ca-candidate-00-01",
+        "ca-candidate-00-04",
+        "ca-candidate-00-02",
+        "ca-candidate-02-03",
+        "ca-candidate-02-06",
+        "ca-candidate-05-06"
+      ],
+      "augmented_component_count": 1,
+      "policy": {
+        "policy": "population-aware-rooted-boundary-forest-v1",
+        "district_count": 69,
+        "population_tolerance": 0.01,
+        "ideal_population": 573017.7246376812,
+        "minimum_root_population": 567287.5473913044,
+        "eligible_root_component_ids": [
+          0
+        ],
+        "no_individual_root_fallback": false,
+        "selected_link_ids": [
+          "ca-candidate-00-01",
+          "ca-candidate-00-04",
+          "ca-candidate-00-02",
+          "ca-candidate-02-03",
+          "ca-candidate-02-06",
+          "ca-candidate-05-06"
+        ],
+        "selected_total_distance_m": 124370.68195761065,
+        "groups": [
+          {
+            "group_id": 0,
+            "component_ids": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "population": 39538223,
+            "root_component_ids": [
+              0
+            ],
+            "district_count": 69
+          }
+        ],
+        "population_bound": {
+          "feasible_seat_allocation": true,
+          "best_max_deviation_pct": 0.0,
+          "deviation_fraction": [
+            0,
+            1
+          ],
+          "seat_counts": [
+            69
+          ],
+          "ideal_population": 573017.7246376812,
+          "group_ideal_seats": [
+            69.0
+          ],
+          "is_constructed_plan": false,
+          "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+        },
+        "selection_priority": [
+          "Retain the most independently population-compatible original root groups.",
+          "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+          "Break ties by stable candidate IDs and component IDs."
+        ],
+        "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+        "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+        "groupings_examined": 1,
+        "population_feasible_groupings": 1,
+        "geometrically_unconnectable_groupings": 0
+      },
+      "actual_district_plan_generated": false,
+      "augmented_graph_validation": {
+        "independent_full_graph_traversal": true,
+        "node_count": 520659,
+        "physical_component_count": 7,
+        "augmented_component_count": 1,
+        "component_sizes": [
+          520659
+        ],
+        "inserted_part_edge_pairs": [
+          [
+            516415,
+            504465
+          ],
+          [
+            506959,
+            506053
+          ],
+          [
+            512754,
+            505033
+          ],
+          [
+            499596,
+            494853
+          ],
+          [
+            506053,
+            497357
+          ],
+          [
+            514042,
+            497357
+          ]
+        ],
+        "all_source_parts_reached": true,
+        "physical_adjacency_modified": false
+      }
+    },
+    {
+      "district_count": 83,
+      "house_sizes": [
+        692
+      ],
+      "ideal_population": 476364.1325301205,
+      "strict_population_bound": {
+        "feasible_seat_allocation": true,
+        "best_max_deviation_pct": 100.0,
+        "deviation_fraction": [
+          1,
+          1
+        ],
+        "seat_counts": [
+          42,
+          1,
+          1,
+          1,
+          1,
+          1,
+          36
+        ],
+        "ideal_population": 476364.1325301205,
+        "group_ideal_seats": [
+          82.9918591687846,
+          6.29770336415979e-06,
+          0.00779865599928454,
+          0.00033587751275518884,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "is_constructed_plan": false,
+        "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+      },
+      "policy_population_bound": {
+        "feasible_seat_allocation": true,
+        "best_max_deviation_pct": 0.0,
+        "deviation_fraction": [
+          0,
+          1
+        ],
+        "seat_counts": [
+          83
+        ],
+        "ideal_population": 476364.1325301205,
+        "group_ideal_seats": [
+          83.0
+        ],
+        "is_constructed_plan": false,
+        "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+      },
+      "selected_link_ids": [
+        "ca-candidate-00-01",
+        "ca-candidate-00-04",
+        "ca-candidate-00-02",
+        "ca-candidate-02-03",
+        "ca-candidate-02-06",
+        "ca-candidate-05-06"
+      ],
+      "augmented_component_count": 1,
+      "policy": {
+        "policy": "population-aware-rooted-boundary-forest-v1",
+        "district_count": 83,
+        "population_tolerance": 0.01,
+        "ideal_population": 476364.1325301205,
+        "minimum_root_population": 471600.4912048193,
+        "eligible_root_component_ids": [
+          0
+        ],
+        "no_individual_root_fallback": false,
+        "selected_link_ids": [
+          "ca-candidate-00-01",
+          "ca-candidate-00-04",
+          "ca-candidate-00-02",
+          "ca-candidate-02-03",
+          "ca-candidate-02-06",
+          "ca-candidate-05-06"
+        ],
+        "selected_total_distance_m": 124370.68195761065,
+        "groups": [
+          {
+            "group_id": 0,
+            "component_ids": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "population": 39538223,
+            "root_component_ids": [
+              0
+            ],
+            "district_count": 83
+          }
+        ],
+        "population_bound": {
+          "feasible_seat_allocation": true,
+          "best_max_deviation_pct": 0.0,
+          "deviation_fraction": [
+            0,
+            1
+          ],
+          "seat_counts": [
+            83
+          ],
+          "ideal_population": 476364.1325301205,
+          "group_ideal_seats": [
+            83.0
+          ],
+          "is_constructed_plan": false,
+          "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+        },
+        "selection_priority": [
+          "Retain the most independently population-compatible original root groups.",
+          "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+          "Break ties by stable candidate IDs and component IDs."
+        ],
+        "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+        "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+        "groupings_examined": 1,
+        "population_feasible_groupings": 1,
+        "geometrically_unconnectable_groupings": 0
+      },
+      "actual_district_plan_generated": false,
+      "augmented_graph_validation": {
+        "independent_full_graph_traversal": true,
+        "node_count": 520659,
+        "physical_component_count": 7,
+        "augmented_component_count": 1,
+        "component_sizes": [
+          520659
+        ],
+        "inserted_part_edge_pairs": [
+          [
+            516415,
+            504465
+          ],
+          [
+            506959,
+            506053
+          ],
+          [
+            512754,
+            505033
+          ],
+          [
+            499596,
+            494853
+          ],
+          [
+            506053,
+            497357
+          ],
+          [
+            514042,
+            497357
+          ]
+        ],
+        "all_source_parts_reached": true,
+        "physical_adjacency_modified": false
+      }
+    },
+    {
+      "district_count": 120,
+      "house_sizes": [
+        1000
+      ],
+      "ideal_population": 329485.19166666665,
+      "strict_population_bound": {
+        "feasible_seat_allocation": true,
+        "best_max_deviation_pct": 100.0,
+        "deviation_fraction": [
+          1,
+          1
+        ],
+        "seat_counts": [
+          60,
+          1,
+          1,
+          1,
+          1,
+          1,
+          55
+        ],
+        "ideal_population": 329485.19166666665,
+        "group_ideal_seats": [
+          119.988230123544,
+          9.10511329758042e-06,
+          0.01127516530017042,
+          0.0004856060425376224,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "is_constructed_plan": false,
+        "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+      },
+      "policy_population_bound": {
+        "feasible_seat_allocation": true,
+        "best_max_deviation_pct": 0.0,
+        "deviation_fraction": [
+          0,
+          1
+        ],
+        "seat_counts": [
+          120
+        ],
+        "ideal_population": 329485.19166666665,
+        "group_ideal_seats": [
+          120.0
+        ],
+        "is_constructed_plan": false,
+        "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+      },
+      "selected_link_ids": [
+        "ca-candidate-00-01",
+        "ca-candidate-00-04",
+        "ca-candidate-00-02",
+        "ca-candidate-02-03",
+        "ca-candidate-02-06",
+        "ca-candidate-05-06"
+      ],
+      "augmented_component_count": 1,
+      "policy": {
+        "policy": "population-aware-rooted-boundary-forest-v1",
+        "district_count": 120,
+        "population_tolerance": 0.01,
+        "ideal_population": 329485.19166666665,
+        "minimum_root_population": 326190.33975,
+        "eligible_root_component_ids": [
+          0
+        ],
+        "no_individual_root_fallback": false,
+        "selected_link_ids": [
+          "ca-candidate-00-01",
+          "ca-candidate-00-04",
+          "ca-candidate-00-02",
+          "ca-candidate-02-03",
+          "ca-candidate-02-06",
+          "ca-candidate-05-06"
+        ],
+        "selected_total_distance_m": 124370.68195761065,
+        "groups": [
+          {
+            "group_id": 0,
+            "component_ids": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "population": 39538223,
+            "root_component_ids": [
+              0
+            ],
+            "district_count": 120
+          }
+        ],
+        "population_bound": {
+          "feasible_seat_allocation": true,
+          "best_max_deviation_pct": 0.0,
+          "deviation_fraction": [
+            0,
+            1
+          ],
+          "seat_counts": [
+            120
+          ],
+          "ideal_population": 329485.19166666665,
+          "group_ideal_seats": [
+            120.0
+          ],
+          "is_constructed_plan": false,
+          "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+        },
+        "selection_priority": [
+          "Retain the most independently population-compatible original root groups.",
+          "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+          "Break ties by stable candidate IDs and component IDs."
+        ],
+        "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+        "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+        "groupings_examined": 1,
+        "population_feasible_groupings": 1,
+        "geometrically_unconnectable_groupings": 0
+      },
+      "actual_district_plan_generated": false,
+      "augmented_graph_validation": {
+        "independent_full_graph_traversal": true,
+        "node_count": 520659,
+        "physical_component_count": 7,
+        "augmented_component_count": 1,
+        "component_sizes": [
+          520659
+        ],
+        "inserted_part_edge_pairs": [
+          [
+            516415,
+            504465
+          ],
+          [
+            506959,
+            506053
+          ],
+          [
+            512754,
+            505033
+          ],
+          [
+            499596,
+            494853
+          ],
+          [
+            506053,
+            497357
+          ],
+          [
+            514042,
+            497357
+          ]
+        ],
+        "all_source_parts_reached": true,
+        "physical_adjacency_modified": false
+      }
+    }
+  ],
+  "strict_baseline": [
+    {
+      "district_count": 52,
+      "house_sizes": [
+        435
+      ],
+      "status": "unsupported_topology",
+      "unsupported_reason": {
+        "code": "disconnected_source_graph",
+        "message": "The current workflow requires one connected, nonoverlapping shared-edge graph before computing district plans.",
+        "component_count": 7,
+        "required_next_step": "Inspect the saved source components and explicitly choose a geographic policy; no synthetic edges were added."
+      },
+      "source_components": [
+        {
+          "block_count": 519554,
+          "population": 39534345,
+          "example_geoid": "060650406112004"
+        },
+        {
+          "block_count": 81,
+          "population": 3715,
+          "example_geoid": "060375990004007"
+        },
+        {
+          "block_count": 25,
+          "population": 160,
+          "example_geoid": "060375991001004"
+        },
+        {
+          "block_count": 50,
+          "population": 3,
+          "example_geoid": "060839801001005"
+        },
+        {
+          "block_count": 7,
+          "population": 0,
+          "example_geoid": "061119800001003"
+        },
+        {
+          "block_count": 3,
+          "population": 0,
+          "example_geoid": "060759804011001"
+        },
+        {
+          "block_count": 3,
+          "population": 0,
+          "example_geoid": "060839801001036"
+        }
+      ],
+      "elapsed_seconds": 192.0432342999993,
+      "path": "states/06/districts-52/benchmark.json",
+      "individual_report_exists": true,
+      "reused_topology_exception": false,
+      "suite_job": {
+        "district_count": 52,
+        "house_sizes": [
+          435
+        ],
+        "relative_output": "states/06/districts-52",
+        "status": "unsupported_topology",
+        "started_at": "2026-10-23T08:15:19.899752+00:00",
+        "log": "states/06/districts-52.log",
+        "pid": 38544,
+        "latest_progress": "Report: C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\states\\06\\districts-52\\benchmark.json",
+        "process_exit_code": 0,
+        "finished_at": "2026-10-23T08:18:34.649081+00:00",
+        "report": "states/06/districts-52/benchmark.json",
+        "timed_pipeline_wall_seconds": 192.0432342999993,
+        "peak_process_working_set_bytes": 1478549504,
+        "graph_cache": {
+          "status": "built",
+          "cache_hit": false,
+          "key": "c90341fde6bc34e08bde35692639c18fbd1ea8b0391f43a2f8ab8a642665e072",
+          "path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\graph-cache\\06\\shared-edge-c90341fde6bc34e08bde35692639c18fbd1ea8b0391f43a2f8ab8a642665e072.npz",
+          "identity": {
+            "schema": 1,
+            "topology_rule": "F***1****; original source coordinates; no snapping or buffering",
+            "source_archive_sha256": "154ffb979e4d1f8cae4ff2676cbba9030ef39a92d4620644bc8aa7f7be2ad85f",
+            "ordered_geoids_sha256": "357e24f62a4695398dc74ea8388650fd84df13320af7b06db352228eee1bd80c",
+            "node_count": 519723,
+            "adjacency_builder_sha256": "8e3bd87629631e5452b6294bb94789dffa733a7b490db8a5238687a7609c0efc",
+            "shapely_version": "2.1.2",
+            "geos_version": "3.13.1"
+          },
+          "bytes": 8994179,
+          "load_seconds": 0.00010119999933522195,
+          "build_seconds": 162.48549819999607,
+          "write_seconds": 5.83186159998877,
+          "total_seconds": 168.5834252999921,
+          "source_hash_verified_by_caller": true,
+          "original_build_timing_reused": false,
+          "invalid_cache_reason": null
+        },
+        "source_components": [
+          {
+            "block_count": 519554,
+            "population": 39534345,
+            "example_geoid": "060650406112004"
+          },
+          {
+            "block_count": 81,
+            "population": 3715,
+            "example_geoid": "060375990004007"
+          },
+          {
+            "block_count": 25,
+            "population": 160,
+            "example_geoid": "060375991001004"
+          },
+          {
+            "block_count": 50,
+            "population": 3,
+            "example_geoid": "060839801001005"
+          },
+          {
+            "block_count": 7,
+            "population": 0,
+            "example_geoid": "061119800001003"
+          },
+          {
+            "block_count": 3,
+            "population": 0,
+            "example_geoid": "060759804011001"
+          },
+          {
+            "block_count": 3,
+            "population": 0,
+            "example_geoid": "060839801001036"
+          }
+        ],
+        "unsupported_reason": {
+          "code": "disconnected_source_graph",
+          "message": "The current workflow requires one connected, nonoverlapping shared-edge graph before computing district plans.",
+          "component_count": 7,
+          "required_next_step": "Inspect the saved source components and explicitly choose a geographic policy; no synthetic edges were added."
+        }
+      }
+    },
+    {
+      "district_count": 69,
+      "house_sizes": [
+        574
+      ],
+      "status": "unsupported_topology",
+      "unsupported_reason": {
+        "code": "disconnected_source_graph",
+        "message": "The current workflow requires one connected, nonoverlapping shared-edge graph before computing district plans.",
+        "component_count": 7,
+        "required_next_step": "Inspect the saved source components and explicitly choose a geographic policy; no synthetic edges were added."
+      },
+      "source_components": [
+        {
+          "block_count": 519554,
+          "population": 39534345,
+          "example_geoid": "060650406112004"
+        },
+        {
+          "block_count": 81,
+          "population": 3715,
+          "example_geoid": "060375990004007"
+        },
+        {
+          "block_count": 25,
+          "population": 160,
+          "example_geoid": "060375991001004"
+        },
+        {
+          "block_count": 50,
+          "population": 3,
+          "example_geoid": "060839801001005"
+        },
+        {
+          "block_count": 7,
+          "population": 0,
+          "example_geoid": "061119800001003"
+        },
+        {
+          "block_count": 3,
+          "population": 0,
+          "example_geoid": "060759804011001"
+        },
+        {
+          "block_count": 3,
+          "population": 0,
+          "example_geoid": "060839801001036"
+        }
+      ],
+      "elapsed_seconds": null,
+      "path": null,
+      "individual_report_exists": false,
+      "reused_topology_exception": true,
+      "suite_job": {
+        "district_count": 69,
+        "house_sizes": [
+          574
+        ],
+        "relative_output": "states/06/districts-69",
+        "status": "unsupported_topology",
+        "topology_report": "states/06/districts-52/benchmark.json"
+      }
+    },
+    {
+      "district_count": 83,
+      "house_sizes": [
+        692
+      ],
+      "status": "unsupported_topology",
+      "unsupported_reason": {
+        "code": "disconnected_source_graph",
+        "message": "The current workflow requires one connected, nonoverlapping shared-edge graph before computing district plans.",
+        "component_count": 7,
+        "required_next_step": "Inspect the saved source components and explicitly choose a geographic policy; no synthetic edges were added."
+      },
+      "source_components": [
+        {
+          "block_count": 519554,
+          "population": 39534345,
+          "example_geoid": "060650406112004"
+        },
+        {
+          "block_count": 81,
+          "population": 3715,
+          "example_geoid": "060375990004007"
+        },
+        {
+          "block_count": 25,
+          "population": 160,
+          "example_geoid": "060375991001004"
+        },
+        {
+          "block_count": 50,
+          "population": 3,
+          "example_geoid": "060839801001005"
+        },
+        {
+          "block_count": 7,
+          "population": 0,
+          "example_geoid": "061119800001003"
+        },
+        {
+          "block_count": 3,
+          "population": 0,
+          "example_geoid": "060759804011001"
+        },
+        {
+          "block_count": 3,
+          "population": 0,
+          "example_geoid": "060839801001036"
+        }
+      ],
+      "elapsed_seconds": null,
+      "path": null,
+      "individual_report_exists": false,
+      "reused_topology_exception": true,
+      "suite_job": {
+        "district_count": 83,
+        "house_sizes": [
+          692
+        ],
+        "relative_output": "states/06/districts-83",
+        "status": "unsupported_topology",
+        "topology_report": "states/06/districts-52/benchmark.json"
+      }
+    },
+    {
+      "district_count": 120,
+      "house_sizes": [
+        1000
+      ],
+      "status": "unsupported_topology",
+      "unsupported_reason": {
+        "code": "disconnected_source_graph",
+        "message": "The current workflow requires one connected, nonoverlapping shared-edge graph before computing district plans.",
+        "component_count": 7,
+        "required_next_step": "Inspect the saved source components and explicitly choose a geographic policy; no synthetic edges were added."
+      },
+      "source_components": [
+        {
+          "block_count": 519554,
+          "population": 39534345,
+          "example_geoid": "060650406112004"
+        },
+        {
+          "block_count": 81,
+          "population": 3715,
+          "example_geoid": "060375990004007"
+        },
+        {
+          "block_count": 25,
+          "population": 160,
+          "example_geoid": "060375991001004"
+        },
+        {
+          "block_count": 50,
+          "population": 3,
+          "example_geoid": "060839801001005"
+        },
+        {
+          "block_count": 7,
+          "population": 0,
+          "example_geoid": "061119800001003"
+        },
+        {
+          "block_count": 3,
+          "population": 0,
+          "example_geoid": "060759804011001"
+        },
+        {
+          "block_count": 3,
+          "population": 0,
+          "example_geoid": "060839801001036"
+        }
+      ],
+      "elapsed_seconds": null,
+      "path": null,
+      "individual_report_exists": false,
+      "reused_topology_exception": true,
+      "suite_job": {
+        "district_count": 120,
+        "house_sizes": [
+          1000
+        ],
+        "relative_output": "states/06/districts-120",
+        "status": "unsupported_topology",
+        "topology_report": "states/06/districts-52/benchmark.json"
+      }
+    }
+  ],
+  "diagnostic_runtime_seconds": 284.41720180000993,
+  "diagnostic_peak_rss_bytes": 3854364672,
+  "measurement_scope": "Fresh part-graph diagnosis including geometry loading/dissolve; not solver or plan runtime. Original strict preflight is separately reported.",
+  "geography": {
+    "summary": "The exact source has seven disconnected coverage components: the mainland and six offshore groups. The northern group includes San Miguel, Santa Rosa, Santa Cruz and Anacapa; retained water census polygons already connect those islands. These are census land-and-water coverage components, not seven dry-land islands. Labels follow source bounds and official regional maps. All six selected gaps lie in the offshore Pacific context shown by NOAA/FWS; this is geographic attribution, not an independent high-resolution global land-mask certificate.",
+    "components": [
+      {
+        "id": 0,
+        "label": "Mainland California coverage",
+        "interpretation": "Exact census coverage, including water polygons; label describes its geographic location."
+      },
+      {
+        "id": 1,
+        "label": "Northern Channel Islands coverage",
+        "interpretation": "Four northern Channel Islands connected through retained census water coverage."
+      },
+      {
+        "id": 2,
+        "label": "Santa Catalina Island coverage",
+        "interpretation": "Exact census coverage, including water polygons; label describes its geographic location."
+      },
+      {
+        "id": 3,
+        "label": "San Clemente Island coverage",
+        "interpretation": "Exact census coverage, including water polygons; label describes its geographic location."
+      },
+      {
+        "id": 4,
+        "label": "Farallon Islands coverage",
+        "interpretation": "Several Farallon islands and their retained water coverage."
+      },
+      {
+        "id": 5,
+        "label": "San Nicolas Island coverage",
+        "interpretation": "Exact census coverage, including water polygons; label describes its geographic location."
+      },
+      {
+        "id": 6,
+        "label": "Santa Barbara Island coverage",
+        "interpretation": "Exact census coverage, including water polygons; label describes its geographic location."
+      }
+    ],
+    "sources": [
+      {
+        "title": "NOAA Coast Pilot 7, Chapter 5: Channel Islands map and geography",
+        "url": "https://nauticalcharts.noaa.gov/publications/coast-pilot/files/cp7/CPB7_C05_WEB.pdf"
+      },
+      {
+        "title": "U.S. Fish and Wildlife Service: Farallon Islands geography",
+        "url": "https://www.fws.gov/refuge/farallon-islands/about-us"
+      },
+      {
+        "title": "National Park Service: Channel Islands regional map",
+        "url": "https://www.nps.gov/chis/learn/upload/2021-Park-Brochure.pdf"
+      }
+    ],
+    "links": [
+      {
+        "candidate_id": "ca-candidate-00-01",
+        "summary": "Proposed recorded water connection: Mainland California coverage to Northern Channel Islands coverage. Both endpoints lie on unchanged census part boundaries; the segment crosses no other California coverage component. Its open-Pacific interpretation is supported by the official regional geography, not a certified global shoreline-intersection test."
+      },
+      {
+        "candidate_id": "ca-candidate-00-02",
+        "summary": "Proposed recorded water connection: Mainland California coverage to Santa Catalina Island coverage. Both endpoints lie on unchanged census part boundaries; the segment crosses no other California coverage component. Its open-Pacific interpretation is supported by the official regional geography, not a certified global shoreline-intersection test."
+      },
+      {
+        "candidate_id": "ca-candidate-00-04",
+        "summary": "Proposed recorded water connection: Mainland California coverage to Farallon Islands coverage. Both endpoints lie on unchanged census part boundaries; the segment crosses no other California coverage component. Its open-Pacific interpretation is supported by the official regional geography, not a certified global shoreline-intersection test."
+      },
+      {
+        "candidate_id": "ca-candidate-02-03",
+        "summary": "Proposed recorded water connection: Santa Catalina Island coverage to San Clemente Island coverage. Both endpoints lie on unchanged census part boundaries; the segment crosses no other California coverage component. Its open-Pacific interpretation is supported by the official regional geography, not a certified global shoreline-intersection test."
+      },
+      {
+        "candidate_id": "ca-candidate-02-06",
+        "summary": "Proposed recorded water connection: Santa Catalina Island coverage to Santa Barbara Island coverage. Both endpoints lie on unchanged census part boundaries; the segment crosses no other California coverage component. Its open-Pacific interpretation is supported by the official regional geography, not a certified global shoreline-intersection test."
+      },
+      {
+        "candidate_id": "ca-candidate-05-06",
+        "summary": "Proposed recorded water connection: San Nicolas Island coverage to Santa Barbara Island coverage. Both endpoints lie on unchanged census part boundaries; the segment crosses no other California coverage component. Its open-Pacific interpretation is supported by the official regional geography, not a certified global shoreline-intersection test."
+      }
+    ],
+    "water_context_validation": {
+      "source_component_clearance_verified": true,
+      "official_regional_geography_reviewed": true,
+      "independent_global_land_mask_tested": false,
+      "foreign_land_exclave_identified": false,
+      "connection_kind": "proposed recorded-water-connection"
+    },
+    "limits": [
+      "Measured lengths span census-coverage boundaries, not shorelines or transport routes.",
+      "Source polygons are unchanged; these proposed edges do not create physical land continuity.",
+      "No California policy adapter or district solve is implemented by this diagnosis."
+    ]
+  },
+  "optimizer_starting_point": {
+    "recommended_inner_max_iterations": 1000,
+    "recommendation": "Start with a traced 52-district pilot using a 1,000 inner-iteration cap; measure termination, memory, final balance and independent connectivity before the larger anchors. California has no measured solver baseline yet.",
+    "workload": "California has 519,723 blocks versus New York\u2019s 288,819 (1.80\u00d7). Its 52/69/83/120 district matrices are 3.54\u20133.60\u00d7 the corresponding New York anchor matrices. This is not a runtime prediction. Four dense float64 matrices alone total about 1.86 GiB at 120 districts; total process memory is higher. Run serially.",
+    "new_york_evidence": [
+      {
+        "district_count": 26,
+        "house_size": 435,
+        "solve_wall_seconds": 356.0095616999897,
+        "timed_pipeline_wall_seconds": 1027.0218744000013,
+        "outer_termination": {
+          "status": "outer_iteration_limit_without_center_convergence",
+          "outer_iterations": 80,
+          "configured_max_outer_iterations": 80,
+          "centers_converged": false,
+          "outer_iteration_limit_reached": true,
+          "disclosure": "The outer loop reached the 80-iteration limit without center convergence. Successful inner optimizer passes do not establish outer convergence. Final population balance and connectivity are assessed separately after repair/rebalancing."
+        },
+        "benchmark_path": ".cache/state-block-benchmark/suite-through-1000/corrections/new-york-inner-budget-v1/states/36/districts-26/benchmark.json",
+        "benchmark_sha256": "6332da0dbe1f8fd202a6f281267407876ed458bed3806a482e3aeca46292b36b",
+        "largest_inner_pass": 377,
+        "all_inner_passes_succeeded": true
+      },
+      {
+        "district_count": 35,
+        "house_size": 574,
+        "solve_wall_seconds": 535.0749599999981,
+        "timed_pipeline_wall_seconds": 1214.1978798999917,
+        "outer_termination": {
+          "status": "outer_iteration_limit_without_center_convergence",
+          "outer_iterations": 80,
+          "configured_max_outer_iterations": 80,
+          "centers_converged": false,
+          "outer_iteration_limit_reached": true,
+          "disclosure": "The outer loop reached the 80-iteration limit without center convergence. Successful inner optimizer passes do not establish outer convergence. Final population balance and connectivity are assessed separately after repair/rebalancing."
+        },
+        "benchmark_path": ".cache/state-block-benchmark/suite-through-1000/corrections/new-york-inner-budget-anchors-v1/states/36/districts-35/benchmark.json",
+        "benchmark_sha256": "161eeb65826901481aabbfaecc5082006a309a90f5198b719b55883ff82f03ac",
+        "largest_inner_pass": 410,
+        "all_inner_passes_succeeded": true
+      },
+      {
+        "district_count": 42,
+        "house_size": 692,
+        "solve_wall_seconds": 1078.7905780000146,
+        "timed_pipeline_wall_seconds": 1753.4253427000076,
+        "outer_termination": {
+          "status": "outer_iteration_limit_without_center_convergence",
+          "outer_iterations": 80,
+          "configured_max_outer_iterations": 80,
+          "centers_converged": false,
+          "outer_iteration_limit_reached": true,
+          "disclosure": "The outer loop reached the 80-iteration limit without center convergence. Successful inner optimizer passes do not establish outer convergence. Final population balance and connectivity are assessed separately after repair/rebalancing."
+        },
+        "benchmark_path": ".cache/state-block-benchmark/suite-through-1000/corrections/new-york-inner-budget-anchors-v1/states/36/districts-42/benchmark.json",
+        "benchmark_sha256": "40b44cba1f58551dee0db216671059609abf515d24fc6339b7076ba12a16c524",
+        "largest_inner_pass": 557,
+        "all_inner_passes_succeeded": true
+      },
+      {
+        "district_count": 61,
+        "house_size": 1000,
+        "solve_wall_seconds": 1474.0875366999826,
+        "timed_pipeline_wall_seconds": 2149.513068799977,
+        "outer_termination": {
+          "status": "outer_iteration_limit_without_center_convergence",
+          "outer_iterations": 80,
+          "configured_max_outer_iterations": 80,
+          "centers_converged": false,
+          "outer_iteration_limit_reached": true,
+          "disclosure": "The outer loop reached the 80-iteration limit without center convergence. Successful inner optimizer passes do not establish outer convergence. Final population balance and connectivity are assessed separately after repair/rebalancing."
+        },
+        "benchmark_path": ".cache/state-block-benchmark/suite-through-1000/corrections/new-york-inner-budget-anchors-v1/states/36/districts-61/benchmark.json",
+        "benchmark_sha256": "95a9688eaa2f4816840c2cfae367da32e2b1591841fbee17e3884240988eeacf",
+        "largest_inner_pass": 779,
+        "all_inner_passes_succeeded": true
+      }
+    ],
+    "evidence_path": "prompts/new-york-inner-budget-anchors.json",
+    "evidence_sha256": "cebeef7a6d30edd8991401e4693bfcadc9a2002ec5c4fb8bf73908eeb74d1e5c",
+    "california_dense_matrix_estimates": [
+      {
+        "district_count": 52,
+        "one_float64_matrix_bytes": 216204768,
+        "four_float64_matrices_bytes": 864819072
+      },
+      {
+        "district_count": 69,
+        "one_float64_matrix_bytes": 286887096,
+        "four_float64_matrices_bytes": 1147548384
+      },
+      {
+        "district_count": 83,
+        "one_float64_matrix_bytes": 345096072,
+        "four_float64_matrices_bytes": 1380384288
+      },
+      {
+        "district_count": 120,
+        "one_float64_matrix_bytes": 498934080,
+        "four_float64_matrices_bytes": 1995736320
+      }
+    ],
+    "limits": [
+      "1,000 caps each inner pass, not the entire run; successful passes may finish earlier.",
+      "All referenced New York runs reached the outer limit of 80 without center convergence.",
+      "Objective improvement, inner optimizer success, final population balance and connectivity are separate checks.",
+      "A future California run uses the current fixed optimizer; the historical California preflight never reached its older optimizer."
+    ]
+  },
+  "limits": [
+    "Connected augmented source graph does not guarantee a balanced whole-block connected district partition.",
+    "A recorded connection supports a district only if both exact endpoint blocks share that district.",
+    "No optimizer, repair, district polygon validation, or district maps ran in this diagnosis.",
+    "Positive gap does not by itself establish that its path is exclusively water; geography requires separately attributed context."
+  ],
+  "validation": {
+    "historical_file_hashes_verified": 5,
+    "diagnostic_artifact_and_code_hashes_verified": true,
+    "component_totals_reconciled": true,
+    "independent_component_tree_check": true,
+    "full_part_graph_traversal": {
+      "independent_full_graph_traversal": true,
+      "node_count": 520659,
+      "physical_component_count": 7,
+      "augmented_component_count": 1,
+      "component_sizes": [
+        520659
+      ],
+      "inserted_part_edge_pairs": [
+        [
+          516415,
+          504465
+        ],
+        [
+          506959,
+          506053
+        ],
+        [
+          512754,
+          505033
+        ],
+        [
+          499596,
+          494853
+        ],
+        [
+          506053,
+          497357
+        ],
+        [
+          514042,
+          497357
+        ]
+      ],
+      "all_source_parts_reached": true,
+      "physical_adjacency_modified": false
+    },
+    "source_dissolves_are_valid_single_polygons": true
+  },
+  "source_artifacts": {
+    "diagnosis.json": "c1d26274fc45ff017e794350c2ffd9c813983ea800c959e9b8b37c7448ecbec8",
+    "geography-context.json": "d0427fa0907f7be7060aa5a97cc07c461693a33fe0b55eef7df5dcdea318757b",
+    "optimizer-starting-point.json": "c980c61941da23b6f925ce5a2c1ba00f60091166729462796518cd61c3a2edfe"
+  }
+}

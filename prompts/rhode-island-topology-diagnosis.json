@@ -1,0 +1,259 @@
+{
+  "schema_version": 1,
+  "state": "Rhode Island",
+  "diagnostic_date": "2026-10-23",
+  "scope": "2020 source blocks, House sizes 435/574/692/1000, strict shared-edge connectivity, indivisible whole blocks, all source territory retained, no synthetic bridges",
+  "conclusion": "A strict connectivity-only K2 partition exists and has been exported. No near-balanced K2 or K3 partition exists under the unchanged source coverage; the source-component population obstruction proves this independently of the numerical solver.",
+  "original_benchmark_status": "unsupported_topology",
+  "components": [
+    {
+      "component_id": 0,
+      "block_count": 25585,
+      "part_count": 25593,
+      "population": 1095969,
+      "housing_units": 481656,
+      "land_m2": 2654237865,
+      "water_m2": 1063589820,
+      "water_only_blocks": 804,
+      "exact_union_polygon_count": 1,
+      "exact_union_valid": true,
+      "description": "Main Rhode Island source component"
+    },
+    {
+      "component_id": 1,
+      "block_count": 64,
+      "part_count": 64,
+      "population": 1410,
+      "housing_units": 1818,
+      "land_m2": 23521354,
+      "water_m2": 260101309,
+      "water_only_blocks": 14,
+      "exact_union_polygon_count": 1,
+      "exact_union_valid": true,
+      "description": "Block Island / New Shoreham source component"
+    }
+  ],
+  "island_component_tract_block_counts": {
+    "44009041500": 62,
+    "44009990200": 2
+  },
+  "water_only_blocks_included": 818,
+  "component_separation": {
+    "component_ids": [
+      0,
+      1
+    ],
+    "de9im": "FF2FF1212",
+    "disjoint": true,
+    "touches": false,
+    "shared_boundary_length_degrees": 0.0,
+    "minimum_approximate_distance_m": 2333.8945671151278,
+    "nearest_points_lonlat": [
+      [
+        -71.54769842235943,
+        41.31367323132136
+      ],
+      [
+        -71.557569,
+        41.294018
+      ]
+    ],
+    "metric_projection": {
+      "kind": "population-centered-equirectangular",
+      "lon0": -71.4504512581705,
+      "lat0": 41.75567717193088,
+      "dateline_unwrapped": false,
+      "distance_model": "approximate local plane; distortion increases across broad states",
+      "earth_radius_m": 6371000,
+      "note": "Affine equirectangular for approximate distance only; topology uses unmodified NAD83 source coordinates."
+    }
+  },
+  "gap_interpretation": "Positive gap between supplied census-block coverage polygons, including water. Approximate distance only; no jurisdiction classification of the gap has been established.",
+  "blocks_crossing_source_components": [],
+  "balance_bounds": [
+    {
+      "district_count": 2,
+      "house_sizes": [
+        435,
+        574,
+        692
+      ],
+      "ideal_population": {
+        "numerator": 1097379,
+        "denominator": 2,
+        "decimal": 548689.5,
+        "fraction": "1097379/2"
+      },
+      "best_component_allocation": [
+        1,
+        1
+      ],
+      "maximum_absolute_deviation_lower_bound_people": {
+        "numerator": 1094559,
+        "denominator": 2,
+        "decimal": 547279.5,
+        "fraction": "1094559/2"
+      },
+      "maximum_absolute_deviation_lower_bound_percent_of_ideal": {
+        "numerator": 36485300,
+        "denominator": 365793,
+        "decimal": 99.74302406005583,
+        "fraction": "36485300/365793"
+      },
+      "attainability": "Forced exact component populations. The independent part audit confirms exactly two components, no block spans components, and both exact unions are single valid polygons. Assigning one entire component per district therefore attains this bound and gives a connectivity-only plan. It does not give a population-balanced plan."
+    },
+    {
+      "district_count": 3,
+      "house_sizes": [
+        1000
+      ],
+      "ideal_population": {
+        "numerator": 365793,
+        "denominator": 1,
+        "decimal": 365793.0,
+        "fraction": "365793"
+      },
+      "best_component_allocation": [
+        2,
+        1
+      ],
+      "maximum_absolute_deviation_lower_bound_people": {
+        "numerator": 364383,
+        "denominator": 1,
+        "decimal": 364383.0,
+        "fraction": "364383"
+      },
+      "maximum_absolute_deviation_lower_bound_percent_of_ideal": {
+        "numerator": 12146100,
+        "denominator": 121931,
+        "decimal": 99.61453609008373,
+        "fraction": "12146100/121931"
+      },
+      "attainability": "Sharp for the component-population relaxation only. Actual whole-block connected splitting of the main component can impose a higher deviation. A split producing mainland district populations 547984 and 547985 would attain this bound; no such split is asserted here."
+    }
+  ],
+  "connectivity_only_witness": {
+    "url": "http://127.0.0.1:8770/diagnostics/rhode-island/connectivity-only-k2/",
+    "status": "connectivity_only_population_infeasible",
+    "district_populations": [
+      1095969,
+      1410
+    ],
+    "block_components_per_district": [
+      1,
+      1
+    ],
+    "part_components_per_district": [
+      1,
+      1
+    ],
+    "polygon_components_per_district": [
+      1,
+      1
+    ],
+    "strict_map_validation_passed": true,
+    "preservation_audit": {
+      "original_run_files_byte_identical": true,
+      "national_suite_byte_identical": true,
+      "diagnosis_byte_identical": true,
+      "source_archive_byte_identical": true,
+      "exact_component_geometry_preserved": true,
+      "all_block_and_population_totals_conserved": true,
+      "source_coordinates_modified": false,
+      "synthetic_connections_added": false,
+      "district_interiors_disjoint": true
+    },
+    "population_balance_acceptable": false,
+    "numerical_solver_rerun": false,
+    "elapsed_seconds": 33.39579290000256,
+    "peak_process_working_set_bytes": 219197440,
+    "load_scenarios": {
+      "state_entry_outlines_and_detail_index": {
+        "raw_bytes": 12579,
+        "gzip_bytes": 3994
+      },
+      "all_county_detail_shards": {
+        "raw_bytes": 37097240,
+        "gzip_bytes": 9368576
+      },
+      "largest_county_detail_shard": {
+        "county_fips": "007",
+        "block_count": 13417,
+        "population": 660741,
+        "bbox": [
+          -71.799195,
+          41.725198,
+          -71.317873,
+          42.018799
+        ],
+        "path": "blocks/county-007.geojson",
+        "gzip_path": "blocks/county-007.geojson.gz",
+        "raw_bytes": 14850141,
+        "gzip_bytes": 3712833
+      },
+      "national_state_only": {
+        "path": "districts-national.geojson",
+        "gzip_path": "districts-national.geojson.gz",
+        "raw_bytes": 4029,
+        "gzip_bytes": 1419,
+        "coordinate_count": 137
+      }
+    }
+  },
+  "references": {
+    "source_archive_sha256": "79d10c9dfec1e3e0962e13d6295b53856db286a156d9937d3737adb0c542f35b",
+    "original_report": {
+      "path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\states\\44\\districts-2\\benchmark.json",
+      "sha256": "4fe142128a5305fe7b53ed28ee04e5380eb20652928344645d5bc81db3f6c3cf",
+      "status": "unsupported_topology"
+    },
+    "diagnosis": {
+      "path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\diagnostics\\rhode-island\\diagnosis.json",
+      "sha256": "ad5441968267f4098506b46fdf4b665ecfd28c58aefb9bbf3aca80f350357d7c"
+    },
+    "feasibility": {
+      "path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\diagnostics\\rhode-island\\feasibility.json",
+      "sha256": "77d6209bff0cdbe794bb786e52c28af63505dd7988263235a311da1ffa4f38e9"
+    },
+    "witness": {
+      "path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\diagnostics\\rhode-island\\connectivity-only-k2\\witness.json",
+      "sha256": "d27026ec4a294572c4f328ae8b918f31c890245f71ce34c6f75dfb8f298939ed"
+    },
+    "geography_context": {
+      "path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\diagnostics\\rhode-island\\geography-context.json",
+      "sha256": "ad4f299335b1db0b2d2ad365a5c5187268e4300fc3434494bd7cb172b5544d2a"
+    },
+    "part_graph_cache_key": "ffc3c794aa889303966e4ddc3d063e8383b7a1e2067ae4b0a8d19d48a4138cfd",
+    "geography_primary_sources": [
+      {
+        "claim": "New Shoreham is the municipality encompassing the entire geographic area of Block Island.",
+        "source_title": "Town of New Shoreham: Welcome to New Shoreham",
+        "url": "https://newshorehamri.gov/216/Welcome-to-New-Shoreham",
+        "source_type": "Official municipal website"
+      },
+      {
+        "claim": "New Shoreham's 2020 Census population is 1,410; Rhode Island's total resident population is 1,097,379.",
+        "source_title": "Rhode Island Population by City and Town 2010\u20132020",
+        "url": "https://planning.ri.gov/documents/census/2021/POP-BY-C%26T-2010%20-%202020.pdf",
+        "source_type": "Rhode Island Division of Statewide Planning; source identified as U.S. Bureau of the Census",
+        "page": 1
+      }
+    ]
+  },
+  "links": {
+    "diagnostic_viewer": "http://127.0.0.1:8770/diagnostics/rhode-island/",
+    "connectivity_only_example": "http://127.0.0.1:8770/diagnostics/rhode-island/connectivity-only-k2/"
+  },
+  "scripts": [
+    "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\diagnostics\\rhode-island\\analyze.py",
+    "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\diagnostics\\rhode-island\\build-feasibility.py",
+    "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\diagnostics\\rhode-island\\export-connectivity-witness.py",
+    "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\diagnostics\\rhode-island\\save-report.py"
+  ],
+  "limitations": [
+    "K3 is a population relaxation bound; no K3 map was constructed or claimed.",
+    "The source coverage gap has not been classified as federal or other jurisdictional waters.",
+    "The existing connected-source preflight is stricter than a general component-aware partitioner needs, but changing preflight cannot remove this state's balance obstruction at these anchors.",
+    "The witness remains diagnostic and does not change the original benchmark or suite status."
+  ]
+}

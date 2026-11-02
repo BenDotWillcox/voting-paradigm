@@ -1,0 +1,381 @@
+{
+  "status": "complete",
+  "kind": "versioned_geometry_corrections",
+  "states": [
+    {
+      "state": "Maryland",
+      "state_fips": "24",
+      "district_count": 19,
+      "report": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\corrections\\part-connectivity-v1\\states\\24\\districts-19\\benchmark.json",
+      "url": "http://127.0.0.1:8770/corrections/part-connectivity-v1/states/24/districts-19/",
+      "original_url": "http://127.0.0.1:8770/states/24/districts-19/",
+      "repair_moves": [
+        {
+          "units": [
+            12529
+          ],
+          "source_district": 16,
+          "target_district": 15,
+          "population": 0,
+          "geoids": [
+            "240419608001043"
+          ],
+          "reason": "polygon_part_connectivity"
+        }
+      ],
+      "original_part_components": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        3,
+        1,
+        1
+      ],
+      "corrected_part_components": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "max_deviation_people": 20.94736842105263,
+      "max_deviation_percent": 0.006443023597654869,
+      "correction_wall_seconds": 182.15650430000096,
+      "part_graph_build_wall_seconds": 31.52753050001047,
+      "repair_wall_seconds": 0.9178663999919081,
+      "peak_process_working_set_bytes": 396431360,
+      "load_scenarios": {
+        "state_entry_outlines_and_detail_index": {
+          "raw_bytes": 685990,
+          "gzip_bytes": 192722
+        },
+        "all_county_detail_shards": {
+          "raw_bytes": 145445060,
+          "gzip_bytes": 37731917
+        },
+        "largest_county_detail_shard": {
+          "county_fips": "005",
+          "block_count": 9125,
+          "population": 854535,
+          "bbox": [
+            -76.895596,
+            39.156623,
+            -76.287689,
+            39.721302
+          ],
+          "path": "blocks/county-005.geojson",
+          "gzip_path": "blocks/county-005.geojson.gz",
+          "raw_bytes": 13427147,
+          "gzip_bytes": 3484808
+        },
+        "national_state_only": {
+          "path": "districts-national.geojson",
+          "gzip_path": "districts-national.geojson.gz",
+          "raw_bytes": 122370,
+          "gzip_bytes": 34432,
+          "coordinate_count": 4339
+        }
+      },
+      "original_files_byte_identical": true,
+      "district_populations_unchanged": true,
+      "strict_polygon_validation_passed": true,
+      "exact_union_preserved": true,
+      "original_benchmark_sha256": "719436fe9d70827d16f7747820840eeeb808c0f36dac72a8dcfae74ebef65da0"
+    },
+    {
+      "state": "Virginia",
+      "state_fips": "51",
+      "district_count": 26,
+      "report": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\corrections\\part-connectivity-v1\\states\\51\\districts-26\\benchmark.json",
+      "url": "http://127.0.0.1:8770/corrections/part-connectivity-v1/states/51/districts-26/",
+      "original_url": "http://127.0.0.1:8770/states/51/districts-26/",
+      "repair_moves": [
+        {
+          "units": [
+            148263
+          ],
+          "source_district": 18,
+          "target_district": 14,
+          "population": 0,
+          "geoids": [
+            "510010906001010"
+          ],
+          "reason": "polygon_part_connectivity"
+        }
+      ],
+      "original_part_components": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "corrected_part_components": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "max_deviation_people": 17.346153846153847,
+      "max_deviation_percent": 0.0052251125629432,
+      "correction_wall_seconds": 521.8027884000039,
+      "part_graph_build_wall_seconds": 81.31179720000364,
+      "repair_wall_seconds": 1.598264400003245,
+      "peak_process_working_set_bytes": 823029760,
+      "load_scenarios": {
+        "state_entry_outlines_and_detail_index": {
+          "raw_bytes": 1628789,
+          "gzip_bytes": 482165
+        },
+        "all_county_detail_shards": {
+          "raw_bytes": 422567642,
+          "gzip_bytes": 111726561
+        },
+        "largest_county_detail_shard": {
+          "county_fips": "059",
+          "block_count": 8930,
+          "population": 1150309,
+          "bbox": [
+            -77.537026,
+            38.60457,
+            -77.041362,
+            39.057678
+          ],
+          "path": "blocks/county-059.geojson",
+          "gzip_path": "blocks/county-059.geojson.gz",
+          "raw_bytes": 17237202,
+          "gzip_bytes": 4411536
+        },
+        "national_state_only": {
+          "path": "districts-national.geojson",
+          "gzip_path": "districts-national.geojson.gz",
+          "raw_bytes": 265995,
+          "gzip_bytes": 83612,
+          "coordinate_count": 10142
+        }
+      },
+      "original_files_byte_identical": true,
+      "district_populations_unchanged": true,
+      "strict_polygon_validation_passed": true,
+      "exact_union_preserved": true,
+      "original_benchmark_sha256": "0b77f18cbc5a8d6143ad4a8ada1a44a0fc906fa1fa0b1f839856bc73eacd8fb1"
+    }
+  ],
+  "scope": "Maryland K19 and Virginia K26, House1000. Original national suite stays a historical benchmark snapshot.",
+  "available_plans_after_correction": 154,
+  "baseline_complete_plans": 152,
+  "baseline_failed_plans": 2,
+  "topology_exception_jobs_unchanged": 23,
+  "tests": {
+    "command": "venv/Scripts/python.exe -m pytest districting/tests scripts/tests -q",
+    "passed": 261
+  },
+  "zero_population_context": {
+    "schema_version": 1,
+    "checked_at_utc": "2026-10-23T16:26:37.571554+00:00",
+    "purpose": "Read-only source-field investigation of the two multipart blocks responsible for the Maryland K19 and Virginia K26 polygon failures.",
+    "conclusion": "Zero published population is not itself evidence of a data error or protected land. The two source blocks have different characteristics: Maryland is land with one housing unit, Virginia is mostly water with no housing units. The demonstrated connectivity defect was our one-node-per-multipart-block model, not a demonstrated Census data error.",
+    "general_context": [
+      "Census blocks cover all territory and are delineated from visible and nonvisible boundaries rather than population; many have no population.",
+      "MTFCC20=G5040 means tabulation block, not a land-use, park, protection, or ownership classification. Both records have UR20=R (rural).",
+      "The source attribute metadata explicitly labels POP20 as the 2020 Census population count adjusted by the Disclosure Avoidance System. A published zero is therefore not a forensic guarantee that a place had no residents, and we have not established whether privacy protection changed either block count.",
+      "Census housing-unit totals are held invariant at block level. A housing unit with no usual residents, including a seasonal unit whose occupants usually live elsewhere, can coexist with zero resident population; this is a possible Maryland interpretation, not a verified occupancy finding.",
+      "Multipart geometry exists in these preserved Census source polygons. Its existence alone is not evidence of bad data. We have not verified the geographic reason for the two blocks being multipart or identified any parcel protection status."
+    ],
+    "source_attribute_definitions": {
+      "MTFCC20": "MAF/TIGER feature class code",
+      "UR20": "2020 Census urban/rural indicator",
+      "ALAND20": "2020 Census land area (square meters)",
+      "AWATER20": "2020 Census water area (square meters)",
+      "HOUSING20": "2020 Census Housing Unit Count",
+      "POP20": "2020 Census Population Count Adjusted By Disclosure Avoidance System (DAS)"
+    },
+    "blocks": [
+      {
+        "state": "Maryland",
+        "state_fips": "24",
+        "geoid": "240419608001043",
+        "source_record": {
+          "STATEFP20": "24",
+          "COUNTYFP20": "041",
+          "TRACTCE20": "960800",
+          "BLOCKCE20": "1043",
+          "GEOID20": "240419608001043",
+          "NAME20": "Block 1043",
+          "MTFCC20": "G5040",
+          "UR20": "R",
+          "UACE20": "",
+          "UATYPE20": "",
+          "FUNCSTAT20": "S",
+          "ALAND20": 331243,
+          "AWATER20": 0,
+          "INTPTLAT20": "+38.7548624",
+          "INTPTLON20": "-076.3681114",
+          "HOUSING20": 1,
+          "POP20": 0
+        },
+        "total_area_m2": 331243,
+        "land_percent": 100.0,
+        "water_percent": 0.0,
+        "land_km2": 0.331243,
+        "water_km2": 0.0,
+        "internal_point_lonlat": [
+          -76.3681114,
+          38.7548624
+        ],
+        "polygon_part_count_in_preserved_export": 3,
+        "interpretation": "Entirely land according to Census area fields; published population zero but one housing unit. A vacant or seasonally used dwelling is a possible explanation, not established from these fields. This is not a water-only block. No protection/ownership or land-use designation is present in the block record.",
+        "provenance": {
+          "archive_url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_24_tabblock20.zip",
+          "archive_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\24\\tl_2020_24_tabblock20.zip",
+          "archive_sha256_recorded": "152395105863f058c32dbfd8321e8c0f364be1e4b115d38ccf6940cfce1f4990",
+          "dbf_filename": "tl_2020_24_tabblock20.dbf",
+          "dbf_sha256_verified": "78fa71f06029fff0b48b2d9176a5c9058b5b391d656fa7c4b1111cdedfae7c5d",
+          "attribute_metadata_filename": "tl_2020_24_tabblock20.shp.ea.iso.xml",
+          "attribute_metadata_sha256_verified": "bfec33140cc7684b1385347718c27347f615d446ae774ab89ef16e900b413d40"
+        }
+      },
+      {
+        "state": "Virginia",
+        "state_fips": "51",
+        "geoid": "510010906001010",
+        "source_record": {
+          "STATEFP20": "51",
+          "COUNTYFP20": "001",
+          "TRACTCE20": "090600",
+          "BLOCKCE20": "1010",
+          "GEOID20": "510010906001010",
+          "NAME20": "Block 1010",
+          "MTFCC20": "G5040",
+          "UR20": "R",
+          "UACE20": "",
+          "UATYPE20": "",
+          "FUNCSTAT20": "S",
+          "ALAND20": 157291,
+          "AWATER20": 2715985,
+          "INTPTLAT20": "+37.8815685",
+          "INTPTLON20": "-075.9968901",
+          "HOUSING20": 0,
+          "POP20": 0
+        },
+        "total_area_m2": 2873276,
+        "land_percent": 5.474273964631313,
+        "water_percent": 94.52572603536869,
+        "land_km2": 0.157291,
+        "water_km2": 2.715985,
+        "internal_point_lonlat": [
+          -75.9968901,
+          37.8815685
+        ],
+        "polygon_part_count_in_preserved_export": 2,
+        "interpretation": "Predominantly water (94.525726% of the Census land-plus-water area), with a small land portion and no housing units. The source fields support an unpopulated coastal land/water interpretation but do not identify protection status, land use, or explain the exact delineation.",
+        "provenance": {
+          "archive_url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_51_tabblock20.zip",
+          "archive_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\51\\tl_2020_51_tabblock20.zip",
+          "archive_sha256_recorded": "5722c3a80c66acb087429ea511a47d05a742a7b99712a63a711014fca5be9d61",
+          "dbf_filename": "tl_2020_51_tabblock20.dbf",
+          "dbf_sha256_verified": "ddea69bd6a299444a24381f4ae51120dd6ad9b6de5288f69c78be2f4c5cc6778",
+          "attribute_metadata_filename": "tl_2020_51_tabblock20.shp.ea.iso.xml",
+          "attribute_metadata_sha256_verified": "bfec33140cc7684b1385347718c27347f615d446ae774ab89ef16e900b413d40"
+        }
+      }
+    ],
+    "official_references": [
+      {
+        "title": "Census Bureau: What are census blocks?",
+        "url": "https://www.census.gov/newsroom/blogs/random-samplings/2011/07/what-are-census-blocks.html",
+        "supports": "Territory-wide coverage, boundaries independent of population, many blocks have no population."
+      },
+      {
+        "title": "2020 Redistricting TIGER/Line Technical Documentation",
+        "url": "https://www2.census.gov/geo/pdfs/maps-data/data/tiger/tgrshp2020pl/TGRSHP2020PL_TechDoc.pdf",
+        "supports": "G5040 definition on page 85 and block field definitions on page 105; exact population/housing definitions also verified directly from source archive attribute metadata."
+      },
+      {
+        "title": "Census Bureau: U.S. Housing Vacancy Rate Declined in Past Decade",
+        "url": "https://www.census.gov/library/stories/2021/08/united-states-housing-vacancy-rate-declined-in-past-decade.html",
+        "supports": "Housing with no residents on Census Day or temporary occupants whose usual residence is elsewhere can be counted as vacant."
+      },
+      {
+        "title": "Census Bureau: Invariants Set for 2020 Census Data Products",
+        "url": "https://content.govdelivery.com/accounts/USCENSUS/bulletins/2ae5eda",
+        "supports": "Housing-unit totals invariant at block level; population invariant at state level."
+      },
+      {
+        "title": "Census Bureau: 2020 Redistricting Noisy Measurement File README",
+        "url": "https://www2.census.gov/programs-surveys/decennial/2020/data/01-Redistricting_File--PL_94-171/00-2020-Redistricting-Noisy-Measurement-File/2020%20Redistricting%20NMF%202023-06-15%20README.html",
+        "supports": "Total housing units and group-quarters units are treated as invariant in the redistricting data."
+      }
+    ]
+  }
+}

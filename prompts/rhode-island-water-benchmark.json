@@ -1,0 +1,947 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-10-23T17:34:00.725267+00:00",
+  "scope": "Rhode Island only; House 435 / 574 / 692 / 1000 share two distinct plans.",
+  "policy": "shared_edges_plus_recorded_water_connections",
+  "runs": [
+    {
+      "district_count": 2,
+      "house_sizes": [
+        435,
+        574,
+        692
+      ],
+      "status": "complete_under_island_water_policy",
+      "url": "http://127.0.0.1:8770/policies/island-water-v1/states/44/districts-2/",
+      "benchmark_path": ".cache/state-block-benchmark/suite-through-1000/policies/island-water-v1/states/44/districts-2/benchmark.json",
+      "benchmark_sha256": "2dfca718890c249ab53ec8f16e546789073182d7c94f78d21d49504c3d349e26",
+      "configuration": {
+        "seed": 20200955,
+        "max_outer_iterations": 80,
+        "inner_max_iterations": 300,
+        "center_tolerance_m": 0.0001,
+        "max_rebalance_moves": 1000,
+        "island_eligibility_relative_band": 0.01,
+        "minimum_district_population_for_island_classification": 543202.605,
+        "minimum_district_population_exact": "108640521/200",
+        "eligibility_note": "99% of ideal classifies undersized components only; it is not solver convergence or final-plan acceptance.",
+        "boundary_metric": "source census coverage, including retained water blocks; no shoreline substitution"
+      },
+      "source": {
+        "schema": 1,
+        "state_fips": "44",
+        "state": "Rhode Island",
+        "url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_44_tabblock20.zip",
+        "archive_sha256": "79d10c9dfec1e3e0962e13d6295b53856db286a156d9937d3737adb0c542f35b",
+        "archive_bytes": 28351631,
+        "extracted_file_sha256": {
+          "tl_2020_44_tabblock20.cpg": "3ad3031f5503a4404af825262ee8232cc04d4ea6683d42c5dd0a2f2a27ac9824",
+          "tl_2020_44_tabblock20.dbf": "46aeacfdcf81ee580c50cb555d6dd5b165219463f64208912d1d304e410a6e06",
+          "tl_2020_44_tabblock20.prj": "0b9041e921d9ebb43247d314608fe9e38a0b008ee793067fc1806199ea1fb9dd",
+          "tl_2020_44_tabblock20.shp": "2528ad254d42db9368b17b02376f79b5a6021983db77a61e47503d9a91fd72c5",
+          "tl_2020_44_tabblock20.shp.ea.iso.xml": "bfec33140cc7684b1385347718c27347f615d446ae774ab89ef16e900b413d40",
+          "tl_2020_44_tabblock20.shp.iso.xml": "82af09356427a42bceffcc035a39aab788ed59da5f510ae8b239986debf0b661",
+          "tl_2020_44_tabblock20.shx": "fe549c9af889a9aa837e3a365f9aad6133daa6983ae580a01efe8f988ff1d22f"
+        },
+        "download": {
+          "attempts": 1,
+          "etag": null,
+          "expected_bytes": 28351631,
+          "last_modified": "Fri, 06 Jan 2023 21:46:17 GMT",
+          "received_bytes": 28351631,
+          "resumed_bytes": 0,
+          "url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_44_tabblock20.zip"
+        },
+        "hash_provenance": "Locally computed SHA-256; no publisher checksum is provided.",
+        "archive_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\44\\tl_2020_44_tabblock20.zip",
+        "extraction_dir": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\44\\tl_2020_44_tabblock20",
+        "source_shapefile_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\44\\tl_2020_44_tabblock20\\tl_2020_44_tabblock20.shp",
+        "manifest_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\44\\tl_2020_44_tabblock20.manifest.json",
+        "downloaded_in_timed_pipeline": false,
+        "extracted_files_reused": true,
+        "extracted_bytes": 28350689,
+        "crs_wkt": "GEOGCS[\"GCS_North_American_1983\",DATUM[\"D_North_American_1983\",SPHEROID[\"GRS_1980\",6378137,298.257222101]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]"
+      },
+      "code_sha256": {
+        "districting/algorithm.py": "1e3f5772b6cfa51d3bbccb33f218425abcecfd49657c9c0b0e0e0babeb6caafc",
+        "districting/connectivity.py": "2d6788d73fac4e2eb550cff4db36dd4b5b430f131254809805c53317bb8cbfed",
+        "districting/part_connectivity.py": "a127aad254e65dc7b8be69f1fe7403aad6f9d18e0a15b8723e32358f9ef833d5",
+        "districting/apportionment.py": "07eb27ebc88d89647dfad66784d4fb3b9623b7919ed6e837122111bfe4323eae",
+        "districting/data/apportionment_2020.py": "86a8ee34675d78aa99ed7edcb0c686fbb3aebd34d04655a106cae10dfbb0461d",
+        "scripts/benchmark_state_blocks.py": "8a1f05e5e428437ff87434408c315e8d94a4df64df5dffa821a7fc952b77a414",
+        "scripts/benchmark_kansas_blocks.py": "20da6d6f95e4b6706341eb97f01c3518e3d58b07e1852a0537e9c85c5dab31bf",
+        "scripts/benchmark_kansas_anchors.py": "adf92735dfcf5fb703c15a1e7d9f1a8f76b203d037e441b3560d2bc0573b50a7",
+        "scripts/district_block_sources.py": "dd041755be227ea77abfed20bbc6c7a9a10050bf8f6a66aaeed2a07c96a1cbbb",
+        "scripts/district_block_adjacency.py": "8e3bd87629631e5452b6294bb94789dffa733a7b490db8a5238687a7609c0efc",
+        "scripts/district_block_graph_cache.py": "46d0c64da93123c23c3a05136ab2c4b3f096122627990f0a25c4c2e1c75b6c7e",
+        "scripts/district_block_map_export.py": "05e29bdfea353a1819fd4000b2e9ebc350fd8b9c6bdccf299d7531a7002499cf",
+        "scripts/state_block_map_export.py": "3db4348c269b563c3ec6756f2d06ab6b328bf0ccfa37eb0e5d74a73a65ba433b",
+        "scripts/state_block_execution_lock.py": "861c5a915ca9bc7d7065df4c10afae48c641febd680b25133c05d64f4268c6ff",
+        "scripts/district_block_part_graph.py": "49b43929897184c04a5332f4530cd7cf722f9ac604008657855a65694024c490",
+        "scripts/benchmark_rhode_island_water.py": "2bad9f2b92e4885480fedc6145cbc4e99a49b9ea45de6b3f8ea0689bcc85e51f",
+        "scripts/district_block_island_links.py": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+        "scripts/correct_state_block_parts.py": "b4006afd905ac6f9ff72c6ba95ac73cf1c807695e33bf2bc4cdf68233028bacd",
+        "scripts/assets/island-block-viewer.html": "8bdc1af4ccd9dfbfa47e6dc309fcdeae7be8242fe5d9cc255b50c4275186300d"
+      },
+      "solver": {
+        "kind": "balanced_power_diagram",
+        "outer_iterations": 6,
+        "centers_converged": true,
+        "outer_iteration_limit_reached": false,
+        "population_balance": {
+          "district_populations": [
+            548690,
+            548689
+          ],
+          "total_population": 1097379,
+          "target_population": 548689.5,
+          "ideal_population_exact": {
+            "numerator": 1097379,
+            "denominator": 2
+          },
+          "deviation_numerators": [
+            1,
+            -1
+          ],
+          "deviation_denominator": 2,
+          "deviations_people": [
+            0.5,
+            -0.5
+          ],
+          "max_absolute_deviation_numerator": 1,
+          "max_absolute_deviation_people": 0.5,
+          "max_absolute_deviation_percent": 9.11262198383603e-05,
+          "squared_deviation_numerator": 2,
+          "squared_deviation_denominator": 4,
+          "total_range_people": 1,
+          "total_range_percent": 0.0001822524396767206,
+          "exact_equal_populations": false,
+          "integer_population_lower_bound": {
+            "floor_population": 548689,
+            "ceiling_population": 548690,
+            "districts_at_floor": 1,
+            "districts_at_ceiling": 1,
+            "max_deviation_numerator": 1,
+            "deviation_denominator": 2,
+            "max_absolute_deviation_people": 0.5,
+            "reached": true,
+            "whole_block_feasibility_assumed": false
+          }
+        }
+      },
+      "postprocessing": {
+        "stop_reason": "local_optimum",
+        "repair_move_count": 0,
+        "part_repair_move_count": 0,
+        "rebalance_move_count": 0
+      },
+      "final_plan": {
+        "district_populations": [
+          548690,
+          548689
+        ],
+        "total_population": 1097379,
+        "target_population": 548689.5,
+        "ideal_population_exact": {
+          "numerator": 1097379,
+          "denominator": 2
+        },
+        "deviation_numerators": [
+          1,
+          -1
+        ],
+        "deviation_denominator": 2,
+        "deviations_people": [
+          0.5,
+          -0.5
+        ],
+        "max_absolute_deviation_numerator": 1,
+        "max_absolute_deviation_people": 0.5,
+        "max_absolute_deviation_percent": 9.11262198383603e-05,
+        "squared_deviation_numerator": 2,
+        "squared_deviation_denominator": 4,
+        "total_range_people": 1,
+        "total_range_percent": 0.0001822524396767206,
+        "exact_equal_populations": false,
+        "integer_population_lower_bound": {
+          "floor_population": 548689,
+          "ceiling_population": 548690,
+          "districts_at_floor": 1,
+          "districts_at_ceiling": 1,
+          "max_deviation_numerator": 1,
+          "deviation_denominator": 2,
+          "max_absolute_deviation_people": 0.5,
+          "reached": true,
+          "whole_block_feasibility_assumed": false
+        },
+        "district_count": 2,
+        "district_block_counts": [
+          10590,
+          15059
+        ],
+        "shared_edge_components": [
+          1,
+          2
+        ],
+        "all_districts_nonempty": true,
+        "all_districts_shared_edge_connected": false,
+        "all_blocks_assigned_once": true,
+        "population_sum_matches_source": true,
+        "tracts_split_across_districts": 14,
+        "physical_part_components": [
+          1,
+          2
+        ],
+        "all_districts_physically_part_connected": false,
+        "policy_part_components": [
+          1,
+          1
+        ],
+        "all_districts_policy_connected": true
+      },
+      "phases": {
+        "source_acquisition": {
+          "wall_seconds": 0.03161839999665972,
+          "cpu_seconds": 0.03125,
+          "sampled_peak_rss_bytes": 75530240
+        },
+        "source_extraction": {
+          "wall_seconds": 0.09923439999693073,
+          "cpu_seconds": 0.046875,
+          "sampled_peak_rss_bytes": 75546624
+        },
+        "load_and_validate_blocks": {
+          "wall_seconds": 0.4516561000054935,
+          "cpu_seconds": 0.453125,
+          "sampled_peak_rss_bytes": 88469504
+        },
+        "load_or_build_physical_part_graph": {
+          "wall_seconds": 0.45420480000029784,
+          "cpu_seconds": 0.421875,
+          "sampled_peak_rss_bytes": 101576704
+        },
+        "prepare_recorded_water_connection": {
+          "wall_seconds": 16.47174970000924,
+          "cpu_seconds": 16.4375,
+          "sampled_peak_rss_bytes": 214216704
+        },
+        "solve": {
+          "wall_seconds": 0.28635369999392424,
+          "cpu_seconds": 0.265625,
+          "sampled_peak_rss_bytes": 131092480
+        },
+        "audit_initial_plan": {
+          "wall_seconds": 0.2724898000014946,
+          "cpu_seconds": 0.28125,
+          "sampled_peak_rss_bytes": 122818560
+        },
+        "repair_and_rebalance": {
+          "wall_seconds": 0.3735218000074383,
+          "cpu_seconds": 0.375,
+          "sampled_peak_rss_bytes": 124215296
+        },
+        "save_and_audit_final_plan": {
+          "wall_seconds": 0.6422382000018843,
+          "cpu_seconds": 0.640625,
+          "sampled_peak_rss_bytes": 132861952
+        },
+        "independent_polygon_validation_and_map_export": {
+          "wall_seconds": 51.058778799997526,
+          "cpu_seconds": 50.609375,
+          "sampled_peak_rss_bytes": 227569664
+        },
+        "write_viewer_and_verify_preservation": {
+          "wall_seconds": 0.19028690000413917,
+          "cpu_seconds": 0.078125,
+          "sampled_peak_rss_bytes": 124534784
+        }
+      },
+      "timed_pipeline_wall_seconds": 70.49547749999329,
+      "peak_process_working_set_bytes": 229031936,
+      "peak_process_working_set_mib": 218.421875,
+      "preservation_audit": {
+        "all_original_strict_files_byte_identical": true,
+        "national_suite_byte_identical": true,
+        "source_archive_byte_identical": true,
+        "run_code_unchanged": true,
+        "protected_file_count": 22
+      },
+      "physical_part_graph_cache": {
+        "status": "hit",
+        "cache_hit": true,
+        "key": "ffc3c794aa889303966e4ddc3d063e8383b7a1e2067ae4b0a8d19d48a4138cfd",
+        "path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\graph-cache\\44\\shared-edge-parts-ffc3c794aa889303966e4ddc3d063e8383b7a1e2067ae4b0a8d19d48a4138cfd.npz",
+        "identity": {
+          "schema": 1,
+          "topology_rule": "polygon parts; F***1****; original coordinates; no synthetic ownership edges",
+          "source_archive_sha256": "79d10c9dfec1e3e0962e13d6295b53856db286a156d9937d3737adb0c542f35b",
+          "ordered_geoids_sha256": "d13dff473f04d08a40a7ec5aee66e8d41bff11594ff147a879007ea31a833976",
+          "block_count": 25649,
+          "part_builder_sha256": "49b43929897184c04a5332f4530cd7cf722f9ac604008657855a65694024c490",
+          "part_domain_sha256": "a127aad254e65dc7b8be69f1fe7403aad6f9d18e0a15b8723e32358f9ef833d5",
+          "shapely_version": "2.1.2",
+          "geos_version": "3.13.1",
+          "pyshp_version": "3.0.3"
+        },
+        "bytes": 432748,
+        "load_seconds": 0.43513650000386406,
+        "build_seconds": 0.0,
+        "write_seconds": 0.0,
+        "total_seconds": 0.45388880000973586,
+        "source_hash_verified_by_caller": true,
+        "original_build_timing_reused": true,
+        "invalid_cache_reason": null
+      },
+      "physical_polygon_components": [
+        1,
+        2
+      ],
+      "policy_polygon_components": [
+        1,
+        1
+      ],
+      "strict_polygon_validation": {
+        "passed": false,
+        "issues": [
+          "District 1 has 2 polygon components."
+        ]
+      },
+      "policy_polygon_validation": {
+        "policy": "shared_edges_plus_recorded_water_connections",
+        "passed": true,
+        "issues": [],
+        "districts": [
+          {
+            "district_id": 0,
+            "physical_polygon_components": 1,
+            "connected_components_after_links": 1,
+            "used_link_ids": []
+          },
+          {
+            "district_id": 1,
+            "physical_polygon_components": 2,
+            "connected_components_after_links": 1,
+            "used_link_ids": [
+              "ri-water-001"
+            ]
+          }
+        ],
+        "used_link_ids": [
+          "ri-water-001"
+        ],
+        "endpoint_boundary_tolerance_degrees": 1e-09,
+        "endpoint_global_part_order": "assignment mapping GEOID order, then original MultiPolygon parts",
+        "source_coverage_preserved_exactly": true,
+        "independent_source_coverage_valid": true,
+        "independent_district_coverage_valid": true,
+        "source_geometry_modified": false,
+        "validation_basis": "full dissolved polygon components with validated source-part endpoints; independent of graph edges"
+      },
+      "connection": {
+        "component_ids": [
+          0,
+          1
+        ],
+        "distance_m": 2334.777001610648,
+        "endpoint_districts": [
+          1,
+          1
+        ],
+        "endpoints": [
+          {
+            "coordinate": [
+              -71.54775161596777,
+              41.31368809723117
+            ],
+            "geoid": "440099901000017",
+            "part_index": 0,
+            "part_node": 12827,
+            "source_boundary_error_degrees": 1.3160153084083072e-15
+          },
+          {
+            "coordinate": [
+              -71.557569,
+              41.294018
+            ],
+            "geoid": "440099902000001",
+            "part_index": 0,
+            "part_node": 834,
+            "source_boundary_error_degrees": 0.0
+          }
+        ],
+        "id": "ri-water-001",
+        "meaning": "declared connectivity edge; no source polygon or land bridge added",
+        "state_fips": "44",
+        "used_by_district": 1
+      },
+      "payloads": {
+        "district_outlines": {
+          "full": {
+            "path": "districts-full.geojson",
+            "gzip_path": "districts-full.geojson.gz",
+            "raw_bytes": 220588,
+            "gzip_bytes": 59414,
+            "coordinate_count": 9668
+          },
+          "state": {
+            "path": "districts-state.geojson",
+            "gzip_path": "districts-state.geojson.gz",
+            "raw_bytes": 37796,
+            "gzip_bytes": 7434,
+            "coordinate_count": 1387
+          },
+          "national": {
+            "path": "districts-national.geojson",
+            "gzip_path": "districts-national.geojson.gz",
+            "raw_bytes": 7749,
+            "gzip_bytes": 2028,
+            "coordinate_count": 279
+          }
+        },
+        "water_connection": {
+          "path": "water-connections.geojson",
+          "gzip_path": "water-connections.geojson.gz",
+          "raw_bytes": 739,
+          "gzip_bytes": 407,
+          "connection_count": 1
+        },
+        "load_scenarios": {
+          "state_entry_outlines_and_detail_index": {
+            "raw_bytes": 39016,
+            "gzip_bytes": 7835
+          },
+          "all_county_detail_shards": {
+            "raw_bytes": 37097240,
+            "gzip_bytes": 9371659
+          },
+          "largest_county_detail_shard": {
+            "county_fips": "007",
+            "block_count": 13417,
+            "population": 660741,
+            "bbox": [
+              -71.799195,
+              41.725198,
+              -71.317873,
+              42.018799
+            ],
+            "path": "blocks/county-007.geojson",
+            "gzip_path": "blocks/county-007.geojson.gz",
+            "raw_bytes": 14850141,
+            "gzip_bytes": 3716103
+          },
+          "national_state_only": {
+            "path": "districts-national.geojson",
+            "gzip_path": "districts-national.geojson.gz",
+            "raw_bytes": 7749,
+            "gzip_bytes": 2028,
+            "coordinate_count": 279
+          }
+        }
+      },
+      "artifact_sha256": {
+        "water-connections.json": "96efbd2510a514ab0ddcde4bd2d315790447781faec209f69d3a1748a9697553",
+        "initial-solver-result.json": "c5b086759c727a57478edbb4867fdf2bdb4532f40f77d68b64a4cb4fd182129e",
+        "after-repair-result.json": "145c7e5e2f91e9b4098ff26c1efb4006868e70b2dcb012c107d51a86b425d88f",
+        "solver-result.json": "50833a8c3f3b93de2a6995d76c7c71bc54c9266d00c37631410828b30b07bac7",
+        "move-audit.json": "34665867c176f8c647153e2a0764adc1beaac381e912377bc1e64c23f142fd23",
+        "maps/map-manifest.json": "ccb20eb8de86daa1c2bc2cf3df6a06b0001b186aef7649abaae231fabba21d64",
+        "index.html": "6336e4def32ebe7b8e0865fcb1ccfb6f2c441f960a3c3ccab2ac34c6917168bd"
+      },
+      "strict_comparison": {
+        "maximum_deviation_percent": 99.74302406005583,
+        "maximum_deviation_people": 547279.5,
+        "kind": "exact_attained_component_partition"
+      }
+    },
+    {
+      "district_count": 3,
+      "house_sizes": [
+        1000
+      ],
+      "status": "complete_under_island_water_policy",
+      "url": "http://127.0.0.1:8770/policies/island-water-v1/states/44/districts-3/",
+      "benchmark_path": ".cache/state-block-benchmark/suite-through-1000/policies/island-water-v1/states/44/districts-3/benchmark.json",
+      "benchmark_sha256": "8b38cd931622436c6a8b875025dc66f0c35eca5cff9ebb271d47244871ccdcb2",
+      "configuration": {
+        "seed": 20200955,
+        "max_outer_iterations": 80,
+        "inner_max_iterations": 300,
+        "center_tolerance_m": 0.0001,
+        "max_rebalance_moves": 1000,
+        "island_eligibility_relative_band": 0.01,
+        "minimum_district_population_for_island_classification": 362135.07,
+        "minimum_district_population_exact": "36213507/100",
+        "eligibility_note": "99% of ideal classifies undersized components only; it is not solver convergence or final-plan acceptance.",
+        "boundary_metric": "source census coverage, including retained water blocks; no shoreline substitution"
+      },
+      "source": {
+        "schema": 1,
+        "state_fips": "44",
+        "state": "Rhode Island",
+        "url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_44_tabblock20.zip",
+        "archive_sha256": "79d10c9dfec1e3e0962e13d6295b53856db286a156d9937d3737adb0c542f35b",
+        "archive_bytes": 28351631,
+        "extracted_file_sha256": {
+          "tl_2020_44_tabblock20.cpg": "3ad3031f5503a4404af825262ee8232cc04d4ea6683d42c5dd0a2f2a27ac9824",
+          "tl_2020_44_tabblock20.dbf": "46aeacfdcf81ee580c50cb555d6dd5b165219463f64208912d1d304e410a6e06",
+          "tl_2020_44_tabblock20.prj": "0b9041e921d9ebb43247d314608fe9e38a0b008ee793067fc1806199ea1fb9dd",
+          "tl_2020_44_tabblock20.shp": "2528ad254d42db9368b17b02376f79b5a6021983db77a61e47503d9a91fd72c5",
+          "tl_2020_44_tabblock20.shp.ea.iso.xml": "bfec33140cc7684b1385347718c27347f615d446ae774ab89ef16e900b413d40",
+          "tl_2020_44_tabblock20.shp.iso.xml": "82af09356427a42bceffcc035a39aab788ed59da5f510ae8b239986debf0b661",
+          "tl_2020_44_tabblock20.shx": "fe549c9af889a9aa837e3a365f9aad6133daa6983ae580a01efe8f988ff1d22f"
+        },
+        "download": {
+          "attempts": 1,
+          "etag": null,
+          "expected_bytes": 28351631,
+          "last_modified": "Fri, 06 Jan 2023 21:46:17 GMT",
+          "received_bytes": 28351631,
+          "resumed_bytes": 0,
+          "url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_44_tabblock20.zip"
+        },
+        "hash_provenance": "Locally computed SHA-256; no publisher checksum is provided.",
+        "archive_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\44\\tl_2020_44_tabblock20.zip",
+        "extraction_dir": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\44\\tl_2020_44_tabblock20",
+        "source_shapefile_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\44\\tl_2020_44_tabblock20\\tl_2020_44_tabblock20.shp",
+        "manifest_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\44\\tl_2020_44_tabblock20.manifest.json",
+        "downloaded_in_timed_pipeline": false,
+        "extracted_files_reused": true,
+        "extracted_bytes": 28350689,
+        "crs_wkt": "GEOGCS[\"GCS_North_American_1983\",DATUM[\"D_North_American_1983\",SPHEROID[\"GRS_1980\",6378137,298.257222101]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]"
+      },
+      "code_sha256": {
+        "districting/algorithm.py": "1e3f5772b6cfa51d3bbccb33f218425abcecfd49657c9c0b0e0e0babeb6caafc",
+        "districting/connectivity.py": "2d6788d73fac4e2eb550cff4db36dd4b5b430f131254809805c53317bb8cbfed",
+        "districting/part_connectivity.py": "a127aad254e65dc7b8be69f1fe7403aad6f9d18e0a15b8723e32358f9ef833d5",
+        "districting/apportionment.py": "07eb27ebc88d89647dfad66784d4fb3b9623b7919ed6e837122111bfe4323eae",
+        "districting/data/apportionment_2020.py": "86a8ee34675d78aa99ed7edcb0c686fbb3aebd34d04655a106cae10dfbb0461d",
+        "scripts/benchmark_state_blocks.py": "8a1f05e5e428437ff87434408c315e8d94a4df64df5dffa821a7fc952b77a414",
+        "scripts/benchmark_kansas_blocks.py": "20da6d6f95e4b6706341eb97f01c3518e3d58b07e1852a0537e9c85c5dab31bf",
+        "scripts/benchmark_kansas_anchors.py": "adf92735dfcf5fb703c15a1e7d9f1a8f76b203d037e441b3560d2bc0573b50a7",
+        "scripts/district_block_sources.py": "dd041755be227ea77abfed20bbc6c7a9a10050bf8f6a66aaeed2a07c96a1cbbb",
+        "scripts/district_block_adjacency.py": "8e3bd87629631e5452b6294bb94789dffa733a7b490db8a5238687a7609c0efc",
+        "scripts/district_block_graph_cache.py": "46d0c64da93123c23c3a05136ab2c4b3f096122627990f0a25c4c2e1c75b6c7e",
+        "scripts/district_block_map_export.py": "05e29bdfea353a1819fd4000b2e9ebc350fd8b9c6bdccf299d7531a7002499cf",
+        "scripts/state_block_map_export.py": "3db4348c269b563c3ec6756f2d06ab6b328bf0ccfa37eb0e5d74a73a65ba433b",
+        "scripts/state_block_execution_lock.py": "861c5a915ca9bc7d7065df4c10afae48c641febd680b25133c05d64f4268c6ff",
+        "scripts/district_block_part_graph.py": "49b43929897184c04a5332f4530cd7cf722f9ac604008657855a65694024c490",
+        "scripts/benchmark_rhode_island_water.py": "2bad9f2b92e4885480fedc6145cbc4e99a49b9ea45de6b3f8ea0689bcc85e51f",
+        "scripts/district_block_island_links.py": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+        "scripts/correct_state_block_parts.py": "b4006afd905ac6f9ff72c6ba95ac73cf1c807695e33bf2bc4cdf68233028bacd",
+        "scripts/assets/island-block-viewer.html": "8bdc1af4ccd9dfbfa47e6dc309fcdeae7be8242fe5d9cc255b50c4275186300d"
+      },
+      "solver": {
+        "kind": "balanced_power_diagram",
+        "outer_iterations": 13,
+        "centers_converged": true,
+        "outer_iteration_limit_reached": false,
+        "population_balance": {
+          "district_populations": [
+            365956,
+            365664,
+            365759
+          ],
+          "total_population": 1097379,
+          "target_population": 365793.0,
+          "ideal_population_exact": {
+            "numerator": 1097379,
+            "denominator": 3
+          },
+          "deviation_numerators": [
+            489,
+            -387,
+            -102
+          ],
+          "deviation_denominator": 3,
+          "deviations_people": [
+            163.0,
+            -129.0,
+            -34.0
+          ],
+          "max_absolute_deviation_numerator": 489,
+          "max_absolute_deviation_people": 163.0,
+          "max_absolute_deviation_percent": 0.04456072150095819,
+          "squared_deviation_numerator": 399294,
+          "squared_deviation_denominator": 9,
+          "total_range_people": 292,
+          "total_range_percent": 0.07982656857840363,
+          "exact_equal_populations": false,
+          "integer_population_lower_bound": {
+            "floor_population": 365793,
+            "ceiling_population": 365793,
+            "districts_at_floor": 3,
+            "districts_at_ceiling": 0,
+            "max_deviation_numerator": 0,
+            "deviation_denominator": 3,
+            "max_absolute_deviation_people": 0.0,
+            "reached": false,
+            "whole_block_feasibility_assumed": false
+          }
+        }
+      },
+      "postprocessing": {
+        "stop_reason": "local_optimum",
+        "repair_move_count": 2,
+        "part_repair_move_count": 0,
+        "rebalance_move_count": 4
+      },
+      "final_plan": {
+        "district_populations": [
+          365792,
+          365794,
+          365793
+        ],
+        "total_population": 1097379,
+        "target_population": 365793.0,
+        "ideal_population_exact": {
+          "numerator": 1097379,
+          "denominator": 3
+        },
+        "deviation_numerators": [
+          -3,
+          3,
+          0
+        ],
+        "deviation_denominator": 3,
+        "deviations_people": [
+          -1.0,
+          1.0,
+          0.0
+        ],
+        "max_absolute_deviation_numerator": 3,
+        "max_absolute_deviation_people": 1.0,
+        "max_absolute_deviation_percent": 0.00027337865951508096,
+        "squared_deviation_numerator": 18,
+        "squared_deviation_denominator": 9,
+        "total_range_people": 2,
+        "total_range_percent": 0.0005467573190301619,
+        "exact_equal_populations": false,
+        "integer_population_lower_bound": {
+          "floor_population": 365793,
+          "ceiling_population": 365793,
+          "districts_at_floor": 3,
+          "districts_at_ceiling": 0,
+          "max_deviation_numerator": 0,
+          "deviation_denominator": 3,
+          "max_absolute_deviation_people": 0.0,
+          "reached": false,
+          "whole_block_feasibility_assumed": false
+        },
+        "district_count": 3,
+        "district_block_counts": [
+          7374,
+          7817,
+          10458
+        ],
+        "shared_edge_components": [
+          1,
+          1,
+          2
+        ],
+        "all_districts_nonempty": true,
+        "all_districts_shared_edge_connected": false,
+        "all_blocks_assigned_once": true,
+        "population_sum_matches_source": true,
+        "tracts_split_across_districts": 28,
+        "physical_part_components": [
+          1,
+          1,
+          2
+        ],
+        "all_districts_physically_part_connected": false,
+        "policy_part_components": [
+          1,
+          1,
+          1
+        ],
+        "all_districts_policy_connected": true
+      },
+      "phases": {
+        "source_acquisition": {
+          "wall_seconds": 0.03080200000840705,
+          "cpu_seconds": 0.03125,
+          "sampled_peak_rss_bytes": 75448320
+        },
+        "source_extraction": {
+          "wall_seconds": 0.04576500000257511,
+          "cpu_seconds": 0.03125,
+          "sampled_peak_rss_bytes": 77279232
+        },
+        "load_and_validate_blocks": {
+          "wall_seconds": 0.47014380000473466,
+          "cpu_seconds": 0.46875,
+          "sampled_peak_rss_bytes": 88276992
+        },
+        "load_or_build_physical_part_graph": {
+          "wall_seconds": 0.45209729998896364,
+          "cpu_seconds": 0.453125,
+          "sampled_peak_rss_bytes": 101490688
+        },
+        "prepare_recorded_water_connection": {
+          "wall_seconds": 16.763793999998597,
+          "cpu_seconds": 16.59375,
+          "sampled_peak_rss_bytes": 214343680
+        },
+        "solve": {
+          "wall_seconds": 1.2445617000048514,
+          "cpu_seconds": 1.25,
+          "sampled_peak_rss_bytes": 129646592
+        },
+        "audit_initial_plan": {
+          "wall_seconds": 0.26560199999948964,
+          "cpu_seconds": 0.265625,
+          "sampled_peak_rss_bytes": 122032128
+        },
+        "repair_and_rebalance": {
+          "wall_seconds": 0.3893386999989161,
+          "cpu_seconds": 0.390625,
+          "sampled_peak_rss_bytes": 123289600
+        },
+        "save_and_audit_final_plan": {
+          "wall_seconds": 0.5321179000020493,
+          "cpu_seconds": 0.515625,
+          "sampled_peak_rss_bytes": 124715008
+        },
+        "independent_polygon_validation_and_map_export": {
+          "wall_seconds": 51.1711701000022,
+          "cpu_seconds": 50.453125,
+          "sampled_peak_rss_bytes": 227078144
+        },
+        "write_viewer_and_verify_preservation": {
+          "wall_seconds": 0.1616842999937944,
+          "cpu_seconds": 0.0625,
+          "sampled_peak_rss_bytes": 124461056
+        }
+      },
+      "timed_pipeline_wall_seconds": 71.68467709999823,
+      "peak_process_working_set_bytes": 228524032,
+      "peak_process_working_set_mib": 217.9375,
+      "preservation_audit": {
+        "all_original_strict_files_byte_identical": true,
+        "national_suite_byte_identical": true,
+        "source_archive_byte_identical": true,
+        "run_code_unchanged": true,
+        "protected_file_count": 22
+      },
+      "physical_part_graph_cache": {
+        "status": "hit",
+        "cache_hit": true,
+        "key": "ffc3c794aa889303966e4ddc3d063e8383b7a1e2067ae4b0a8d19d48a4138cfd",
+        "path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\graph-cache\\44\\shared-edge-parts-ffc3c794aa889303966e4ddc3d063e8383b7a1e2067ae4b0a8d19d48a4138cfd.npz",
+        "identity": {
+          "schema": 1,
+          "topology_rule": "polygon parts; F***1****; original coordinates; no synthetic ownership edges",
+          "source_archive_sha256": "79d10c9dfec1e3e0962e13d6295b53856db286a156d9937d3737adb0c542f35b",
+          "ordered_geoids_sha256": "d13dff473f04d08a40a7ec5aee66e8d41bff11594ff147a879007ea31a833976",
+          "block_count": 25649,
+          "part_builder_sha256": "49b43929897184c04a5332f4530cd7cf722f9ac604008657855a65694024c490",
+          "part_domain_sha256": "a127aad254e65dc7b8be69f1fe7403aad6f9d18e0a15b8723e32358f9ef833d5",
+          "shapely_version": "2.1.2",
+          "geos_version": "3.13.1",
+          "pyshp_version": "3.0.3"
+        },
+        "bytes": 432748,
+        "load_seconds": 0.4307130999950459,
+        "build_seconds": 0.0,
+        "write_seconds": 0.0,
+        "total_seconds": 0.4518456000078004,
+        "source_hash_verified_by_caller": true,
+        "original_build_timing_reused": true,
+        "invalid_cache_reason": null
+      },
+      "physical_polygon_components": [
+        1,
+        1,
+        2
+      ],
+      "policy_polygon_components": [
+        1,
+        1,
+        1
+      ],
+      "strict_polygon_validation": {
+        "passed": false,
+        "issues": [
+          "District 2 has 2 polygon components."
+        ]
+      },
+      "policy_polygon_validation": {
+        "policy": "shared_edges_plus_recorded_water_connections",
+        "passed": true,
+        "issues": [],
+        "districts": [
+          {
+            "district_id": 0,
+            "physical_polygon_components": 1,
+            "connected_components_after_links": 1,
+            "used_link_ids": []
+          },
+          {
+            "district_id": 1,
+            "physical_polygon_components": 1,
+            "connected_components_after_links": 1,
+            "used_link_ids": []
+          },
+          {
+            "district_id": 2,
+            "physical_polygon_components": 2,
+            "connected_components_after_links": 1,
+            "used_link_ids": [
+              "ri-water-001"
+            ]
+          }
+        ],
+        "used_link_ids": [
+          "ri-water-001"
+        ],
+        "endpoint_boundary_tolerance_degrees": 1e-09,
+        "endpoint_global_part_order": "assignment mapping GEOID order, then original MultiPolygon parts",
+        "source_coverage_preserved_exactly": true,
+        "independent_source_coverage_valid": true,
+        "independent_district_coverage_valid": true,
+        "source_geometry_modified": false,
+        "validation_basis": "full dissolved polygon components with validated source-part endpoints; independent of graph edges"
+      },
+      "connection": {
+        "component_ids": [
+          0,
+          1
+        ],
+        "distance_m": 2334.777001610648,
+        "endpoint_districts": [
+          2,
+          2
+        ],
+        "endpoints": [
+          {
+            "coordinate": [
+              -71.54775161596777,
+              41.31368809723117
+            ],
+            "geoid": "440099901000017",
+            "part_index": 0,
+            "part_node": 12827,
+            "source_boundary_error_degrees": 1.3160153084083072e-15
+          },
+          {
+            "coordinate": [
+              -71.557569,
+              41.294018
+            ],
+            "geoid": "440099902000001",
+            "part_index": 0,
+            "part_node": 834,
+            "source_boundary_error_degrees": 0.0
+          }
+        ],
+        "id": "ri-water-001",
+        "meaning": "declared connectivity edge; no source polygon or land bridge added",
+        "state_fips": "44",
+        "used_by_district": 2
+      },
+      "payloads": {
+        "district_outlines": {
+          "full": {
+            "path": "districts-full.geojson",
+            "gzip_path": "districts-full.geojson.gz",
+            "raw_bytes": 443034,
+            "gzip_bytes": 119893,
+            "coordinate_count": 19425
+          },
+          "state": {
+            "path": "districts-state.geojson",
+            "gzip_path": "districts-state.geojson.gz",
+            "raw_bytes": 68657,
+            "gzip_bytes": 15427,
+            "coordinate_count": 2544
+          },
+          "national": {
+            "path": "districts-national.geojson",
+            "gzip_path": "districts-national.geojson.gz",
+            "raw_bytes": 13121,
+            "gzip_bytes": 3349,
+            "coordinate_count": 473
+          }
+        },
+        "water_connection": {
+          "path": "water-connections.geojson",
+          "gzip_path": "water-connections.geojson.gz",
+          "raw_bytes": 739,
+          "gzip_bytes": 408,
+          "connection_count": 1
+        },
+        "load_scenarios": {
+          "state_entry_outlines_and_detail_index": {
+            "raw_bytes": 69877,
+            "gzip_bytes": 15830
+          },
+          "all_county_detail_shards": {
+            "raw_bytes": 37097240,
+            "gzip_bytes": 9374372
+          },
+          "largest_county_detail_shard": {
+            "county_fips": "007",
+            "block_count": 13417,
+            "population": 660741,
+            "bbox": [
+              -71.799195,
+              41.725198,
+              -71.317873,
+              42.018799
+            ],
+            "path": "blocks/county-007.geojson",
+            "gzip_path": "blocks/county-007.geojson.gz",
+            "raw_bytes": 14850141,
+            "gzip_bytes": 3717294
+          },
+          "national_state_only": {
+            "path": "districts-national.geojson",
+            "gzip_path": "districts-national.geojson.gz",
+            "raw_bytes": 13121,
+            "gzip_bytes": 3349,
+            "coordinate_count": 473
+          }
+        }
+      },
+      "artifact_sha256": {
+        "water-connections.json": "96efbd2510a514ab0ddcde4bd2d315790447781faec209f69d3a1748a9697553",
+        "initial-solver-result.json": "9904713591295f8bf5d9801c25852d891f1bed5650cfadecce37d31b86c98196",
+        "after-repair-result.json": "681aa298837faf6fe04980bab1631d90395ad60783de43800d4e091ff0208fa3",
+        "solver-result.json": "dc2d91a03426c6e73c69d89f4222f7f0d6fc790f356f11a03cb55182dbe910ff",
+        "move-audit.json": "214c23d0507c6d9ab534977e67d9eae1b7edea64041ad7f124b75e95acde6593",
+        "maps/map-manifest.json": "cd94a3ee7f410d60a24f59bf3d9bd2efeb5e36d882610a37d9717fc4f6546604",
+        "index.html": "c8c60823d8ad68c3475466fdf5f7d528720f1caa3e34c9e9610d87a31cde2317"
+      },
+      "strict_comparison": {
+        "maximum_deviation_percent": 99.61453609008373,
+        "maximum_deviation_people": 364383.0,
+        "kind": "necessary_lower_bound_not_constructed"
+      }
+    }
+  ],
+  "implementation_validation": {
+    "regression_tests_passed": 308,
+    "pytest_elapsed_seconds": 8.29,
+    "browser_checks": "Both maps: exact outlines, link toggle and focus. K2 county 009: 4341 blocks loaded on demand."
+  },
+  "strict_baseline": {
+    "status": "unsupported_topology",
+    "benchmark_path": ".cache/state-block-benchmark/suite-through-1000/states/44/districts-2/benchmark.json",
+    "benchmark_sha256": "4fe142128a5305fe7b53ed28ee04e5380eb20652928344645d5bc81db3f6c3cf",
+    "preflight_wall_seconds": 8.45810010000423,
+    "solver_executed": false,
+    "k3_separate_run_executed": false,
+    "note": "K3 reused the source-topology exception; no separate strict K3 solve or runtime exists.",
+    "certificate_path": ".cache/state-block-benchmark/suite-through-1000/diagnostics/rhode-island/feasibility.json",
+    "certificate_sha256": "77d6209bff0cdbe794bb786e52c28af63505dd7988263235a311da1ffa4f38e9"
+  },
+  "measurement_notes": [
+    "New K2 and K3 pipelines ran serially in fresh processes, using cached source and physical part graphs.",
+    "Full measured pipeline includes source preparation, link construction, solving, audits and map export.",
+    "The pipeline timer excludes process imports, the initial preservation inventory, and the final report flush.",
+    "Shared desktop timings are observations, not isolated hardware benchmarks.",
+    "The original 8.4581-second preflight rejection is not a comparable strict-solver baseline; no speedup is claimed.",
+    "The 1% band classifies undersized components only, not final-plan acceptance.",
+    "The 2334.777m link uses a bbox-centered local metric; the earlier 2333.895m diagnostic used a population-centered metric."
+  ]
+}

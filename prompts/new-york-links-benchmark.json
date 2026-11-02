@@ -1,0 +1,3871 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-10-23T20:59:29.733262+00:00",
+  "scope": "New York K26/K35/K42/K61 for House sizes 435/574/692/1000; recorded Liberty water and Ellis exclave links.",
+  "policy": "shared_edges_plus_recorded_mixed_connections",
+  "total_population": 20201249,
+  "block_count": 288819,
+  "runs": [
+    {
+      "status": "failed",
+      "district_count": 26,
+      "house_sizes": [
+        435
+      ],
+      "run_kind": "new_york_recorded_mixed_policy_v1",
+      "configuration": {
+        "seed": 20200955,
+        "max_outer_iterations": 80,
+        "inner_max_iterations": 300,
+        "center_tolerance_m": 0.0001,
+        "physical_adjacency_rule": "polygon parts; disjoint interiors; positive-length shared boundary; F***1****",
+        "connection_policy": "new-york-harbor-recorded-mixed-v1",
+        "connection_kinds": [
+          "recorded-water-connection",
+          "recorded-exclave-connection"
+        ],
+        "max_rebalance_moves": 1000,
+        "root_eligibility_relative_band": 0.01,
+        "group_population_preflight_tolerance": 0.01,
+        "minimum_district_population_for_root_classification": 769201.4042307693,
+        "minimum_district_population_exact": "1999923651/2600",
+        "eligibility_note": "99% of ideal classifies original eligible roots; root groups must admit integer district allocations within a 1% optimistic population budget. Neither is final-plan acceptance.",
+        "boundary_metric": "source census coverage, including retained water blocks; no shoreline substitution",
+        "inner_optimization": {
+          "normalization": "population-mass and geometry-derived shifted squared costs; mean-zero weight gauge",
+          "public_units": "centers in source coordinate units; weights in squared source coordinate units",
+          "max_line_search_steps": 100,
+          "failure_policy": "raise on unsuccessful termination or nonfinite output; no completed plan returned"
+        }
+      },
+      "source": {
+        "schema": 1,
+        "state_fips": "36",
+        "state": "New York",
+        "url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_36_tabblock20.zip",
+        "archive_sha256": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+        "archive_bytes": 325849613,
+        "extracted_file_sha256": {
+          "tl_2020_36_tabblock20.cpg": "3ad3031f5503a4404af825262ee8232cc04d4ea6683d42c5dd0a2f2a27ac9824",
+          "tl_2020_36_tabblock20.dbf": "7974555de141bd5c1aa249da81c8227a5f22caf516689ba332293e6ddc15bb83",
+          "tl_2020_36_tabblock20.prj": "0b9041e921d9ebb43247d314608fe9e38a0b008ee793067fc1806199ea1fb9dd",
+          "tl_2020_36_tabblock20.shp": "9eff19746d07b054923a2b0c98392121545a647fda5a133fc4f48f375a2d13de",
+          "tl_2020_36_tabblock20.shp.ea.iso.xml": "bfec33140cc7684b1385347718c27347f615d446ae774ab89ef16e900b413d40",
+          "tl_2020_36_tabblock20.shp.iso.xml": "98d50f01ba3643e4b591fd0bd8583e574520f2b0c2820c96a799e1867f3d04b5",
+          "tl_2020_36_tabblock20.shx": "82b83662912e3cd806b76a606058d1eff15c3feea69faec0130eaa5c4384f64d"
+        },
+        "download": {
+          "attempts": 1,
+          "etag": null,
+          "expected_bytes": 325849613,
+          "last_modified": "Fri, 06 Jan 2023 21:46:06 GMT",
+          "received_bytes": 325849613,
+          "resumed_bytes": 0,
+          "url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_36_tabblock20.zip"
+        },
+        "hash_provenance": "Locally computed SHA-256; no publisher checksum is provided.",
+        "archive_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\36\\tl_2020_36_tabblock20.zip",
+        "extraction_dir": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\36\\tl_2020_36_tabblock20",
+        "source_shapefile_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\36\\tl_2020_36_tabblock20\\tl_2020_36_tabblock20.shp",
+        "manifest_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\36\\tl_2020_36_tabblock20.manifest.json",
+        "downloaded_in_timed_pipeline": false,
+        "extracted_files_reused": true,
+        "extracted_bytes": 325848671,
+        "crs_wkt": "GEOGCS[\"GCS_North_American_1983\",DATUM[\"D_North_American_1983\",SPHEROID[\"GRS_1980\",6378137,298.257222101]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]"
+      },
+      "code_sha256": {
+        "districting/algorithm.py": "a1b264a2bb855675ab3b633a5b47a38b77f4929e29b7a4086cfb889436e244ac",
+        "districting/connectivity.py": "2d6788d73fac4e2eb550cff4db36dd4b5b430f131254809805c53317bb8cbfed",
+        "districting/part_connectivity.py": "a127aad254e65dc7b8be69f1fe7403aad6f9d18e0a15b8723e32358f9ef833d5",
+        "districting/apportionment.py": "07eb27ebc88d89647dfad66784d4fb3b9623b7919ed6e837122111bfe4323eae",
+        "districting/data/apportionment_2020.py": "86a8ee34675d78aa99ed7edcb0c686fbb3aebd34d04655a106cae10dfbb0461d",
+        "scripts/benchmark_state_blocks.py": "8a1f05e5e428437ff87434408c315e8d94a4df64df5dffa821a7fc952b77a414",
+        "scripts/benchmark_kansas_blocks.py": "20da6d6f95e4b6706341eb97f01c3518e3d58b07e1852a0537e9c85c5dab31bf",
+        "scripts/benchmark_kansas_anchors.py": "adf92735dfcf5fb703c15a1e7d9f1a8f76b203d037e441b3560d2bc0573b50a7",
+        "scripts/district_block_sources.py": "dd041755be227ea77abfed20bbc6c7a9a10050bf8f6a66aaeed2a07c96a1cbbb",
+        "scripts/district_block_adjacency.py": "8e3bd87629631e5452b6294bb94789dffa733a7b490db8a5238687a7609c0efc",
+        "scripts/district_block_graph_cache.py": "46d0c64da93123c23c3a05136ab2c4b3f096122627990f0a25c4c2e1c75b6c7e",
+        "scripts/district_block_map_export.py": "05e29bdfea353a1819fd4000b2e9ebc350fd8b9c6bdccf299d7531a7002499cf",
+        "scripts/state_block_map_export.py": "b31d08a7d1db70dffbc174080d2feff6b6b614caef6cd918a6aaddbf7a61af28",
+        "scripts/state_block_execution_lock.py": "861c5a915ca9bc7d7065df4c10afae48c641febd680b25133c05d64f4268c6ff",
+        "scripts/district_block_part_graph.py": "49b43929897184c04a5332f4530cd7cf722f9ac604008657855a65694024c490",
+        "scripts/benchmark_new_york_links.py": "cf945a1d60777a2ddf40b7694de24bed01c64c3553f816deaef69c1721ee0304",
+        "scripts/run_new_york_link_suite.py": "c490cdd58a3b685871e0af1e3a9aaa056cfc4ebe58b541e7952a451539301eba",
+        "scripts/new_york_recorded_links.py": "708731aea5095098aff83ba57e5fad122f1f2c823dacd7991c22402b298cd424",
+        "scripts/hawaii_population_links.py": "b512c901f00b62864eb84f7b5cfed2e8d4fe5915ffe3cc87e50c93345e581519",
+        "scripts/district_block_island_links.py": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+        "scripts/correct_state_block_parts.py": "b4006afd905ac6f9ff72c6ba95ac73cf1c807695e33bf2bc4cdf68233028bacd",
+        "scripts/assets/new-york-block-viewer.html": "b10f09dca60f554d5b972d8c89d97e5cd809ecea7c34a73eb04b92fd7c158199",
+        "districting/__init__.py": "baf0b8848dc6fffc7ab83fbe1eb2f6a45f6f67e622fda941b62c818d88f8e548"
+      },
+      "phases": {
+        "source_acquisition": {
+          "wall_seconds": 0.3082239000068512,
+          "cpu_seconds": 0.3125,
+          "sampled_peak_rss_bytes": 79953920
+        },
+        "source_extraction": {
+          "wall_seconds": 0.34665220000897534,
+          "cpu_seconds": 0.3125,
+          "sampled_peak_rss_bytes": 78966784
+        },
+        "load_and_validate_blocks": {
+          "wall_seconds": 4.91921999999613,
+          "cpu_seconds": 4.921875,
+          "sampled_peak_rss_bytes": 221876224
+        },
+        "load_or_build_physical_part_graph": {
+          "wall_seconds": 4.423827100006747,
+          "cpu_seconds": 4.421875,
+          "sampled_peak_rss_bytes": 352112640
+        },
+        "prepare_recorded_mixed_connections": {
+          "wall_seconds": 87.04539770001429,
+          "cpu_seconds": 86.90625,
+          "sampled_peak_rss_bytes": 1102815232
+        },
+        "solve": {
+          "wall_seconds": 27.520435399987036,
+          "cpu_seconds": 27.578125,
+          "sampled_peak_rss_bytes": 719302656
+        }
+      },
+      "timed_pipeline_wall_seconds": 126.41290440000012,
+      "peak_process_working_set_bytes": 1105133568,
+      "preservation_audit": {
+        "all_original_strict_files_byte_identical": true,
+        "all_original_diagnostic_files_byte_identical": true,
+        "national_suite_byte_identical": true,
+        "source_archive_byte_identical": true,
+        "prior_policy_and_correction_evidence_byte_identical": true,
+        "run_code_unchanged": true,
+        "protected_file_count": 1052
+      },
+      "started_at": "2026-10-23T20:41:50.639813+00:00",
+      "finished_at": "2026-10-23T20:43:57.049931+00:00",
+      "url": "http://127.0.0.1:8770/policies/new-york-links-v1/states/36/districts-26/",
+      "benchmark_path": ".cache/state-block-benchmark/suite-through-1000/policies/new-york-links-v1/states/36/districts-26/benchmark.json",
+      "benchmark_sha256": "7393b3bd1b9dd1e50102b5e8d23d2616074ac8e3d4ab253f8d411c1d4681c1fb",
+      "peak_working_set_mib": 1053.9375,
+      "source_connection_verification": {
+        "source_records_match_report": true,
+        "physical_component_count": 3,
+        "augmented_component_count": 1,
+        "recorded_water_link_count": 1,
+        "recorded_exclave_link_count": 1,
+        "source_geometry_modified": false,
+        "endpoint_populations_independently_verified_zero": true,
+        "validation_scope": "Saved source graph audit, immutable typed records and original DBF endpoints; not final district connectivity."
+      },
+      "error": "DistrictingOptimizationError: Inner population optimizer failed (unsuccessful termination; status=1; iterations=300; evaluations=339): STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+      "failed_phase": "solve",
+      "optimizer_failure": {
+        "reason": "unsuccessful termination",
+        "status": 1,
+        "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+        "iterations": 300,
+        "function_evaluations": 339,
+        "balance_pass": 2,
+        "plan_returned": false
+      },
+      "accepted_plan": false,
+      "failure_details": {
+        "disclosure": "The inner weight optimizer failed on balance pass 2 after 300 iterations: STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT. Its configured inner iteration limit was 300. This is an inner-optimizer failure, separate from the outer center-convergence limit. No validated district plan or completed map is accepted from this attempt. Final population balance and district connectivity are unavailable; failure time and peak process memory are still measured.",
+        "failed_phase": "solve",
+        "optimizer_failure": {
+          "reason": "unsuccessful termination",
+          "status": 1,
+          "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+          "iterations": 300,
+          "function_evaluations": 339,
+          "balance_pass": 2,
+          "plan_returned": false
+        },
+        "solver_progress": [
+          {
+            "balance_pass": 1,
+            "inner_optimizer": {
+              "success": true,
+              "status": 0,
+              "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+              "iterations": 192,
+              "function_evaluations": 221,
+              "iteration_limit_reached": false
+            },
+            "wall_seconds": 10.96852680000302
+          },
+          {
+            "balance_pass": 2,
+            "inner_optimizer": {
+              "success": false,
+              "status": 1,
+              "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+              "iterations": 300,
+              "function_evaluations": 339,
+              "iteration_limit_reached": true
+            },
+            "wall_seconds": 16.083960499992827
+          }
+        ],
+        "successful_inner_pass_count": 1,
+        "failed_inner_pass_count": 1,
+        "accepted_district_plan": false,
+        "accepted_completed_map": false
+      },
+      "recorded_policy_audit": {
+        "schema_version": 1,
+        "policy": "new-york-harbor-recorded-mixed-v1",
+        "state_fips": "36",
+        "district_count": 26,
+        "source_geometry_modified": false,
+        "synthetic_ownership_edges": false,
+        "source_population": 20201249,
+        "block_count": 288819,
+        "part_count": 288841,
+        "physical_component_count": 3,
+        "physical_edge_count": 712458,
+        "synthetic_edge_count": 2,
+        "augmented_edge_count": 712460,
+        "augmented_component_count": 1,
+        "augmented_graph_connected": true,
+        "eligible_root_count": 1,
+        "groups": [
+          {
+            "group_id": 0,
+            "component_ids": [
+              0,
+              1,
+              2
+            ],
+            "population": 20201249,
+            "root_component_ids": [
+              0
+            ],
+            "district_count": 26
+          }
+        ],
+        "population_selection": {
+          "policy": "population-aware-rooted-boundary-forest-v1",
+          "district_count": 26,
+          "population_tolerance": 0.01,
+          "ideal_population": 776971.1153846154,
+          "minimum_root_population": 769201.4042307693,
+          "eligible_root_component_ids": [
+            0
+          ],
+          "no_individual_root_fallback": false,
+          "selected_link_ids": [
+            "ny-candidate-00-01",
+            "ny-candidate-00-02"
+          ],
+          "selected_total_distance_m": 1647.2943809814926,
+          "groups": [
+            {
+              "group_id": 0,
+              "component_ids": [
+                0,
+                1,
+                2
+              ],
+              "population": 20201249,
+              "root_component_ids": [
+                0
+              ],
+              "district_count": 26
+            }
+          ],
+          "population_bound": {
+            "feasible_seat_allocation": true,
+            "best_max_deviation_pct": 0.0,
+            "deviation_fraction": [
+              0,
+              1
+            ],
+            "seat_counts": [
+              26
+            ],
+            "ideal_population": 776971.1153846154,
+            "group_ideal_seats": [
+              26.0
+            ],
+            "is_constructed_plan": false,
+            "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+          },
+          "selection_priority": [
+            "Retain the most independently population-compatible original root groups.",
+            "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+            "Break ties by stable candidate IDs and component IDs."
+          ],
+          "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+          "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+          "groupings_examined": 1,
+          "population_feasible_groupings": 1,
+          "geometrically_unconnectable_groupings": 0
+        },
+        "components": [
+          {
+            "component_id": 0,
+            "population": 20201249,
+            "part_count": 288839,
+            "block_count": 288817
+          },
+          {
+            "component_id": 1,
+            "population": 0,
+            "part_count": 1,
+            "block_count": 1
+          },
+          {
+            "component_id": 2,
+            "population": 0,
+            "part_count": 1,
+            "block_count": 1
+          }
+        ],
+        "candidate_count": 3,
+        "candidate_connections": [
+          {
+            "id": "ny-candidate-00-01",
+            "component_ids": [
+              0,
+              1
+            ],
+            "distance_m": 795.2682330091204,
+            "planar_candidate_distance_m": 774.1447935977649,
+            "endpoints": [
+              {
+                "geoid": "360610005000003",
+                "part_node": 272183,
+                "part_index": 0,
+                "coordinate": [
+                  -74.03495160556861,
+                  40.685939310772014
+                ],
+                "source_boundary_error_degrees": 3.413126338774593e-15,
+                "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+              },
+              {
+                "geoid": "360610001001001",
+                "part_node": 59971,
+                "part_index": 0,
+                "coordinate": [
+                  -74.043619,
+                  40.68876
+                ],
+                "source_boundary_error_degrees": 0.0,
+                "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+              }
+            ],
+            "selected_k": [
+              26,
+              35,
+              42,
+              61
+            ],
+            "classification": "positive_gap",
+            "source_boundaries_intersect": false,
+            "exact_geographic_distance_degrees": 0.008878034353130539,
+            "intervening_component_ids": [],
+            "endpoint_component_interior_crossings": [],
+            "endpoint_interior_intersection_length_degrees": {
+              "0": 0.0,
+              "1": 0.0
+            },
+            "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+            "eligible_positive_gap": true,
+            "projection": {
+              "kind": "per-pair-bbox-centered-equirectangular",
+              "lon0": -75.7700405,
+              "lat0": 42.746221500000004
+            }
+          },
+          {
+            "id": "ny-candidate-00-02",
+            "component_ids": [
+              0,
+              2
+            ],
+            "distance_m": 852.0261479723722,
+            "planar_candidate_distance_m": 829.5126827760413,
+            "endpoints": [
+              {
+                "geoid": "360610005000003",
+                "part_node": 272183,
+                "part_index": 0,
+                "coordinate": [
+                  -74.02908780665521,
+                  40.695641431154876
+                ],
+                "source_boundary_error_degrees": 7.347373392151231e-16,
+                "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+              },
+              {
+                "geoid": "360610001001000",
+                "part_node": 113983,
+                "part_index": 0,
+                "coordinate": [
+                  -74.038372,
+                  40.698669
+                ],
+                "source_boundary_error_degrees": 0.0,
+                "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+              }
+            ],
+            "selected_k": [
+              26,
+              35,
+              42,
+              61
+            ],
+            "classification": "positive_gap",
+            "source_boundaries_intersect": false,
+            "exact_geographic_distance_degrees": 0.009511262497346112,
+            "intervening_component_ids": [],
+            "endpoint_component_interior_crossings": [],
+            "endpoint_interior_intersection_length_degrees": {
+              "0": 0.0,
+              "2": 0.0
+            },
+            "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+            "eligible_positive_gap": true,
+            "projection": {
+              "kind": "per-pair-bbox-centered-equirectangular",
+              "lon0": -75.7700405,
+              "lat0": 42.746221500000004
+            }
+          },
+          {
+            "id": "ny-candidate-01-02",
+            "component_ids": [
+              1,
+              2
+            ],
+            "distance_m": 973.0490513691004,
+            "planar_candidate_distance_m": 973.0503137011425,
+            "endpoints": [
+              {
+                "geoid": "360610001001001",
+                "part_node": 59971,
+                "part_index": 0,
+                "coordinate": [
+                  -74.045427,
+                  40.690895
+                ],
+                "source_boundary_error_degrees": 0.0,
+                "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+              },
+              {
+                "geoid": "360610001001000",
+                "part_node": 113983,
+                "part_index": 0,
+                "coordinate": [
+                  -74.039931,
+                  40.69859
+                ],
+                "source_boundary_error_degrees": 0.0,
+                "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+              }
+            ],
+            "selected_k": [],
+            "classification": "positive_gap",
+            "source_boundaries_intersect": false,
+            "exact_geographic_distance_degrees": 0.009271866414181928,
+            "intervening_component_ids": [],
+            "endpoint_component_interior_crossings": [],
+            "endpoint_interior_intersection_length_degrees": {
+              "1": 0.0,
+              "2": 0.0
+            },
+            "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+            "eligible_positive_gap": true,
+            "projection": {
+              "kind": "per-pair-bbox-centered-equirectangular",
+              "lon0": -74.0427875,
+              "lat0": 40.6943615
+            }
+          }
+        ],
+        "unselected_candidate_ids": [
+          "ny-candidate-01-02"
+        ],
+        "connection_kind_counts": {
+          "recorded-water-connection": 1,
+          "recorded-exclave-connection": 1
+        },
+        "provenance": {
+          "policy": "new-york-harbor-recorded-mixed-v1",
+          "builder_sha256": "708731aea5095098aff83ba57e5fad122f1f2c823dacd7991c22402b298cd424",
+          "physical_validation_helpers_sha256": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+          "source_archive_sha256": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+          "source_files_sha256": {
+            ".shp": "9eff19746d07b054923a2b0c98392121545a647fda5a133fc4f48f375a2d13de",
+            ".shx": "82b83662912e3cd806b76a606058d1eff15c3feea69faec0130eaa5c4384f64d",
+            ".dbf": "7974555de141bd5c1aa249da81c8227a5f22caf516689ba332293e6ddc15bb83"
+          },
+          "diagnostic_evidence_sha256": {
+            "diagnosis.json": "c0c6328e9abecac3622fd2c439b5a016be35690778ee6978e815672c0bc59c63",
+            "candidate-links.json": "960425feb448677b723481da6cb57f066744995b7bed8ae94b13a9aa2d7489de",
+            "geography-context.json": "3ef1f218718f63348d7f73d6e910cc5cd6977649694f8e50b1d866ed66b7e92f"
+          },
+          "context_source_archive_sha256": {
+            ".cache/state-block-benchmark/source/34/tl_2020_34_tabblock20.zip": "33e5475f232d0f01c6a6448fb041fc38bd23eee1f8f5f5a2878cfb116690ce88",
+            ".cache/state-block-benchmark/source/36/tl_2020_36_tabblock20.zip": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+            ".cache/state-block-benchmark/suite-through-1000/diagnostics/new-york/context-source/tl_2020_34017_areawater.zip": "6b4b4f89aa45cca7f6eed0bbe540550a69043721f8c938dee8298696bc148d61"
+          },
+          "shapely_version": "2.1.2",
+          "geos_version": "3.13.1"
+        },
+        "endpoint_tolerance_degrees": 1e-09,
+        "elapsed_seconds": 85.33400319999782
+      },
+      "recorded_connections": [
+        {
+          "id": "ny-water-liberty-001",
+          "component_ids": [
+            0,
+            1
+          ],
+          "distance_m": 795.2682330091204,
+          "planar_candidate_distance_m": 774.1447935977649,
+          "endpoints": [
+            {
+              "geoid": "360610005000003",
+              "part_node": 272183,
+              "part_index": 0,
+              "coordinate": [
+                -74.03495160556861,
+                40.685939310772014
+              ],
+              "source_boundary_error_degrees": 3.413126338774593e-15,
+              "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+            },
+            {
+              "geoid": "360610001001001",
+              "part_node": 59971,
+              "part_index": 0,
+              "coordinate": [
+                -74.043619,
+                40.68876
+              ],
+              "source_boundary_error_degrees": 0.0,
+              "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+            }
+          ],
+          "selected_k": [
+            26,
+            35,
+            42,
+            61
+          ],
+          "classification": "positive_gap",
+          "source_boundaries_intersect": false,
+          "exact_geographic_distance_degrees": 0.008878034353130539,
+          "intervening_component_ids": [],
+          "endpoint_component_interior_crossings": [],
+          "endpoint_interior_intersection_length_degrees": {
+            "0": 0.0,
+            "1": 0.0
+          },
+          "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+          "eligible_positive_gap": true,
+          "projection": {
+            "kind": "per-pair-bbox-centered-equirectangular",
+            "lon0": -75.7700405,
+            "lat0": 42.746221500000004
+          },
+          "candidate_id": "ny-candidate-00-01",
+          "state_fips": "36",
+          "kind": "recorded-water-connection",
+          "policy": "new-york-harbor-recorded-mixed-v1",
+          "geographic_context": {
+            "crossed_state": "New Jersey",
+            "water_only": true,
+            "mapped_water_length_m": 795.2682334982188,
+            "mapped_land_length_m": 1.3708295158248595e-09,
+            "surface_length_measurement": "Local equirectangular lengths of exact source-polygon intersections. Overlapping intersections are merged as normalized intervals; no geometry is buffered or repaired.",
+            "source_year": 2020,
+            "crossed_new_jersey_blocks": [
+              {
+                "geoid": "340179801001017",
+                "population": 0,
+                "land_area_m2": 0,
+                "water_area_m2": 1355954,
+                "candidate_interior_length_m": 795.2682334995897
+              }
+            ],
+            "classification": "mapped_water_only",
+            "meaning": "Recorded connectivity exception only; no New Jersey territory, source polygons, bridge, or travel route is added."
+          },
+          "provenance": {
+            "policy": "new-york-harbor-recorded-mixed-v1",
+            "builder_sha256": "708731aea5095098aff83ba57e5fad122f1f2c823dacd7991c22402b298cd424",
+            "physical_validation_helpers_sha256": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+            "source_archive_sha256": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+            "source_files_sha256": {
+              ".shp": "9eff19746d07b054923a2b0c98392121545a647fda5a133fc4f48f375a2d13de",
+              ".shx": "82b83662912e3cd806b76a606058d1eff15c3feea69faec0130eaa5c4384f64d",
+              ".dbf": "7974555de141bd5c1aa249da81c8227a5f22caf516689ba332293e6ddc15bb83"
+            },
+            "diagnostic_evidence_sha256": {
+              "diagnosis.json": "c0c6328e9abecac3622fd2c439b5a016be35690778ee6978e815672c0bc59c63",
+              "candidate-links.json": "960425feb448677b723481da6cb57f066744995b7bed8ae94b13a9aa2d7489de",
+              "geography-context.json": "3ef1f218718f63348d7f73d6e910cc5cd6977649694f8e50b1d866ed66b7e92f"
+            },
+            "context_source_archive_sha256": {
+              ".cache/state-block-benchmark/source/34/tl_2020_34_tabblock20.zip": "33e5475f232d0f01c6a6448fb041fc38bd23eee1f8f5f5a2878cfb116690ce88",
+              ".cache/state-block-benchmark/source/36/tl_2020_36_tabblock20.zip": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+              ".cache/state-block-benchmark/suite-through-1000/diagnostics/new-york/context-source/tl_2020_34017_areawater.zip": "6b4b4f89aa45cca7f6eed0bbe540550a69043721f8c938dee8298696bc148d61"
+            },
+            "shapely_version": "2.1.2",
+            "geos_version": "3.13.1"
+          },
+          "distance_definition": "Spherical endpoint length of the preserved planar nearest-boundary candidate in census coverage."
+        },
+        {
+          "id": "ny-exclave-ellis-001",
+          "component_ids": [
+            0,
+            2
+          ],
+          "distance_m": 852.0261479723722,
+          "planar_candidate_distance_m": 829.5126827760413,
+          "endpoints": [
+            {
+              "geoid": "360610005000003",
+              "part_node": 272183,
+              "part_index": 0,
+              "coordinate": [
+                -74.02908780665521,
+                40.695641431154876
+              ],
+              "source_boundary_error_degrees": 7.347373392151231e-16,
+              "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+            },
+            {
+              "geoid": "360610001001000",
+              "part_node": 113983,
+              "part_index": 0,
+              "coordinate": [
+                -74.038372,
+                40.698669
+              ],
+              "source_boundary_error_degrees": 0.0,
+              "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+            }
+          ],
+          "selected_k": [
+            26,
+            35,
+            42,
+            61
+          ],
+          "classification": "positive_gap",
+          "source_boundaries_intersect": false,
+          "exact_geographic_distance_degrees": 0.009511262497346112,
+          "intervening_component_ids": [],
+          "endpoint_component_interior_crossings": [],
+          "endpoint_interior_intersection_length_degrees": {
+            "0": 0.0,
+            "2": 0.0
+          },
+          "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+          "eligible_positive_gap": true,
+          "projection": {
+            "kind": "per-pair-bbox-centered-equirectangular",
+            "lon0": -75.7700405,
+            "lat0": 42.746221500000004
+          },
+          "candidate_id": "ny-candidate-00-02",
+          "state_fips": "36",
+          "kind": "recorded-exclave-connection",
+          "policy": "new-york-harbor-recorded-mixed-v1",
+          "geographic_context": {
+            "crossed_state": "New Jersey",
+            "water_only": false,
+            "mapped_water_length_m": 826.5058575058739,
+            "mapped_land_length_m": 25.52029106998187,
+            "surface_length_measurement": "Local equirectangular lengths of exact source-polygon intersections. Overlapping intersections are merged as normalized intervals; no geometry is buffered or repaired.",
+            "source_year": 2020,
+            "crossed_new_jersey_blocks": [
+              {
+                "geoid": "340179801001000",
+                "population": 0,
+                "land_area_m2": 0,
+                "water_area_m2": 2528781,
+                "candidate_interior_length_m": 826.505857505817
+              },
+              {
+                "geoid": "340179801001001",
+                "population": 0,
+                "land_area_m2": 109419,
+                "water_area_m2": 0,
+                "candidate_interior_length_m": 25.520291070114638
+              }
+            ],
+            "classification": "crosses_mapped_water_and_new_jersey_land",
+            "meaning": "Recorded connectivity exception only; no New Jersey territory, source polygons, bridge, or travel route is added."
+          },
+          "provenance": {
+            "policy": "new-york-harbor-recorded-mixed-v1",
+            "builder_sha256": "708731aea5095098aff83ba57e5fad122f1f2c823dacd7991c22402b298cd424",
+            "physical_validation_helpers_sha256": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+            "source_archive_sha256": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+            "source_files_sha256": {
+              ".shp": "9eff19746d07b054923a2b0c98392121545a647fda5a133fc4f48f375a2d13de",
+              ".shx": "82b83662912e3cd806b76a606058d1eff15c3feea69faec0130eaa5c4384f64d",
+              ".dbf": "7974555de141bd5c1aa249da81c8227a5f22caf516689ba332293e6ddc15bb83"
+            },
+            "diagnostic_evidence_sha256": {
+              "diagnosis.json": "c0c6328e9abecac3622fd2c439b5a016be35690778ee6978e815672c0bc59c63",
+              "candidate-links.json": "960425feb448677b723481da6cb57f066744995b7bed8ae94b13a9aa2d7489de",
+              "geography-context.json": "3ef1f218718f63348d7f73d6e910cc5cd6977649694f8e50b1d866ed66b7e92f"
+            },
+            "context_source_archive_sha256": {
+              ".cache/state-block-benchmark/source/34/tl_2020_34_tabblock20.zip": "33e5475f232d0f01c6a6448fb041fc38bd23eee1f8f5f5a2878cfb116690ce88",
+              ".cache/state-block-benchmark/source/36/tl_2020_36_tabblock20.zip": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+              ".cache/state-block-benchmark/suite-through-1000/diagnostics/new-york/context-source/tl_2020_34017_areawater.zip": "6b4b4f89aa45cca7f6eed0bbe540550a69043721f8c938dee8298696bc148d61"
+            },
+            "shapely_version": "2.1.2",
+            "geos_version": "3.13.1"
+          },
+          "distance_definition": "Spherical endpoint length of the preserved planar nearest-boundary candidate in census coverage."
+        }
+      ]
+    },
+    {
+      "status": "failed",
+      "district_count": 35,
+      "house_sizes": [
+        574
+      ],
+      "run_kind": "new_york_recorded_mixed_policy_v1",
+      "configuration": {
+        "seed": 20200955,
+        "max_outer_iterations": 80,
+        "inner_max_iterations": 300,
+        "center_tolerance_m": 0.0001,
+        "physical_adjacency_rule": "polygon parts; disjoint interiors; positive-length shared boundary; F***1****",
+        "connection_policy": "new-york-harbor-recorded-mixed-v1",
+        "connection_kinds": [
+          "recorded-water-connection",
+          "recorded-exclave-connection"
+        ],
+        "max_rebalance_moves": 1000,
+        "root_eligibility_relative_band": 0.01,
+        "group_population_preflight_tolerance": 0.01,
+        "minimum_district_population_for_root_classification": 571406.7574285715,
+        "minimum_district_population_exact": "1999923651/3500",
+        "eligibility_note": "99% of ideal classifies original eligible roots; root groups must admit integer district allocations within a 1% optimistic population budget. Neither is final-plan acceptance.",
+        "boundary_metric": "source census coverage, including retained water blocks; no shoreline substitution",
+        "inner_optimization": {
+          "normalization": "population-mass and geometry-derived shifted squared costs; mean-zero weight gauge",
+          "public_units": "centers in source coordinate units; weights in squared source coordinate units",
+          "max_line_search_steps": 100,
+          "failure_policy": "raise on unsuccessful termination or nonfinite output; no completed plan returned"
+        }
+      },
+      "source": {
+        "schema": 1,
+        "state_fips": "36",
+        "state": "New York",
+        "url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_36_tabblock20.zip",
+        "archive_sha256": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+        "archive_bytes": 325849613,
+        "extracted_file_sha256": {
+          "tl_2020_36_tabblock20.cpg": "3ad3031f5503a4404af825262ee8232cc04d4ea6683d42c5dd0a2f2a27ac9824",
+          "tl_2020_36_tabblock20.dbf": "7974555de141bd5c1aa249da81c8227a5f22caf516689ba332293e6ddc15bb83",
+          "tl_2020_36_tabblock20.prj": "0b9041e921d9ebb43247d314608fe9e38a0b008ee793067fc1806199ea1fb9dd",
+          "tl_2020_36_tabblock20.shp": "9eff19746d07b054923a2b0c98392121545a647fda5a133fc4f48f375a2d13de",
+          "tl_2020_36_tabblock20.shp.ea.iso.xml": "bfec33140cc7684b1385347718c27347f615d446ae774ab89ef16e900b413d40",
+          "tl_2020_36_tabblock20.shp.iso.xml": "98d50f01ba3643e4b591fd0bd8583e574520f2b0c2820c96a799e1867f3d04b5",
+          "tl_2020_36_tabblock20.shx": "82b83662912e3cd806b76a606058d1eff15c3feea69faec0130eaa5c4384f64d"
+        },
+        "download": {
+          "attempts": 1,
+          "etag": null,
+          "expected_bytes": 325849613,
+          "last_modified": "Fri, 06 Jan 2023 21:46:06 GMT",
+          "received_bytes": 325849613,
+          "resumed_bytes": 0,
+          "url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_36_tabblock20.zip"
+        },
+        "hash_provenance": "Locally computed SHA-256; no publisher checksum is provided.",
+        "archive_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\36\\tl_2020_36_tabblock20.zip",
+        "extraction_dir": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\36\\tl_2020_36_tabblock20",
+        "source_shapefile_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\36\\tl_2020_36_tabblock20\\tl_2020_36_tabblock20.shp",
+        "manifest_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\36\\tl_2020_36_tabblock20.manifest.json",
+        "downloaded_in_timed_pipeline": false,
+        "extracted_files_reused": true,
+        "extracted_bytes": 325848671,
+        "crs_wkt": "GEOGCS[\"GCS_North_American_1983\",DATUM[\"D_North_American_1983\",SPHEROID[\"GRS_1980\",6378137,298.257222101]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]"
+      },
+      "code_sha256": {
+        "districting/algorithm.py": "a1b264a2bb855675ab3b633a5b47a38b77f4929e29b7a4086cfb889436e244ac",
+        "districting/connectivity.py": "2d6788d73fac4e2eb550cff4db36dd4b5b430f131254809805c53317bb8cbfed",
+        "districting/part_connectivity.py": "a127aad254e65dc7b8be69f1fe7403aad6f9d18e0a15b8723e32358f9ef833d5",
+        "districting/apportionment.py": "07eb27ebc88d89647dfad66784d4fb3b9623b7919ed6e837122111bfe4323eae",
+        "districting/data/apportionment_2020.py": "86a8ee34675d78aa99ed7edcb0c686fbb3aebd34d04655a106cae10dfbb0461d",
+        "scripts/benchmark_state_blocks.py": "8a1f05e5e428437ff87434408c315e8d94a4df64df5dffa821a7fc952b77a414",
+        "scripts/benchmark_kansas_blocks.py": "20da6d6f95e4b6706341eb97f01c3518e3d58b07e1852a0537e9c85c5dab31bf",
+        "scripts/benchmark_kansas_anchors.py": "adf92735dfcf5fb703c15a1e7d9f1a8f76b203d037e441b3560d2bc0573b50a7",
+        "scripts/district_block_sources.py": "dd041755be227ea77abfed20bbc6c7a9a10050bf8f6a66aaeed2a07c96a1cbbb",
+        "scripts/district_block_adjacency.py": "8e3bd87629631e5452b6294bb94789dffa733a7b490db8a5238687a7609c0efc",
+        "scripts/district_block_graph_cache.py": "46d0c64da93123c23c3a05136ab2c4b3f096122627990f0a25c4c2e1c75b6c7e",
+        "scripts/district_block_map_export.py": "05e29bdfea353a1819fd4000b2e9ebc350fd8b9c6bdccf299d7531a7002499cf",
+        "scripts/state_block_map_export.py": "b31d08a7d1db70dffbc174080d2feff6b6b614caef6cd918a6aaddbf7a61af28",
+        "scripts/state_block_execution_lock.py": "861c5a915ca9bc7d7065df4c10afae48c641febd680b25133c05d64f4268c6ff",
+        "scripts/district_block_part_graph.py": "49b43929897184c04a5332f4530cd7cf722f9ac604008657855a65694024c490",
+        "scripts/benchmark_new_york_links.py": "cf945a1d60777a2ddf40b7694de24bed01c64c3553f816deaef69c1721ee0304",
+        "scripts/run_new_york_link_suite.py": "c490cdd58a3b685871e0af1e3a9aaa056cfc4ebe58b541e7952a451539301eba",
+        "scripts/new_york_recorded_links.py": "708731aea5095098aff83ba57e5fad122f1f2c823dacd7991c22402b298cd424",
+        "scripts/hawaii_population_links.py": "b512c901f00b62864eb84f7b5cfed2e8d4fe5915ffe3cc87e50c93345e581519",
+        "scripts/district_block_island_links.py": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+        "scripts/correct_state_block_parts.py": "b4006afd905ac6f9ff72c6ba95ac73cf1c807695e33bf2bc4cdf68233028bacd",
+        "scripts/assets/new-york-block-viewer.html": "b10f09dca60f554d5b972d8c89d97e5cd809ecea7c34a73eb04b92fd7c158199",
+        "districting/__init__.py": "baf0b8848dc6fffc7ab83fbe1eb2f6a45f6f67e622fda941b62c818d88f8e548"
+      },
+      "phases": {
+        "source_acquisition": {
+          "wall_seconds": 0.32671269999991637,
+          "cpu_seconds": 0.328125,
+          "sampled_peak_rss_bytes": 79077376
+        },
+        "source_extraction": {
+          "wall_seconds": 0.3176467000012053,
+          "cpu_seconds": 0.3125,
+          "sampled_peak_rss_bytes": 80130048
+        },
+        "load_and_validate_blocks": {
+          "wall_seconds": 5.534206500000437,
+          "cpu_seconds": 5.4375,
+          "sampled_peak_rss_bytes": 221990912
+        },
+        "load_or_build_physical_part_graph": {
+          "wall_seconds": 4.804624299998977,
+          "cpu_seconds": 4.703125,
+          "sampled_peak_rss_bytes": 333500416
+        },
+        "prepare_recorded_mixed_connections": {
+          "wall_seconds": 85.2068014999968,
+          "cpu_seconds": 84.6875,
+          "sampled_peak_rss_bytes": 1102491648
+        },
+        "solve": {
+          "wall_seconds": 35.25245620000351,
+          "cpu_seconds": 35.25,
+          "sampled_peak_rss_bytes": 803835904
+        }
+      },
+      "timed_pipeline_wall_seconds": 133.75257169999531,
+      "peak_process_working_set_bytes": 1104809984,
+      "preservation_audit": {
+        "all_original_strict_files_byte_identical": true,
+        "all_original_diagnostic_files_byte_identical": true,
+        "national_suite_byte_identical": true,
+        "source_archive_byte_identical": true,
+        "prior_policy_and_correction_evidence_byte_identical": true,
+        "run_code_unchanged": true,
+        "protected_file_count": 1052
+      },
+      "started_at": "2026-10-23T20:48:36.175058+00:00",
+      "finished_at": "2026-10-23T20:50:49.925162+00:00",
+      "url": "http://127.0.0.1:8770/policies/new-york-links-v1/states/36/districts-35/",
+      "benchmark_path": ".cache/state-block-benchmark/suite-through-1000/policies/new-york-links-v1/states/36/districts-35/benchmark.json",
+      "benchmark_sha256": "4336e1bda980a413fe280f1a8907a6337638f2743f7257cd20e5c4d46db621dd",
+      "peak_working_set_mib": 1053.62890625,
+      "source_connection_verification": {
+        "source_records_match_report": true,
+        "physical_component_count": 3,
+        "augmented_component_count": 1,
+        "recorded_water_link_count": 1,
+        "recorded_exclave_link_count": 1,
+        "source_geometry_modified": false,
+        "endpoint_populations_independently_verified_zero": true,
+        "validation_scope": "Saved source graph audit, immutable typed records and original DBF endpoints; not final district connectivity."
+      },
+      "error": "DistrictingOptimizationError: Inner population optimizer failed (unsuccessful termination; status=1; iterations=300; evaluations=348): STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+      "failed_phase": "solve",
+      "optimizer_failure": {
+        "reason": "unsuccessful termination",
+        "status": 1,
+        "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+        "iterations": 300,
+        "function_evaluations": 348,
+        "balance_pass": 2,
+        "plan_returned": false
+      },
+      "accepted_plan": false,
+      "failure_details": {
+        "disclosure": "The inner weight optimizer failed on balance pass 2 after 300 iterations: STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT. Its configured inner iteration limit was 300. This is an inner-optimizer failure, separate from the outer center-convergence limit. No validated district plan or completed map is accepted from this attempt. Final population balance and district connectivity are unavailable; failure time and peak process memory are still measured.",
+        "failed_phase": "solve",
+        "optimizer_failure": {
+          "reason": "unsuccessful termination",
+          "status": 1,
+          "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+          "iterations": 300,
+          "function_evaluations": 348,
+          "balance_pass": 2,
+          "plan_returned": false
+        },
+        "solver_progress": [
+          {
+            "balance_pass": 1,
+            "inner_optimizer": {
+              "success": true,
+              "status": 0,
+              "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+              "iterations": 180,
+              "function_evaluations": 209,
+              "iteration_limit_reached": false
+            },
+            "wall_seconds": 13.033638399996562
+          },
+          {
+            "balance_pass": 2,
+            "inner_optimizer": {
+              "success": false,
+              "status": 1,
+              "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+              "iterations": 300,
+              "function_evaluations": 348,
+              "iteration_limit_reached": true
+            },
+            "wall_seconds": 21.634207000010065
+          }
+        ],
+        "successful_inner_pass_count": 1,
+        "failed_inner_pass_count": 1,
+        "accepted_district_plan": false,
+        "accepted_completed_map": false
+      },
+      "recorded_policy_audit": {
+        "schema_version": 1,
+        "policy": "new-york-harbor-recorded-mixed-v1",
+        "state_fips": "36",
+        "district_count": 35,
+        "source_geometry_modified": false,
+        "synthetic_ownership_edges": false,
+        "source_population": 20201249,
+        "block_count": 288819,
+        "part_count": 288841,
+        "physical_component_count": 3,
+        "physical_edge_count": 712458,
+        "synthetic_edge_count": 2,
+        "augmented_edge_count": 712460,
+        "augmented_component_count": 1,
+        "augmented_graph_connected": true,
+        "eligible_root_count": 1,
+        "groups": [
+          {
+            "group_id": 0,
+            "component_ids": [
+              0,
+              1,
+              2
+            ],
+            "population": 20201249,
+            "root_component_ids": [
+              0
+            ],
+            "district_count": 35
+          }
+        ],
+        "population_selection": {
+          "policy": "population-aware-rooted-boundary-forest-v1",
+          "district_count": 35,
+          "population_tolerance": 0.01,
+          "ideal_population": 577178.5428571429,
+          "minimum_root_population": 571406.7574285715,
+          "eligible_root_component_ids": [
+            0
+          ],
+          "no_individual_root_fallback": false,
+          "selected_link_ids": [
+            "ny-candidate-00-01",
+            "ny-candidate-00-02"
+          ],
+          "selected_total_distance_m": 1647.2943809814926,
+          "groups": [
+            {
+              "group_id": 0,
+              "component_ids": [
+                0,
+                1,
+                2
+              ],
+              "population": 20201249,
+              "root_component_ids": [
+                0
+              ],
+              "district_count": 35
+            }
+          ],
+          "population_bound": {
+            "feasible_seat_allocation": true,
+            "best_max_deviation_pct": 0.0,
+            "deviation_fraction": [
+              0,
+              1
+            ],
+            "seat_counts": [
+              35
+            ],
+            "ideal_population": 577178.5428571429,
+            "group_ideal_seats": [
+              35.0
+            ],
+            "is_constructed_plan": false,
+            "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+          },
+          "selection_priority": [
+            "Retain the most independently population-compatible original root groups.",
+            "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+            "Break ties by stable candidate IDs and component IDs."
+          ],
+          "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+          "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+          "groupings_examined": 1,
+          "population_feasible_groupings": 1,
+          "geometrically_unconnectable_groupings": 0
+        },
+        "components": [
+          {
+            "component_id": 0,
+            "population": 20201249,
+            "part_count": 288839,
+            "block_count": 288817
+          },
+          {
+            "component_id": 1,
+            "population": 0,
+            "part_count": 1,
+            "block_count": 1
+          },
+          {
+            "component_id": 2,
+            "population": 0,
+            "part_count": 1,
+            "block_count": 1
+          }
+        ],
+        "candidate_count": 3,
+        "candidate_connections": [
+          {
+            "id": "ny-candidate-00-01",
+            "component_ids": [
+              0,
+              1
+            ],
+            "distance_m": 795.2682330091204,
+            "planar_candidate_distance_m": 774.1447935977649,
+            "endpoints": [
+              {
+                "geoid": "360610005000003",
+                "part_node": 272183,
+                "part_index": 0,
+                "coordinate": [
+                  -74.03495160556861,
+                  40.685939310772014
+                ],
+                "source_boundary_error_degrees": 3.413126338774593e-15,
+                "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+              },
+              {
+                "geoid": "360610001001001",
+                "part_node": 59971,
+                "part_index": 0,
+                "coordinate": [
+                  -74.043619,
+                  40.68876
+                ],
+                "source_boundary_error_degrees": 0.0,
+                "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+              }
+            ],
+            "selected_k": [
+              26,
+              35,
+              42,
+              61
+            ],
+            "classification": "positive_gap",
+            "source_boundaries_intersect": false,
+            "exact_geographic_distance_degrees": 0.008878034353130539,
+            "intervening_component_ids": [],
+            "endpoint_component_interior_crossings": [],
+            "endpoint_interior_intersection_length_degrees": {
+              "0": 0.0,
+              "1": 0.0
+            },
+            "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+            "eligible_positive_gap": true,
+            "projection": {
+              "kind": "per-pair-bbox-centered-equirectangular",
+              "lon0": -75.7700405,
+              "lat0": 42.746221500000004
+            }
+          },
+          {
+            "id": "ny-candidate-00-02",
+            "component_ids": [
+              0,
+              2
+            ],
+            "distance_m": 852.0261479723722,
+            "planar_candidate_distance_m": 829.5126827760413,
+            "endpoints": [
+              {
+                "geoid": "360610005000003",
+                "part_node": 272183,
+                "part_index": 0,
+                "coordinate": [
+                  -74.02908780665521,
+                  40.695641431154876
+                ],
+                "source_boundary_error_degrees": 7.347373392151231e-16,
+                "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+              },
+              {
+                "geoid": "360610001001000",
+                "part_node": 113983,
+                "part_index": 0,
+                "coordinate": [
+                  -74.038372,
+                  40.698669
+                ],
+                "source_boundary_error_degrees": 0.0,
+                "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+              }
+            ],
+            "selected_k": [
+              26,
+              35,
+              42,
+              61
+            ],
+            "classification": "positive_gap",
+            "source_boundaries_intersect": false,
+            "exact_geographic_distance_degrees": 0.009511262497346112,
+            "intervening_component_ids": [],
+            "endpoint_component_interior_crossings": [],
+            "endpoint_interior_intersection_length_degrees": {
+              "0": 0.0,
+              "2": 0.0
+            },
+            "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+            "eligible_positive_gap": true,
+            "projection": {
+              "kind": "per-pair-bbox-centered-equirectangular",
+              "lon0": -75.7700405,
+              "lat0": 42.746221500000004
+            }
+          },
+          {
+            "id": "ny-candidate-01-02",
+            "component_ids": [
+              1,
+              2
+            ],
+            "distance_m": 973.0490513691004,
+            "planar_candidate_distance_m": 973.0503137011425,
+            "endpoints": [
+              {
+                "geoid": "360610001001001",
+                "part_node": 59971,
+                "part_index": 0,
+                "coordinate": [
+                  -74.045427,
+                  40.690895
+                ],
+                "source_boundary_error_degrees": 0.0,
+                "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+              },
+              {
+                "geoid": "360610001001000",
+                "part_node": 113983,
+                "part_index": 0,
+                "coordinate": [
+                  -74.039931,
+                  40.69859
+                ],
+                "source_boundary_error_degrees": 0.0,
+                "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+              }
+            ],
+            "selected_k": [],
+            "classification": "positive_gap",
+            "source_boundaries_intersect": false,
+            "exact_geographic_distance_degrees": 0.009271866414181928,
+            "intervening_component_ids": [],
+            "endpoint_component_interior_crossings": [],
+            "endpoint_interior_intersection_length_degrees": {
+              "1": 0.0,
+              "2": 0.0
+            },
+            "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+            "eligible_positive_gap": true,
+            "projection": {
+              "kind": "per-pair-bbox-centered-equirectangular",
+              "lon0": -74.0427875,
+              "lat0": 40.6943615
+            }
+          }
+        ],
+        "unselected_candidate_ids": [
+          "ny-candidate-01-02"
+        ],
+        "connection_kind_counts": {
+          "recorded-water-connection": 1,
+          "recorded-exclave-connection": 1
+        },
+        "provenance": {
+          "policy": "new-york-harbor-recorded-mixed-v1",
+          "builder_sha256": "708731aea5095098aff83ba57e5fad122f1f2c823dacd7991c22402b298cd424",
+          "physical_validation_helpers_sha256": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+          "source_archive_sha256": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+          "source_files_sha256": {
+            ".shp": "9eff19746d07b054923a2b0c98392121545a647fda5a133fc4f48f375a2d13de",
+            ".shx": "82b83662912e3cd806b76a606058d1eff15c3feea69faec0130eaa5c4384f64d",
+            ".dbf": "7974555de141bd5c1aa249da81c8227a5f22caf516689ba332293e6ddc15bb83"
+          },
+          "diagnostic_evidence_sha256": {
+            "diagnosis.json": "c0c6328e9abecac3622fd2c439b5a016be35690778ee6978e815672c0bc59c63",
+            "candidate-links.json": "960425feb448677b723481da6cb57f066744995b7bed8ae94b13a9aa2d7489de",
+            "geography-context.json": "3ef1f218718f63348d7f73d6e910cc5cd6977649694f8e50b1d866ed66b7e92f"
+          },
+          "context_source_archive_sha256": {
+            ".cache/state-block-benchmark/source/34/tl_2020_34_tabblock20.zip": "33e5475f232d0f01c6a6448fb041fc38bd23eee1f8f5f5a2878cfb116690ce88",
+            ".cache/state-block-benchmark/source/36/tl_2020_36_tabblock20.zip": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+            ".cache/state-block-benchmark/suite-through-1000/diagnostics/new-york/context-source/tl_2020_34017_areawater.zip": "6b4b4f89aa45cca7f6eed0bbe540550a69043721f8c938dee8298696bc148d61"
+          },
+          "shapely_version": "2.1.2",
+          "geos_version": "3.13.1"
+        },
+        "endpoint_tolerance_degrees": 1e-09,
+        "elapsed_seconds": 83.57979519999935
+      },
+      "recorded_connections": [
+        {
+          "id": "ny-water-liberty-001",
+          "component_ids": [
+            0,
+            1
+          ],
+          "distance_m": 795.2682330091204,
+          "planar_candidate_distance_m": 774.1447935977649,
+          "endpoints": [
+            {
+              "geoid": "360610005000003",
+              "part_node": 272183,
+              "part_index": 0,
+              "coordinate": [
+                -74.03495160556861,
+                40.685939310772014
+              ],
+              "source_boundary_error_degrees": 3.413126338774593e-15,
+              "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+            },
+            {
+              "geoid": "360610001001001",
+              "part_node": 59971,
+              "part_index": 0,
+              "coordinate": [
+                -74.043619,
+                40.68876
+              ],
+              "source_boundary_error_degrees": 0.0,
+              "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+            }
+          ],
+          "selected_k": [
+            26,
+            35,
+            42,
+            61
+          ],
+          "classification": "positive_gap",
+          "source_boundaries_intersect": false,
+          "exact_geographic_distance_degrees": 0.008878034353130539,
+          "intervening_component_ids": [],
+          "endpoint_component_interior_crossings": [],
+          "endpoint_interior_intersection_length_degrees": {
+            "0": 0.0,
+            "1": 0.0
+          },
+          "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+          "eligible_positive_gap": true,
+          "projection": {
+            "kind": "per-pair-bbox-centered-equirectangular",
+            "lon0": -75.7700405,
+            "lat0": 42.746221500000004
+          },
+          "candidate_id": "ny-candidate-00-01",
+          "state_fips": "36",
+          "kind": "recorded-water-connection",
+          "policy": "new-york-harbor-recorded-mixed-v1",
+          "geographic_context": {
+            "crossed_state": "New Jersey",
+            "water_only": true,
+            "mapped_water_length_m": 795.2682334982188,
+            "mapped_land_length_m": 1.3708295158248595e-09,
+            "surface_length_measurement": "Local equirectangular lengths of exact source-polygon intersections. Overlapping intersections are merged as normalized intervals; no geometry is buffered or repaired.",
+            "source_year": 2020,
+            "crossed_new_jersey_blocks": [
+              {
+                "geoid": "340179801001017",
+                "population": 0,
+                "land_area_m2": 0,
+                "water_area_m2": 1355954,
+                "candidate_interior_length_m": 795.2682334995897
+              }
+            ],
+            "classification": "mapped_water_only",
+            "meaning": "Recorded connectivity exception only; no New Jersey territory, source polygons, bridge, or travel route is added."
+          },
+          "provenance": {
+            "policy": "new-york-harbor-recorded-mixed-v1",
+            "builder_sha256": "708731aea5095098aff83ba57e5fad122f1f2c823dacd7991c22402b298cd424",
+            "physical_validation_helpers_sha256": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+            "source_archive_sha256": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+            "source_files_sha256": {
+              ".shp": "9eff19746d07b054923a2b0c98392121545a647fda5a133fc4f48f375a2d13de",
+              ".shx": "82b83662912e3cd806b76a606058d1eff15c3feea69faec0130eaa5c4384f64d",
+              ".dbf": "7974555de141bd5c1aa249da81c8227a5f22caf516689ba332293e6ddc15bb83"
+            },
+            "diagnostic_evidence_sha256": {
+              "diagnosis.json": "c0c6328e9abecac3622fd2c439b5a016be35690778ee6978e815672c0bc59c63",
+              "candidate-links.json": "960425feb448677b723481da6cb57f066744995b7bed8ae94b13a9aa2d7489de",
+              "geography-context.json": "3ef1f218718f63348d7f73d6e910cc5cd6977649694f8e50b1d866ed66b7e92f"
+            },
+            "context_source_archive_sha256": {
+              ".cache/state-block-benchmark/source/34/tl_2020_34_tabblock20.zip": "33e5475f232d0f01c6a6448fb041fc38bd23eee1f8f5f5a2878cfb116690ce88",
+              ".cache/state-block-benchmark/source/36/tl_2020_36_tabblock20.zip": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+              ".cache/state-block-benchmark/suite-through-1000/diagnostics/new-york/context-source/tl_2020_34017_areawater.zip": "6b4b4f89aa45cca7f6eed0bbe540550a69043721f8c938dee8298696bc148d61"
+            },
+            "shapely_version": "2.1.2",
+            "geos_version": "3.13.1"
+          },
+          "distance_definition": "Spherical endpoint length of the preserved planar nearest-boundary candidate in census coverage."
+        },
+        {
+          "id": "ny-exclave-ellis-001",
+          "component_ids": [
+            0,
+            2
+          ],
+          "distance_m": 852.0261479723722,
+          "planar_candidate_distance_m": 829.5126827760413,
+          "endpoints": [
+            {
+              "geoid": "360610005000003",
+              "part_node": 272183,
+              "part_index": 0,
+              "coordinate": [
+                -74.02908780665521,
+                40.695641431154876
+              ],
+              "source_boundary_error_degrees": 7.347373392151231e-16,
+              "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+            },
+            {
+              "geoid": "360610001001000",
+              "part_node": 113983,
+              "part_index": 0,
+              "coordinate": [
+                -74.038372,
+                40.698669
+              ],
+              "source_boundary_error_degrees": 0.0,
+              "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+            }
+          ],
+          "selected_k": [
+            26,
+            35,
+            42,
+            61
+          ],
+          "classification": "positive_gap",
+          "source_boundaries_intersect": false,
+          "exact_geographic_distance_degrees": 0.009511262497346112,
+          "intervening_component_ids": [],
+          "endpoint_component_interior_crossings": [],
+          "endpoint_interior_intersection_length_degrees": {
+            "0": 0.0,
+            "2": 0.0
+          },
+          "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+          "eligible_positive_gap": true,
+          "projection": {
+            "kind": "per-pair-bbox-centered-equirectangular",
+            "lon0": -75.7700405,
+            "lat0": 42.746221500000004
+          },
+          "candidate_id": "ny-candidate-00-02",
+          "state_fips": "36",
+          "kind": "recorded-exclave-connection",
+          "policy": "new-york-harbor-recorded-mixed-v1",
+          "geographic_context": {
+            "crossed_state": "New Jersey",
+            "water_only": false,
+            "mapped_water_length_m": 826.5058575058739,
+            "mapped_land_length_m": 25.52029106998187,
+            "surface_length_measurement": "Local equirectangular lengths of exact source-polygon intersections. Overlapping intersections are merged as normalized intervals; no geometry is buffered or repaired.",
+            "source_year": 2020,
+            "crossed_new_jersey_blocks": [
+              {
+                "geoid": "340179801001000",
+                "population": 0,
+                "land_area_m2": 0,
+                "water_area_m2": 2528781,
+                "candidate_interior_length_m": 826.505857505817
+              },
+              {
+                "geoid": "340179801001001",
+                "population": 0,
+                "land_area_m2": 109419,
+                "water_area_m2": 0,
+                "candidate_interior_length_m": 25.520291070114638
+              }
+            ],
+            "classification": "crosses_mapped_water_and_new_jersey_land",
+            "meaning": "Recorded connectivity exception only; no New Jersey territory, source polygons, bridge, or travel route is added."
+          },
+          "provenance": {
+            "policy": "new-york-harbor-recorded-mixed-v1",
+            "builder_sha256": "708731aea5095098aff83ba57e5fad122f1f2c823dacd7991c22402b298cd424",
+            "physical_validation_helpers_sha256": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+            "source_archive_sha256": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+            "source_files_sha256": {
+              ".shp": "9eff19746d07b054923a2b0c98392121545a647fda5a133fc4f48f375a2d13de",
+              ".shx": "82b83662912e3cd806b76a606058d1eff15c3feea69faec0130eaa5c4384f64d",
+              ".dbf": "7974555de141bd5c1aa249da81c8227a5f22caf516689ba332293e6ddc15bb83"
+            },
+            "diagnostic_evidence_sha256": {
+              "diagnosis.json": "c0c6328e9abecac3622fd2c439b5a016be35690778ee6978e815672c0bc59c63",
+              "candidate-links.json": "960425feb448677b723481da6cb57f066744995b7bed8ae94b13a9aa2d7489de",
+              "geography-context.json": "3ef1f218718f63348d7f73d6e910cc5cd6977649694f8e50b1d866ed66b7e92f"
+            },
+            "context_source_archive_sha256": {
+              ".cache/state-block-benchmark/source/34/tl_2020_34_tabblock20.zip": "33e5475f232d0f01c6a6448fb041fc38bd23eee1f8f5f5a2878cfb116690ce88",
+              ".cache/state-block-benchmark/source/36/tl_2020_36_tabblock20.zip": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+              ".cache/state-block-benchmark/suite-through-1000/diagnostics/new-york/context-source/tl_2020_34017_areawater.zip": "6b4b4f89aa45cca7f6eed0bbe540550a69043721f8c938dee8298696bc148d61"
+            },
+            "shapely_version": "2.1.2",
+            "geos_version": "3.13.1"
+          },
+          "distance_definition": "Spherical endpoint length of the preserved planar nearest-boundary candidate in census coverage."
+        }
+      ]
+    },
+    {
+      "status": "failed",
+      "district_count": 42,
+      "house_sizes": [
+        692
+      ],
+      "run_kind": "new_york_recorded_mixed_policy_v1",
+      "configuration": {
+        "seed": 20200955,
+        "max_outer_iterations": 80,
+        "inner_max_iterations": 300,
+        "center_tolerance_m": 0.0001,
+        "physical_adjacency_rule": "polygon parts; disjoint interiors; positive-length shared boundary; F***1****",
+        "connection_policy": "new-york-harbor-recorded-mixed-v1",
+        "connection_kinds": [
+          "recorded-water-connection",
+          "recorded-exclave-connection"
+        ],
+        "max_rebalance_moves": 1000,
+        "root_eligibility_relative_band": 0.01,
+        "group_population_preflight_tolerance": 0.01,
+        "minimum_district_population_for_root_classification": 476172.29785714287,
+        "minimum_district_population_exact": "666641217/1400",
+        "eligibility_note": "99% of ideal classifies original eligible roots; root groups must admit integer district allocations within a 1% optimistic population budget. Neither is final-plan acceptance.",
+        "boundary_metric": "source census coverage, including retained water blocks; no shoreline substitution",
+        "inner_optimization": {
+          "normalization": "population-mass and geometry-derived shifted squared costs; mean-zero weight gauge",
+          "public_units": "centers in source coordinate units; weights in squared source coordinate units",
+          "max_line_search_steps": 100,
+          "failure_policy": "raise on unsuccessful termination or nonfinite output; no completed plan returned"
+        }
+      },
+      "source": {
+        "schema": 1,
+        "state_fips": "36",
+        "state": "New York",
+        "url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_36_tabblock20.zip",
+        "archive_sha256": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+        "archive_bytes": 325849613,
+        "extracted_file_sha256": {
+          "tl_2020_36_tabblock20.cpg": "3ad3031f5503a4404af825262ee8232cc04d4ea6683d42c5dd0a2f2a27ac9824",
+          "tl_2020_36_tabblock20.dbf": "7974555de141bd5c1aa249da81c8227a5f22caf516689ba332293e6ddc15bb83",
+          "tl_2020_36_tabblock20.prj": "0b9041e921d9ebb43247d314608fe9e38a0b008ee793067fc1806199ea1fb9dd",
+          "tl_2020_36_tabblock20.shp": "9eff19746d07b054923a2b0c98392121545a647fda5a133fc4f48f375a2d13de",
+          "tl_2020_36_tabblock20.shp.ea.iso.xml": "bfec33140cc7684b1385347718c27347f615d446ae774ab89ef16e900b413d40",
+          "tl_2020_36_tabblock20.shp.iso.xml": "98d50f01ba3643e4b591fd0bd8583e574520f2b0c2820c96a799e1867f3d04b5",
+          "tl_2020_36_tabblock20.shx": "82b83662912e3cd806b76a606058d1eff15c3feea69faec0130eaa5c4384f64d"
+        },
+        "download": {
+          "attempts": 1,
+          "etag": null,
+          "expected_bytes": 325849613,
+          "last_modified": "Fri, 06 Jan 2023 21:46:06 GMT",
+          "received_bytes": 325849613,
+          "resumed_bytes": 0,
+          "url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_36_tabblock20.zip"
+        },
+        "hash_provenance": "Locally computed SHA-256; no publisher checksum is provided.",
+        "archive_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\36\\tl_2020_36_tabblock20.zip",
+        "extraction_dir": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\36\\tl_2020_36_tabblock20",
+        "source_shapefile_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\36\\tl_2020_36_tabblock20\\tl_2020_36_tabblock20.shp",
+        "manifest_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\36\\tl_2020_36_tabblock20.manifest.json",
+        "downloaded_in_timed_pipeline": false,
+        "extracted_files_reused": true,
+        "extracted_bytes": 325848671,
+        "crs_wkt": "GEOGCS[\"GCS_North_American_1983\",DATUM[\"D_North_American_1983\",SPHEROID[\"GRS_1980\",6378137,298.257222101]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]"
+      },
+      "code_sha256": {
+        "districting/algorithm.py": "a1b264a2bb855675ab3b633a5b47a38b77f4929e29b7a4086cfb889436e244ac",
+        "districting/connectivity.py": "2d6788d73fac4e2eb550cff4db36dd4b5b430f131254809805c53317bb8cbfed",
+        "districting/part_connectivity.py": "a127aad254e65dc7b8be69f1fe7403aad6f9d18e0a15b8723e32358f9ef833d5",
+        "districting/apportionment.py": "07eb27ebc88d89647dfad66784d4fb3b9623b7919ed6e837122111bfe4323eae",
+        "districting/data/apportionment_2020.py": "86a8ee34675d78aa99ed7edcb0c686fbb3aebd34d04655a106cae10dfbb0461d",
+        "scripts/benchmark_state_blocks.py": "8a1f05e5e428437ff87434408c315e8d94a4df64df5dffa821a7fc952b77a414",
+        "scripts/benchmark_kansas_blocks.py": "20da6d6f95e4b6706341eb97f01c3518e3d58b07e1852a0537e9c85c5dab31bf",
+        "scripts/benchmark_kansas_anchors.py": "adf92735dfcf5fb703c15a1e7d9f1a8f76b203d037e441b3560d2bc0573b50a7",
+        "scripts/district_block_sources.py": "dd041755be227ea77abfed20bbc6c7a9a10050bf8f6a66aaeed2a07c96a1cbbb",
+        "scripts/district_block_adjacency.py": "8e3bd87629631e5452b6294bb94789dffa733a7b490db8a5238687a7609c0efc",
+        "scripts/district_block_graph_cache.py": "46d0c64da93123c23c3a05136ab2c4b3f096122627990f0a25c4c2e1c75b6c7e",
+        "scripts/district_block_map_export.py": "05e29bdfea353a1819fd4000b2e9ebc350fd8b9c6bdccf299d7531a7002499cf",
+        "scripts/state_block_map_export.py": "b31d08a7d1db70dffbc174080d2feff6b6b614caef6cd918a6aaddbf7a61af28",
+        "scripts/state_block_execution_lock.py": "861c5a915ca9bc7d7065df4c10afae48c641febd680b25133c05d64f4268c6ff",
+        "scripts/district_block_part_graph.py": "49b43929897184c04a5332f4530cd7cf722f9ac604008657855a65694024c490",
+        "scripts/benchmark_new_york_links.py": "cf945a1d60777a2ddf40b7694de24bed01c64c3553f816deaef69c1721ee0304",
+        "scripts/run_new_york_link_suite.py": "c490cdd58a3b685871e0af1e3a9aaa056cfc4ebe58b541e7952a451539301eba",
+        "scripts/new_york_recorded_links.py": "708731aea5095098aff83ba57e5fad122f1f2c823dacd7991c22402b298cd424",
+        "scripts/hawaii_population_links.py": "b512c901f00b62864eb84f7b5cfed2e8d4fe5915ffe3cc87e50c93345e581519",
+        "scripts/district_block_island_links.py": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+        "scripts/correct_state_block_parts.py": "b4006afd905ac6f9ff72c6ba95ac73cf1c807695e33bf2bc4cdf68233028bacd",
+        "scripts/assets/new-york-block-viewer.html": "b10f09dca60f554d5b972d8c89d97e5cd809ecea7c34a73eb04b92fd7c158199",
+        "districting/__init__.py": "baf0b8848dc6fffc7ab83fbe1eb2f6a45f6f67e622fda941b62c818d88f8e548"
+      },
+      "phases": {
+        "source_acquisition": {
+          "wall_seconds": 0.3023535999964224,
+          "cpu_seconds": 0.3125,
+          "sampled_peak_rss_bytes": 79966208
+        },
+        "source_extraction": {
+          "wall_seconds": 0.3059438000054797,
+          "cpu_seconds": 0.296875,
+          "sampled_peak_rss_bytes": 78913536
+        },
+        "load_and_validate_blocks": {
+          "wall_seconds": 4.941120700008469,
+          "cpu_seconds": 4.890625,
+          "sampled_peak_rss_bytes": 222355456
+        },
+        "load_or_build_physical_part_graph": {
+          "wall_seconds": 4.479098499999964,
+          "cpu_seconds": 4.484375,
+          "sampled_peak_rss_bytes": 361873408
+        },
+        "prepare_recorded_mixed_connections": {
+          "wall_seconds": 84.84476219999488,
+          "cpu_seconds": 84.5,
+          "sampled_peak_rss_bytes": 1101221888
+        },
+        "solve": {
+          "wall_seconds": 43.32237840000016,
+          "cpu_seconds": 42.828125,
+          "sampled_peak_rss_bytes": 854384640
+        }
+      },
+      "timed_pipeline_wall_seconds": 140.28447090000554,
+      "peak_process_working_set_bytes": 1103540224,
+      "preservation_audit": {
+        "all_original_strict_files_byte_identical": true,
+        "all_original_diagnostic_files_byte_identical": true,
+        "national_suite_byte_identical": true,
+        "source_archive_byte_identical": true,
+        "prior_policy_and_correction_evidence_byte_identical": true,
+        "run_code_unchanged": true,
+        "protected_file_count": 1052
+      },
+      "started_at": "2026-10-23T20:50:55.663772+00:00",
+      "finished_at": "2026-10-23T20:53:15.945380+00:00",
+      "url": "http://127.0.0.1:8770/policies/new-york-links-v1/states/36/districts-42/",
+      "benchmark_path": ".cache/state-block-benchmark/suite-through-1000/policies/new-york-links-v1/states/36/districts-42/benchmark.json",
+      "benchmark_sha256": "4c401a542d90f88e0070c88a7dd63b8d1ccbb0bd4113276803cdc20a933d4c45",
+      "peak_working_set_mib": 1052.41796875,
+      "source_connection_verification": {
+        "source_records_match_report": true,
+        "physical_component_count": 3,
+        "augmented_component_count": 1,
+        "recorded_water_link_count": 1,
+        "recorded_exclave_link_count": 1,
+        "source_geometry_modified": false,
+        "endpoint_populations_independently_verified_zero": true,
+        "validation_scope": "Saved source graph audit, immutable typed records and original DBF endpoints; not final district connectivity."
+      },
+      "error": "DistrictingOptimizationError: Inner population optimizer failed (unsuccessful termination; status=1; iterations=300; evaluations=342): STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+      "failed_phase": "solve",
+      "optimizer_failure": {
+        "reason": "unsuccessful termination",
+        "status": 1,
+        "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+        "iterations": 300,
+        "function_evaluations": 342,
+        "balance_pass": 2,
+        "plan_returned": false
+      },
+      "accepted_plan": false,
+      "failure_details": {
+        "disclosure": "The inner weight optimizer failed on balance pass 2 after 300 iterations: STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT. Its configured inner iteration limit was 300. This is an inner-optimizer failure, separate from the outer center-convergence limit. No validated district plan or completed map is accepted from this attempt. Final population balance and district connectivity are unavailable; failure time and peak process memory are still measured.",
+        "failed_phase": "solve",
+        "optimizer_failure": {
+          "reason": "unsuccessful termination",
+          "status": 1,
+          "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+          "iterations": 300,
+          "function_evaluations": 342,
+          "balance_pass": 2,
+          "plan_returned": false
+        },
+        "solver_progress": [
+          {
+            "balance_pass": 1,
+            "inner_optimizer": {
+              "success": true,
+              "status": 0,
+              "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+              "iterations": 220,
+              "function_evaluations": 245,
+              "iteration_limit_reached": false
+            },
+            "wall_seconds": 16.747029399994062
+          },
+          {
+            "balance_pass": 2,
+            "inner_optimizer": {
+              "success": false,
+              "status": 1,
+              "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+              "iterations": 300,
+              "function_evaluations": 342,
+              "iteration_limit_reached": true
+            },
+            "wall_seconds": 25.93346859999292
+          }
+        ],
+        "successful_inner_pass_count": 1,
+        "failed_inner_pass_count": 1,
+        "accepted_district_plan": false,
+        "accepted_completed_map": false
+      },
+      "recorded_policy_audit": {
+        "schema_version": 1,
+        "policy": "new-york-harbor-recorded-mixed-v1",
+        "state_fips": "36",
+        "district_count": 42,
+        "source_geometry_modified": false,
+        "synthetic_ownership_edges": false,
+        "source_population": 20201249,
+        "block_count": 288819,
+        "part_count": 288841,
+        "physical_component_count": 3,
+        "physical_edge_count": 712458,
+        "synthetic_edge_count": 2,
+        "augmented_edge_count": 712460,
+        "augmented_component_count": 1,
+        "augmented_graph_connected": true,
+        "eligible_root_count": 1,
+        "groups": [
+          {
+            "group_id": 0,
+            "component_ids": [
+              0,
+              1,
+              2
+            ],
+            "population": 20201249,
+            "root_component_ids": [
+              0
+            ],
+            "district_count": 42
+          }
+        ],
+        "population_selection": {
+          "policy": "population-aware-rooted-boundary-forest-v1",
+          "district_count": 42,
+          "population_tolerance": 0.01,
+          "ideal_population": 480982.11904761905,
+          "minimum_root_population": 476172.29785714287,
+          "eligible_root_component_ids": [
+            0
+          ],
+          "no_individual_root_fallback": false,
+          "selected_link_ids": [
+            "ny-candidate-00-01",
+            "ny-candidate-00-02"
+          ],
+          "selected_total_distance_m": 1647.2943809814926,
+          "groups": [
+            {
+              "group_id": 0,
+              "component_ids": [
+                0,
+                1,
+                2
+              ],
+              "population": 20201249,
+              "root_component_ids": [
+                0
+              ],
+              "district_count": 42
+            }
+          ],
+          "population_bound": {
+            "feasible_seat_allocation": true,
+            "best_max_deviation_pct": 0.0,
+            "deviation_fraction": [
+              0,
+              1
+            ],
+            "seat_counts": [
+              42
+            ],
+            "ideal_population": 480982.11904761905,
+            "group_ideal_seats": [
+              42.0
+            ],
+            "is_constructed_plan": false,
+            "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+          },
+          "selection_priority": [
+            "Retain the most independently population-compatible original root groups.",
+            "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+            "Break ties by stable candidate IDs and component IDs."
+          ],
+          "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+          "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+          "groupings_examined": 1,
+          "population_feasible_groupings": 1,
+          "geometrically_unconnectable_groupings": 0
+        },
+        "components": [
+          {
+            "component_id": 0,
+            "population": 20201249,
+            "part_count": 288839,
+            "block_count": 288817
+          },
+          {
+            "component_id": 1,
+            "population": 0,
+            "part_count": 1,
+            "block_count": 1
+          },
+          {
+            "component_id": 2,
+            "population": 0,
+            "part_count": 1,
+            "block_count": 1
+          }
+        ],
+        "candidate_count": 3,
+        "candidate_connections": [
+          {
+            "id": "ny-candidate-00-01",
+            "component_ids": [
+              0,
+              1
+            ],
+            "distance_m": 795.2682330091204,
+            "planar_candidate_distance_m": 774.1447935977649,
+            "endpoints": [
+              {
+                "geoid": "360610005000003",
+                "part_node": 272183,
+                "part_index": 0,
+                "coordinate": [
+                  -74.03495160556861,
+                  40.685939310772014
+                ],
+                "source_boundary_error_degrees": 3.413126338774593e-15,
+                "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+              },
+              {
+                "geoid": "360610001001001",
+                "part_node": 59971,
+                "part_index": 0,
+                "coordinate": [
+                  -74.043619,
+                  40.68876
+                ],
+                "source_boundary_error_degrees": 0.0,
+                "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+              }
+            ],
+            "selected_k": [
+              26,
+              35,
+              42,
+              61
+            ],
+            "classification": "positive_gap",
+            "source_boundaries_intersect": false,
+            "exact_geographic_distance_degrees": 0.008878034353130539,
+            "intervening_component_ids": [],
+            "endpoint_component_interior_crossings": [],
+            "endpoint_interior_intersection_length_degrees": {
+              "0": 0.0,
+              "1": 0.0
+            },
+            "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+            "eligible_positive_gap": true,
+            "projection": {
+              "kind": "per-pair-bbox-centered-equirectangular",
+              "lon0": -75.7700405,
+              "lat0": 42.746221500000004
+            }
+          },
+          {
+            "id": "ny-candidate-00-02",
+            "component_ids": [
+              0,
+              2
+            ],
+            "distance_m": 852.0261479723722,
+            "planar_candidate_distance_m": 829.5126827760413,
+            "endpoints": [
+              {
+                "geoid": "360610005000003",
+                "part_node": 272183,
+                "part_index": 0,
+                "coordinate": [
+                  -74.02908780665521,
+                  40.695641431154876
+                ],
+                "source_boundary_error_degrees": 7.347373392151231e-16,
+                "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+              },
+              {
+                "geoid": "360610001001000",
+                "part_node": 113983,
+                "part_index": 0,
+                "coordinate": [
+                  -74.038372,
+                  40.698669
+                ],
+                "source_boundary_error_degrees": 0.0,
+                "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+              }
+            ],
+            "selected_k": [
+              26,
+              35,
+              42,
+              61
+            ],
+            "classification": "positive_gap",
+            "source_boundaries_intersect": false,
+            "exact_geographic_distance_degrees": 0.009511262497346112,
+            "intervening_component_ids": [],
+            "endpoint_component_interior_crossings": [],
+            "endpoint_interior_intersection_length_degrees": {
+              "0": 0.0,
+              "2": 0.0
+            },
+            "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+            "eligible_positive_gap": true,
+            "projection": {
+              "kind": "per-pair-bbox-centered-equirectangular",
+              "lon0": -75.7700405,
+              "lat0": 42.746221500000004
+            }
+          },
+          {
+            "id": "ny-candidate-01-02",
+            "component_ids": [
+              1,
+              2
+            ],
+            "distance_m": 973.0490513691004,
+            "planar_candidate_distance_m": 973.0503137011425,
+            "endpoints": [
+              {
+                "geoid": "360610001001001",
+                "part_node": 59971,
+                "part_index": 0,
+                "coordinate": [
+                  -74.045427,
+                  40.690895
+                ],
+                "source_boundary_error_degrees": 0.0,
+                "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+              },
+              {
+                "geoid": "360610001001000",
+                "part_node": 113983,
+                "part_index": 0,
+                "coordinate": [
+                  -74.039931,
+                  40.69859
+                ],
+                "source_boundary_error_degrees": 0.0,
+                "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+              }
+            ],
+            "selected_k": [],
+            "classification": "positive_gap",
+            "source_boundaries_intersect": false,
+            "exact_geographic_distance_degrees": 0.009271866414181928,
+            "intervening_component_ids": [],
+            "endpoint_component_interior_crossings": [],
+            "endpoint_interior_intersection_length_degrees": {
+              "1": 0.0,
+              "2": 0.0
+            },
+            "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+            "eligible_positive_gap": true,
+            "projection": {
+              "kind": "per-pair-bbox-centered-equirectangular",
+              "lon0": -74.0427875,
+              "lat0": 40.6943615
+            }
+          }
+        ],
+        "unselected_candidate_ids": [
+          "ny-candidate-01-02"
+        ],
+        "connection_kind_counts": {
+          "recorded-water-connection": 1,
+          "recorded-exclave-connection": 1
+        },
+        "provenance": {
+          "policy": "new-york-harbor-recorded-mixed-v1",
+          "builder_sha256": "708731aea5095098aff83ba57e5fad122f1f2c823dacd7991c22402b298cd424",
+          "physical_validation_helpers_sha256": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+          "source_archive_sha256": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+          "source_files_sha256": {
+            ".shp": "9eff19746d07b054923a2b0c98392121545a647fda5a133fc4f48f375a2d13de",
+            ".shx": "82b83662912e3cd806b76a606058d1eff15c3feea69faec0130eaa5c4384f64d",
+            ".dbf": "7974555de141bd5c1aa249da81c8227a5f22caf516689ba332293e6ddc15bb83"
+          },
+          "diagnostic_evidence_sha256": {
+            "diagnosis.json": "c0c6328e9abecac3622fd2c439b5a016be35690778ee6978e815672c0bc59c63",
+            "candidate-links.json": "960425feb448677b723481da6cb57f066744995b7bed8ae94b13a9aa2d7489de",
+            "geography-context.json": "3ef1f218718f63348d7f73d6e910cc5cd6977649694f8e50b1d866ed66b7e92f"
+          },
+          "context_source_archive_sha256": {
+            ".cache/state-block-benchmark/source/34/tl_2020_34_tabblock20.zip": "33e5475f232d0f01c6a6448fb041fc38bd23eee1f8f5f5a2878cfb116690ce88",
+            ".cache/state-block-benchmark/source/36/tl_2020_36_tabblock20.zip": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+            ".cache/state-block-benchmark/suite-through-1000/diagnostics/new-york/context-source/tl_2020_34017_areawater.zip": "6b4b4f89aa45cca7f6eed0bbe540550a69043721f8c938dee8298696bc148d61"
+          },
+          "shapely_version": "2.1.2",
+          "geos_version": "3.13.1"
+        },
+        "endpoint_tolerance_degrees": 1e-09,
+        "elapsed_seconds": 83.31604629999492
+      },
+      "recorded_connections": [
+        {
+          "id": "ny-water-liberty-001",
+          "component_ids": [
+            0,
+            1
+          ],
+          "distance_m": 795.2682330091204,
+          "planar_candidate_distance_m": 774.1447935977649,
+          "endpoints": [
+            {
+              "geoid": "360610005000003",
+              "part_node": 272183,
+              "part_index": 0,
+              "coordinate": [
+                -74.03495160556861,
+                40.685939310772014
+              ],
+              "source_boundary_error_degrees": 3.413126338774593e-15,
+              "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+            },
+            {
+              "geoid": "360610001001001",
+              "part_node": 59971,
+              "part_index": 0,
+              "coordinate": [
+                -74.043619,
+                40.68876
+              ],
+              "source_boundary_error_degrees": 0.0,
+              "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+            }
+          ],
+          "selected_k": [
+            26,
+            35,
+            42,
+            61
+          ],
+          "classification": "positive_gap",
+          "source_boundaries_intersect": false,
+          "exact_geographic_distance_degrees": 0.008878034353130539,
+          "intervening_component_ids": [],
+          "endpoint_component_interior_crossings": [],
+          "endpoint_interior_intersection_length_degrees": {
+            "0": 0.0,
+            "1": 0.0
+          },
+          "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+          "eligible_positive_gap": true,
+          "projection": {
+            "kind": "per-pair-bbox-centered-equirectangular",
+            "lon0": -75.7700405,
+            "lat0": 42.746221500000004
+          },
+          "candidate_id": "ny-candidate-00-01",
+          "state_fips": "36",
+          "kind": "recorded-water-connection",
+          "policy": "new-york-harbor-recorded-mixed-v1",
+          "geographic_context": {
+            "crossed_state": "New Jersey",
+            "water_only": true,
+            "mapped_water_length_m": 795.2682334982188,
+            "mapped_land_length_m": 1.3708295158248595e-09,
+            "surface_length_measurement": "Local equirectangular lengths of exact source-polygon intersections. Overlapping intersections are merged as normalized intervals; no geometry is buffered or repaired.",
+            "source_year": 2020,
+            "crossed_new_jersey_blocks": [
+              {
+                "geoid": "340179801001017",
+                "population": 0,
+                "land_area_m2": 0,
+                "water_area_m2": 1355954,
+                "candidate_interior_length_m": 795.2682334995897
+              }
+            ],
+            "classification": "mapped_water_only",
+            "meaning": "Recorded connectivity exception only; no New Jersey territory, source polygons, bridge, or travel route is added."
+          },
+          "provenance": {
+            "policy": "new-york-harbor-recorded-mixed-v1",
+            "builder_sha256": "708731aea5095098aff83ba57e5fad122f1f2c823dacd7991c22402b298cd424",
+            "physical_validation_helpers_sha256": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+            "source_archive_sha256": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+            "source_files_sha256": {
+              ".shp": "9eff19746d07b054923a2b0c98392121545a647fda5a133fc4f48f375a2d13de",
+              ".shx": "82b83662912e3cd806b76a606058d1eff15c3feea69faec0130eaa5c4384f64d",
+              ".dbf": "7974555de141bd5c1aa249da81c8227a5f22caf516689ba332293e6ddc15bb83"
+            },
+            "diagnostic_evidence_sha256": {
+              "diagnosis.json": "c0c6328e9abecac3622fd2c439b5a016be35690778ee6978e815672c0bc59c63",
+              "candidate-links.json": "960425feb448677b723481da6cb57f066744995b7bed8ae94b13a9aa2d7489de",
+              "geography-context.json": "3ef1f218718f63348d7f73d6e910cc5cd6977649694f8e50b1d866ed66b7e92f"
+            },
+            "context_source_archive_sha256": {
+              ".cache/state-block-benchmark/source/34/tl_2020_34_tabblock20.zip": "33e5475f232d0f01c6a6448fb041fc38bd23eee1f8f5f5a2878cfb116690ce88",
+              ".cache/state-block-benchmark/source/36/tl_2020_36_tabblock20.zip": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+              ".cache/state-block-benchmark/suite-through-1000/diagnostics/new-york/context-source/tl_2020_34017_areawater.zip": "6b4b4f89aa45cca7f6eed0bbe540550a69043721f8c938dee8298696bc148d61"
+            },
+            "shapely_version": "2.1.2",
+            "geos_version": "3.13.1"
+          },
+          "distance_definition": "Spherical endpoint length of the preserved planar nearest-boundary candidate in census coverage."
+        },
+        {
+          "id": "ny-exclave-ellis-001",
+          "component_ids": [
+            0,
+            2
+          ],
+          "distance_m": 852.0261479723722,
+          "planar_candidate_distance_m": 829.5126827760413,
+          "endpoints": [
+            {
+              "geoid": "360610005000003",
+              "part_node": 272183,
+              "part_index": 0,
+              "coordinate": [
+                -74.02908780665521,
+                40.695641431154876
+              ],
+              "source_boundary_error_degrees": 7.347373392151231e-16,
+              "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+            },
+            {
+              "geoid": "360610001001000",
+              "part_node": 113983,
+              "part_index": 0,
+              "coordinate": [
+                -74.038372,
+                40.698669
+              ],
+              "source_boundary_error_degrees": 0.0,
+              "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+            }
+          ],
+          "selected_k": [
+            26,
+            35,
+            42,
+            61
+          ],
+          "classification": "positive_gap",
+          "source_boundaries_intersect": false,
+          "exact_geographic_distance_degrees": 0.009511262497346112,
+          "intervening_component_ids": [],
+          "endpoint_component_interior_crossings": [],
+          "endpoint_interior_intersection_length_degrees": {
+            "0": 0.0,
+            "2": 0.0
+          },
+          "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+          "eligible_positive_gap": true,
+          "projection": {
+            "kind": "per-pair-bbox-centered-equirectangular",
+            "lon0": -75.7700405,
+            "lat0": 42.746221500000004
+          },
+          "candidate_id": "ny-candidate-00-02",
+          "state_fips": "36",
+          "kind": "recorded-exclave-connection",
+          "policy": "new-york-harbor-recorded-mixed-v1",
+          "geographic_context": {
+            "crossed_state": "New Jersey",
+            "water_only": false,
+            "mapped_water_length_m": 826.5058575058739,
+            "mapped_land_length_m": 25.52029106998187,
+            "surface_length_measurement": "Local equirectangular lengths of exact source-polygon intersections. Overlapping intersections are merged as normalized intervals; no geometry is buffered or repaired.",
+            "source_year": 2020,
+            "crossed_new_jersey_blocks": [
+              {
+                "geoid": "340179801001000",
+                "population": 0,
+                "land_area_m2": 0,
+                "water_area_m2": 2528781,
+                "candidate_interior_length_m": 826.505857505817
+              },
+              {
+                "geoid": "340179801001001",
+                "population": 0,
+                "land_area_m2": 109419,
+                "water_area_m2": 0,
+                "candidate_interior_length_m": 25.520291070114638
+              }
+            ],
+            "classification": "crosses_mapped_water_and_new_jersey_land",
+            "meaning": "Recorded connectivity exception only; no New Jersey territory, source polygons, bridge, or travel route is added."
+          },
+          "provenance": {
+            "policy": "new-york-harbor-recorded-mixed-v1",
+            "builder_sha256": "708731aea5095098aff83ba57e5fad122f1f2c823dacd7991c22402b298cd424",
+            "physical_validation_helpers_sha256": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+            "source_archive_sha256": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+            "source_files_sha256": {
+              ".shp": "9eff19746d07b054923a2b0c98392121545a647fda5a133fc4f48f375a2d13de",
+              ".shx": "82b83662912e3cd806b76a606058d1eff15c3feea69faec0130eaa5c4384f64d",
+              ".dbf": "7974555de141bd5c1aa249da81c8227a5f22caf516689ba332293e6ddc15bb83"
+            },
+            "diagnostic_evidence_sha256": {
+              "diagnosis.json": "c0c6328e9abecac3622fd2c439b5a016be35690778ee6978e815672c0bc59c63",
+              "candidate-links.json": "960425feb448677b723481da6cb57f066744995b7bed8ae94b13a9aa2d7489de",
+              "geography-context.json": "3ef1f218718f63348d7f73d6e910cc5cd6977649694f8e50b1d866ed66b7e92f"
+            },
+            "context_source_archive_sha256": {
+              ".cache/state-block-benchmark/source/34/tl_2020_34_tabblock20.zip": "33e5475f232d0f01c6a6448fb041fc38bd23eee1f8f5f5a2878cfb116690ce88",
+              ".cache/state-block-benchmark/source/36/tl_2020_36_tabblock20.zip": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+              ".cache/state-block-benchmark/suite-through-1000/diagnostics/new-york/context-source/tl_2020_34017_areawater.zip": "6b4b4f89aa45cca7f6eed0bbe540550a69043721f8c938dee8298696bc148d61"
+            },
+            "shapely_version": "2.1.2",
+            "geos_version": "3.13.1"
+          },
+          "distance_definition": "Spherical endpoint length of the preserved planar nearest-boundary candidate in census coverage."
+        }
+      ]
+    },
+    {
+      "status": "failed",
+      "district_count": 61,
+      "house_sizes": [
+        1000
+      ],
+      "run_kind": "new_york_recorded_mixed_policy_v1",
+      "configuration": {
+        "seed": 20200955,
+        "max_outer_iterations": 80,
+        "inner_max_iterations": 300,
+        "center_tolerance_m": 0.0001,
+        "physical_adjacency_rule": "polygon parts; disjoint interiors; positive-length shared boundary; F***1****",
+        "connection_policy": "new-york-harbor-recorded-mixed-v1",
+        "connection_kinds": [
+          "recorded-water-connection",
+          "recorded-exclave-connection"
+        ],
+        "max_rebalance_moves": 1000,
+        "root_eligibility_relative_band": 0.01,
+        "group_population_preflight_tolerance": 0.01,
+        "minimum_district_population_for_root_classification": 327856.3362295082,
+        "minimum_district_population_exact": "1999923651/6100",
+        "eligibility_note": "99% of ideal classifies original eligible roots; root groups must admit integer district allocations within a 1% optimistic population budget. Neither is final-plan acceptance.",
+        "boundary_metric": "source census coverage, including retained water blocks; no shoreline substitution",
+        "inner_optimization": {
+          "normalization": "population-mass and geometry-derived shifted squared costs; mean-zero weight gauge",
+          "public_units": "centers in source coordinate units; weights in squared source coordinate units",
+          "max_line_search_steps": 100,
+          "failure_policy": "raise on unsuccessful termination or nonfinite output; no completed plan returned"
+        }
+      },
+      "source": {
+        "schema": 1,
+        "state_fips": "36",
+        "state": "New York",
+        "url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_36_tabblock20.zip",
+        "archive_sha256": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+        "archive_bytes": 325849613,
+        "extracted_file_sha256": {
+          "tl_2020_36_tabblock20.cpg": "3ad3031f5503a4404af825262ee8232cc04d4ea6683d42c5dd0a2f2a27ac9824",
+          "tl_2020_36_tabblock20.dbf": "7974555de141bd5c1aa249da81c8227a5f22caf516689ba332293e6ddc15bb83",
+          "tl_2020_36_tabblock20.prj": "0b9041e921d9ebb43247d314608fe9e38a0b008ee793067fc1806199ea1fb9dd",
+          "tl_2020_36_tabblock20.shp": "9eff19746d07b054923a2b0c98392121545a647fda5a133fc4f48f375a2d13de",
+          "tl_2020_36_tabblock20.shp.ea.iso.xml": "bfec33140cc7684b1385347718c27347f615d446ae774ab89ef16e900b413d40",
+          "tl_2020_36_tabblock20.shp.iso.xml": "98d50f01ba3643e4b591fd0bd8583e574520f2b0c2820c96a799e1867f3d04b5",
+          "tl_2020_36_tabblock20.shx": "82b83662912e3cd806b76a606058d1eff15c3feea69faec0130eaa5c4384f64d"
+        },
+        "download": {
+          "attempts": 1,
+          "etag": null,
+          "expected_bytes": 325849613,
+          "last_modified": "Fri, 06 Jan 2023 21:46:06 GMT",
+          "received_bytes": 325849613,
+          "resumed_bytes": 0,
+          "url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_36_tabblock20.zip"
+        },
+        "hash_provenance": "Locally computed SHA-256; no publisher checksum is provided.",
+        "archive_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\36\\tl_2020_36_tabblock20.zip",
+        "extraction_dir": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\36\\tl_2020_36_tabblock20",
+        "source_shapefile_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\36\\tl_2020_36_tabblock20\\tl_2020_36_tabblock20.shp",
+        "manifest_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\36\\tl_2020_36_tabblock20.manifest.json",
+        "downloaded_in_timed_pipeline": false,
+        "extracted_files_reused": true,
+        "extracted_bytes": 325848671,
+        "crs_wkt": "GEOGCS[\"GCS_North_American_1983\",DATUM[\"D_North_American_1983\",SPHEROID[\"GRS_1980\",6378137,298.257222101]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]"
+      },
+      "code_sha256": {
+        "districting/algorithm.py": "a1b264a2bb855675ab3b633a5b47a38b77f4929e29b7a4086cfb889436e244ac",
+        "districting/connectivity.py": "2d6788d73fac4e2eb550cff4db36dd4b5b430f131254809805c53317bb8cbfed",
+        "districting/part_connectivity.py": "a127aad254e65dc7b8be69f1fe7403aad6f9d18e0a15b8723e32358f9ef833d5",
+        "districting/apportionment.py": "07eb27ebc88d89647dfad66784d4fb3b9623b7919ed6e837122111bfe4323eae",
+        "districting/data/apportionment_2020.py": "86a8ee34675d78aa99ed7edcb0c686fbb3aebd34d04655a106cae10dfbb0461d",
+        "scripts/benchmark_state_blocks.py": "8a1f05e5e428437ff87434408c315e8d94a4df64df5dffa821a7fc952b77a414",
+        "scripts/benchmark_kansas_blocks.py": "20da6d6f95e4b6706341eb97f01c3518e3d58b07e1852a0537e9c85c5dab31bf",
+        "scripts/benchmark_kansas_anchors.py": "adf92735dfcf5fb703c15a1e7d9f1a8f76b203d037e441b3560d2bc0573b50a7",
+        "scripts/district_block_sources.py": "dd041755be227ea77abfed20bbc6c7a9a10050bf8f6a66aaeed2a07c96a1cbbb",
+        "scripts/district_block_adjacency.py": "8e3bd87629631e5452b6294bb94789dffa733a7b490db8a5238687a7609c0efc",
+        "scripts/district_block_graph_cache.py": "46d0c64da93123c23c3a05136ab2c4b3f096122627990f0a25c4c2e1c75b6c7e",
+        "scripts/district_block_map_export.py": "05e29bdfea353a1819fd4000b2e9ebc350fd8b9c6bdccf299d7531a7002499cf",
+        "scripts/state_block_map_export.py": "b31d08a7d1db70dffbc174080d2feff6b6b614caef6cd918a6aaddbf7a61af28",
+        "scripts/state_block_execution_lock.py": "861c5a915ca9bc7d7065df4c10afae48c641febd680b25133c05d64f4268c6ff",
+        "scripts/district_block_part_graph.py": "49b43929897184c04a5332f4530cd7cf722f9ac604008657855a65694024c490",
+        "scripts/benchmark_new_york_links.py": "cf945a1d60777a2ddf40b7694de24bed01c64c3553f816deaef69c1721ee0304",
+        "scripts/run_new_york_link_suite.py": "c490cdd58a3b685871e0af1e3a9aaa056cfc4ebe58b541e7952a451539301eba",
+        "scripts/new_york_recorded_links.py": "708731aea5095098aff83ba57e5fad122f1f2c823dacd7991c22402b298cd424",
+        "scripts/hawaii_population_links.py": "b512c901f00b62864eb84f7b5cfed2e8d4fe5915ffe3cc87e50c93345e581519",
+        "scripts/district_block_island_links.py": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+        "scripts/correct_state_block_parts.py": "b4006afd905ac6f9ff72c6ba95ac73cf1c807695e33bf2bc4cdf68233028bacd",
+        "scripts/assets/new-york-block-viewer.html": "b10f09dca60f554d5b972d8c89d97e5cd809ecea7c34a73eb04b92fd7c158199",
+        "districting/__init__.py": "baf0b8848dc6fffc7ab83fbe1eb2f6a45f6f67e622fda941b62c818d88f8e548"
+      },
+      "phases": {
+        "source_acquisition": {
+          "wall_seconds": 0.31776009999157395,
+          "cpu_seconds": 0.328125,
+          "sampled_peak_rss_bytes": 79724544
+        },
+        "source_extraction": {
+          "wall_seconds": 0.3120223000005353,
+          "cpu_seconds": 0.3125,
+          "sampled_peak_rss_bytes": 79724544
+        },
+        "load_and_validate_blocks": {
+          "wall_seconds": 5.083882100007031,
+          "cpu_seconds": 5.0625,
+          "sampled_peak_rss_bytes": 220512256
+        },
+        "load_or_build_physical_part_graph": {
+          "wall_seconds": 5.058119100009208,
+          "cpu_seconds": 4.953125,
+          "sampled_peak_rss_bytes": 332709888
+        },
+        "prepare_recorded_mixed_connections": {
+          "wall_seconds": 91.06560480000917,
+          "cpu_seconds": 90.34375,
+          "sampled_peak_rss_bytes": 1101664256
+        },
+        "solve": {
+          "wall_seconds": 30.815544700002647,
+          "cpu_seconds": 30.84375,
+          "sampled_peak_rss_bytes": 1030795264
+        }
+      },
+      "timed_pipeline_wall_seconds": 135.2913705000101,
+      "peak_process_working_set_bytes": 1103982592,
+      "preservation_audit": {
+        "all_original_strict_files_byte_identical": true,
+        "all_original_diagnostic_files_byte_identical": true,
+        "national_suite_byte_identical": true,
+        "source_archive_byte_identical": true,
+        "prior_policy_and_correction_evidence_byte_identical": true,
+        "run_code_unchanged": true,
+        "protected_file_count": 1052
+      },
+      "started_at": "2026-10-23T20:53:22.175104+00:00",
+      "finished_at": "2026-10-23T20:55:37.464530+00:00",
+      "url": "http://127.0.0.1:8770/policies/new-york-links-v1/states/36/districts-61/",
+      "benchmark_path": ".cache/state-block-benchmark/suite-through-1000/policies/new-york-links-v1/states/36/districts-61/benchmark.json",
+      "benchmark_sha256": "fd1bf5e38f699181c04c8e76c7e18fc1de813575864d5be13dff7e92d4365be5",
+      "peak_working_set_mib": 1052.83984375,
+      "source_connection_verification": {
+        "source_records_match_report": true,
+        "physical_component_count": 3,
+        "augmented_component_count": 1,
+        "recorded_water_link_count": 1,
+        "recorded_exclave_link_count": 1,
+        "source_geometry_modified": false,
+        "endpoint_populations_independently_verified_zero": true,
+        "validation_scope": "Saved source graph audit, immutable typed records and original DBF endpoints; not final district connectivity."
+      },
+      "error": "DistrictingOptimizationError: Inner population optimizer failed (unsuccessful termination; status=1; iterations=300; evaluations=313): STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+      "failed_phase": "solve",
+      "optimizer_failure": {
+        "reason": "unsuccessful termination",
+        "status": 1,
+        "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+        "iterations": 300,
+        "function_evaluations": 313,
+        "balance_pass": 1,
+        "plan_returned": false
+      },
+      "accepted_plan": false,
+      "failure_details": {
+        "disclosure": "The inner weight optimizer failed on balance pass 1 after 300 iterations: STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT. Its configured inner iteration limit was 300. This is an inner-optimizer failure, separate from the outer center-convergence limit. No validated district plan or completed map is accepted from this attempt. Final population balance and district connectivity are unavailable; failure time and peak process memory are still measured.",
+        "failed_phase": "solve",
+        "optimizer_failure": {
+          "reason": "unsuccessful termination",
+          "status": 1,
+          "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+          "iterations": 300,
+          "function_evaluations": 313,
+          "balance_pass": 1,
+          "plan_returned": false
+        },
+        "solver_progress": [
+          {
+            "balance_pass": 1,
+            "inner_optimizer": {
+              "success": false,
+              "status": 1,
+              "message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+              "iterations": 300,
+              "function_evaluations": 313,
+              "iteration_limit_reached": true
+            },
+            "wall_seconds": 29.940513399997144
+          }
+        ],
+        "successful_inner_pass_count": 0,
+        "failed_inner_pass_count": 1,
+        "accepted_district_plan": false,
+        "accepted_completed_map": false
+      },
+      "recorded_policy_audit": {
+        "schema_version": 1,
+        "policy": "new-york-harbor-recorded-mixed-v1",
+        "state_fips": "36",
+        "district_count": 61,
+        "source_geometry_modified": false,
+        "synthetic_ownership_edges": false,
+        "source_population": 20201249,
+        "block_count": 288819,
+        "part_count": 288841,
+        "physical_component_count": 3,
+        "physical_edge_count": 712458,
+        "synthetic_edge_count": 2,
+        "augmented_edge_count": 712460,
+        "augmented_component_count": 1,
+        "augmented_graph_connected": true,
+        "eligible_root_count": 1,
+        "groups": [
+          {
+            "group_id": 0,
+            "component_ids": [
+              0,
+              1,
+              2
+            ],
+            "population": 20201249,
+            "root_component_ids": [
+              0
+            ],
+            "district_count": 61
+          }
+        ],
+        "population_selection": {
+          "policy": "population-aware-rooted-boundary-forest-v1",
+          "district_count": 61,
+          "population_tolerance": 0.01,
+          "ideal_population": 331168.01639344264,
+          "minimum_root_population": 327856.3362295082,
+          "eligible_root_component_ids": [
+            0
+          ],
+          "no_individual_root_fallback": false,
+          "selected_link_ids": [
+            "ny-candidate-00-01",
+            "ny-candidate-00-02"
+          ],
+          "selected_total_distance_m": 1647.2943809814926,
+          "groups": [
+            {
+              "group_id": 0,
+              "component_ids": [
+                0,
+                1,
+                2
+              ],
+              "population": 20201249,
+              "root_component_ids": [
+                0
+              ],
+              "district_count": 61
+            }
+          ],
+          "population_bound": {
+            "feasible_seat_allocation": true,
+            "best_max_deviation_pct": 0.0,
+            "deviation_fraction": [
+              0,
+              1
+            ],
+            "seat_counts": [
+              61
+            ],
+            "ideal_population": 331168.01639344264,
+            "group_ideal_seats": [
+              61.0
+            ],
+            "is_constructed_plan": false,
+            "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+          },
+          "selection_priority": [
+            "Retain the most independently population-compatible original root groups.",
+            "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+            "Break ties by stable candidate IDs and component IDs."
+          ],
+          "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+          "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+          "groupings_examined": 1,
+          "population_feasible_groupings": 1,
+          "geometrically_unconnectable_groupings": 0
+        },
+        "components": [
+          {
+            "component_id": 0,
+            "population": 20201249,
+            "part_count": 288839,
+            "block_count": 288817
+          },
+          {
+            "component_id": 1,
+            "population": 0,
+            "part_count": 1,
+            "block_count": 1
+          },
+          {
+            "component_id": 2,
+            "population": 0,
+            "part_count": 1,
+            "block_count": 1
+          }
+        ],
+        "candidate_count": 3,
+        "candidate_connections": [
+          {
+            "id": "ny-candidate-00-01",
+            "component_ids": [
+              0,
+              1
+            ],
+            "distance_m": 795.2682330091204,
+            "planar_candidate_distance_m": 774.1447935977649,
+            "endpoints": [
+              {
+                "geoid": "360610005000003",
+                "part_node": 272183,
+                "part_index": 0,
+                "coordinate": [
+                  -74.03495160556861,
+                  40.685939310772014
+                ],
+                "source_boundary_error_degrees": 3.413126338774593e-15,
+                "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+              },
+              {
+                "geoid": "360610001001001",
+                "part_node": 59971,
+                "part_index": 0,
+                "coordinate": [
+                  -74.043619,
+                  40.68876
+                ],
+                "source_boundary_error_degrees": 0.0,
+                "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+              }
+            ],
+            "selected_k": [
+              26,
+              35,
+              42,
+              61
+            ],
+            "classification": "positive_gap",
+            "source_boundaries_intersect": false,
+            "exact_geographic_distance_degrees": 0.008878034353130539,
+            "intervening_component_ids": [],
+            "endpoint_component_interior_crossings": [],
+            "endpoint_interior_intersection_length_degrees": {
+              "0": 0.0,
+              "1": 0.0
+            },
+            "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+            "eligible_positive_gap": true,
+            "projection": {
+              "kind": "per-pair-bbox-centered-equirectangular",
+              "lon0": -75.7700405,
+              "lat0": 42.746221500000004
+            }
+          },
+          {
+            "id": "ny-candidate-00-02",
+            "component_ids": [
+              0,
+              2
+            ],
+            "distance_m": 852.0261479723722,
+            "planar_candidate_distance_m": 829.5126827760413,
+            "endpoints": [
+              {
+                "geoid": "360610005000003",
+                "part_node": 272183,
+                "part_index": 0,
+                "coordinate": [
+                  -74.02908780665521,
+                  40.695641431154876
+                ],
+                "source_boundary_error_degrees": 7.347373392151231e-16,
+                "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+              },
+              {
+                "geoid": "360610001001000",
+                "part_node": 113983,
+                "part_index": 0,
+                "coordinate": [
+                  -74.038372,
+                  40.698669
+                ],
+                "source_boundary_error_degrees": 0.0,
+                "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+              }
+            ],
+            "selected_k": [
+              26,
+              35,
+              42,
+              61
+            ],
+            "classification": "positive_gap",
+            "source_boundaries_intersect": false,
+            "exact_geographic_distance_degrees": 0.009511262497346112,
+            "intervening_component_ids": [],
+            "endpoint_component_interior_crossings": [],
+            "endpoint_interior_intersection_length_degrees": {
+              "0": 0.0,
+              "2": 0.0
+            },
+            "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+            "eligible_positive_gap": true,
+            "projection": {
+              "kind": "per-pair-bbox-centered-equirectangular",
+              "lon0": -75.7700405,
+              "lat0": 42.746221500000004
+            }
+          },
+          {
+            "id": "ny-candidate-01-02",
+            "component_ids": [
+              1,
+              2
+            ],
+            "distance_m": 973.0490513691004,
+            "planar_candidate_distance_m": 973.0503137011425,
+            "endpoints": [
+              {
+                "geoid": "360610001001001",
+                "part_node": 59971,
+                "part_index": 0,
+                "coordinate": [
+                  -74.045427,
+                  40.690895
+                ],
+                "source_boundary_error_degrees": 0.0,
+                "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+              },
+              {
+                "geoid": "360610001001000",
+                "part_node": 113983,
+                "part_index": 0,
+                "coordinate": [
+                  -74.039931,
+                  40.69859
+                ],
+                "source_boundary_error_degrees": 0.0,
+                "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+              }
+            ],
+            "selected_k": [],
+            "classification": "positive_gap",
+            "source_boundaries_intersect": false,
+            "exact_geographic_distance_degrees": 0.009271866414181928,
+            "intervening_component_ids": [],
+            "endpoint_component_interior_crossings": [],
+            "endpoint_interior_intersection_length_degrees": {
+              "1": 0.0,
+              "2": 0.0
+            },
+            "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+            "eligible_positive_gap": true,
+            "projection": {
+              "kind": "per-pair-bbox-centered-equirectangular",
+              "lon0": -74.0427875,
+              "lat0": 40.6943615
+            }
+          }
+        ],
+        "unselected_candidate_ids": [
+          "ny-candidate-01-02"
+        ],
+        "connection_kind_counts": {
+          "recorded-water-connection": 1,
+          "recorded-exclave-connection": 1
+        },
+        "provenance": {
+          "policy": "new-york-harbor-recorded-mixed-v1",
+          "builder_sha256": "708731aea5095098aff83ba57e5fad122f1f2c823dacd7991c22402b298cd424",
+          "physical_validation_helpers_sha256": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+          "source_archive_sha256": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+          "source_files_sha256": {
+            ".shp": "9eff19746d07b054923a2b0c98392121545a647fda5a133fc4f48f375a2d13de",
+            ".shx": "82b83662912e3cd806b76a606058d1eff15c3feea69faec0130eaa5c4384f64d",
+            ".dbf": "7974555de141bd5c1aa249da81c8227a5f22caf516689ba332293e6ddc15bb83"
+          },
+          "diagnostic_evidence_sha256": {
+            "diagnosis.json": "c0c6328e9abecac3622fd2c439b5a016be35690778ee6978e815672c0bc59c63",
+            "candidate-links.json": "960425feb448677b723481da6cb57f066744995b7bed8ae94b13a9aa2d7489de",
+            "geography-context.json": "3ef1f218718f63348d7f73d6e910cc5cd6977649694f8e50b1d866ed66b7e92f"
+          },
+          "context_source_archive_sha256": {
+            ".cache/state-block-benchmark/source/34/tl_2020_34_tabblock20.zip": "33e5475f232d0f01c6a6448fb041fc38bd23eee1f8f5f5a2878cfb116690ce88",
+            ".cache/state-block-benchmark/source/36/tl_2020_36_tabblock20.zip": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+            ".cache/state-block-benchmark/suite-through-1000/diagnostics/new-york/context-source/tl_2020_34017_areawater.zip": "6b4b4f89aa45cca7f6eed0bbe540550a69043721f8c938dee8298696bc148d61"
+          },
+          "shapely_version": "2.1.2",
+          "geos_version": "3.13.1"
+        },
+        "endpoint_tolerance_degrees": 1e-09,
+        "elapsed_seconds": 89.33802279998781
+      },
+      "recorded_connections": [
+        {
+          "id": "ny-water-liberty-001",
+          "component_ids": [
+            0,
+            1
+          ],
+          "distance_m": 795.2682330091204,
+          "planar_candidate_distance_m": 774.1447935977649,
+          "endpoints": [
+            {
+              "geoid": "360610005000003",
+              "part_node": 272183,
+              "part_index": 0,
+              "coordinate": [
+                -74.03495160556861,
+                40.685939310772014
+              ],
+              "source_boundary_error_degrees": 3.413126338774593e-15,
+              "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+            },
+            {
+              "geoid": "360610001001001",
+              "part_node": 59971,
+              "part_index": 0,
+              "coordinate": [
+                -74.043619,
+                40.68876
+              ],
+              "source_boundary_error_degrees": 0.0,
+              "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+            }
+          ],
+          "selected_k": [
+            26,
+            35,
+            42,
+            61
+          ],
+          "classification": "positive_gap",
+          "source_boundaries_intersect": false,
+          "exact_geographic_distance_degrees": 0.008878034353130539,
+          "intervening_component_ids": [],
+          "endpoint_component_interior_crossings": [],
+          "endpoint_interior_intersection_length_degrees": {
+            "0": 0.0,
+            "1": 0.0
+          },
+          "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+          "eligible_positive_gap": true,
+          "projection": {
+            "kind": "per-pair-bbox-centered-equirectangular",
+            "lon0": -75.7700405,
+            "lat0": 42.746221500000004
+          },
+          "candidate_id": "ny-candidate-00-01",
+          "state_fips": "36",
+          "kind": "recorded-water-connection",
+          "policy": "new-york-harbor-recorded-mixed-v1",
+          "geographic_context": {
+            "crossed_state": "New Jersey",
+            "water_only": true,
+            "mapped_water_length_m": 795.2682334982188,
+            "mapped_land_length_m": 1.3708295158248595e-09,
+            "surface_length_measurement": "Local equirectangular lengths of exact source-polygon intersections. Overlapping intersections are merged as normalized intervals; no geometry is buffered or repaired.",
+            "source_year": 2020,
+            "crossed_new_jersey_blocks": [
+              {
+                "geoid": "340179801001017",
+                "population": 0,
+                "land_area_m2": 0,
+                "water_area_m2": 1355954,
+                "candidate_interior_length_m": 795.2682334995897
+              }
+            ],
+            "classification": "mapped_water_only",
+            "meaning": "Recorded connectivity exception only; no New Jersey territory, source polygons, bridge, or travel route is added."
+          },
+          "provenance": {
+            "policy": "new-york-harbor-recorded-mixed-v1",
+            "builder_sha256": "708731aea5095098aff83ba57e5fad122f1f2c823dacd7991c22402b298cd424",
+            "physical_validation_helpers_sha256": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+            "source_archive_sha256": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+            "source_files_sha256": {
+              ".shp": "9eff19746d07b054923a2b0c98392121545a647fda5a133fc4f48f375a2d13de",
+              ".shx": "82b83662912e3cd806b76a606058d1eff15c3feea69faec0130eaa5c4384f64d",
+              ".dbf": "7974555de141bd5c1aa249da81c8227a5f22caf516689ba332293e6ddc15bb83"
+            },
+            "diagnostic_evidence_sha256": {
+              "diagnosis.json": "c0c6328e9abecac3622fd2c439b5a016be35690778ee6978e815672c0bc59c63",
+              "candidate-links.json": "960425feb448677b723481da6cb57f066744995b7bed8ae94b13a9aa2d7489de",
+              "geography-context.json": "3ef1f218718f63348d7f73d6e910cc5cd6977649694f8e50b1d866ed66b7e92f"
+            },
+            "context_source_archive_sha256": {
+              ".cache/state-block-benchmark/source/34/tl_2020_34_tabblock20.zip": "33e5475f232d0f01c6a6448fb041fc38bd23eee1f8f5f5a2878cfb116690ce88",
+              ".cache/state-block-benchmark/source/36/tl_2020_36_tabblock20.zip": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+              ".cache/state-block-benchmark/suite-through-1000/diagnostics/new-york/context-source/tl_2020_34017_areawater.zip": "6b4b4f89aa45cca7f6eed0bbe540550a69043721f8c938dee8298696bc148d61"
+            },
+            "shapely_version": "2.1.2",
+            "geos_version": "3.13.1"
+          },
+          "distance_definition": "Spherical endpoint length of the preserved planar nearest-boundary candidate in census coverage."
+        },
+        {
+          "id": "ny-exclave-ellis-001",
+          "component_ids": [
+            0,
+            2
+          ],
+          "distance_m": 852.0261479723722,
+          "planar_candidate_distance_m": 829.5126827760413,
+          "endpoints": [
+            {
+              "geoid": "360610005000003",
+              "part_node": 272183,
+              "part_index": 0,
+              "coordinate": [
+                -74.02908780665521,
+                40.695641431154876
+              ],
+              "source_boundary_error_degrees": 7.347373392151231e-16,
+              "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+            },
+            {
+              "geoid": "360610001001000",
+              "part_node": 113983,
+              "part_index": 0,
+              "coordinate": [
+                -74.038372,
+                40.698669
+              ],
+              "source_boundary_error_degrees": 0.0,
+              "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+            }
+          ],
+          "selected_k": [
+            26,
+            35,
+            42,
+            61
+          ],
+          "classification": "positive_gap",
+          "source_boundaries_intersect": false,
+          "exact_geographic_distance_degrees": 0.009511262497346112,
+          "intervening_component_ids": [],
+          "endpoint_component_interior_crossings": [],
+          "endpoint_interior_intersection_length_degrees": {
+            "0": 0.0,
+            "2": 0.0
+          },
+          "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+          "eligible_positive_gap": true,
+          "projection": {
+            "kind": "per-pair-bbox-centered-equirectangular",
+            "lon0": -75.7700405,
+            "lat0": 42.746221500000004
+          },
+          "candidate_id": "ny-candidate-00-02",
+          "state_fips": "36",
+          "kind": "recorded-exclave-connection",
+          "policy": "new-york-harbor-recorded-mixed-v1",
+          "geographic_context": {
+            "crossed_state": "New Jersey",
+            "water_only": false,
+            "mapped_water_length_m": 826.5058575058739,
+            "mapped_land_length_m": 25.52029106998187,
+            "surface_length_measurement": "Local equirectangular lengths of exact source-polygon intersections. Overlapping intersections are merged as normalized intervals; no geometry is buffered or repaired.",
+            "source_year": 2020,
+            "crossed_new_jersey_blocks": [
+              {
+                "geoid": "340179801001000",
+                "population": 0,
+                "land_area_m2": 0,
+                "water_area_m2": 2528781,
+                "candidate_interior_length_m": 826.505857505817
+              },
+              {
+                "geoid": "340179801001001",
+                "population": 0,
+                "land_area_m2": 109419,
+                "water_area_m2": 0,
+                "candidate_interior_length_m": 25.520291070114638
+              }
+            ],
+            "classification": "crosses_mapped_water_and_new_jersey_land",
+            "meaning": "Recorded connectivity exception only; no New Jersey territory, source polygons, bridge, or travel route is added."
+          },
+          "provenance": {
+            "policy": "new-york-harbor-recorded-mixed-v1",
+            "builder_sha256": "708731aea5095098aff83ba57e5fad122f1f2c823dacd7991c22402b298cd424",
+            "physical_validation_helpers_sha256": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+            "source_archive_sha256": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+            "source_files_sha256": {
+              ".shp": "9eff19746d07b054923a2b0c98392121545a647fda5a133fc4f48f375a2d13de",
+              ".shx": "82b83662912e3cd806b76a606058d1eff15c3feea69faec0130eaa5c4384f64d",
+              ".dbf": "7974555de141bd5c1aa249da81c8227a5f22caf516689ba332293e6ddc15bb83"
+            },
+            "diagnostic_evidence_sha256": {
+              "diagnosis.json": "c0c6328e9abecac3622fd2c439b5a016be35690778ee6978e815672c0bc59c63",
+              "candidate-links.json": "960425feb448677b723481da6cb57f066744995b7bed8ae94b13a9aa2d7489de",
+              "geography-context.json": "3ef1f218718f63348d7f73d6e910cc5cd6977649694f8e50b1d866ed66b7e92f"
+            },
+            "context_source_archive_sha256": {
+              ".cache/state-block-benchmark/source/34/tl_2020_34_tabblock20.zip": "33e5475f232d0f01c6a6448fb041fc38bd23eee1f8f5f5a2878cfb116690ce88",
+              ".cache/state-block-benchmark/source/36/tl_2020_36_tabblock20.zip": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+              ".cache/state-block-benchmark/suite-through-1000/diagnostics/new-york/context-source/tl_2020_34017_areawater.zip": "6b4b4f89aa45cca7f6eed0bbe540550a69043721f8c938dee8298696bc148d61"
+            },
+            "shapely_version": "2.1.2",
+            "geos_version": "3.13.1"
+          },
+          "distance_definition": "Spherical endpoint length of the preserved planar nearest-boundary candidate in census coverage."
+        }
+      ]
+    }
+  ],
+  "complete_plan_count": 0,
+  "failed_plan_count": 4,
+  "execution_audit": {
+    "original_manifest_path": "C:/Users/benja/projects/voting_paradigm/.cache/state-block-benchmark/suite-through-1000/policies/new-york-links-v1/run.json",
+    "original_manifest_sha256": "832c48a064f4cb1e130fdfa4589d8b7a2d67ec8fade4079f99e8082455d55522",
+    "original_status": "stopped",
+    "original_elapsed_wall_seconds": 129.5478473999974,
+    "supplemental_manifest_path": "C:/Users/benja/projects/voting_paradigm/.cache/state-block-benchmark/suite-through-1000/policies/new-york-links-v1/supplemental-first-attempts.json",
+    "supplemental_manifest_sha256": "5a6ff4303ac9ff9970fa3408fde67f274141945beccf5904738b8f68097bf78a",
+    "supplemental_status": "complete",
+    "supplemental_elapsed_wall_seconds": 426.82374889998755,
+    "all_requested_attempts_terminal": true,
+    "original_manifest_preserved": true,
+    "no_prior_attempt_retried": true,
+    "jobs": [
+      {
+        "district_count": 26,
+        "status": "failed",
+        "started_at": "2026-10-23T20:41:47.900674+00:00",
+        "command": [
+          "C:\\Users\\benja\\projects\\voting_paradigm\\venv\\Scripts\\python.exe",
+          "-X",
+          "utf8",
+          "-u",
+          "C:\\Users\\benja\\projects\\voting_paradigm\\scripts\\benchmark_new_york_links.py",
+          "--district-count",
+          "26",
+          "--output",
+          "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\policies\\new-york-links-v1\\states\\36\\districts-26"
+        ],
+        "output": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\policies\\new-york-links-v1\\states\\36\\districts-26",
+        "log": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\policies\\new-york-links-v1\\districts-26.log",
+        "pid": 36792,
+        "exit_code": 1,
+        "finished_at": "2026-10-23T20:43:57.423514+00:00",
+        "process_wall_seconds": 129.52330000000075,
+        "benchmark_sha256": "7393b3bd1b9dd1e50102b5e8d23d2616074ac8e3d4ab253f8d411c1d4681c1fb",
+        "execution_source": "original_suite"
+      },
+      {
+        "district_count": 35,
+        "attempt_kind": "deferred_first_attempt",
+        "status": "failed",
+        "started_at": "2026-10-23T20:48:33.332799+00:00",
+        "command": [
+          "C:\\Users\\benja\\projects\\voting_paradigm\\venv\\Scripts\\python.exe",
+          "-X",
+          "utf8",
+          "-u",
+          "C:\\Users\\benja\\projects\\voting_paradigm\\scripts\\benchmark_new_york_links.py",
+          "--district-count",
+          "35",
+          "--output",
+          "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\policies\\new-york-links-v1\\states\\36\\districts-35"
+        ],
+        "output": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\policies\\new-york-links-v1\\states\\36\\districts-35",
+        "log": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\policies\\new-york-links-v1\\districts-35.log",
+        "pid": 46972,
+        "exit_code": 1,
+        "finished_at": "2026-10-23T20:50:50.306212+00:00",
+        "process_wall_seconds": 136.97284919999947,
+        "benchmark_sha256": "4336e1bda980a413fe280f1a8907a6337638f2743f7257cd20e5c4d46db621dd",
+        "terminal_validation": {
+          "passed": true,
+          "classification": "numerical_failure",
+          "preservation_verified": true,
+          "code_unchanged": true,
+          "protected_file_count": 1052
+        },
+        "execution_source": "deferred_first_attempt"
+      },
+      {
+        "district_count": 42,
+        "attempt_kind": "deferred_first_attempt",
+        "status": "failed",
+        "started_at": "2026-10-23T20:50:52.733153+00:00",
+        "command": [
+          "C:\\Users\\benja\\projects\\voting_paradigm\\venv\\Scripts\\python.exe",
+          "-X",
+          "utf8",
+          "-u",
+          "C:\\Users\\benja\\projects\\voting_paradigm\\scripts\\benchmark_new_york_links.py",
+          "--district-count",
+          "42",
+          "--output",
+          "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\policies\\new-york-links-v1\\states\\36\\districts-42"
+        ],
+        "output": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\policies\\new-york-links-v1\\states\\36\\districts-42",
+        "log": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\policies\\new-york-links-v1\\districts-42.log",
+        "pid": 50052,
+        "exit_code": 1,
+        "finished_at": "2026-10-23T20:53:16.471908+00:00",
+        "process_wall_seconds": 143.73671739999554,
+        "benchmark_sha256": "4c401a542d90f88e0070c88a7dd63b8d1ccbb0bd4113276803cdc20a933d4c45",
+        "terminal_validation": {
+          "passed": true,
+          "classification": "numerical_failure",
+          "preservation_verified": true,
+          "code_unchanged": true,
+          "protected_file_count": 1052
+        },
+        "execution_source": "deferred_first_attempt"
+      },
+      {
+        "district_count": 61,
+        "attempt_kind": "deferred_first_attempt",
+        "status": "failed",
+        "started_at": "2026-10-23T20:53:18.939846+00:00",
+        "command": [
+          "C:\\Users\\benja\\projects\\voting_paradigm\\venv\\Scripts\\python.exe",
+          "-X",
+          "utf8",
+          "-u",
+          "C:\\Users\\benja\\projects\\voting_paradigm\\scripts\\benchmark_new_york_links.py",
+          "--district-count",
+          "61",
+          "--output",
+          "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\policies\\new-york-links-v1\\states\\36\\districts-61"
+        ],
+        "output": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\policies\\new-york-links-v1\\states\\36\\districts-61",
+        "log": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\policies\\new-york-links-v1\\districts-61.log",
+        "pid": 16740,
+        "exit_code": 1,
+        "finished_at": "2026-10-23T20:55:37.809552+00:00",
+        "process_wall_seconds": 138.87037629999395,
+        "benchmark_sha256": "fd1bf5e38f699181c04c8e76c7e18fc1de813575864d5be13dff7e92d4365be5",
+        "terminal_validation": {
+          "passed": true,
+          "classification": "numerical_failure",
+          "preservation_verified": true,
+          "code_unchanged": true,
+          "protected_file_count": 1052
+        },
+        "execution_source": "deferred_first_attempt"
+      }
+    ],
+    "note": "A terminal attempt may be failed. Supplemental jobs are first attempts for originally unstarted anchors; the failed original attempt is retained without retry."
+  },
+  "recorded_connections": [
+    {
+      "id": "ny-water-liberty-001",
+      "component_ids": [
+        0,
+        1
+      ],
+      "distance_m": 795.2682330091204,
+      "planar_candidate_distance_m": 774.1447935977649,
+      "endpoints": [
+        {
+          "geoid": "360610005000003",
+          "part_node": 272183,
+          "part_index": 0,
+          "coordinate": [
+            -74.03495160556861,
+            40.685939310772014
+          ],
+          "source_boundary_error_degrees": 3.413126338774593e-15,
+          "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+        },
+        {
+          "geoid": "360610001001001",
+          "part_node": 59971,
+          "part_index": 0,
+          "coordinate": [
+            -74.043619,
+            40.68876
+          ],
+          "source_boundary_error_degrees": 0.0,
+          "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+        }
+      ],
+      "selected_k": [
+        26,
+        35,
+        42,
+        61
+      ],
+      "classification": "positive_gap",
+      "source_boundaries_intersect": false,
+      "exact_geographic_distance_degrees": 0.008878034353130539,
+      "intervening_component_ids": [],
+      "endpoint_component_interior_crossings": [],
+      "endpoint_interior_intersection_length_degrees": {
+        "0": 0.0,
+        "1": 0.0
+      },
+      "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+      "eligible_positive_gap": true,
+      "projection": {
+        "kind": "per-pair-bbox-centered-equirectangular",
+        "lon0": -75.7700405,
+        "lat0": 42.746221500000004
+      },
+      "candidate_id": "ny-candidate-00-01",
+      "state_fips": "36",
+      "kind": "recorded-water-connection",
+      "policy": "new-york-harbor-recorded-mixed-v1",
+      "geographic_context": {
+        "crossed_state": "New Jersey",
+        "water_only": true,
+        "mapped_water_length_m": 795.2682334982188,
+        "mapped_land_length_m": 1.3708295158248595e-09,
+        "surface_length_measurement": "Local equirectangular lengths of exact source-polygon intersections. Overlapping intersections are merged as normalized intervals; no geometry is buffered or repaired.",
+        "source_year": 2020,
+        "crossed_new_jersey_blocks": [
+          {
+            "geoid": "340179801001017",
+            "population": 0,
+            "land_area_m2": 0,
+            "water_area_m2": 1355954,
+            "candidate_interior_length_m": 795.2682334995897
+          }
+        ],
+        "classification": "mapped_water_only",
+        "meaning": "Recorded connectivity exception only; no New Jersey territory, source polygons, bridge, or travel route is added."
+      },
+      "provenance": {
+        "policy": "new-york-harbor-recorded-mixed-v1",
+        "builder_sha256": "708731aea5095098aff83ba57e5fad122f1f2c823dacd7991c22402b298cd424",
+        "physical_validation_helpers_sha256": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+        "source_archive_sha256": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+        "source_files_sha256": {
+          ".shp": "9eff19746d07b054923a2b0c98392121545a647fda5a133fc4f48f375a2d13de",
+          ".shx": "82b83662912e3cd806b76a606058d1eff15c3feea69faec0130eaa5c4384f64d",
+          ".dbf": "7974555de141bd5c1aa249da81c8227a5f22caf516689ba332293e6ddc15bb83"
+        },
+        "diagnostic_evidence_sha256": {
+          "diagnosis.json": "c0c6328e9abecac3622fd2c439b5a016be35690778ee6978e815672c0bc59c63",
+          "candidate-links.json": "960425feb448677b723481da6cb57f066744995b7bed8ae94b13a9aa2d7489de",
+          "geography-context.json": "3ef1f218718f63348d7f73d6e910cc5cd6977649694f8e50b1d866ed66b7e92f"
+        },
+        "context_source_archive_sha256": {
+          ".cache/state-block-benchmark/source/34/tl_2020_34_tabblock20.zip": "33e5475f232d0f01c6a6448fb041fc38bd23eee1f8f5f5a2878cfb116690ce88",
+          ".cache/state-block-benchmark/source/36/tl_2020_36_tabblock20.zip": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+          ".cache/state-block-benchmark/suite-through-1000/diagnostics/new-york/context-source/tl_2020_34017_areawater.zip": "6b4b4f89aa45cca7f6eed0bbe540550a69043721f8c938dee8298696bc148d61"
+        },
+        "shapely_version": "2.1.2",
+        "geos_version": "3.13.1"
+      },
+      "distance_definition": "Spherical endpoint length of the preserved planar nearest-boundary candidate in census coverage."
+    },
+    {
+      "id": "ny-exclave-ellis-001",
+      "component_ids": [
+        0,
+        2
+      ],
+      "distance_m": 852.0261479723722,
+      "planar_candidate_distance_m": 829.5126827760413,
+      "endpoints": [
+        {
+          "geoid": "360610005000003",
+          "part_node": 272183,
+          "part_index": 0,
+          "coordinate": [
+            -74.02908780665521,
+            40.695641431154876
+          ],
+          "source_boundary_error_degrees": 7.347373392151231e-16,
+          "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+        },
+        {
+          "geoid": "360610001001000",
+          "part_node": 113983,
+          "part_index": 0,
+          "coordinate": [
+            -74.038372,
+            40.698669
+          ],
+          "source_boundary_error_degrees": 0.0,
+          "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+        }
+      ],
+      "selected_k": [
+        26,
+        35,
+        42,
+        61
+      ],
+      "classification": "positive_gap",
+      "source_boundaries_intersect": false,
+      "exact_geographic_distance_degrees": 0.009511262497346112,
+      "intervening_component_ids": [],
+      "endpoint_component_interior_crossings": [],
+      "endpoint_interior_intersection_length_degrees": {
+        "0": 0.0,
+        "2": 0.0
+      },
+      "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+      "eligible_positive_gap": true,
+      "projection": {
+        "kind": "per-pair-bbox-centered-equirectangular",
+        "lon0": -75.7700405,
+        "lat0": 42.746221500000004
+      },
+      "candidate_id": "ny-candidate-00-02",
+      "state_fips": "36",
+      "kind": "recorded-exclave-connection",
+      "policy": "new-york-harbor-recorded-mixed-v1",
+      "geographic_context": {
+        "crossed_state": "New Jersey",
+        "water_only": false,
+        "mapped_water_length_m": 826.5058575058739,
+        "mapped_land_length_m": 25.52029106998187,
+        "surface_length_measurement": "Local equirectangular lengths of exact source-polygon intersections. Overlapping intersections are merged as normalized intervals; no geometry is buffered or repaired.",
+        "source_year": 2020,
+        "crossed_new_jersey_blocks": [
+          {
+            "geoid": "340179801001000",
+            "population": 0,
+            "land_area_m2": 0,
+            "water_area_m2": 2528781,
+            "candidate_interior_length_m": 826.505857505817
+          },
+          {
+            "geoid": "340179801001001",
+            "population": 0,
+            "land_area_m2": 109419,
+            "water_area_m2": 0,
+            "candidate_interior_length_m": 25.520291070114638
+          }
+        ],
+        "classification": "crosses_mapped_water_and_new_jersey_land",
+        "meaning": "Recorded connectivity exception only; no New Jersey territory, source polygons, bridge, or travel route is added."
+      },
+      "provenance": {
+        "policy": "new-york-harbor-recorded-mixed-v1",
+        "builder_sha256": "708731aea5095098aff83ba57e5fad122f1f2c823dacd7991c22402b298cd424",
+        "physical_validation_helpers_sha256": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+        "source_archive_sha256": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+        "source_files_sha256": {
+          ".shp": "9eff19746d07b054923a2b0c98392121545a647fda5a133fc4f48f375a2d13de",
+          ".shx": "82b83662912e3cd806b76a606058d1eff15c3feea69faec0130eaa5c4384f64d",
+          ".dbf": "7974555de141bd5c1aa249da81c8227a5f22caf516689ba332293e6ddc15bb83"
+        },
+        "diagnostic_evidence_sha256": {
+          "diagnosis.json": "c0c6328e9abecac3622fd2c439b5a016be35690778ee6978e815672c0bc59c63",
+          "candidate-links.json": "960425feb448677b723481da6cb57f066744995b7bed8ae94b13a9aa2d7489de",
+          "geography-context.json": "3ef1f218718f63348d7f73d6e910cc5cd6977649694f8e50b1d866ed66b7e92f"
+        },
+        "context_source_archive_sha256": {
+          ".cache/state-block-benchmark/source/34/tl_2020_34_tabblock20.zip": "33e5475f232d0f01c6a6448fb041fc38bd23eee1f8f5f5a2878cfb116690ce88",
+          ".cache/state-block-benchmark/source/36/tl_2020_36_tabblock20.zip": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+          ".cache/state-block-benchmark/suite-through-1000/diagnostics/new-york/context-source/tl_2020_34017_areawater.zip": "6b4b4f89aa45cca7f6eed0bbe540550a69043721f8c938dee8298696bc148d61"
+        },
+        "shapely_version": "2.1.2",
+        "geos_version": "3.13.1"
+      },
+      "distance_definition": "Spherical endpoint length of the preserved planar nearest-boundary candidate in census coverage."
+    }
+  ],
+  "source_connections_url": "http://127.0.0.1:8770/policies/new-york-links-v1/connections/",
+  "outer_convergence": {
+    "accepted_plan_count": 0,
+    "center_converged_plan_count": 0,
+    "all_accepted_plans_center_converged": false,
+    "district_counts_without_center_convergence": [],
+    "district_counts_at_outer_limit_without_center_convergence": [],
+    "disclosures": []
+  },
+  "validation_note": "All 526 districting and script regression tests passed in 11.13 seconds. Browser checks passed for the comparison, harbor and island views, Ellis land crossing, and link/context toggles, with no captured browser errors or warnings. Source-map screenshots are saved beside the comparison. Both orchestrators and all four benchmark children have exited; the state36 execution lock was independently verified free.",
+  "preserved_historical_file_count": 1052,
+  "source_population_audit": {
+    "archive": ".cache/state-block-benchmark/source/36/tl_2020_36_tabblock20.zip",
+    "archive_sha256": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+    "all_source_dbf_geoids_unique": true,
+    "source_block_count": 288819,
+    "source_population": 20201249
+  },
+  "same_recorded_connection_across_completed_plans": false,
+  "strict_baseline": {
+    "status": "unsupported_topology",
+    "benchmark_path": ".cache/state-block-benchmark/suite-through-1000/states/36/districts-26/benchmark.json",
+    "benchmark_sha256": "c4fdf76ed538e1622c36c5c1c211a402e4e56d9f7d80d72e32cc42d06189aa86",
+    "preflight_wall_seconds": 99.36156880001363,
+    "solver_executed": false,
+    "district_plan_exists": false,
+    "note": "K35/K42/K61 reused the K26 source-topology rejection. No prior strict solver runtimes or population results exist."
+  },
+  "crossing_audit": {
+    "path": ".cache/state-block-benchmark/suite-through-1000/diagnostics/new-york/geography-context.json",
+    "sha256": "3ef1f218718f63348d7f73d6e910cc5cd6977649694f8e50b1d866ed66b7e92f",
+    "record": {
+      "status": "complete",
+      "source_year": 2020,
+      "analysis": "new_york_harbor_candidate_water_and_land_classification",
+      "links": [
+        {
+          "candidate_id": "ny-candidate-00-01",
+          "candidate_endpoints": [
+            [
+              -74.03495160556861,
+              40.685939310772014
+            ],
+            [
+              -74.043619,
+              40.68876
+            ]
+          ],
+          "selected_k": [
+            26,
+            35,
+            42,
+            61
+          ],
+          "component_ids": [
+            0,
+            1
+          ],
+          "distance_m": 795.2682330091204,
+          "candidate_planar_length_m": 795.2682334995897,
+          "new_jersey_interior_coverage_fraction": 1.0,
+          "new_jersey_interior_coverage_m": 795.2682334995897,
+          "crossed_new_jersey_blocks": [
+            {
+              "geoid": "340179801001017",
+              "population": 0,
+              "land_area_m2": 0,
+              "water_area_m2": 1355954,
+              "candidate_interior_length_m": 795.2682334995897
+            }
+          ],
+          "mapped_water_fraction": 0.9999999999982763,
+          "mapped_water_length_m": 795.2682334982188,
+          "outside_mapped_water_length_m": 1.3708295158248595e-09,
+          "water_only_under_2020_census_area_water": true,
+          "classification": "mapped_water_only",
+          "water_intervals_normalized": [
+            [
+              0.0,
+              0.9999999999982763
+            ]
+          ],
+          "outside_water_intervals_normalized": [
+            [
+              0.9999999999982763,
+              1.0
+            ]
+          ],
+          "crossed_water_features": [
+            {
+              "name": "Hudson Riv",
+              "hydroid": "1108476069011",
+              "mtfcc": "H3010"
+            }
+          ]
+        },
+        {
+          "candidate_id": "ny-candidate-00-02",
+          "candidate_endpoints": [
+            [
+              -74.02908780665521,
+              40.695641431154876
+            ],
+            [
+              -74.038372,
+              40.698669
+            ]
+          ],
+          "selected_k": [
+            26,
+            35,
+            42,
+            61
+          ],
+          "component_ids": [
+            0,
+            2
+          ],
+          "distance_m": 852.0261479723722,
+          "candidate_planar_length_m": 852.0261485758558,
+          "new_jersey_interior_coverage_fraction": 1.0,
+          "new_jersey_interior_coverage_m": 852.0261485758558,
+          "crossed_new_jersey_blocks": [
+            {
+              "geoid": "340179801001000",
+              "population": 0,
+              "land_area_m2": 0,
+              "water_area_m2": 2528781,
+              "candidate_interior_length_m": 826.505857505817
+            },
+            {
+              "geoid": "340179801001001",
+              "population": 0,
+              "land_area_m2": 109419,
+              "water_area_m2": 0,
+              "candidate_interior_length_m": 25.520291070114638
+            }
+          ],
+          "mapped_water_fraction": 0.9700475259912639,
+          "mapped_water_length_m": 826.5058575058739,
+          "outside_mapped_water_length_m": 25.52029106998187,
+          "water_only_under_2020_census_area_water": false,
+          "classification": "crosses_mapped_water_and_new_jersey_land",
+          "water_intervals_normalized": [
+            [
+              0.0,
+              0.9700475259912639
+            ]
+          ],
+          "outside_water_intervals_normalized": [
+            [
+              0.9700475259912639,
+              1.0
+            ]
+          ],
+          "crossed_water_features": [
+            {
+              "name": "Hudson Riv",
+              "hydroid": "1108476069011",
+              "mtfcc": "H3010"
+            }
+          ]
+        },
+        {
+          "candidate_id": "ny-candidate-01-02",
+          "candidate_endpoints": [
+            [
+              -74.045427,
+              40.690895
+            ],
+            [
+              -74.039931,
+              40.69859
+            ]
+          ],
+          "selected_k": [],
+          "component_ids": [
+            1,
+            2
+          ],
+          "distance_m": 973.0490513691004,
+          "candidate_planar_length_m": 973.0490519388167,
+          "new_jersey_interior_coverage_fraction": 1.0,
+          "new_jersey_interior_coverage_m": 973.0490519388167,
+          "crossed_new_jersey_blocks": [
+            {
+              "geoid": "340179801001000",
+              "population": 0,
+              "land_area_m2": 0,
+              "water_area_m2": 2528781,
+              "candidate_interior_length_m": 288.8137243988954
+            },
+            {
+              "geoid": "340179801001001",
+              "population": 0,
+              "land_area_m2": 109419,
+              "water_area_m2": 0,
+              "candidate_interior_length_m": 151.40711750830465
+            },
+            {
+              "geoid": "340179801001017",
+              "population": 0,
+              "land_area_m2": 0,
+              "water_area_m2": 1355954,
+              "candidate_interior_length_m": 532.828210031729
+            }
+          ],
+          "mapped_water_fraction": 0.844399296000144,
+          "mapped_water_length_m": 821.6419344307443,
+          "outside_mapped_water_length_m": 151.40711750807236,
+          "water_only_under_2020_census_area_water": false,
+          "classification": "crosses_mapped_water_and_new_jersey_land",
+          "water_intervals_normalized": [
+            [
+              0.0,
+              0.7782584087967858
+            ],
+            [
+              0.9313543788008553,
+              0.9974952660042135
+            ]
+          ],
+          "outside_water_intervals_normalized": [
+            [
+              0.7782584087967858,
+              0.9313543788008553
+            ],
+            [
+              0.9974952660042135,
+              1.0
+            ]
+          ],
+          "crossed_water_features": [
+            {
+              "name": "Hudson Riv",
+              "hydroid": "1108476069011",
+              "mtfcc": "H3010"
+            }
+          ]
+        }
+      ],
+      "isolated_island_water_access": [
+        {
+          "geoid": "360610001001000",
+          "population": 0,
+          "housing_units": 0,
+          "land_area_m2": 18951,
+          "water_area_m2": 0,
+          "minimum_distance_to_hudson_county_mapped_water_m": 2.3396330402527297,
+          "water_intersects_island": false,
+          "source_boundary_length_m": 712.9204742092372,
+          "boundary_touching_new_jersey_nonwater_m": 712.9204742092372,
+          "entire_boundary_touches_new_jersey_nonwater": true,
+          "nearest_water_endpoint_coordinates": [
+            [
+              -74.039931,
+              40.69859
+            ],
+            [
+              -74.03995052179404,
+              40.698575044459524
+            ]
+          ],
+          "interpretation": "Positive separation means any connection from this source block to mapped harbor water must first cross a nonwater gap."
+        },
+        {
+          "geoid": "360610001001001",
+          "population": 0,
+          "housing_units": 0,
+          "land_area_m2": 57438,
+          "water_area_m2": 0,
+          "minimum_distance_to_hudson_county_mapped_water_m": 0.0,
+          "water_intersects_island": true,
+          "source_boundary_length_m": 952.9013207200319,
+          "boundary_touching_new_jersey_nonwater_m": 178.6133868804345,
+          "entire_boundary_touches_new_jersey_nonwater": false,
+          "nearest_water_endpoint_coordinates": [
+            [
+              -74.047207,
+              40.690893
+            ],
+            [
+              -74.047207,
+              40.690893
+            ]
+          ],
+          "interpretation": "The source block boundary reaches mapped harbor water."
+        }
+      ],
+      "new_jersey_source_feature_count": 137972,
+      "hudson_county_area_water_feature_count": 127,
+      "source_archive_sha256": {
+        ".cache/state-block-benchmark/source/34/tl_2020_34_tabblock20.zip": "33e5475f232d0f01c6a6448fb041fc38bd23eee1f8f5f5a2878cfb116690ce88",
+        ".cache/state-block-benchmark/source/36/tl_2020_36_tabblock20.zip": "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93",
+        ".cache/state-block-benchmark/suite-through-1000/diagnostics/new-york/context-source/tl_2020_34017_areawater.zip": "6b4b4f89aa45cca7f6eed0bbe540550a69043721f8c938dee8298696bc148d61"
+      },
+      "source_archives_byte_identical_before_after": true,
+      "source_geometry_modified": false,
+      "candidate_file_sha256": "960425feb448677b723481da6cb57f066744995b7bed8ae94b13a9aa2d7489de",
+      "diagnosis_file_sha256": "c0c6328e9abecac3622fd2c439b5a016be35690778ee6978e815672c0bc59c63",
+      "script_sha256": "577e6ceb3a1d8eb7a09a9acba40dc56447a657da753974727269b298d571a917",
+      "shapely_version": "2.1.2",
+      "geos_version": "3.13.1",
+      "source_urls": [
+        "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_36_tabblock20.zip",
+        "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_34_tabblock20.zip",
+        "https://www2.census.gov/geo/tiger/TIGER2020/AREAWATER/tl_2020_34017_areawater.zip"
+      ],
+      "geographic_explanation": {
+        "liberty_island": "Liberty Island belongs to New York, while surrounding water belongs to New Jersey under the 1834 compact. Its nearest selected boundary connection is mapped water-only.",
+        "ellis_island": "The original Ellis Island and main building belong to New York; most expanded island area belongs to New Jersey. The Census New York source block is enclosed by mapped New Jersey land, so the proposed connection includes a short land crossing.",
+        "primary_context_sources": [
+          {
+            "title": "National Park Service: Statue of Liberty frequently asked questions",
+            "url": "https://www.nps.gov/stli/planyourvisit/frequently-asked-questions-statue-of-liberty.htm"
+          },
+          {
+            "title": "National Park Service: Ellis Island frequently asked questions",
+            "url": "https://www.nps.gov/elis/faqs.htm"
+          }
+        ],
+        "territory_assignment": "Connections grant adjacency only between the two New York source blocks. New Jersey land and water remain outside the New York assignments."
+      },
+      "policy_assessments": [
+        {
+          "district_count": 26,
+          "recorded_geometric_selection": {
+            "policy": "population-aware-rooted-boundary-forest-v1",
+            "district_count": 26,
+            "population_tolerance": 0.01,
+            "ideal_population": 776971.1153846154,
+            "minimum_root_population": 769201.4042307693,
+            "eligible_root_component_ids": [
+              0
+            ],
+            "no_individual_root_fallback": false,
+            "selected_link_ids": [
+              "ny-candidate-00-01",
+              "ny-candidate-00-02"
+            ],
+            "selected_total_distance_m": 1647.2943809814926,
+            "groups": [
+              {
+                "group_id": 0,
+                "component_ids": [
+                  0,
+                  1,
+                  2
+                ],
+                "population": 20201249,
+                "root_component_ids": [
+                  0
+                ],
+                "district_count": 26
+              }
+            ],
+            "population_bound": {
+              "feasible_seat_allocation": true,
+              "best_max_deviation_pct": 0.0,
+              "deviation_fraction": [
+                0,
+                1
+              ],
+              "seat_counts": [
+                26
+              ],
+              "ideal_population": 776971.1153846154,
+              "group_ideal_seats": [
+                26.0
+              ],
+              "is_constructed_plan": false,
+              "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+            },
+            "selection_priority": [
+              "Retain the most independently population-compatible original root groups.",
+              "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+              "Break ties by stable candidate IDs and component IDs."
+            ],
+            "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+            "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+            "groupings_examined": 1,
+            "population_feasible_groupings": 1,
+            "geometrically_unconnectable_groupings": 0
+          },
+          "water_only_selection": {
+            "status": "no_connecting_water_only_forest",
+            "reason": "No population-compatible forest can connect the source components using permitted positive-length water gaps."
+          }
+        },
+        {
+          "district_count": 35,
+          "recorded_geometric_selection": {
+            "policy": "population-aware-rooted-boundary-forest-v1",
+            "district_count": 35,
+            "population_tolerance": 0.01,
+            "ideal_population": 577178.5428571429,
+            "minimum_root_population": 571406.7574285715,
+            "eligible_root_component_ids": [
+              0
+            ],
+            "no_individual_root_fallback": false,
+            "selected_link_ids": [
+              "ny-candidate-00-01",
+              "ny-candidate-00-02"
+            ],
+            "selected_total_distance_m": 1647.2943809814926,
+            "groups": [
+              {
+                "group_id": 0,
+                "component_ids": [
+                  0,
+                  1,
+                  2
+                ],
+                "population": 20201249,
+                "root_component_ids": [
+                  0
+                ],
+                "district_count": 35
+              }
+            ],
+            "population_bound": {
+              "feasible_seat_allocation": true,
+              "best_max_deviation_pct": 0.0,
+              "deviation_fraction": [
+                0,
+                1
+              ],
+              "seat_counts": [
+                35
+              ],
+              "ideal_population": 577178.5428571429,
+              "group_ideal_seats": [
+                35.0
+              ],
+              "is_constructed_plan": false,
+              "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+            },
+            "selection_priority": [
+              "Retain the most independently population-compatible original root groups.",
+              "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+              "Break ties by stable candidate IDs and component IDs."
+            ],
+            "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+            "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+            "groupings_examined": 1,
+            "population_feasible_groupings": 1,
+            "geometrically_unconnectable_groupings": 0
+          },
+          "water_only_selection": {
+            "status": "no_connecting_water_only_forest",
+            "reason": "No population-compatible forest can connect the source components using permitted positive-length water gaps."
+          }
+        },
+        {
+          "district_count": 42,
+          "recorded_geometric_selection": {
+            "policy": "population-aware-rooted-boundary-forest-v1",
+            "district_count": 42,
+            "population_tolerance": 0.01,
+            "ideal_population": 480982.11904761905,
+            "minimum_root_population": 476172.29785714287,
+            "eligible_root_component_ids": [
+              0
+            ],
+            "no_individual_root_fallback": false,
+            "selected_link_ids": [
+              "ny-candidate-00-01",
+              "ny-candidate-00-02"
+            ],
+            "selected_total_distance_m": 1647.2943809814926,
+            "groups": [
+              {
+                "group_id": 0,
+                "component_ids": [
+                  0,
+                  1,
+                  2
+                ],
+                "population": 20201249,
+                "root_component_ids": [
+                  0
+                ],
+                "district_count": 42
+              }
+            ],
+            "population_bound": {
+              "feasible_seat_allocation": true,
+              "best_max_deviation_pct": 0.0,
+              "deviation_fraction": [
+                0,
+                1
+              ],
+              "seat_counts": [
+                42
+              ],
+              "ideal_population": 480982.11904761905,
+              "group_ideal_seats": [
+                42.0
+              ],
+              "is_constructed_plan": false,
+              "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+            },
+            "selection_priority": [
+              "Retain the most independently population-compatible original root groups.",
+              "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+              "Break ties by stable candidate IDs and component IDs."
+            ],
+            "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+            "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+            "groupings_examined": 1,
+            "population_feasible_groupings": 1,
+            "geometrically_unconnectable_groupings": 0
+          },
+          "water_only_selection": {
+            "status": "no_connecting_water_only_forest",
+            "reason": "No population-compatible forest can connect the source components using permitted positive-length water gaps."
+          }
+        },
+        {
+          "district_count": 61,
+          "recorded_geometric_selection": {
+            "policy": "population-aware-rooted-boundary-forest-v1",
+            "district_count": 61,
+            "population_tolerance": 0.01,
+            "ideal_population": 331168.01639344264,
+            "minimum_root_population": 327856.3362295082,
+            "eligible_root_component_ids": [
+              0
+            ],
+            "no_individual_root_fallback": false,
+            "selected_link_ids": [
+              "ny-candidate-00-01",
+              "ny-candidate-00-02"
+            ],
+            "selected_total_distance_m": 1647.2943809814926,
+            "groups": [
+              {
+                "group_id": 0,
+                "component_ids": [
+                  0,
+                  1,
+                  2
+                ],
+                "population": 20201249,
+                "root_component_ids": [
+                  0
+                ],
+                "district_count": 61
+              }
+            ],
+            "population_bound": {
+              "feasible_seat_allocation": true,
+              "best_max_deviation_pct": 0.0,
+              "deviation_fraction": [
+                0,
+                1
+              ],
+              "seat_counts": [
+                61
+              ],
+              "ideal_population": 331168.01639344264,
+              "group_ideal_seats": [
+                61.0
+              ],
+              "is_constructed_plan": false,
+              "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+            },
+            "selection_priority": [
+              "Retain the most independently population-compatible original root groups.",
+              "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+              "Break ties by stable candidate IDs and component IDs."
+            ],
+            "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+            "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+            "groupings_examined": 1,
+            "population_feasible_groupings": 1,
+            "geometrically_unconnectable_groupings": 0
+          },
+          "water_only_selection": {
+            "status": "no_connecting_water_only_forest",
+            "reason": "No population-compatible forest can connect the source components using permitted positive-length water gaps."
+          }
+        }
+      ],
+      "conditional_partition_extension": {
+        "main_anchor_block_geoid": "360610005000003",
+        "main_anchor_population": 0,
+        "main_anchor_land_area_m2": 0,
+        "main_anchor_water_area_m2": 2628930,
+        "main_anchor_polygon_part_count": 1,
+        "zero_population_island_blocks": [
+          "360610001001000",
+          "360610001001001"
+        ],
+        "statement": "Any valid part-connected partition of the main source component extends to these islands by assigning both zero-population island blocks to the district containing the common anchor block. Every district population stays unchanged, and the two recorded links connect that district under the augmented policy.",
+        "prerequisite": "Explicit permission for the Ellis cross-New-Jersey-land exclave link, as well as the Liberty water link.",
+        "limits": "This conditional construction does not produce or prove the quality/existence of a balanced main-component district plan. Physical polygon connectivity remains separate, and full graph/polygon-plus-link validation remains necessary."
+      },
+      "measurement": "Local equirectangular lengths of exact source-polygon intersections. Overlapping intersections are merged as normalized intervals; no geometry is buffered or repaired.",
+      "limits": [
+        "Area-water is mapped 2020 geography, not present water levels or navigability.",
+        "Connection lines are graph-policy proposals, not existing roads, bridges, ferries, or changes to state boundaries.",
+        "Water/land classification is independent of population-aware graph selection and final district validation.",
+        "Context display polygons are clipped and simplified; calculations use full unsimplified source geometry."
+      ]
+    }
+  },
+  "measurement_notes": [
+    "New plans run serially in fresh processes with cached source and part graphs; shared-desktop timings are observations, not isolated hardware comparisons.",
+    "For accepted plans, pipeline time includes source and link preparation, solving, repair/rebalance, independent polygon validation, map export, viewer generation and preservation checks. For failed attempts it measures only work through the failed phase plus failure cleanup/preservation; unexecuted repair or export phases are not included.",
+    "Process imports, initial preservation inventory and final report flush are outside the pipeline timer.",
+    "Strict topology rejection happened before solving; it is not a before/after solver-performance baseline.",
+    "Physical shared-edge connectivity and policy connectivity are separate. Liberty uses a water link; Ellis uses an explicit exclave link over New Jersey land and water. No New Jersey area or population is assigned.",
+    "Only accepted-plan population deviations are independently recomputed from source DBF and final assignments. Failed attempts have no accepted final balance or district-connectivity measurement. Local whole-block balancing does not establish global optimality.",
+    "Successful inner optimizer passes, outer center convergence, final postprocessed population balance and policy connectivity are independent outcomes. Outer iteration-limit cases are disclosed explicitly.",
+    "Compressed payloads measure saved map bytes, not browser memory or latency. New Jersey diagnostic context loads only on connection/harbor inspection and is separate from the map export sizes."
+  ]
+}

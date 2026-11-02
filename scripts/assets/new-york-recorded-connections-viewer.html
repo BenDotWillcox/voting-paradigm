@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>New York · Recorded source connections</title>
+<style>
+:root{color-scheme:dark;--bg:#101c25;--panel:#1a2b37;--text:#e9f5f6;--muted:#a9c0ca;--line:#36515e;--water:#63e2e5;--exclave:#ff81ca;--land:#ffbc68}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 system-ui,sans-serif}main{max-width:1260px;margin:auto;padding:28px}a{color:var(--water)}h1{font-size:30px;margin:12px 0 10px}h2{font-size:19px}.muted,.note{color:var(--muted)}.note{font-size:12px}.callout{background:#29272b;border-left:3px solid var(--exclave);padding:14px 18px}.toolbar{display:flex;flex-wrap:wrap;gap:9px;margin:20px 0}button{font:inherit;color:var(--text);background:var(--panel);border:1px solid var(--line);padding:8px 13px;border-radius:4px;cursor:pointer}button[aria-pressed=true]{border-color:var(--water);background:#1c424e}button:disabled{opacity:.4}button:focus-visible,a:focus-visible{outline:3px solid var(--water);outline-offset:3px}.map-shell{aspect-ratio:1100/620;background:#10212c;border:1px solid var(--line);border-radius:6px;overflow:hidden}svg{display:block;width:100%;height:100%}.key{display:flex;flex-wrap:wrap;gap:20px;margin:12px 0}.key span{display:flex;align-items:center;gap:7px}.key i{width:25px;border-top:3px dashed var(--water)}.key .exclave{border-color:var(--exclave)}.key .land{border-color:var(--land)}.key .source{border:0;background:#61be90;height:10px}.key .context{border:0;background:#89968f;height:10px}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:10px;border-bottom:1px solid var(--line)}th{color:var(--muted)}.status{min-height:25px}.error{color:#ffada4}.water-area{fill:#437f9f;fill-opacity:.55;stroke:#739bb3;stroke-width:.6}.context{fill:#89968f;fill-opacity:.4;stroke:#a0ada7;stroke-width:.8}.block{fill:#61be90;fill-opacity:.5;stroke:#c6ffdc;stroke-width:1.6}.water-area,.context,.block,.link,.halo,.land-crossing{vector-effect:non-scaling-stroke}.link{fill:none;stroke-width:3;stroke-dasharray:6 5}.halo{fill:none;stroke:#101c25;stroke-width:7}.land-crossing{fill:none;stroke:var(--land);stroke-width:5}.label{fill:var(--text);font-size:13px;paint-order:stroke;stroke:#10212c;stroke-width:4;stroke-linejoin:round}.facts{display:grid;grid-template-columns:1fr 1fr;gap:16px}.facts>div{padding:16px;background:var(--panel);border:1px solid var(--line)}code{font-size:12px;overflow-wrap:anywhere}@media(max-width:700px){main{padding:18px}.facts{grid-template-columns:1fr}h1{font-size:24px}}
+</style></head><body><main>
+<a href="../">← New York attempt comparison</a>
+<p class="note">2020 Census source polygons · approved connectivity records</p>
+<h1>Liberty water link + Ellis exclave link</h1>
+<p class="callout"><strong>Recorded source connections, not a district plan.</strong> __PLAN_STATUS__ These lines grant adjacency only. No New Jersey territory or population is assigned, and neither source polygon is altered.</p>
+<div class="toolbar" role="group" aria-label="Source connection views"><button data-view="harbor" aria-pressed="true">Harbor overview</button><button data-view="liberty" aria-pressed="false">Liberty water link</button><button data-view="ellis" aria-pressed="false">Ellis exclave link</button><button data-view="land" aria-pressed="false">Ellis land crossing</button><button id="toggle-context" aria-pressed="true">New Jersey context</button><button id="toggle-links" aria-pressed="true">Recorded links</button></div>
+<div class="map-shell"><svg id="map" viewBox="0 0 1100 620" role="img" aria-label="New York source island blocks, receiving water block, and recorded connections"><g id="context"></g><g id="blocks"></g><g id="links"></g><g id="labels"></g></svg></div>
+<div class="key"><span><i></i>Liberty water link</span><span><i class="exclave"></i>Ellis exclave link</span><span><i class="land"></i>Ellis line over NJ land</span><span><i class="source"></i>Exact NY endpoint blocks</span><span><i class="context"></i>New Jersey context</span></div>
+<p id="status" class="status" role="status" aria-live="polite">Loading approved records and preserved geographic evidence…</p>
+<div class="facts"><div><h2>Why there are two link types</h2><p>Liberty’s boundary connects across mapped harbor water. New York’s original Ellis Island block is surrounded by New Jersey land, so its selected link includes a short land crossing.</p></div><div><h2>What the lines mean</h2><p>Both zero-population islands connect to the same New York water block. Their physical polygons stay separate. A district may use a link only when both endpoint blocks belong to that district; this source map does not assign district labels.</p></div></div>
+<h2>Saved connection records</h2><div class="table-wrap"><table><thead><tr><th>Connection</th><th>Total length</th><th>Mapped water</th><th>Mapped NJ land</th><th>Endpoint blocks</th></tr></thead><tbody id="records"></tbody></table></div>
+<p class="note">Lengths are between included Census coverage boundaries, not shorelines, bridges, roads or ferry routes. Water/land lengths come from preserved 2020 Census AREAWATER analysis. D3 rewinds display copies only; source geometry stays unchanged.</p>
+<p><a href="recorded-connections.json">Approved records and provenance</a> · <a href="../../../diagnostics/new-york/geography-context.json">Water / land audit</a> · <a href="../../../diagnostics/new-york/">Preserved original diagnosis</a></p>
+__D3_SCRIPTS__
+<script>
+'use strict';
+const $=id=>document.getElementById(id),NS='http://www.w3.org/2000/svg',W=1100,H=620;
+let record=null,source=null,nj=null,water=null,surface=null,view='harbor',showContext=true,showLinks=true;
+const base='../../../diagnostics/new-york/';
+function ringArea(r){let a=0;for(let i=0,j=r.length-1;i<r.length;j=i++)a+=r[j][0]*r[i][1]-r[i][0]*r[j][1];return a/2}
+function rewind(rings){return rings.map((r,i)=>(ringArea(r)>0)===(i===0)?r.slice().reverse():r)}
+function forD3(d){return {...d,features:d.features.map(f=>({...f,geometry:{...f.geometry,coordinates:f.geometry.type==='Polygon'?rewind(f.geometry.coordinates):f.geometry.type==='MultiPolygon'?f.geometry.coordinates.map(rewind):f.geometry.coordinates}}))}}
+async function read(path){const r=await fetch(path);if(!r.ok)throw Error(path+': HTTP '+r.status);return r.json()}
+function add(group,type,attrs,text){const el=document.createElementNS(NS,type);for(const [k,v]of Object.entries(attrs))el.setAttribute(k,v);if(text)el.textContent=text;$(group).appendChild(el);return el}
+function name(r){return r.kind==='recorded-water-connection'?'Liberty water link':'Ellis exclave link'}
+function line(r){return {type:'LineString',coordinates:r.endpoints.map(e=>e.coordinate)}}
+function box(coords,dx=.002,dy=.0015){const xs=coords.map(x=>x[0]),ys=coords.map(x=>x[1]);return {type:'MultiPoint',coordinates:[[Math.min(...xs)-dx,Math.min(...ys)-dy],[Math.max(...xs)+dx,Math.max(...ys)+dy]]}}
+function draw(){
+ if(!record)return;for(const id of ['context','blocks','links','labels'])$(id).replaceChildren();
+ const selected=record.connections.find(r=>r.kind===(view==='liberty'?'recorded-water-connection':'recorded-exclave-connection'));
+ let extent=view==='harbor'?box([[-74.052,40.682],[-74.018,40.707]],0,0):box(line(selected).coordinates);
+ const land=surface.features.filter(f=>f.properties.candidate_id==='ny-candidate-00-02'&&f.properties.classification==='outside_mapped_water'&&f.properties.length_m>.01);
+ if(view==='land'){const coords=land.flatMap(f=>f.geometry.coordinates);extent=box(coords,.00065,.00045);}
+ const projection=d3.geoMercator().fitExtent([[35,35],[W-35,H-35]],extent),path=d3.geoPath(projection);
+ if(showContext)for(const [data,cls]of[[nj,'context'],[water,'water-area']])for(const f of data.features)add('context','path',{d:path(f),class:cls});
+ const endpoints=new Set(record.connections.flatMap(r=>r.endpoints.map(e=>e.geoid)));
+ for(const f of source.features)if(endpoints.has(f.properties.geoid)){const p=add('blocks','path',{d:path(f),class:'block'});const t=document.createElementNS(NS,'title');t.textContent=f.properties.geoid+' · '+f.properties.population+' residents · New York source block';p.appendChild(t);}
+ if(showLinks){for(const r of record.connections){const color=r.kind==='recorded-water-connection'?'#63e2e5':'#ff81ca';add('links','path',{d:path(line(r)),class:'halo'});add('links','path',{d:path(line(r)),class:'link',stroke:color});for(const e of r.endpoints){const [x,y]=projection(e.coordinate);add('links','circle',{cx:x,cy:y,r:4,fill:color,stroke:'#10212c','stroke-width':1.5});}}for(const f of land)add('links','path',{d:path(f),class:'land-crossing'});}
+ const labels=[['Liberty Island',[-74.045,40.6895]],['Ellis Island · NY portion',[-74.039,40.699]],['Receiving NY water block',[-74.030,40.692]]];
+ for(const [name,coordinate]of labels){const [x,y]=projection(coordinate);if(x>0&&x<W&&y>0&&y<H)add('labels','text',{x:x+7,y:y-10,class:'label'},name)}
+ document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===view)));$('toggle-context').setAttribute('aria-pressed',String(showContext));$('toggle-links').setAttribute('aria-pressed',String(showLinks));
+ $('status').textContent=(view==='land'?'Ellis detail: amber is the approximately 26 m New Jersey land crossing. ':view==='harbor'?'Both approved links and all three New York endpoint blocks. ':name(selected)+'. ')+'Physical source geometry only; no district plan is shown.';
+}
+document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>{view=b.dataset.view;draw()}));$('toggle-context').addEventListener('click',()=>{showContext=!showContext;draw()});$('toggle-links').addEventListener('click',()=>{showLinks=!showLinks;draw()});
+Promise.all([read('recorded-connections.json'),read(base+'detail-blocks.geojson'),read(base+'new-jersey-context.geojson'),read(base+'area-water-context.geojson'),read(base+'connection-surface-segments.geojson')]).then(([r,s,n,w,l])=>{
+ if(r.connections.length!==2||new Set(r.connections.map(x=>x.kind)).size!==2||!r.connections.every(x=>['recorded-water-connection','recorded-exclave-connection'].includes(x.kind)))throw Error('Unexpected approved connection records');
+ record=r;source=forD3(s);nj=forD3(n);water=forD3(w);surface=l;
+ for(const c of r.connections){const tr=document.createElement('tr');for(const value of [name(c),c.distance_m.toFixed(1)+' m',c.geographic_context.mapped_water_length_m.toFixed(1)+' m',c.geographic_context.mapped_land_length_m.toFixed(1)+' m',c.endpoints.map(e=>e.geoid).join(' ↔ ')]){const td=document.createElement('td');td.textContent=value;tr.appendChild(td)}$('records').appendChild(tr)}draw();
+}).catch(error=>{$('status').textContent='Evidence could not be loaded: '+error.message;$('status').classList.add('error')});
+</script></main></body></html>

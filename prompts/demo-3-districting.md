@@ -2,6 +2,8 @@
 
 Living design document for the districting demo. Edit when decisions change.
 
+**Implementation status:** the app currently uses cached tract-based district plans. Kansas also has a separate offline census-block prototype, including shared-edge connectivity repair and population rebalancing; it does not replace the app's tract artifacts. See [`kansas-connectivity-benchmark.md`](kansas-connectivity-benchmark.md) for measured results and validation. The database layout, broader precompute rollout, and UI sequence below remain design intent where not yet implemented.
+
 ## What we're building
 
 An interactive map of the United States showing congressional districts drawn by an algorithm — not by humans, not by political compromise. Two affordances:
@@ -20,16 +22,14 @@ A power diagram (a.k.a. additively-weighted Voronoi diagram) partitions space in
 The algorithm is a constrained Lloyd iteration:
 
 1. Initialize `k` centers (`k` = number of districts in the state). Random or k-means++; we use a single fixed seed.
-2. **Assign** each population unit (census tract) to a cell, with weights chosen so each cell contains exactly `total_state_population / k` people (population-balance constraint).
+2. **Assign** each population unit's representative point to a cell, adjusting weights toward the target `total_state_population / k`. Whole tracts or blocks are indivisible: exact population balance is not generally attainable, and the numerical solver does not guarantee a one-unit error bound.
 3. **Update** each center to the population-weighted centroid of its cell.
-4. **Update** each weight to enforce step 2's balance constraint at the new centers.
+4. **Update** each weight toward step 2's population target at the new centers.
 5. Repeat until convergence (centers stabilize within tolerance).
 
-**Properties guaranteed by construction:**
-- *Convex polygonal cells* — power diagrams are convex by definition. No "salamander" shapes.
-- *Population balance* — exact balance to within one indivisible unit (the granularity of our census tracts).
-- *Contiguity* — convexity implies contiguity for tract-resolution input.
-- *Compactness* — empirically the paper reports ~6 sides per district on average; convexity bounds the worst case sharply.
+**Continuous cells and whole-unit districts are different geometries.** The mathematical power cells are convex before clipping to a state boundary. The displayed districts are unions of the entire census polygons assigned by their representative points. Those unions need not be convex or contiguous; even clipping continuous cells to an irregular state boundary can break connectivity. Population deviation and compactness must be measured on the resulting district plan, not inferred from continuous-cell properties. The paper's cell-side statistics are not a bound on the complexity of dissolved census polygons.
+
+**Kansas shared-edge prototype:** `districting/connectivity.py` postprocesses the initial assignments on a graph built from all source blocks, including zero-population and water blocks. An edge requires disjoint polygon interiors and a shared boundary of positive length; corner contacts do not count. Repair retains one anchor component per district and attaches detached components to neighboring anchored territory. Rebalancing transfers populated boundary blocks only when the donor stays connected, the recipient shares an edge, and the population objective improves (maximum deviation first, then squared deviations). The result is a postprocessed district plan, no longer an exact power diagram. It is a local search, with no guarantee of globally optimal balance or preserved compactness. Independent graph and dissolved-polygon checks validate the output; a graph over multipart blocks alone cannot certify geometric connectivity.
 
 **Properties not guaranteed:**
 - Respect for political boundaries (counties, municipalities). The algorithm is geometry-only.
@@ -41,7 +41,7 @@ These omissions are honest: the demo is *"here's what pure geometric fairness lo
 ## Locked-in decisions
 
 1. **Census vintage:** 2020 decennial. Authoritative, matches the current apportionment, frozen reference point.
-2. **Geographic unit:** census tracts (~85K nationwide). Bump to block groups (~240K) only if tract-level looks too coarse in state detail view.
+2. **Geographic unit:** the original cached plans use census tracts (~85K nationwide). The block-level plans use 2020 census blocks, allowing tract splits while keeping blocks whole and summing their published populations. The Kansas prototype came first; the state block suite then covered all 50 states at House 435, 574, 692 and 1,000. Computation resolution and display detail are independent: simplified district outlines load nationally, with finer geometry loaded after state selection.
 3. **House size picker:** discrete toggle group over five educational anchors. The Python API still accepts any integer in **[435, 11036]** for flexibility, but the UI deliberately exposes only the values we plan to render. Anchors (computed from the 2020 apportionment population, 331,108,434):
    - **435** — current size, set by the Reapportionment Act of 1929
    - **573** — Wyoming Rule (smallest-state population sets district size; 331,108,434 / 577,719 ≈ 573, using apportionment populations throughout. The widely quoted 574 divides the apportionment total by Wyoming's resident population, mixing two measures; corrected 2026-09-30)
@@ -64,6 +64,7 @@ districting/                        Python domain package
   __init__.py
   apportionment.py                  Method of Equal Proportions; pure
   algorithm.py                      Balanced Lloyd / power diagram core; pure
+  connectivity.py                   Shared-edge repair and local rebalance; pure graph input
   geometry.py                       Shapefile loading, polygon simplification
   metrics.py                        Polsby-Popper, population deviation, edge count
   precompute.py                     Offline pipeline (CLI entrypoint)
@@ -87,6 +88,57 @@ lib/districting-api.ts              Typed Python API client
 
 **Domain isolation:** `districting/` does not import `voting/`, `preferences/`, or `delegation/`. If we later compose with methods comparison, the composition happens at the API layer, not by reaching into another package.
 
+### Kansas offline benchmark implementation
+
+The block prototype runs separately from the app's cached tract plans. `scripts/district_block_adjacency.py` builds the exact shared-edge graph once for a source dataset. `scripts/district_block_graph_cache.py` caches that graph independently of district count, so the same topology can support every Kansas plan.
+
+Cache identity includes the source archive SHA-256, an order-sensitive GEOID digest, adjacency-builder hash, topology rule, schema version, and Shapely/GEOS versions. Hits are read-only loads of compressed NPZ integer CSR arrays and UTF-8 JSON with pickle disabled. The loader validates identity, payload checksum, index ranges, sorted unique neighbors, symmetry, and metadata; invalid entries are rebuilt and replaced atomically. The benchmark verifies and re-extracts the source archive before lookup. Cached graph metadata retains the original build measurements, while cache metadata records the current load/validation time separately.
+
+`scripts/run_kansas_anchor_suite.py` prepares the graph in its own process, then invokes `scripts/benchmark_kansas_anchors.py` serially in fresh processes for the five House anchors. House sizes **435 / 574 / 692 / 1,000 / 11,037** yield **4 / 5 / 6 / 9 / 98 Kansas districts** under the same 2020 apportionment data. Each run uses the same source, seed, solver settings, connectivity heuristic, and exporter; fresh processes provide independent OS peak-memory measurements. Initial and corrected assignments are checkpointed, and each run records its cache status, code hashes, solver telemetry, connectivity audits, and export validation.
+
+The methodology separates one-time cold graph creation from warm cache loading and reports numerical solving, connectivity correction, and full pipeline costs. Population deviations use the exact fractional ideal `2,937,880 / K`; a floor/ceiling integer-person lower bound does not establish feasibility with whole blocks and connectivity constraints. Center stabilization, inner-optimizer success, and the rebalance move limit are separate outcomes. See [`kansas-anchor-benchmark.md`](kansas-anchor-benchmark.md) for the anchor report; inspect individual run statuses before treating the suite as complete.
+
+For the remaining states, the current block batch stops at **House size 1,000**.
+`scripts/run_state_block_suite.py` runs 435 / 574 / 692 / 1,000, sharing a plan
+when anchors allocate the same state seat count. Kansas remains a separate
+completed control. The other 49 states produce 177 distinct state/count jobs.
+Two states may run concurrently, with fresh processes for their serial plans;
+timing reports explicitly include that concurrent load. Official Census resident
+totals and block counts are checked before solving. Source archives and graphs
+are cached; checkpoints and reports allow restart without recomputing validated
+completed plans. Generated map GeoJSON is retained as verified gzip bodies, and
+regenerable source extractions may be removed to bound disk use.
+
+The geographic policy remains **strict shared-edge connectivity, with explicit
+exceptions**. Disconnected source graphs are flagged before expensive solves.
+That is a limitation of this workflow and does not prove every possible connected
+partition is infeasible; component counts greater than the requested district
+count do establish graph-partition infeasibility. Antimeridian topology is a
+separate unsupported case requiring matching geometry/adjacency normalization.
+No nearest-neighbor, ferry, corner, or artificial water connections are added.
+Final polygon validation remains necessary because a multipart source block can
+make its graph vertex look connected while its geometry is disconnected.
+
+The October 2026 batch encountered Windows file-replacement failures in progress
+metadata. `scripts/recover_state_block_suite.py` provides one explicitly scoped
+operational recovery after the original queue and its children have stopped.
+It preserves the original terminal manifest, verifies the recorded benchmark
+code hashes, and uses the same queue and state locks. Child output goes directly
+to durable log files so loss of a progress reader cannot break a solver's stdout.
+Recovery metadata writes retry transient sharing errors; numerical code and
+settings remain unchanged. Separate recovery history and timing accompany the
+reconciled results. The fixed recovery identifier refuses a duplicate launch;
+geometry-validation failures remain failed and are excluded from these retries.
+
+The remaining-state anchor batch finished on October 23, 2026 with **152 valid
+plans, 23 topology exceptions, and two polygon-validation failures**. Forty
+states completed all four requested anchors. All valid plans pass graph and
+polygon connectivity; West Virginia's three-district plan remains a population
+balance outlier at 2.25% after exhausting its rebalance budget. The full result,
+separate original/recovery timings, compressed payload measurements, and retained
+failure history are in [`state-block-anchor-benchmark.md`](state-block-anchor-benchmark.md)
+and its JSON companion. Application integration remains separate work.
+
 ## Data model
 
 New tables, all `district_*` prefixed:
@@ -98,9 +150,9 @@ Pre-loaded census geometry per state. Loaded once per resolution level by the pr
 | Column | Type | Notes |
 |---|---|---|
 | `state_fips` | text | PK part. e.g. "06" for California |
-| `resolution_level` | enum | `tract` (initial) ; `block_group` (future) |
-| `units_geojson` | jsonb | FeatureCollection of tract polygons |
-| `unit_populations` | jsonb | `{ tract_geoid: population }` from 2020 decennial |
+| `resolution_level` | enum | `tract` (current app); `block` (prototype, persistence not integrated) |
+| `units_geojson` | jsonb | FeatureCollection of census-unit polygons |
+| `unit_populations` | jsonb | `{ unit_geoid: population }` from 2020 decennial |
 | `loaded_at` | timestamp | |
 
 PK: `(state_fips, resolution_level)`.
@@ -116,13 +168,15 @@ One row per `(state, n_districts, seed, resolution)` tuple. The cache layer for 
 | `n_districts` | int | |
 | `seed` | int | The canonical seed; widening this column is how we'd add multi-seed support later |
 | `resolution_level` | enum | matches state_geometry |
-| `centers_jsonb` | jsonb | The `k` final `(x, y, weight)` triples — sufficient to *redraw* the diagram exactly without rerunning |
+| `centers_jsonb` | jsonb | The `k` final `(x, y, weight)` triples preserve the original point-assignment diagram; they cannot reconstruct postprocessed assignments |
 | `polygons_geojson` | jsonb | FeatureCollection: one Feature per district, with district_id property |
 | `metrics_jsonb` | jsonb | `{ max_pop_deviation, mean_polsby_popper, edge_counts: [...] }` |
 | `iterations` | int | How many Lloyd iterations to converge (telemetry) |
 | `computed_at` | timestamp | |
 
 Unique: `(state_fips, n_districts, seed, resolution_level)`.
+
+This is a proposed persistence contract. Persisting repaired plans will also require final unit assignments, repair/rebalance audit metadata, and source/algorithm/configuration versions. The Kansas benchmark currently saves these as local artifacts; initial centers are provenance only. The cache key must distinguish those versions and settings before that workflow is integrated.
 
 Apportionment results are not stored — they're cheap and depend only on the cap.
 
@@ -138,6 +192,8 @@ Method of Equal Proportions: each round, the next seat goes to the state with th
 
 ### Districting (the expensive operation)
 
+The estimates below describe the original tract-based design, not a measured block-resolution rollout. Use the Kansas benchmark for its measured block workload; do not extrapolate these tract estimates to all-state block processing.
+
 Per-state Lloyd iteration. Empirically (rough estimates, validate during step 3):
 - Small state (1–3 districts, few hundred tracts): under a second.
 - Medium state (5–15 districts, few thousand tracts): a few seconds.
@@ -147,7 +203,7 @@ This is too slow to run live for 50 states on every slider tick. **Precompute it
 
 ### Critical structural insight
 
-A state's district map at a given seat count depends ONLY on `(state_fips, n_districts, seed, resolution_level)`. It does NOT depend on what other states received, on the global cap, or on anything else. So:
+For fixed input data, algorithm version, and settings (including connectivity postprocessing), a state's district map depends on `(state_fips, n_districts, seed, resolution_level)`. It does not depend on other states' allocations or the global cap. So:
 
 - The same California-at-52-seats map is reused whether the cap is 435, 500, or 600 — as long as the apportionment gives California 52.
 - Total distinct precompute jobs = sum over states of (number of distinct seat counts that state ever receives across the cap range).
@@ -228,7 +284,7 @@ Click a state → navigate to `/districts/{fips}?cap=N`. The single-state map is
   - Polsby-Popper compactness score per district + mean
   - Edge count per district (paper says ~6 average)
   - Iterations to convergence (algorithm telemetry, kept honest)
-- **Comparison:** side-by-side option to show today's actual congressional districts (TIGER/Line) for the same state, for visual contrast. Real maps look very different from algorithmically convex ones; that's the point.
+- **Comparison:** side-by-side option to show today's actual congressional districts (TIGER/Line) for the same state, with measured population balance and compactness for both. Whole-unit algorithmic districts are not guaranteed to be convex.
 
 ### Stretch: live regeneration
 
@@ -259,7 +315,8 @@ Each step is a shippable layer.
 - Pure function: `(units: list[Unit], n_districts: int, seed: int) → DistrictingResult`.
 - `Unit` carries `(geoid, centroid, population, polygon)`. `DistrictingResult` carries centers, weights, assignments, polygons, iteration count.
 - **Test plan:**
-  - Unit tests: 100-point grid → 4 districts, verify population balance ≤ 1 unit, verify cells are convex, verify each unit assigned to nearest cell under power-diagram metric.
+  - Unit tests: 100-point grid → 4 districts, verify population totals and deviations, verify each initial unit assignment minimizes the power-diagram metric. Use exact-balance fixtures only where achievable; do not infer polygon connectivity from these point tests.
+  - Connectivity postprocessing: verify shared-edge components, donor/recipient connectivity after every move, population conservation, deterministic repair, and independent final polygon connectivity. Corrected assignments need not minimize the original power metric.
   - Property tests: random small inputs, check determinism given seed.
   - Validation: against published Brown maps for at least one state if we can match parameters.
 - **Acceptance:** algorithm runs on a small synthetic input, reproduces the published demo for one state.
@@ -296,13 +353,13 @@ Each step is a shippable layer.
 
 - Live "regenerate with new seed" affordance for a single state.
 - Side-by-side comparison of two seeds.
-- Block-group resolution for state detail view.
+- Broader block-resolution computation and lazy detail loading, informed by the separate Kansas benchmark.
 - DC + territories.
 - Cross-demo: feed a districting result into the methods-comparison demo to simulate House elections under different methods.
 
 ## Reproducibility
 
-- Algorithm is deterministic given `(state_fips, n_districts, seed, resolution_level, input_data_hash)`. Seed is the single canonical seed; data hash is the SHA of the loaded census shapefile + population data. Record all five on every `district_run` row.
+- Algorithm is deterministic given `(state_fips, n_districts, seed, resolution_level, input_data_hash)` plus algorithm version and solver/postprocessing settings. Seed is the single canonical seed; data hash is the SHA of the loaded census shapefile + population data. Record all inputs and versions with persisted plans. The Kansas prototype records source/code hashes and a move audit; stored initial centers cannot reproduce its repaired boundaries by themselves.
 - Precompute pipeline is idempotent: rerunning produces byte-identical results. CI can spot-check this with one or two cells.
 - Apportionment is fully deterministic; no seed needed.
 - The single-seed choice is documented in the methodology writeup. Future multi-seed work is a non-breaking schema extension (`seed` is already on the row).
@@ -320,7 +377,7 @@ These didn't need answering up front but will at some point:
 ## Future work (deferred)
 
 - DC and territories support.
-- Block-group resolution for state detail.
+- Broader block-resolution rollout beyond the Kansas offline prototype.
 - Live seed-regeneration affordance.
 - Multi-seed comparison view.
 - Cross-demo composition with the voting-methods comparison: simulate a hypothetical House election under various methods, given a chosen districting.

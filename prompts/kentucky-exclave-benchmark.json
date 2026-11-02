@@ -1,0 +1,5009 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-10-23T20:18:42.766091+00:00",
+  "scope": "Kentucky K6/K8/K9/K14 for House sizes 435/574/692/1000; new recorded-exclave policy.",
+  "policy": "shared_edges_plus_recorded_exclave_connections",
+  "total_population": 4505836,
+  "block_count": 132662,
+  "runs": [
+    {
+      "status": "complete_under_exclave_policy",
+      "district_count": 6,
+      "house_sizes": [
+        435
+      ],
+      "run_kind": "kentucky_recorded_exclave_policy_v1",
+      "configuration": {
+        "seed": 20200955,
+        "max_outer_iterations": 80,
+        "inner_max_iterations": 300,
+        "center_tolerance_m": 0.0001,
+        "physical_adjacency_rule": "polygon parts; disjoint interiors; positive-length shared boundary; F***1****",
+        "connection_policy": "kentucky-bend-recorded-exclave-v1",
+        "connection_kind": "recorded-exclave-connection",
+        "max_rebalance_moves": 1000,
+        "root_eligibility_relative_band": 0.01,
+        "group_population_preflight_tolerance": 0.01,
+        "minimum_district_population_for_root_classification": 743462.94,
+        "minimum_district_population_exact": "37173147/50",
+        "eligibility_note": "99% of ideal classifies original eligible roots; root groups must admit integer district allocations within a 1% optimistic population budget. Neither is final-plan acceptance.",
+        "boundary_metric": "source census coverage, including retained water blocks; no shoreline substitution",
+        "inner_optimization": {
+          "normalization": "population-mass and geometry-derived shifted squared costs; mean-zero weight gauge",
+          "public_units": "centers in source coordinate units; weights in squared source coordinate units",
+          "max_line_search_steps": 100,
+          "failure_policy": "raise on unsuccessful termination or nonfinite output; no completed plan returned"
+        }
+      },
+      "source": {
+        "schema": 1,
+        "state_fips": "21",
+        "state": "Kentucky",
+        "url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_21_tabblock20.zip",
+        "archive_sha256": "ebed3b0de6fee945db0064d378aa66aaebe05f05b460a5ad109a57a14a783b66",
+        "archive_bytes": 265195721,
+        "extracted_file_sha256": {
+          "tl_2020_21_tabblock20.cpg": "3ad3031f5503a4404af825262ee8232cc04d4ea6683d42c5dd0a2f2a27ac9824",
+          "tl_2020_21_tabblock20.dbf": "311f0298461610a8acb293b679111e9cbecd8a6d6707077595bfdfdda38846e5",
+          "tl_2020_21_tabblock20.prj": "0b9041e921d9ebb43247d314608fe9e38a0b008ee793067fc1806199ea1fb9dd",
+          "tl_2020_21_tabblock20.shp": "f6fcf8b2648405f173d50fc6055c57b267898c4786ee1e74974e69f0629632c2",
+          "tl_2020_21_tabblock20.shp.ea.iso.xml": "bfec33140cc7684b1385347718c27347f615d446ae774ab89ef16e900b413d40",
+          "tl_2020_21_tabblock20.shp.iso.xml": "45da72c95bb92b99dd9c6a87abcde6e28e40ff45d01947aee0439d698e44a3c1",
+          "tl_2020_21_tabblock20.shx": "51b9bbb8677d5742f8109f3a15797e3602c5424d2bd8a90945eaa4c8fb96875b"
+        },
+        "download": {
+          "attempts": 1,
+          "etag": null,
+          "expected_bytes": 265195721,
+          "last_modified": "Fri, 06 Jan 2023 21:45:54 GMT",
+          "received_bytes": 265195721,
+          "resumed_bytes": 0,
+          "url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_21_tabblock20.zip"
+        },
+        "hash_provenance": "Locally computed SHA-256; no publisher checksum is provided.",
+        "archive_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\21\\tl_2020_21_tabblock20.zip",
+        "extraction_dir": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\21\\tl_2020_21_tabblock20",
+        "source_shapefile_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\21\\tl_2020_21_tabblock20\\tl_2020_21_tabblock20.shp",
+        "manifest_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\21\\tl_2020_21_tabblock20.manifest.json",
+        "downloaded_in_timed_pipeline": false,
+        "extracted_files_reused": true,
+        "extracted_bytes": 265194779,
+        "crs_wkt": "GEOGCS[\"GCS_North_American_1983\",DATUM[\"D_North_American_1983\",SPHEROID[\"GRS_1980\",6378137,298.257222101]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]"
+      },
+      "code_sha256": {
+        "districting/algorithm.py": "a1b264a2bb855675ab3b633a5b47a38b77f4929e29b7a4086cfb889436e244ac",
+        "districting/connectivity.py": "2d6788d73fac4e2eb550cff4db36dd4b5b430f131254809805c53317bb8cbfed",
+        "districting/part_connectivity.py": "a127aad254e65dc7b8be69f1fe7403aad6f9d18e0a15b8723e32358f9ef833d5",
+        "districting/apportionment.py": "07eb27ebc88d89647dfad66784d4fb3b9623b7919ed6e837122111bfe4323eae",
+        "districting/data/apportionment_2020.py": "86a8ee34675d78aa99ed7edcb0c686fbb3aebd34d04655a106cae10dfbb0461d",
+        "scripts/benchmark_state_blocks.py": "8a1f05e5e428437ff87434408c315e8d94a4df64df5dffa821a7fc952b77a414",
+        "scripts/benchmark_kansas_blocks.py": "20da6d6f95e4b6706341eb97f01c3518e3d58b07e1852a0537e9c85c5dab31bf",
+        "scripts/benchmark_kansas_anchors.py": "adf92735dfcf5fb703c15a1e7d9f1a8f76b203d037e441b3560d2bc0573b50a7",
+        "scripts/district_block_sources.py": "dd041755be227ea77abfed20bbc6c7a9a10050bf8f6a66aaeed2a07c96a1cbbb",
+        "scripts/district_block_adjacency.py": "8e3bd87629631e5452b6294bb94789dffa733a7b490db8a5238687a7609c0efc",
+        "scripts/district_block_graph_cache.py": "46d0c64da93123c23c3a05136ab2c4b3f096122627990f0a25c4c2e1c75b6c7e",
+        "scripts/district_block_map_export.py": "05e29bdfea353a1819fd4000b2e9ebc350fd8b9c6bdccf299d7531a7002499cf",
+        "scripts/state_block_map_export.py": "75e8369f845a261eb3abe2a05979a81d31874ac93d299d1bd4f5d2ff4f7804b2",
+        "scripts/state_block_execution_lock.py": "861c5a915ca9bc7d7065df4c10afae48c641febd680b25133c05d64f4268c6ff",
+        "scripts/district_block_part_graph.py": "49b43929897184c04a5332f4530cd7cf722f9ac604008657855a65694024c490",
+        "scripts/benchmark_kentucky_exclave.py": "c7fbb1697a15a7a30521234ec7ebcd39443f68b8ace4084c09ae16d2589d1364",
+        "scripts/kentucky_exclave_links.py": "4e7a40e495c3462ee7951bbeffc264c35f6d92409d4d55e863d242ca3e40f971",
+        "scripts/hawaii_population_links.py": "b512c901f00b62864eb84f7b5cfed2e8d4fe5915ffe3cc87e50c93345e581519",
+        "scripts/district_block_island_links.py": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+        "scripts/correct_state_block_parts.py": "b4006afd905ac6f9ff72c6ba95ac73cf1c807695e33bf2bc4cdf68233028bacd",
+        "scripts/assets/kentucky-block-viewer.html": "1bc1853a73a4583ceff39f0788c289bb0764dd7b0f816688efa0ccb774740042",
+        "districting/__init__.py": "baf0b8848dc6fffc7ab83fbe1eb2f6a45f6f67e622fda941b62c818d88f8e548"
+      },
+      "phases": {
+        "source_acquisition": {
+          "wall_seconds": 0.2755920000054175,
+          "cpu_seconds": 0.28125,
+          "sampled_peak_rss_bytes": 77545472
+        },
+        "source_extraction": {
+          "wall_seconds": 0.3399739000014961,
+          "cpu_seconds": 0.265625,
+          "sampled_peak_rss_bytes": 77549568
+        },
+        "load_and_validate_blocks": {
+          "wall_seconds": 2.493227200000547,
+          "cpu_seconds": 2.484375,
+          "sampled_peak_rss_bytes": 142974976
+        },
+        "load_or_build_physical_part_graph": {
+          "wall_seconds": 2.2590475999895716,
+          "cpu_seconds": 2.234375,
+          "sampled_peak_rss_bytes": 196112384
+        },
+        "prepare_recorded_exclave_connection": {
+          "wall_seconds": 62.60316270000476,
+          "cpu_seconds": 62.25,
+          "sampled_peak_rss_bytes": 734457856
+        },
+        "solve": {
+          "wall_seconds": 22.991038200008916,
+          "cpu_seconds": 22.5625,
+          "sampled_peak_rss_bytes": 306909184
+        },
+        "audit_initial_plan": {
+          "wall_seconds": 1.6300770999951055,
+          "cpu_seconds": 1.625,
+          "sampled_peak_rss_bytes": 282292224
+        },
+        "repair_and_rebalance": {
+          "wall_seconds": 2.702982900009374,
+          "cpu_seconds": 2.671875,
+          "sampled_peak_rss_bytes": 270548992
+        },
+        "save_and_audit_final_plan": {
+          "wall_seconds": 3.5622842000011588,
+          "cpu_seconds": 3.515625,
+          "sampled_peak_rss_bytes": 289898496
+        },
+        "independent_polygon_validation_and_map_export": {
+          "wall_seconds": 472.9875830000092,
+          "cpu_seconds": 467.671875,
+          "sampled_peak_rss_bytes": 1125756928
+        },
+        "write_viewer_and_verify_preservation": {
+          "wall_seconds": 0.8991474999929778,
+          "cpu_seconds": 0.609375,
+          "sampled_peak_rss_bytes": 255057920
+        }
+      },
+      "timed_pipeline_wall_seconds": 573.2228858000017,
+      "peak_process_working_set_bytes": 1127518208,
+      "preservation_audit": {
+        "all_original_strict_files_byte_identical": true,
+        "national_suite_byte_identical": true,
+        "source_archive_byte_identical": true,
+        "run_code_unchanged": true,
+        "protected_file_count": 275,
+        "all_original_diagnostic_files_byte_identical": true,
+        "rhode_island_and_hawaii_evidence_byte_identical": true
+      },
+      "started_at": "2026-10-23T19:40:50.973119+00:00",
+      "finished_at": "2026-10-23T19:50:24.190076+00:00",
+      "url": "http://127.0.0.1:8770/policies/kentucky-exclave-v1/states/21/districts-6/",
+      "benchmark_path": ".cache/state-block-benchmark/suite-through-1000/policies/kentucky-exclave-v1/states/21/districts-6/benchmark.json",
+      "benchmark_sha256": "467bbd32351defdb769c01a2eda3f6cc39855fb818762f758806b6259220ed2e",
+      "peak_working_set_mib": 1075.28515625,
+      "accepted_plan": true,
+      "input": {
+        "state_fips": "21",
+        "state": "Kentucky",
+        "block_count": 132662,
+        "populated_block_count": 91572,
+        "zero_population_block_count": 41090,
+        "water_only_block_count": 6809,
+        "tract_count": 1306,
+        "total_population": 4505836,
+        "largest_block_population": 2400,
+        "source_bbox": [
+          -89.571203,
+          36.497058,
+          -81.964788,
+          39.147732
+        ],
+        "longitude_span_degrees": 7.606414999999998,
+        "source_crosses_antimeridian": false,
+        "shared_edge_antimeridian_normalization_supported": true,
+        "projection": {
+          "kind": "population-centered-equirectangular",
+          "lon0": -85.25697916544878,
+          "lat0": 37.838308240804146,
+          "dateline_unwrapped": false,
+          "distance_model": "approximate local plane; distortion increases across broad states"
+        },
+        "location_source": "TIGER INTPT internal points, not household locations or population centroids",
+        "official_totals_validated": true,
+        "expected_totals": {
+          "block_count": 132662,
+          "resident_population": 4505836
+        },
+        "block_count_source_url": "https://www2.census.gov/geo/docs/maps-data/data/geo_tallies2020/State_Block_Counts_2010_2020.txt",
+        "resident_population_source_url": "https://www2.census.gov/programs-surveys/decennial/2020/data/apportionment/apportionment-2020-table02.pdf"
+      },
+      "solver": {
+        "kind": "balanced_power_diagram",
+        "outer_iterations": 42,
+        "centers_converged": true,
+        "outer_iteration_limit_reached": false,
+        "population_balance": {
+          "district_populations": [
+            751433,
+            750576,
+            750976,
+            750918,
+            750941,
+            750992
+          ],
+          "total_population": 4505836,
+          "target_population": 750972.6666666666,
+          "ideal_population_exact": {
+            "numerator": 4505836,
+            "denominator": 6
+          },
+          "deviation_numerators": [
+            2762,
+            -2380,
+            20,
+            -328,
+            -190,
+            116
+          ],
+          "deviation_denominator": 6,
+          "deviations_people": [
+            460.3333333333333,
+            -396.6666666666667,
+            3.3333333333333335,
+            -54.666666666666664,
+            -31.666666666666668,
+            19.333333333333332
+          ],
+          "max_absolute_deviation_numerator": 2762,
+          "max_absolute_deviation_people": 460.3333333333333,
+          "max_absolute_deviation_percent": 0.061298280718605824,
+          "squared_deviation_numerator": 13450584,
+          "squared_deviation_denominator": 36,
+          "total_range_people": 857,
+          "total_range_percent": 0.1141186674348556,
+          "exact_equal_populations": false,
+          "integer_population_lower_bound": {
+            "floor_population": 750972,
+            "ceiling_population": 750973,
+            "districts_at_floor": 2,
+            "districts_at_ceiling": 4,
+            "max_deviation_numerator": 4,
+            "deviation_denominator": 6,
+            "max_absolute_deviation_people": 0.6666666666666666,
+            "reached": false,
+            "whole_block_feasibility_assumed": false
+          }
+        },
+        "all_inner_optimizer_passes_succeeded": true,
+        "normalization": {
+          "normalization": "population-mass and geometry-derived shifted squared costs; mean-zero weight gauge",
+          "public_units": "centers in source coordinate units; weights in squared source coordinate units",
+          "max_line_search_steps": 100,
+          "failure_policy": "raise on unsuccessful termination or nonfinite output; no completed plan returned"
+        }
+      },
+      "outer_termination": {
+        "status": "center_tolerance_met",
+        "outer_iterations": 42,
+        "configured_max_outer_iterations": 80,
+        "centers_converged": true,
+        "outer_iteration_limit_reached": false,
+        "disclosure": "The outer loop met its center-convergence tolerance after 42 iterations. Successful inner optimizer passes do not establish outer convergence. Final population balance and connectivity are assessed separately after repair/rebalancing."
+      },
+      "initial_plan": {
+        "district_populations": [
+          751433,
+          750576,
+          750976,
+          750918,
+          750941,
+          750992
+        ],
+        "total_population": 4505836,
+        "target_population": 750972.6666666666,
+        "ideal_population_exact": {
+          "numerator": 4505836,
+          "denominator": 6
+        },
+        "deviation_numerators": [
+          2762,
+          -2380,
+          20,
+          -328,
+          -190,
+          116
+        ],
+        "deviation_denominator": 6,
+        "deviations_people": [
+          460.3333333333333,
+          -396.6666666666667,
+          3.3333333333333335,
+          -54.666666666666664,
+          -31.666666666666668,
+          19.333333333333332
+        ],
+        "max_absolute_deviation_numerator": 2762,
+        "max_absolute_deviation_people": 460.3333333333333,
+        "max_absolute_deviation_percent": 0.061298280718605824,
+        "squared_deviation_numerator": 13450584,
+        "squared_deviation_denominator": 36,
+        "total_range_people": 857,
+        "total_range_percent": 0.1141186674348556,
+        "exact_equal_populations": false,
+        "integer_population_lower_bound": {
+          "floor_population": 750972,
+          "ceiling_population": 750973,
+          "districts_at_floor": 2,
+          "districts_at_ceiling": 4,
+          "max_deviation_numerator": 4,
+          "deviation_denominator": 6,
+          "max_absolute_deviation_people": 0.6666666666666666,
+          "reached": false,
+          "whole_block_feasibility_assumed": false
+        },
+        "district_count": 6,
+        "district_block_counts": [
+          10902,
+          17886,
+          33372,
+          21990,
+          16614,
+          31898
+        ],
+        "shared_edge_components": [
+          3,
+          2,
+          2,
+          5,
+          5,
+          5
+        ],
+        "all_districts_nonempty": true,
+        "all_districts_shared_edge_connected": false,
+        "all_blocks_assigned_once": true,
+        "population_sum_matches_source": true,
+        "tracts_split_across_districts": 101,
+        "physical_part_components": [
+          3,
+          2,
+          2,
+          5,
+          5,
+          5
+        ],
+        "all_districts_physically_part_connected": false,
+        "policy_part_components": [
+          3,
+          2,
+          1,
+          5,
+          5,
+          5
+        ],
+        "all_districts_policy_connected": false
+      },
+      "after_repair_plan": {
+        "district_populations": [
+          751603,
+          750576,
+          750976,
+          750743,
+          750973,
+          750965
+        ],
+        "total_population": 4505836,
+        "target_population": 750972.6666666666,
+        "ideal_population_exact": {
+          "numerator": 4505836,
+          "denominator": 6
+        },
+        "deviation_numerators": [
+          3782,
+          -2380,
+          20,
+          -1378,
+          2,
+          -46
+        ],
+        "deviation_denominator": 6,
+        "deviations_people": [
+          630.3333333333334,
+          -396.6666666666667,
+          3.3333333333333335,
+          -229.66666666666666,
+          0.3333333333333333,
+          -7.666666666666667
+        ],
+        "max_absolute_deviation_numerator": 3782,
+        "max_absolute_deviation_people": 630.3333333333334,
+        "max_absolute_deviation_percent": 0.0839355893112843,
+        "squared_deviation_numerator": 21869328,
+        "squared_deviation_denominator": 36,
+        "total_range_people": 1027,
+        "total_range_percent": 0.13675597602753406,
+        "exact_equal_populations": false,
+        "integer_population_lower_bound": {
+          "floor_population": 750972,
+          "ceiling_population": 750973,
+          "districts_at_floor": 2,
+          "districts_at_ceiling": 4,
+          "max_deviation_numerator": 4,
+          "deviation_denominator": 6,
+          "max_absolute_deviation_people": 0.6666666666666666,
+          "reached": false,
+          "whole_block_feasibility_assumed": false
+        },
+        "district_count": 6,
+        "district_block_counts": [
+          10901,
+          17887,
+          33373,
+          21990,
+          16616,
+          31895
+        ],
+        "shared_edge_components": [
+          1,
+          1,
+          2,
+          1,
+          1,
+          1
+        ],
+        "all_districts_nonempty": true,
+        "all_districts_shared_edge_connected": false,
+        "all_blocks_assigned_once": true,
+        "population_sum_matches_source": true,
+        "tracts_split_across_districts": 101,
+        "physical_part_components": [
+          1,
+          1,
+          2,
+          1,
+          1,
+          1
+        ],
+        "all_districts_physically_part_connected": false,
+        "policy_part_components": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "all_districts_policy_connected": true
+      },
+      "final_plan": {
+        "district_populations": [
+          750974,
+          750973,
+          750971,
+          750972,
+          750973,
+          750973
+        ],
+        "total_population": 4505836,
+        "target_population": 750972.6666666666,
+        "ideal_population_exact": {
+          "numerator": 4505836,
+          "denominator": 6
+        },
+        "deviation_numerators": [
+          8,
+          2,
+          -10,
+          -4,
+          2,
+          2
+        ],
+        "deviation_denominator": 6,
+        "deviations_people": [
+          1.3333333333333333,
+          0.3333333333333333,
+          -1.6666666666666667,
+          -0.6666666666666666,
+          0.3333333333333333,
+          0.3333333333333333
+        ],
+        "max_absolute_deviation_numerator": 10,
+        "max_absolute_deviation_people": 1.6666666666666667,
+        "max_absolute_deviation_percent": 0.00022193439796743602,
+        "squared_deviation_numerator": 192,
+        "squared_deviation_denominator": 36,
+        "total_range_people": 3,
+        "total_range_percent": 0.0003994819163413848,
+        "exact_equal_populations": false,
+        "integer_population_lower_bound": {
+          "floor_population": 750972,
+          "ceiling_population": 750973,
+          "districts_at_floor": 2,
+          "districts_at_ceiling": 4,
+          "max_deviation_numerator": 4,
+          "deviation_denominator": 6,
+          "max_absolute_deviation_people": 0.6666666666666666,
+          "reached": false,
+          "whole_block_feasibility_assumed": false
+        },
+        "district_count": 6,
+        "district_block_counts": [
+          10900,
+          17886,
+          33373,
+          21994,
+          16616,
+          31893
+        ],
+        "shared_edge_components": [
+          1,
+          1,
+          2,
+          1,
+          1,
+          1
+        ],
+        "all_districts_nonempty": true,
+        "all_districts_shared_edge_connected": false,
+        "all_blocks_assigned_once": true,
+        "population_sum_matches_source": true,
+        "tracts_split_across_districts": 103,
+        "physical_part_components": [
+          1,
+          1,
+          2,
+          1,
+          1,
+          1
+        ],
+        "all_districts_physically_part_connected": false,
+        "policy_part_components": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "all_districts_policy_connected": true
+      },
+      "postprocessing": {
+        "stop_reason": "local_optimum",
+        "repair_move_count": 15,
+        "part_repair_move_count": 0,
+        "rebalance_move_count": 14
+      },
+      "exclave_policy_audit": {
+        "schema_version": 1,
+        "policy": "kentucky-bend-recorded-exclave-v1",
+        "state_fips": "21",
+        "district_count": 6,
+        "source_geometry_modified": false,
+        "synthetic_ownership_edges": false,
+        "source_population": 4505836,
+        "block_count": 132662,
+        "part_count": 132669,
+        "physical_component_count": 2,
+        "physical_edge_count": 330295,
+        "synthetic_edge_count": 1,
+        "augmented_edge_count": 330296,
+        "augmented_component_count": 1,
+        "augmented_graph_connected": true,
+        "eligible_root_count": 1,
+        "groups": [
+          {
+            "group_id": 0,
+            "component_ids": [
+              0,
+              1
+            ],
+            "population": 4505836,
+            "root_component_ids": [
+              0
+            ],
+            "district_count": 6
+          }
+        ],
+        "population_selection": {
+          "policy": "population-aware-rooted-boundary-forest-v1",
+          "district_count": 6,
+          "population_tolerance": 0.01,
+          "ideal_population": 750972.6666666666,
+          "minimum_root_population": 743462.94,
+          "eligible_root_component_ids": [
+            0
+          ],
+          "no_individual_root_fallback": false,
+          "selected_link_ids": [
+            "ky-candidate-00-01"
+          ],
+          "selected_total_distance_m": 5144.856912662275,
+          "groups": [
+            {
+              "group_id": 0,
+              "component_ids": [
+                0,
+                1
+              ],
+              "population": 4505836,
+              "root_component_ids": [
+                0
+              ],
+              "district_count": 6
+            }
+          ],
+          "population_bound": {
+            "feasible_seat_allocation": true,
+            "best_max_deviation_pct": 0.0,
+            "deviation_fraction": [
+              0,
+              1
+            ],
+            "seat_counts": [
+              6
+            ],
+            "ideal_population": 750972.6666666666,
+            "group_ideal_seats": [
+              6.0
+            ],
+            "is_constructed_plan": false,
+            "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+          },
+          "selection_priority": [
+            "Retain the most independently population-compatible original root groups.",
+            "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+            "Break ties by stable candidate IDs and component IDs."
+          ],
+          "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+          "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+          "groupings_examined": 1,
+          "population_feasible_groupings": 1,
+          "geometrically_unconnectable_groupings": 0
+        },
+        "components": [
+          {
+            "component_id": 0,
+            "population": 4505827,
+            "part_count": 132664,
+            "block_count": 132657
+          },
+          {
+            "component_id": 1,
+            "population": 9,
+            "part_count": 5,
+            "block_count": 5
+          }
+        ],
+        "candidate_count": 1,
+        "candidate_connections": [
+          {
+            "id": "ky-candidate-00-01",
+            "component_ids": [
+              0,
+              1
+            ],
+            "distance_m": 5144.856912662275,
+            "planar_candidate_distance_m": 5063.300447424077,
+            "endpoints": [
+              {
+                "geoid": "210759602004000",
+                "part_node": 130538,
+                "part_index": 0,
+                "coordinate": [
+                  -89.41230144260315,
+                  36.51117494957951
+                ],
+                "source_boundary_error_degrees": 1.7110407666062239e-15,
+                "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+              },
+              {
+                "geoid": "210759602004105",
+                "part_node": 122447,
+                "part_index": 0,
+                "coordinate": [
+                  -89.467715,
+                  36.523724
+                ],
+                "source_boundary_error_degrees": 0.0,
+                "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+              }
+            ],
+            "selected_k": [
+              6,
+              8,
+              9,
+              14
+            ],
+            "classification": "positive_gap",
+            "source_boundaries_intersect": false,
+            "exact_geographic_distance_degrees": 0.05600524983122607,
+            "intervening_component_ids": [],
+            "endpoint_component_interior_crossings": [],
+            "endpoint_interior_intersection_length_degrees": {
+              "0": 0.0,
+              "1": 0.0
+            },
+            "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+            "eligible_positive_gap": true,
+            "projection": {
+              "kind": "per-pair-bbox-centered-equirectangular",
+              "lon0": -85.7679955,
+              "lat0": 37.822395
+            }
+          }
+        ],
+        "excluded_candidates": [],
+        "geographic_context": {
+          "crossed_state": "Missouri",
+          "water_only": false,
+          "mapped_water_length_m": 1804.8854352990725,
+          "mapped_land_length_m": 3339.9715683397676,
+          "surface_length_measurement": "Local equirectangular lengths of line intervals intersected with exact 2020 area-water polygons.",
+          "source_year": 2020,
+          "area_water_source_url": "https://www2.census.gov/geo/tiger/TIGER2020/AREAWATER/tl_2020_29143_areawater.zip",
+          "area_water_archive_sha256": "987001cceff747e1c087283e9522f71962364b6c7bb35c353a0a41395919a4bb",
+          "meaning": "Explicit cross-jurisdiction connectivity exception; no Missouri territory, source polygon, bridge, or travel route is added."
+        },
+        "provenance": {
+          "policy": "kentucky-bend-recorded-exclave-v1",
+          "builder_sha256": "4e7a40e495c3462ee7951bbeffc264c35f6d92409d4d55e863d242ca3e40f971",
+          "physical_validation_helpers_sha256": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+          "source_archive_sha256": "ebed3b0de6fee945db0064d378aa66aaebe05f05b460a5ad109a57a14a783b66",
+          "source_files_sha256": {
+            ".shp": "f6fcf8b2648405f173d50fc6055c57b267898c4786ee1e74974e69f0629632c2",
+            ".shx": "51b9bbb8677d5742f8109f3a15797e3602c5424d2bd8a90945eaa4c8fb96875b",
+            ".dbf": "311f0298461610a8acb293b679111e9cbecd8a6d6707077595bfdfdda38846e5"
+          },
+          "diagnostic_evidence_sha256": {
+            "diagnosis.json": "4c179da7207752f210de8378e48ac4c9308a355544c86d044d2ed6db4cd32673",
+            "candidate-links.json": "20ed82660a0ea247de667dd7956d29f816fdacf1035a3f9e18aecbf35dc0a97f",
+            "area-water-audit.json": "a03a31c43ebab7bf820a5efe78a966dc8f28fd04fc195affb75e2a07d6f63c14",
+            "missouri-connection-context.json": "72a6acc4ed007b3225912d9666ae90ab771a8c7e2b9f5e986d7a7ac359c2aa95"
+          },
+          "shapely_version": "2.1.2",
+          "geos_version": "3.13.1"
+        },
+        "endpoint_tolerance_degrees": 1e-09,
+        "elapsed_seconds": 61.76024300001154
+      },
+      "independent_population_audit": {
+        "source": "Original source archive DBF GEOID20/POP20, read independently of runner aggregation",
+        "all_source_geoids_assigned_exactly_once": true,
+        "block_count": 132662,
+        "total_population": 4505836,
+        "district_populations": [
+          750974,
+          750973,
+          750971,
+          750972,
+          750973,
+          750973
+        ],
+        "district_block_counts": [
+          10900,
+          17886,
+          33373,
+          21994,
+          16616,
+          31893
+        ],
+        "deviation_numerators": [
+          8,
+          2,
+          -10,
+          -4,
+          2,
+          2
+        ],
+        "deviation_denominator": 6,
+        "max_absolute_deviation_people": 1.6666666666666667,
+        "max_absolute_deviation_percent": 0.00022193439796743602
+      },
+      "verified_compressed_map_artifact_count": 124,
+      "physical_polygon_components": [
+        1,
+        1,
+        2,
+        1,
+        1,
+        1
+      ],
+      "policy_polygon_components": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "strict_polygon_validation": {
+        "issues": [
+          "District 2 has 2 polygon components."
+        ],
+        "passed": false
+      },
+      "policy_polygon_validation": {
+        "districts": [
+          {
+            "connected_components_after_links": 1,
+            "district_id": 0,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 1,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 2,
+            "physical_polygon_components": 2,
+            "used_link_ids": [
+              "ky-exclave-001"
+            ]
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 3,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 4,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 5,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          }
+        ],
+        "endpoint_boundary_tolerance_degrees": 1e-09,
+        "endpoint_global_part_order": "assignment mapping GEOID order, then original MultiPolygon parts",
+        "independent_district_coverage_valid": true,
+        "independent_source_coverage_valid": true,
+        "issues": [],
+        "passed": true,
+        "policy": "shared_edges_plus_recorded_exclave_connections",
+        "source_coverage_preserved_exactly": true,
+        "source_geometry_modified": false,
+        "used_link_ids": [
+          "ky-exclave-001"
+        ],
+        "validation_basis": "full dissolved polygon components with validated source-part endpoints; independent of graph edges"
+      },
+      "connection_features": [
+        {
+          "geometry": {
+            "coordinates": [
+              [
+                -89.41230144260315,
+                36.51117494957951
+              ],
+              [
+                -89.467715,
+                36.523724
+              ]
+            ],
+            "type": "LineString"
+          },
+          "id": "ky-exclave-001",
+          "properties": {
+            "component_ids": [
+              0,
+              1
+            ],
+            "distance_m": 5144.856912662275,
+            "endpoint_districts": [
+              2,
+              2
+            ],
+            "endpoints": [
+              {
+                "coordinate": [
+                  -89.41230144260315,
+                  36.51117494957951
+                ],
+                "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection.",
+                "geoid": "210759602004000",
+                "part_index": 0,
+                "part_node": 130538,
+                "source_boundary_error_degrees": 1.7110407666062239e-15
+              },
+              {
+                "coordinate": [
+                  -89.467715,
+                  36.523724
+                ],
+                "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance.",
+                "geoid": "210759602004105",
+                "part_index": 0,
+                "part_node": 122447,
+                "source_boundary_error_degrees": 0.0
+              }
+            ],
+            "geographic_context": {
+              "area_water_archive_sha256": "987001cceff747e1c087283e9522f71962364b6c7bb35c353a0a41395919a4bb",
+              "area_water_source_url": "https://www2.census.gov/geo/tiger/TIGER2020/AREAWATER/tl_2020_29143_areawater.zip",
+              "crossed_state": "Missouri",
+              "mapped_land_length_m": 3339.9715683397676,
+              "mapped_water_length_m": 1804.8854352990725,
+              "meaning": "Explicit cross-jurisdiction connectivity exception; no Missouri territory, source polygon, bridge, or travel route is added.",
+              "source_year": 2020,
+              "surface_length_measurement": "Local equirectangular lengths of line intervals intersected with exact 2020 area-water polygons.",
+              "water_only": false
+            },
+            "id": "ky-exclave-001",
+            "kind": "recorded-exclave-connection",
+            "meaning": "declared exclave connectivity exception; no source polygon, foreign-state territory, bridge, or travel route added",
+            "policy": "kentucky-bend-recorded-exclave-v1",
+            "provenance": {
+              "builder_sha256": "4e7a40e495c3462ee7951bbeffc264c35f6d92409d4d55e863d242ca3e40f971",
+              "diagnostic_evidence_sha256": {
+                "area-water-audit.json": "a03a31c43ebab7bf820a5efe78a966dc8f28fd04fc195affb75e2a07d6f63c14",
+                "candidate-links.json": "20ed82660a0ea247de667dd7956d29f816fdacf1035a3f9e18aecbf35dc0a97f",
+                "diagnosis.json": "4c179da7207752f210de8378e48ac4c9308a355544c86d044d2ed6db4cd32673",
+                "missouri-connection-context.json": "72a6acc4ed007b3225912d9666ae90ab771a8c7e2b9f5e986d7a7ac359c2aa95"
+              },
+              "geos_version": "3.13.1",
+              "physical_validation_helpers_sha256": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+              "policy": "kentucky-bend-recorded-exclave-v1",
+              "shapely_version": "2.1.2",
+              "source_archive_sha256": "ebed3b0de6fee945db0064d378aa66aaebe05f05b460a5ad109a57a14a783b66",
+              "source_files_sha256": {
+                ".dbf": "311f0298461610a8acb293b679111e9cbecd8a6d6707077595bfdfdda38846e5",
+                ".shp": "f6fcf8b2648405f173d50fc6055c57b267898c4786ee1e74974e69f0629632c2",
+                ".shx": "51b9bbb8677d5742f8109f3a15797e3602c5424d2bd8a90945eaa4c8fb96875b"
+              }
+            },
+            "state_fips": "21",
+            "used_by_district": 2
+          },
+          "type": "Feature"
+        }
+      ],
+      "recorded_connections": [
+        {
+          "id": "ky-exclave-001",
+          "component_ids": [
+            0,
+            1
+          ],
+          "distance_m": 5144.856912662275,
+          "planar_candidate_distance_m": 5063.300447424077,
+          "endpoints": [
+            {
+              "geoid": "210759602004000",
+              "part_node": 130538,
+              "part_index": 0,
+              "coordinate": [
+                -89.41230144260315,
+                36.51117494957951
+              ],
+              "source_boundary_error_degrees": 1.7110407666062239e-15,
+              "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+            },
+            {
+              "geoid": "210759602004105",
+              "part_node": 122447,
+              "part_index": 0,
+              "coordinate": [
+                -89.467715,
+                36.523724
+              ],
+              "source_boundary_error_degrees": 0.0,
+              "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+            }
+          ],
+          "selected_k": [
+            6,
+            8,
+            9,
+            14
+          ],
+          "classification": "positive_gap",
+          "source_boundaries_intersect": false,
+          "exact_geographic_distance_degrees": 0.05600524983122607,
+          "intervening_component_ids": [],
+          "endpoint_component_interior_crossings": [],
+          "endpoint_interior_intersection_length_degrees": {
+            "0": 0.0,
+            "1": 0.0
+          },
+          "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+          "eligible_positive_gap": true,
+          "projection": {
+            "kind": "per-pair-bbox-centered-equirectangular",
+            "lon0": -85.7679955,
+            "lat0": 37.822395
+          },
+          "candidate_id": "ky-candidate-00-01",
+          "state_fips": "21",
+          "kind": "recorded-exclave-connection",
+          "policy": "kentucky-bend-recorded-exclave-v1",
+          "distance_definition": "Spherical endpoint length of the preserved planar nearest-boundary candidate in census coverage.",
+          "geographic_context": {
+            "crossed_state": "Missouri",
+            "water_only": false,
+            "mapped_water_length_m": 1804.8854352990725,
+            "mapped_land_length_m": 3339.9715683397676,
+            "surface_length_measurement": "Local equirectangular lengths of line intervals intersected with exact 2020 area-water polygons.",
+            "source_year": 2020,
+            "area_water_source_url": "https://www2.census.gov/geo/tiger/TIGER2020/AREAWATER/tl_2020_29143_areawater.zip",
+            "area_water_archive_sha256": "987001cceff747e1c087283e9522f71962364b6c7bb35c353a0a41395919a4bb",
+            "meaning": "Explicit cross-jurisdiction connectivity exception; no Missouri territory, source polygon, bridge, or travel route is added."
+          },
+          "provenance": {
+            "policy": "kentucky-bend-recorded-exclave-v1",
+            "builder_sha256": "4e7a40e495c3462ee7951bbeffc264c35f6d92409d4d55e863d242ca3e40f971",
+            "physical_validation_helpers_sha256": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+            "source_archive_sha256": "ebed3b0de6fee945db0064d378aa66aaebe05f05b460a5ad109a57a14a783b66",
+            "source_files_sha256": {
+              ".shp": "f6fcf8b2648405f173d50fc6055c57b267898c4786ee1e74974e69f0629632c2",
+              ".shx": "51b9bbb8677d5742f8109f3a15797e3602c5424d2bd8a90945eaa4c8fb96875b",
+              ".dbf": "311f0298461610a8acb293b679111e9cbecd8a6d6707077595bfdfdda38846e5"
+            },
+            "diagnostic_evidence_sha256": {
+              "diagnosis.json": "4c179da7207752f210de8378e48ac4c9308a355544c86d044d2ed6db4cd32673",
+              "candidate-links.json": "20ed82660a0ea247de667dd7956d29f816fdacf1035a3f9e18aecbf35dc0a97f",
+              "area-water-audit.json": "a03a31c43ebab7bf820a5efe78a966dc8f28fd04fc195affb75e2a07d6f63c14",
+              "missouri-connection-context.json": "72a6acc4ed007b3225912d9666ae90ab771a8c7e2b9f5e986d7a7ac359c2aa95"
+            },
+            "shapely_version": "2.1.2",
+            "geos_version": "3.13.1"
+          }
+        }
+      ],
+      "selected_connection_count": 1,
+      "used_connection_count": 1,
+      "inner_optimizer_pass_count": 43,
+      "inner_optimizer_failed_pass_count": 0,
+      "payloads": {
+        "district_outlines": {
+          "full": {
+            "coordinate_count": 143260,
+            "gzip_bytes": 914493,
+            "gzip_path": "districts-full.geojson.gz",
+            "path": "districts-full.geojson",
+            "raw_bytes": 3264408
+          },
+          "national": {
+            "coordinate_count": 4538,
+            "gzip_bytes": 35499,
+            "gzip_path": "districts-national.geojson.gz",
+            "path": "districts-national.geojson",
+            "raw_bytes": 117450
+          },
+          "state": {
+            "coordinate_count": 26295,
+            "gzip_bytes": 206767,
+            "gzip_path": "districts-state.geojson.gz",
+            "path": "districts-state.geojson",
+            "raw_bytes": 673821
+          }
+        },
+        "exclave_connections": {
+          "connection_count": 1,
+          "gzip_bytes": 1483,
+          "gzip_path": "exclave-connections.geojson.gz",
+          "path": "exclave-connections.geojson",
+          "raw_bytes": 2752
+        },
+        "load_scenarios": {
+          "all_county_detail_shards": {
+            "gzip_bytes": 96103375,
+            "raw_bytes": 361032393
+          },
+          "largest_county_detail_shard": {
+            "bbox": [
+              -85.947104,
+              37.99721,
+              -85.404899,
+              38.380239
+            ],
+            "block_count": 10986,
+            "county_fips": "111",
+            "gzip_bytes": 3166946,
+            "gzip_path": "blocks/county-111.geojson.gz",
+            "path": "blocks/county-111.geojson",
+            "population": 782969,
+            "raw_bytes": 12663068
+          },
+          "national_state_only": {
+            "coordinate_count": 4538,
+            "gzip_bytes": 35499,
+            "gzip_path": "districts-national.geojson.gz",
+            "path": "districts-national.geojson",
+            "raw_bytes": 117450
+          },
+          "state_entry_outlines_and_detail_index": {
+            "gzip_bytes": 212724,
+            "raw_bytes": 701252
+          }
+        }
+      }
+    },
+    {
+      "status": "complete_under_exclave_policy",
+      "district_count": 8,
+      "house_sizes": [
+        574
+      ],
+      "run_kind": "kentucky_recorded_exclave_policy_v1",
+      "configuration": {
+        "seed": 20200955,
+        "max_outer_iterations": 80,
+        "inner_max_iterations": 300,
+        "center_tolerance_m": 0.0001,
+        "physical_adjacency_rule": "polygon parts; disjoint interiors; positive-length shared boundary; F***1****",
+        "connection_policy": "kentucky-bend-recorded-exclave-v1",
+        "connection_kind": "recorded-exclave-connection",
+        "max_rebalance_moves": 1000,
+        "root_eligibility_relative_band": 0.01,
+        "group_population_preflight_tolerance": 0.01,
+        "minimum_district_population_for_root_classification": 557597.205,
+        "minimum_district_population_exact": "111519441/200",
+        "eligibility_note": "99% of ideal classifies original eligible roots; root groups must admit integer district allocations within a 1% optimistic population budget. Neither is final-plan acceptance.",
+        "boundary_metric": "source census coverage, including retained water blocks; no shoreline substitution",
+        "inner_optimization": {
+          "normalization": "population-mass and geometry-derived shifted squared costs; mean-zero weight gauge",
+          "public_units": "centers in source coordinate units; weights in squared source coordinate units",
+          "max_line_search_steps": 100,
+          "failure_policy": "raise on unsuccessful termination or nonfinite output; no completed plan returned"
+        }
+      },
+      "source": {
+        "schema": 1,
+        "state_fips": "21",
+        "state": "Kentucky",
+        "url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_21_tabblock20.zip",
+        "archive_sha256": "ebed3b0de6fee945db0064d378aa66aaebe05f05b460a5ad109a57a14a783b66",
+        "archive_bytes": 265195721,
+        "extracted_file_sha256": {
+          "tl_2020_21_tabblock20.cpg": "3ad3031f5503a4404af825262ee8232cc04d4ea6683d42c5dd0a2f2a27ac9824",
+          "tl_2020_21_tabblock20.dbf": "311f0298461610a8acb293b679111e9cbecd8a6d6707077595bfdfdda38846e5",
+          "tl_2020_21_tabblock20.prj": "0b9041e921d9ebb43247d314608fe9e38a0b008ee793067fc1806199ea1fb9dd",
+          "tl_2020_21_tabblock20.shp": "f6fcf8b2648405f173d50fc6055c57b267898c4786ee1e74974e69f0629632c2",
+          "tl_2020_21_tabblock20.shp.ea.iso.xml": "bfec33140cc7684b1385347718c27347f615d446ae774ab89ef16e900b413d40",
+          "tl_2020_21_tabblock20.shp.iso.xml": "45da72c95bb92b99dd9c6a87abcde6e28e40ff45d01947aee0439d698e44a3c1",
+          "tl_2020_21_tabblock20.shx": "51b9bbb8677d5742f8109f3a15797e3602c5424d2bd8a90945eaa4c8fb96875b"
+        },
+        "download": {
+          "attempts": 1,
+          "etag": null,
+          "expected_bytes": 265195721,
+          "last_modified": "Fri, 06 Jan 2023 21:45:54 GMT",
+          "received_bytes": 265195721,
+          "resumed_bytes": 0,
+          "url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_21_tabblock20.zip"
+        },
+        "hash_provenance": "Locally computed SHA-256; no publisher checksum is provided.",
+        "archive_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\21\\tl_2020_21_tabblock20.zip",
+        "extraction_dir": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\21\\tl_2020_21_tabblock20",
+        "source_shapefile_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\21\\tl_2020_21_tabblock20\\tl_2020_21_tabblock20.shp",
+        "manifest_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\21\\tl_2020_21_tabblock20.manifest.json",
+        "downloaded_in_timed_pipeline": false,
+        "extracted_files_reused": true,
+        "extracted_bytes": 265194779,
+        "crs_wkt": "GEOGCS[\"GCS_North_American_1983\",DATUM[\"D_North_American_1983\",SPHEROID[\"GRS_1980\",6378137,298.257222101]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]"
+      },
+      "code_sha256": {
+        "districting/algorithm.py": "a1b264a2bb855675ab3b633a5b47a38b77f4929e29b7a4086cfb889436e244ac",
+        "districting/connectivity.py": "2d6788d73fac4e2eb550cff4db36dd4b5b430f131254809805c53317bb8cbfed",
+        "districting/part_connectivity.py": "a127aad254e65dc7b8be69f1fe7403aad6f9d18e0a15b8723e32358f9ef833d5",
+        "districting/apportionment.py": "07eb27ebc88d89647dfad66784d4fb3b9623b7919ed6e837122111bfe4323eae",
+        "districting/data/apportionment_2020.py": "86a8ee34675d78aa99ed7edcb0c686fbb3aebd34d04655a106cae10dfbb0461d",
+        "scripts/benchmark_state_blocks.py": "8a1f05e5e428437ff87434408c315e8d94a4df64df5dffa821a7fc952b77a414",
+        "scripts/benchmark_kansas_blocks.py": "20da6d6f95e4b6706341eb97f01c3518e3d58b07e1852a0537e9c85c5dab31bf",
+        "scripts/benchmark_kansas_anchors.py": "adf92735dfcf5fb703c15a1e7d9f1a8f76b203d037e441b3560d2bc0573b50a7",
+        "scripts/district_block_sources.py": "dd041755be227ea77abfed20bbc6c7a9a10050bf8f6a66aaeed2a07c96a1cbbb",
+        "scripts/district_block_adjacency.py": "8e3bd87629631e5452b6294bb94789dffa733a7b490db8a5238687a7609c0efc",
+        "scripts/district_block_graph_cache.py": "46d0c64da93123c23c3a05136ab2c4b3f096122627990f0a25c4c2e1c75b6c7e",
+        "scripts/district_block_map_export.py": "05e29bdfea353a1819fd4000b2e9ebc350fd8b9c6bdccf299d7531a7002499cf",
+        "scripts/state_block_map_export.py": "75e8369f845a261eb3abe2a05979a81d31874ac93d299d1bd4f5d2ff4f7804b2",
+        "scripts/state_block_execution_lock.py": "861c5a915ca9bc7d7065df4c10afae48c641febd680b25133c05d64f4268c6ff",
+        "scripts/district_block_part_graph.py": "49b43929897184c04a5332f4530cd7cf722f9ac604008657855a65694024c490",
+        "scripts/benchmark_kentucky_exclave.py": "c7fbb1697a15a7a30521234ec7ebcd39443f68b8ace4084c09ae16d2589d1364",
+        "scripts/kentucky_exclave_links.py": "4e7a40e495c3462ee7951bbeffc264c35f6d92409d4d55e863d242ca3e40f971",
+        "scripts/hawaii_population_links.py": "b512c901f00b62864eb84f7b5cfed2e8d4fe5915ffe3cc87e50c93345e581519",
+        "scripts/district_block_island_links.py": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+        "scripts/correct_state_block_parts.py": "b4006afd905ac6f9ff72c6ba95ac73cf1c807695e33bf2bc4cdf68233028bacd",
+        "scripts/assets/kentucky-block-viewer.html": "1bc1853a73a4583ceff39f0788c289bb0764dd7b0f816688efa0ccb774740042",
+        "districting/__init__.py": "baf0b8848dc6fffc7ab83fbe1eb2f6a45f6f67e622fda941b62c818d88f8e548"
+      },
+      "phases": {
+        "source_acquisition": {
+          "wall_seconds": 0.2716305999929318,
+          "cpu_seconds": 0.28125,
+          "sampled_peak_rss_bytes": 77615104
+        },
+        "source_extraction": {
+          "wall_seconds": 0.27182369999354705,
+          "cpu_seconds": 0.265625,
+          "sampled_peak_rss_bytes": 77611008
+        },
+        "load_and_validate_blocks": {
+          "wall_seconds": 2.3815601999958744,
+          "cpu_seconds": 2.40625,
+          "sampled_peak_rss_bytes": 142966784
+        },
+        "load_or_build_physical_part_graph": {
+          "wall_seconds": 2.000458399998024,
+          "cpu_seconds": 2.0,
+          "sampled_peak_rss_bytes": 194256896
+        },
+        "prepare_recorded_exclave_connection": {
+          "wall_seconds": 54.520094100007555,
+          "cpu_seconds": 54.5,
+          "sampled_peak_rss_bytes": 733970432
+        },
+        "solve": {
+          "wall_seconds": 34.54440530001011,
+          "cpu_seconds": 34.40625,
+          "sampled_peak_rss_bytes": 312905728
+        },
+        "audit_initial_plan": {
+          "wall_seconds": 1.2604429999919375,
+          "cpu_seconds": 1.265625,
+          "sampled_peak_rss_bytes": 262819840
+        },
+        "repair_and_rebalance": {
+          "wall_seconds": 2.453510699997423,
+          "cpu_seconds": 2.453125,
+          "sampled_peak_rss_bytes": 262705152
+        },
+        "save_and_audit_final_plan": {
+          "wall_seconds": 3.090492000002996,
+          "cpu_seconds": 3.0625,
+          "sampled_peak_rss_bytes": 285016064
+        },
+        "independent_polygon_validation_and_map_export": {
+          "wall_seconds": 405.5472580999922,
+          "cpu_seconds": 403.390625,
+          "sampled_peak_rss_bytes": 1119318016
+        },
+        "write_viewer_and_verify_preservation": {
+          "wall_seconds": 0.6390225000068313,
+          "cpu_seconds": 0.5625,
+          "sampled_peak_rss_bytes": 249556992
+        }
+      },
+      "timed_pipeline_wall_seconds": 507.29562210000586,
+      "peak_process_working_set_bytes": 1121062912,
+      "preservation_audit": {
+        "all_original_strict_files_byte_identical": true,
+        "national_suite_byte_identical": true,
+        "source_archive_byte_identical": true,
+        "run_code_unchanged": true,
+        "protected_file_count": 275,
+        "all_original_diagnostic_files_byte_identical": true,
+        "rhode_island_and_hawaii_evidence_byte_identical": true
+      },
+      "started_at": "2026-10-23T19:50:26.491975+00:00",
+      "finished_at": "2026-10-23T19:58:53.782061+00:00",
+      "url": "http://127.0.0.1:8770/policies/kentucky-exclave-v1/states/21/districts-8/",
+      "benchmark_path": ".cache/state-block-benchmark/suite-through-1000/policies/kentucky-exclave-v1/states/21/districts-8/benchmark.json",
+      "benchmark_sha256": "3b180a4faabccddd305e355dc983851863f7d59767b29940ec944927becf365d",
+      "peak_working_set_mib": 1069.12890625,
+      "accepted_plan": true,
+      "input": {
+        "state_fips": "21",
+        "state": "Kentucky",
+        "block_count": 132662,
+        "populated_block_count": 91572,
+        "zero_population_block_count": 41090,
+        "water_only_block_count": 6809,
+        "tract_count": 1306,
+        "total_population": 4505836,
+        "largest_block_population": 2400,
+        "source_bbox": [
+          -89.571203,
+          36.497058,
+          -81.964788,
+          39.147732
+        ],
+        "longitude_span_degrees": 7.606414999999998,
+        "source_crosses_antimeridian": false,
+        "shared_edge_antimeridian_normalization_supported": true,
+        "projection": {
+          "kind": "population-centered-equirectangular",
+          "lon0": -85.25697916544878,
+          "lat0": 37.838308240804146,
+          "dateline_unwrapped": false,
+          "distance_model": "approximate local plane; distortion increases across broad states"
+        },
+        "location_source": "TIGER INTPT internal points, not household locations or population centroids",
+        "official_totals_validated": true,
+        "expected_totals": {
+          "block_count": 132662,
+          "resident_population": 4505836
+        },
+        "block_count_source_url": "https://www2.census.gov/geo/docs/maps-data/data/geo_tallies2020/State_Block_Counts_2010_2020.txt",
+        "resident_population_source_url": "https://www2.census.gov/programs-surveys/decennial/2020/data/apportionment/apportionment-2020-table02.pdf"
+      },
+      "solver": {
+        "kind": "balanced_power_diagram",
+        "outer_iterations": 66,
+        "centers_converged": true,
+        "outer_iteration_limit_reached": false,
+        "population_balance": {
+          "district_populations": [
+            563280,
+            563230,
+            563153,
+            563361,
+            563292,
+            563298,
+            563236,
+            562986
+          ],
+          "total_population": 4505836,
+          "target_population": 563229.5,
+          "ideal_population_exact": {
+            "numerator": 4505836,
+            "denominator": 8
+          },
+          "deviation_numerators": [
+            404,
+            4,
+            -612,
+            1052,
+            500,
+            548,
+            52,
+            -1948
+          ],
+          "deviation_denominator": 8,
+          "deviations_people": [
+            50.5,
+            0.5,
+            -76.5,
+            131.5,
+            62.5,
+            68.5,
+            6.5,
+            -243.5
+          ],
+          "max_absolute_deviation_numerator": 1948,
+          "max_absolute_deviation_people": 243.5,
+          "max_absolute_deviation_percent": 0.043232820724056535,
+          "squared_deviation_numerator": 5992192,
+          "squared_deviation_denominator": 64,
+          "total_range_people": 375,
+          "total_range_percent": 0.0665803193902308,
+          "exact_equal_populations": false,
+          "integer_population_lower_bound": {
+            "floor_population": 563229,
+            "ceiling_population": 563230,
+            "districts_at_floor": 4,
+            "districts_at_ceiling": 4,
+            "max_deviation_numerator": 4,
+            "deviation_denominator": 8,
+            "max_absolute_deviation_people": 0.5,
+            "reached": false,
+            "whole_block_feasibility_assumed": false
+          }
+        },
+        "all_inner_optimizer_passes_succeeded": true,
+        "normalization": {
+          "normalization": "population-mass and geometry-derived shifted squared costs; mean-zero weight gauge",
+          "public_units": "centers in source coordinate units; weights in squared source coordinate units",
+          "max_line_search_steps": 100,
+          "failure_policy": "raise on unsuccessful termination or nonfinite output; no completed plan returned"
+        }
+      },
+      "outer_termination": {
+        "status": "center_tolerance_met",
+        "outer_iterations": 66,
+        "configured_max_outer_iterations": 80,
+        "centers_converged": true,
+        "outer_iteration_limit_reached": false,
+        "disclosure": "The outer loop met its center-convergence tolerance after 66 iterations. Successful inner optimizer passes do not establish outer convergence. Final population balance and connectivity are assessed separately after repair/rebalancing."
+      },
+      "initial_plan": {
+        "district_populations": [
+          563280,
+          563230,
+          563153,
+          563361,
+          563292,
+          563298,
+          563236,
+          562986
+        ],
+        "total_population": 4505836,
+        "target_population": 563229.5,
+        "ideal_population_exact": {
+          "numerator": 4505836,
+          "denominator": 8
+        },
+        "deviation_numerators": [
+          404,
+          4,
+          -612,
+          1052,
+          500,
+          548,
+          52,
+          -1948
+        ],
+        "deviation_denominator": 8,
+        "deviations_people": [
+          50.5,
+          0.5,
+          -76.5,
+          131.5,
+          62.5,
+          68.5,
+          6.5,
+          -243.5
+        ],
+        "max_absolute_deviation_numerator": 1948,
+        "max_absolute_deviation_people": 243.5,
+        "max_absolute_deviation_percent": 0.043232820724056535,
+        "squared_deviation_numerator": 5992192,
+        "squared_deviation_denominator": 64,
+        "total_range_people": 375,
+        "total_range_percent": 0.0665803193902308,
+        "exact_equal_populations": false,
+        "integer_population_lower_bound": {
+          "floor_population": 563229,
+          "ceiling_population": 563230,
+          "districts_at_floor": 4,
+          "districts_at_ceiling": 4,
+          "max_deviation_numerator": 4,
+          "deviation_denominator": 8,
+          "max_absolute_deviation_people": 0.5,
+          "reached": false,
+          "whole_block_feasibility_assumed": false
+        },
+        "district_count": 8,
+        "district_block_counts": [
+          20262,
+          12925,
+          27115,
+          19093,
+          9645,
+          25054,
+          9028,
+          9540
+        ],
+        "shared_edge_components": [
+          4,
+          1,
+          3,
+          5,
+          7,
+          3,
+          7,
+          3
+        ],
+        "all_districts_nonempty": true,
+        "all_districts_shared_edge_connected": false,
+        "all_blocks_assigned_once": true,
+        "population_sum_matches_source": true,
+        "tracts_split_across_districts": 125,
+        "physical_part_components": [
+          4,
+          1,
+          3,
+          5,
+          7,
+          3,
+          7,
+          3
+        ],
+        "all_districts_physically_part_connected": false,
+        "policy_part_components": [
+          4,
+          1,
+          2,
+          5,
+          7,
+          3,
+          7,
+          3
+        ],
+        "all_districts_policy_connected": false
+      },
+      "after_repair_plan": {
+        "district_populations": [
+          562980,
+          563364,
+          563160,
+          563309,
+          563223,
+          563492,
+          563202,
+          563106
+        ],
+        "total_population": 4505836,
+        "target_population": 563229.5,
+        "ideal_population_exact": {
+          "numerator": 4505836,
+          "denominator": 8
+        },
+        "deviation_numerators": [
+          -1996,
+          1076,
+          -556,
+          636,
+          -52,
+          2100,
+          -220,
+          -988
+        ],
+        "deviation_denominator": 8,
+        "deviations_people": [
+          -249.5,
+          134.5,
+          -69.5,
+          79.5,
+          -6.5,
+          262.5,
+          -27.5,
+          -123.5
+        ],
+        "max_absolute_deviation_numerator": 2100,
+        "max_absolute_deviation_people": 262.5,
+        "max_absolute_deviation_percent": 0.04660622357316156,
+        "squared_deviation_numerator": 11292672,
+        "squared_deviation_denominator": 64,
+        "total_range_people": 512,
+        "total_range_percent": 0.09090432940746179,
+        "exact_equal_populations": false,
+        "integer_population_lower_bound": {
+          "floor_population": 563229,
+          "ceiling_population": 563230,
+          "districts_at_floor": 4,
+          "districts_at_ceiling": 4,
+          "max_deviation_numerator": 4,
+          "deviation_denominator": 8,
+          "max_absolute_deviation_people": 0.5,
+          "reached": false,
+          "whole_block_feasibility_assumed": false
+        },
+        "district_count": 8,
+        "district_block_counts": [
+          20256,
+          12932,
+          27116,
+          19092,
+          9643,
+          25057,
+          9020,
+          9546
+        ],
+        "shared_edge_components": [
+          1,
+          1,
+          2,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "all_districts_nonempty": true,
+        "all_districts_shared_edge_connected": false,
+        "all_blocks_assigned_once": true,
+        "population_sum_matches_source": true,
+        "tracts_split_across_districts": 123,
+        "physical_part_components": [
+          1,
+          1,
+          2,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "all_districts_physically_part_connected": false,
+        "policy_part_components": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "all_districts_policy_connected": true
+      },
+      "final_plan": {
+        "district_populations": [
+          563230,
+          563231,
+          563226,
+          563229,
+          563231,
+          563231,
+          563229,
+          563229
+        ],
+        "total_population": 4505836,
+        "target_population": 563229.5,
+        "ideal_population_exact": {
+          "numerator": 4505836,
+          "denominator": 8
+        },
+        "deviation_numerators": [
+          4,
+          12,
+          -28,
+          -4,
+          12,
+          12,
+          -4,
+          -4
+        ],
+        "deviation_denominator": 8,
+        "deviations_people": [
+          0.5,
+          1.5,
+          -3.5,
+          -0.5,
+          1.5,
+          1.5,
+          -0.5,
+          -0.5
+        ],
+        "max_absolute_deviation_numerator": 28,
+        "max_absolute_deviation_people": 3.5,
+        "max_absolute_deviation_percent": 0.0006214163143088208,
+        "squared_deviation_numerator": 1280,
+        "squared_deviation_denominator": 64,
+        "total_range_people": 5,
+        "total_range_percent": 0.0008877375918697441,
+        "exact_equal_populations": false,
+        "integer_population_lower_bound": {
+          "floor_population": 563229,
+          "ceiling_population": 563230,
+          "districts_at_floor": 4,
+          "districts_at_ceiling": 4,
+          "max_deviation_numerator": 4,
+          "deviation_denominator": 8,
+          "max_absolute_deviation_people": 0.5,
+          "reached": false,
+          "whole_block_feasibility_assumed": false
+        },
+        "district_count": 8,
+        "district_block_counts": [
+          20260,
+          12925,
+          27123,
+          19093,
+          9641,
+          25054,
+          9018,
+          9548
+        ],
+        "shared_edge_components": [
+          1,
+          1,
+          2,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "all_districts_nonempty": true,
+        "all_districts_shared_edge_connected": false,
+        "all_blocks_assigned_once": true,
+        "population_sum_matches_source": true,
+        "tracts_split_across_districts": 124,
+        "physical_part_components": [
+          1,
+          1,
+          2,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "all_districts_physically_part_connected": false,
+        "policy_part_components": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "all_districts_policy_connected": true
+      },
+      "postprocessing": {
+        "stop_reason": "local_optimum",
+        "repair_move_count": 24,
+        "part_repair_move_count": 0,
+        "rebalance_move_count": 38
+      },
+      "exclave_policy_audit": {
+        "schema_version": 1,
+        "policy": "kentucky-bend-recorded-exclave-v1",
+        "state_fips": "21",
+        "district_count": 8,
+        "source_geometry_modified": false,
+        "synthetic_ownership_edges": false,
+        "source_population": 4505836,
+        "block_count": 132662,
+        "part_count": 132669,
+        "physical_component_count": 2,
+        "physical_edge_count": 330295,
+        "synthetic_edge_count": 1,
+        "augmented_edge_count": 330296,
+        "augmented_component_count": 1,
+        "augmented_graph_connected": true,
+        "eligible_root_count": 1,
+        "groups": [
+          {
+            "group_id": 0,
+            "component_ids": [
+              0,
+              1
+            ],
+            "population": 4505836,
+            "root_component_ids": [
+              0
+            ],
+            "district_count": 8
+          }
+        ],
+        "population_selection": {
+          "policy": "population-aware-rooted-boundary-forest-v1",
+          "district_count": 8,
+          "population_tolerance": 0.01,
+          "ideal_population": 563229.5,
+          "minimum_root_population": 557597.205,
+          "eligible_root_component_ids": [
+            0
+          ],
+          "no_individual_root_fallback": false,
+          "selected_link_ids": [
+            "ky-candidate-00-01"
+          ],
+          "selected_total_distance_m": 5144.856912662275,
+          "groups": [
+            {
+              "group_id": 0,
+              "component_ids": [
+                0,
+                1
+              ],
+              "population": 4505836,
+              "root_component_ids": [
+                0
+              ],
+              "district_count": 8
+            }
+          ],
+          "population_bound": {
+            "feasible_seat_allocation": true,
+            "best_max_deviation_pct": 0.0,
+            "deviation_fraction": [
+              0,
+              1
+            ],
+            "seat_counts": [
+              8
+            ],
+            "ideal_population": 563229.5,
+            "group_ideal_seats": [
+              8.0
+            ],
+            "is_constructed_plan": false,
+            "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+          },
+          "selection_priority": [
+            "Retain the most independently population-compatible original root groups.",
+            "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+            "Break ties by stable candidate IDs and component IDs."
+          ],
+          "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+          "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+          "groupings_examined": 1,
+          "population_feasible_groupings": 1,
+          "geometrically_unconnectable_groupings": 0
+        },
+        "components": [
+          {
+            "component_id": 0,
+            "population": 4505827,
+            "part_count": 132664,
+            "block_count": 132657
+          },
+          {
+            "component_id": 1,
+            "population": 9,
+            "part_count": 5,
+            "block_count": 5
+          }
+        ],
+        "candidate_count": 1,
+        "candidate_connections": [
+          {
+            "id": "ky-candidate-00-01",
+            "component_ids": [
+              0,
+              1
+            ],
+            "distance_m": 5144.856912662275,
+            "planar_candidate_distance_m": 5063.300447424077,
+            "endpoints": [
+              {
+                "geoid": "210759602004000",
+                "part_node": 130538,
+                "part_index": 0,
+                "coordinate": [
+                  -89.41230144260315,
+                  36.51117494957951
+                ],
+                "source_boundary_error_degrees": 1.7110407666062239e-15,
+                "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+              },
+              {
+                "geoid": "210759602004105",
+                "part_node": 122447,
+                "part_index": 0,
+                "coordinate": [
+                  -89.467715,
+                  36.523724
+                ],
+                "source_boundary_error_degrees": 0.0,
+                "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+              }
+            ],
+            "selected_k": [
+              6,
+              8,
+              9,
+              14
+            ],
+            "classification": "positive_gap",
+            "source_boundaries_intersect": false,
+            "exact_geographic_distance_degrees": 0.05600524983122607,
+            "intervening_component_ids": [],
+            "endpoint_component_interior_crossings": [],
+            "endpoint_interior_intersection_length_degrees": {
+              "0": 0.0,
+              "1": 0.0
+            },
+            "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+            "eligible_positive_gap": true,
+            "projection": {
+              "kind": "per-pair-bbox-centered-equirectangular",
+              "lon0": -85.7679955,
+              "lat0": 37.822395
+            }
+          }
+        ],
+        "excluded_candidates": [],
+        "geographic_context": {
+          "crossed_state": "Missouri",
+          "water_only": false,
+          "mapped_water_length_m": 1804.8854352990725,
+          "mapped_land_length_m": 3339.9715683397676,
+          "surface_length_measurement": "Local equirectangular lengths of line intervals intersected with exact 2020 area-water polygons.",
+          "source_year": 2020,
+          "area_water_source_url": "https://www2.census.gov/geo/tiger/TIGER2020/AREAWATER/tl_2020_29143_areawater.zip",
+          "area_water_archive_sha256": "987001cceff747e1c087283e9522f71962364b6c7bb35c353a0a41395919a4bb",
+          "meaning": "Explicit cross-jurisdiction connectivity exception; no Missouri territory, source polygon, bridge, or travel route is added."
+        },
+        "provenance": {
+          "policy": "kentucky-bend-recorded-exclave-v1",
+          "builder_sha256": "4e7a40e495c3462ee7951bbeffc264c35f6d92409d4d55e863d242ca3e40f971",
+          "physical_validation_helpers_sha256": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+          "source_archive_sha256": "ebed3b0de6fee945db0064d378aa66aaebe05f05b460a5ad109a57a14a783b66",
+          "source_files_sha256": {
+            ".shp": "f6fcf8b2648405f173d50fc6055c57b267898c4786ee1e74974e69f0629632c2",
+            ".shx": "51b9bbb8677d5742f8109f3a15797e3602c5424d2bd8a90945eaa4c8fb96875b",
+            ".dbf": "311f0298461610a8acb293b679111e9cbecd8a6d6707077595bfdfdda38846e5"
+          },
+          "diagnostic_evidence_sha256": {
+            "diagnosis.json": "4c179da7207752f210de8378e48ac4c9308a355544c86d044d2ed6db4cd32673",
+            "candidate-links.json": "20ed82660a0ea247de667dd7956d29f816fdacf1035a3f9e18aecbf35dc0a97f",
+            "area-water-audit.json": "a03a31c43ebab7bf820a5efe78a966dc8f28fd04fc195affb75e2a07d6f63c14",
+            "missouri-connection-context.json": "72a6acc4ed007b3225912d9666ae90ab771a8c7e2b9f5e986d7a7ac359c2aa95"
+          },
+          "shapely_version": "2.1.2",
+          "geos_version": "3.13.1"
+        },
+        "endpoint_tolerance_degrees": 1e-09,
+        "elapsed_seconds": 53.89668510000047
+      },
+      "independent_population_audit": {
+        "source": "Original source archive DBF GEOID20/POP20, read independently of runner aggregation",
+        "all_source_geoids_assigned_exactly_once": true,
+        "block_count": 132662,
+        "total_population": 4505836,
+        "district_populations": [
+          563230,
+          563231,
+          563226,
+          563229,
+          563231,
+          563231,
+          563229,
+          563229
+        ],
+        "district_block_counts": [
+          20260,
+          12925,
+          27123,
+          19093,
+          9641,
+          25054,
+          9018,
+          9548
+        ],
+        "deviation_numerators": [
+          4,
+          12,
+          -28,
+          -4,
+          12,
+          12,
+          -4,
+          -4
+        ],
+        "deviation_denominator": 8,
+        "max_absolute_deviation_people": 3.5,
+        "max_absolute_deviation_percent": 0.0006214163143088208
+      },
+      "verified_compressed_map_artifact_count": 124,
+      "physical_polygon_components": [
+        1,
+        1,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "policy_polygon_components": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "strict_polygon_validation": {
+        "issues": [
+          "District 2 has 2 polygon components."
+        ],
+        "passed": false
+      },
+      "policy_polygon_validation": {
+        "districts": [
+          {
+            "connected_components_after_links": 1,
+            "district_id": 0,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 1,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 2,
+            "physical_polygon_components": 2,
+            "used_link_ids": [
+              "ky-exclave-001"
+            ]
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 3,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 4,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 5,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 6,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 7,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          }
+        ],
+        "endpoint_boundary_tolerance_degrees": 1e-09,
+        "endpoint_global_part_order": "assignment mapping GEOID order, then original MultiPolygon parts",
+        "independent_district_coverage_valid": true,
+        "independent_source_coverage_valid": true,
+        "issues": [],
+        "passed": true,
+        "policy": "shared_edges_plus_recorded_exclave_connections",
+        "source_coverage_preserved_exactly": true,
+        "source_geometry_modified": false,
+        "used_link_ids": [
+          "ky-exclave-001"
+        ],
+        "validation_basis": "full dissolved polygon components with validated source-part endpoints; independent of graph edges"
+      },
+      "connection_features": [
+        {
+          "geometry": {
+            "coordinates": [
+              [
+                -89.41230144260315,
+                36.51117494957951
+              ],
+              [
+                -89.467715,
+                36.523724
+              ]
+            ],
+            "type": "LineString"
+          },
+          "id": "ky-exclave-001",
+          "properties": {
+            "component_ids": [
+              0,
+              1
+            ],
+            "distance_m": 5144.856912662275,
+            "endpoint_districts": [
+              2,
+              2
+            ],
+            "endpoints": [
+              {
+                "coordinate": [
+                  -89.41230144260315,
+                  36.51117494957951
+                ],
+                "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection.",
+                "geoid": "210759602004000",
+                "part_index": 0,
+                "part_node": 130538,
+                "source_boundary_error_degrees": 1.7110407666062239e-15
+              },
+              {
+                "coordinate": [
+                  -89.467715,
+                  36.523724
+                ],
+                "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance.",
+                "geoid": "210759602004105",
+                "part_index": 0,
+                "part_node": 122447,
+                "source_boundary_error_degrees": 0.0
+              }
+            ],
+            "geographic_context": {
+              "area_water_archive_sha256": "987001cceff747e1c087283e9522f71962364b6c7bb35c353a0a41395919a4bb",
+              "area_water_source_url": "https://www2.census.gov/geo/tiger/TIGER2020/AREAWATER/tl_2020_29143_areawater.zip",
+              "crossed_state": "Missouri",
+              "mapped_land_length_m": 3339.9715683397676,
+              "mapped_water_length_m": 1804.8854352990725,
+              "meaning": "Explicit cross-jurisdiction connectivity exception; no Missouri territory, source polygon, bridge, or travel route is added.",
+              "source_year": 2020,
+              "surface_length_measurement": "Local equirectangular lengths of line intervals intersected with exact 2020 area-water polygons.",
+              "water_only": false
+            },
+            "id": "ky-exclave-001",
+            "kind": "recorded-exclave-connection",
+            "meaning": "declared exclave connectivity exception; no source polygon, foreign-state territory, bridge, or travel route added",
+            "policy": "kentucky-bend-recorded-exclave-v1",
+            "provenance": {
+              "builder_sha256": "4e7a40e495c3462ee7951bbeffc264c35f6d92409d4d55e863d242ca3e40f971",
+              "diagnostic_evidence_sha256": {
+                "area-water-audit.json": "a03a31c43ebab7bf820a5efe78a966dc8f28fd04fc195affb75e2a07d6f63c14",
+                "candidate-links.json": "20ed82660a0ea247de667dd7956d29f816fdacf1035a3f9e18aecbf35dc0a97f",
+                "diagnosis.json": "4c179da7207752f210de8378e48ac4c9308a355544c86d044d2ed6db4cd32673",
+                "missouri-connection-context.json": "72a6acc4ed007b3225912d9666ae90ab771a8c7e2b9f5e986d7a7ac359c2aa95"
+              },
+              "geos_version": "3.13.1",
+              "physical_validation_helpers_sha256": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+              "policy": "kentucky-bend-recorded-exclave-v1",
+              "shapely_version": "2.1.2",
+              "source_archive_sha256": "ebed3b0de6fee945db0064d378aa66aaebe05f05b460a5ad109a57a14a783b66",
+              "source_files_sha256": {
+                ".dbf": "311f0298461610a8acb293b679111e9cbecd8a6d6707077595bfdfdda38846e5",
+                ".shp": "f6fcf8b2648405f173d50fc6055c57b267898c4786ee1e74974e69f0629632c2",
+                ".shx": "51b9bbb8677d5742f8109f3a15797e3602c5424d2bd8a90945eaa4c8fb96875b"
+              }
+            },
+            "state_fips": "21",
+            "used_by_district": 2
+          },
+          "type": "Feature"
+        }
+      ],
+      "recorded_connections": [
+        {
+          "id": "ky-exclave-001",
+          "component_ids": [
+            0,
+            1
+          ],
+          "distance_m": 5144.856912662275,
+          "planar_candidate_distance_m": 5063.300447424077,
+          "endpoints": [
+            {
+              "geoid": "210759602004000",
+              "part_node": 130538,
+              "part_index": 0,
+              "coordinate": [
+                -89.41230144260315,
+                36.51117494957951
+              ],
+              "source_boundary_error_degrees": 1.7110407666062239e-15,
+              "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+            },
+            {
+              "geoid": "210759602004105",
+              "part_node": 122447,
+              "part_index": 0,
+              "coordinate": [
+                -89.467715,
+                36.523724
+              ],
+              "source_boundary_error_degrees": 0.0,
+              "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+            }
+          ],
+          "selected_k": [
+            6,
+            8,
+            9,
+            14
+          ],
+          "classification": "positive_gap",
+          "source_boundaries_intersect": false,
+          "exact_geographic_distance_degrees": 0.05600524983122607,
+          "intervening_component_ids": [],
+          "endpoint_component_interior_crossings": [],
+          "endpoint_interior_intersection_length_degrees": {
+            "0": 0.0,
+            "1": 0.0
+          },
+          "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+          "eligible_positive_gap": true,
+          "projection": {
+            "kind": "per-pair-bbox-centered-equirectangular",
+            "lon0": -85.7679955,
+            "lat0": 37.822395
+          },
+          "candidate_id": "ky-candidate-00-01",
+          "state_fips": "21",
+          "kind": "recorded-exclave-connection",
+          "policy": "kentucky-bend-recorded-exclave-v1",
+          "distance_definition": "Spherical endpoint length of the preserved planar nearest-boundary candidate in census coverage.",
+          "geographic_context": {
+            "crossed_state": "Missouri",
+            "water_only": false,
+            "mapped_water_length_m": 1804.8854352990725,
+            "mapped_land_length_m": 3339.9715683397676,
+            "surface_length_measurement": "Local equirectangular lengths of line intervals intersected with exact 2020 area-water polygons.",
+            "source_year": 2020,
+            "area_water_source_url": "https://www2.census.gov/geo/tiger/TIGER2020/AREAWATER/tl_2020_29143_areawater.zip",
+            "area_water_archive_sha256": "987001cceff747e1c087283e9522f71962364b6c7bb35c353a0a41395919a4bb",
+            "meaning": "Explicit cross-jurisdiction connectivity exception; no Missouri territory, source polygon, bridge, or travel route is added."
+          },
+          "provenance": {
+            "policy": "kentucky-bend-recorded-exclave-v1",
+            "builder_sha256": "4e7a40e495c3462ee7951bbeffc264c35f6d92409d4d55e863d242ca3e40f971",
+            "physical_validation_helpers_sha256": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+            "source_archive_sha256": "ebed3b0de6fee945db0064d378aa66aaebe05f05b460a5ad109a57a14a783b66",
+            "source_files_sha256": {
+              ".shp": "f6fcf8b2648405f173d50fc6055c57b267898c4786ee1e74974e69f0629632c2",
+              ".shx": "51b9bbb8677d5742f8109f3a15797e3602c5424d2bd8a90945eaa4c8fb96875b",
+              ".dbf": "311f0298461610a8acb293b679111e9cbecd8a6d6707077595bfdfdda38846e5"
+            },
+            "diagnostic_evidence_sha256": {
+              "diagnosis.json": "4c179da7207752f210de8378e48ac4c9308a355544c86d044d2ed6db4cd32673",
+              "candidate-links.json": "20ed82660a0ea247de667dd7956d29f816fdacf1035a3f9e18aecbf35dc0a97f",
+              "area-water-audit.json": "a03a31c43ebab7bf820a5efe78a966dc8f28fd04fc195affb75e2a07d6f63c14",
+              "missouri-connection-context.json": "72a6acc4ed007b3225912d9666ae90ab771a8c7e2b9f5e986d7a7ac359c2aa95"
+            },
+            "shapely_version": "2.1.2",
+            "geos_version": "3.13.1"
+          }
+        }
+      ],
+      "selected_connection_count": 1,
+      "used_connection_count": 1,
+      "inner_optimizer_pass_count": 67,
+      "inner_optimizer_failed_pass_count": 0,
+      "payloads": {
+        "district_outlines": {
+          "full": {
+            "coordinate_count": 183422,
+            "gzip_bytes": 1161718,
+            "gzip_path": "districts-full.geojson.gz",
+            "path": "districts-full.geojson",
+            "raw_bytes": 4179365
+          },
+          "national": {
+            "coordinate_count": 5559,
+            "gzip_bytes": 45882,
+            "gzip_path": "districts-national.geojson.gz",
+            "path": "districts-national.geojson",
+            "raw_bytes": 143617
+          },
+          "state": {
+            "coordinate_count": 33263,
+            "gzip_bytes": 257280,
+            "gzip_path": "districts-state.geojson.gz",
+            "path": "districts-state.geojson",
+            "raw_bytes": 852956
+          }
+        },
+        "exclave_connections": {
+          "connection_count": 1,
+          "gzip_bytes": 1483,
+          "gzip_path": "exclave-connections.geojson.gz",
+          "path": "exclave-connections.geojson",
+          "raw_bytes": 2752
+        },
+        "load_scenarios": {
+          "all_county_detail_shards": {
+            "gzip_bytes": 96107303,
+            "raw_bytes": 361032393
+          },
+          "largest_county_detail_shard": {
+            "bbox": [
+              -85.947104,
+              37.99721,
+              -85.404899,
+              38.380239
+            ],
+            "block_count": 10986,
+            "county_fips": "111",
+            "gzip_bytes": 3168657,
+            "gzip_path": "blocks/county-111.geojson.gz",
+            "path": "blocks/county-111.geojson",
+            "population": 782969,
+            "raw_bytes": 12663068
+          },
+          "national_state_only": {
+            "coordinate_count": 5559,
+            "gzip_bytes": 45882,
+            "gzip_path": "districts-national.geojson.gz",
+            "path": "districts-national.geojson",
+            "raw_bytes": 143617
+          },
+          "state_entry_outlines_and_detail_index": {
+            "gzip_bytes": 263238,
+            "raw_bytes": 880387
+          }
+        }
+      }
+    },
+    {
+      "status": "complete_under_exclave_policy",
+      "district_count": 9,
+      "house_sizes": [
+        692
+      ],
+      "run_kind": "kentucky_recorded_exclave_policy_v1",
+      "configuration": {
+        "seed": 20200955,
+        "max_outer_iterations": 80,
+        "inner_max_iterations": 300,
+        "center_tolerance_m": 0.0001,
+        "physical_adjacency_rule": "polygon parts; disjoint interiors; positive-length shared boundary; F***1****",
+        "connection_policy": "kentucky-bend-recorded-exclave-v1",
+        "connection_kind": "recorded-exclave-connection",
+        "max_rebalance_moves": 1000,
+        "root_eligibility_relative_band": 0.01,
+        "group_population_preflight_tolerance": 0.01,
+        "minimum_district_population_for_root_classification": 495641.96,
+        "minimum_district_population_exact": "12391049/25",
+        "eligibility_note": "99% of ideal classifies original eligible roots; root groups must admit integer district allocations within a 1% optimistic population budget. Neither is final-plan acceptance.",
+        "boundary_metric": "source census coverage, including retained water blocks; no shoreline substitution",
+        "inner_optimization": {
+          "normalization": "population-mass and geometry-derived shifted squared costs; mean-zero weight gauge",
+          "public_units": "centers in source coordinate units; weights in squared source coordinate units",
+          "max_line_search_steps": 100,
+          "failure_policy": "raise on unsuccessful termination or nonfinite output; no completed plan returned"
+        }
+      },
+      "source": {
+        "schema": 1,
+        "state_fips": "21",
+        "state": "Kentucky",
+        "url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_21_tabblock20.zip",
+        "archive_sha256": "ebed3b0de6fee945db0064d378aa66aaebe05f05b460a5ad109a57a14a783b66",
+        "archive_bytes": 265195721,
+        "extracted_file_sha256": {
+          "tl_2020_21_tabblock20.cpg": "3ad3031f5503a4404af825262ee8232cc04d4ea6683d42c5dd0a2f2a27ac9824",
+          "tl_2020_21_tabblock20.dbf": "311f0298461610a8acb293b679111e9cbecd8a6d6707077595bfdfdda38846e5",
+          "tl_2020_21_tabblock20.prj": "0b9041e921d9ebb43247d314608fe9e38a0b008ee793067fc1806199ea1fb9dd",
+          "tl_2020_21_tabblock20.shp": "f6fcf8b2648405f173d50fc6055c57b267898c4786ee1e74974e69f0629632c2",
+          "tl_2020_21_tabblock20.shp.ea.iso.xml": "bfec33140cc7684b1385347718c27347f615d446ae774ab89ef16e900b413d40",
+          "tl_2020_21_tabblock20.shp.iso.xml": "45da72c95bb92b99dd9c6a87abcde6e28e40ff45d01947aee0439d698e44a3c1",
+          "tl_2020_21_tabblock20.shx": "51b9bbb8677d5742f8109f3a15797e3602c5424d2bd8a90945eaa4c8fb96875b"
+        },
+        "download": {
+          "attempts": 1,
+          "etag": null,
+          "expected_bytes": 265195721,
+          "last_modified": "Fri, 06 Jan 2023 21:45:54 GMT",
+          "received_bytes": 265195721,
+          "resumed_bytes": 0,
+          "url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_21_tabblock20.zip"
+        },
+        "hash_provenance": "Locally computed SHA-256; no publisher checksum is provided.",
+        "archive_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\21\\tl_2020_21_tabblock20.zip",
+        "extraction_dir": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\21\\tl_2020_21_tabblock20",
+        "source_shapefile_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\21\\tl_2020_21_tabblock20\\tl_2020_21_tabblock20.shp",
+        "manifest_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\21\\tl_2020_21_tabblock20.manifest.json",
+        "downloaded_in_timed_pipeline": false,
+        "extracted_files_reused": true,
+        "extracted_bytes": 265194779,
+        "crs_wkt": "GEOGCS[\"GCS_North_American_1983\",DATUM[\"D_North_American_1983\",SPHEROID[\"GRS_1980\",6378137,298.257222101]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]"
+      },
+      "code_sha256": {
+        "districting/algorithm.py": "a1b264a2bb855675ab3b633a5b47a38b77f4929e29b7a4086cfb889436e244ac",
+        "districting/connectivity.py": "2d6788d73fac4e2eb550cff4db36dd4b5b430f131254809805c53317bb8cbfed",
+        "districting/part_connectivity.py": "a127aad254e65dc7b8be69f1fe7403aad6f9d18e0a15b8723e32358f9ef833d5",
+        "districting/apportionment.py": "07eb27ebc88d89647dfad66784d4fb3b9623b7919ed6e837122111bfe4323eae",
+        "districting/data/apportionment_2020.py": "86a8ee34675d78aa99ed7edcb0c686fbb3aebd34d04655a106cae10dfbb0461d",
+        "scripts/benchmark_state_blocks.py": "8a1f05e5e428437ff87434408c315e8d94a4df64df5dffa821a7fc952b77a414",
+        "scripts/benchmark_kansas_blocks.py": "20da6d6f95e4b6706341eb97f01c3518e3d58b07e1852a0537e9c85c5dab31bf",
+        "scripts/benchmark_kansas_anchors.py": "adf92735dfcf5fb703c15a1e7d9f1a8f76b203d037e441b3560d2bc0573b50a7",
+        "scripts/district_block_sources.py": "dd041755be227ea77abfed20bbc6c7a9a10050bf8f6a66aaeed2a07c96a1cbbb",
+        "scripts/district_block_adjacency.py": "8e3bd87629631e5452b6294bb94789dffa733a7b490db8a5238687a7609c0efc",
+        "scripts/district_block_graph_cache.py": "46d0c64da93123c23c3a05136ab2c4b3f096122627990f0a25c4c2e1c75b6c7e",
+        "scripts/district_block_map_export.py": "05e29bdfea353a1819fd4000b2e9ebc350fd8b9c6bdccf299d7531a7002499cf",
+        "scripts/state_block_map_export.py": "75e8369f845a261eb3abe2a05979a81d31874ac93d299d1bd4f5d2ff4f7804b2",
+        "scripts/state_block_execution_lock.py": "861c5a915ca9bc7d7065df4c10afae48c641febd680b25133c05d64f4268c6ff",
+        "scripts/district_block_part_graph.py": "49b43929897184c04a5332f4530cd7cf722f9ac604008657855a65694024c490",
+        "scripts/benchmark_kentucky_exclave.py": "c7fbb1697a15a7a30521234ec7ebcd39443f68b8ace4084c09ae16d2589d1364",
+        "scripts/kentucky_exclave_links.py": "4e7a40e495c3462ee7951bbeffc264c35f6d92409d4d55e863d242ca3e40f971",
+        "scripts/hawaii_population_links.py": "b512c901f00b62864eb84f7b5cfed2e8d4fe5915ffe3cc87e50c93345e581519",
+        "scripts/district_block_island_links.py": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+        "scripts/correct_state_block_parts.py": "b4006afd905ac6f9ff72c6ba95ac73cf1c807695e33bf2bc4cdf68233028bacd",
+        "scripts/assets/kentucky-block-viewer.html": "1bc1853a73a4583ceff39f0788c289bb0764dd7b0f816688efa0ccb774740042",
+        "districting/__init__.py": "baf0b8848dc6fffc7ab83fbe1eb2f6a45f6f67e622fda941b62c818d88f8e548"
+      },
+      "phases": {
+        "source_acquisition": {
+          "wall_seconds": 0.24493499999516644,
+          "cpu_seconds": 0.25,
+          "sampled_peak_rss_bytes": 76722176
+        },
+        "source_extraction": {
+          "wall_seconds": 0.2550253000081284,
+          "cpu_seconds": 0.25,
+          "sampled_peak_rss_bytes": 77643776
+        },
+        "load_and_validate_blocks": {
+          "wall_seconds": 2.359647599994787,
+          "cpu_seconds": 2.375,
+          "sampled_peak_rss_bytes": 141512704
+        },
+        "load_or_build_physical_part_graph": {
+          "wall_seconds": 2.663902300002519,
+          "cpu_seconds": 2.53125,
+          "sampled_peak_rss_bytes": 193204224
+        },
+        "prepare_recorded_exclave_connection": {
+          "wall_seconds": 53.86131829999795,
+          "cpu_seconds": 53.84375,
+          "sampled_peak_rss_bytes": 737755136
+        },
+        "solve": {
+          "wall_seconds": 24.151934200010146,
+          "cpu_seconds": 24.15625,
+          "sampled_peak_rss_bytes": 314589184
+        },
+        "audit_initial_plan": {
+          "wall_seconds": 1.3220999000041047,
+          "cpu_seconds": 1.328125,
+          "sampled_peak_rss_bytes": 259538944
+        },
+        "repair_and_rebalance": {
+          "wall_seconds": 2.160697599989362,
+          "cpu_seconds": 2.15625,
+          "sampled_peak_rss_bytes": 262901760
+        },
+        "save_and_audit_final_plan": {
+          "wall_seconds": 2.867048000000068,
+          "cpu_seconds": 2.859375,
+          "sampled_peak_rss_bytes": 282284032
+        },
+        "independent_polygon_validation_and_map_export": {
+          "wall_seconds": 400.98351710000134,
+          "cpu_seconds": 398.890625,
+          "sampled_peak_rss_bytes": 1125736448
+        },
+        "write_viewer_and_verify_preservation": {
+          "wall_seconds": 0.6476545000041369,
+          "cpu_seconds": 0.5625,
+          "sampled_peak_rss_bytes": 254476288
+        }
+      },
+      "timed_pipeline_wall_seconds": 491.8123415999871,
+      "peak_process_working_set_bytes": 1127874560,
+      "preservation_audit": {
+        "all_original_strict_files_byte_identical": true,
+        "national_suite_byte_identical": true,
+        "source_archive_byte_identical": true,
+        "run_code_unchanged": true,
+        "protected_file_count": 275,
+        "all_original_diagnostic_files_byte_identical": true,
+        "rhode_island_and_hawaii_evidence_byte_identical": true
+      },
+      "started_at": "2026-10-23T19:58:55.566532+00:00",
+      "finished_at": "2026-10-23T20:07:07.373223+00:00",
+      "url": "http://127.0.0.1:8770/policies/kentucky-exclave-v1/states/21/districts-9/",
+      "benchmark_path": ".cache/state-block-benchmark/suite-through-1000/policies/kentucky-exclave-v1/states/21/districts-9/benchmark.json",
+      "benchmark_sha256": "87561fbdf8c16250a8ec4d729169e41266949d12007cbe5441063d6d7647f02a",
+      "peak_working_set_mib": 1075.625,
+      "accepted_plan": true,
+      "input": {
+        "state_fips": "21",
+        "state": "Kentucky",
+        "block_count": 132662,
+        "populated_block_count": 91572,
+        "zero_population_block_count": 41090,
+        "water_only_block_count": 6809,
+        "tract_count": 1306,
+        "total_population": 4505836,
+        "largest_block_population": 2400,
+        "source_bbox": [
+          -89.571203,
+          36.497058,
+          -81.964788,
+          39.147732
+        ],
+        "longitude_span_degrees": 7.606414999999998,
+        "source_crosses_antimeridian": false,
+        "shared_edge_antimeridian_normalization_supported": true,
+        "projection": {
+          "kind": "population-centered-equirectangular",
+          "lon0": -85.25697916544878,
+          "lat0": 37.838308240804146,
+          "dateline_unwrapped": false,
+          "distance_model": "approximate local plane; distortion increases across broad states"
+        },
+        "location_source": "TIGER INTPT internal points, not household locations or population centroids",
+        "official_totals_validated": true,
+        "expected_totals": {
+          "block_count": 132662,
+          "resident_population": 4505836
+        },
+        "block_count_source_url": "https://www2.census.gov/geo/docs/maps-data/data/geo_tallies2020/State_Block_Counts_2010_2020.txt",
+        "resident_population_source_url": "https://www2.census.gov/programs-surveys/decennial/2020/data/apportionment/apportionment-2020-table02.pdf"
+      },
+      "solver": {
+        "kind": "balanced_power_diagram",
+        "outer_iterations": 41,
+        "centers_converged": true,
+        "outer_iteration_limit_reached": false,
+        "population_balance": {
+          "district_populations": [
+            500663,
+            500632,
+            500633,
+            500576,
+            500686,
+            500648,
+            500675,
+            500703,
+            500620
+          ],
+          "total_population": 4505836,
+          "target_population": 500648.44444444444,
+          "ideal_population_exact": {
+            "numerator": 4505836,
+            "denominator": 9
+          },
+          "deviation_numerators": [
+            131,
+            -148,
+            -139,
+            -652,
+            338,
+            -4,
+            239,
+            491,
+            -256
+          ],
+          "deviation_denominator": 9,
+          "deviations_people": [
+            14.555555555555555,
+            -16.444444444444443,
+            -15.444444444444445,
+            -72.44444444444444,
+            37.55555555555556,
+            -0.4444444444444444,
+            26.555555555555557,
+            54.55555555555556,
+            -28.444444444444443
+          ],
+          "max_absolute_deviation_numerator": 652,
+          "max_absolute_deviation_people": 72.44444444444444,
+          "max_absolute_deviation_percent": 0.014470122747476827,
+          "squared_deviation_numerator": 961488,
+          "squared_deviation_denominator": 81,
+          "total_range_people": 127,
+          "total_range_percent": 0.025367101687677935,
+          "exact_equal_populations": false,
+          "integer_population_lower_bound": {
+            "floor_population": 500648,
+            "ceiling_population": 500649,
+            "districts_at_floor": 5,
+            "districts_at_ceiling": 4,
+            "max_deviation_numerator": 5,
+            "deviation_denominator": 9,
+            "max_absolute_deviation_people": 0.5555555555555556,
+            "reached": false,
+            "whole_block_feasibility_assumed": false
+          }
+        },
+        "all_inner_optimizer_passes_succeeded": true,
+        "normalization": {
+          "normalization": "population-mass and geometry-derived shifted squared costs; mean-zero weight gauge",
+          "public_units": "centers in source coordinate units; weights in squared source coordinate units",
+          "max_line_search_steps": 100,
+          "failure_policy": "raise on unsuccessful termination or nonfinite output; no completed plan returned"
+        }
+      },
+      "outer_termination": {
+        "status": "center_tolerance_met",
+        "outer_iterations": 41,
+        "configured_max_outer_iterations": 80,
+        "centers_converged": true,
+        "outer_iteration_limit_reached": false,
+        "disclosure": "The outer loop met its center-convergence tolerance after 41 iterations. Successful inner optimizer passes do not establish outer convergence. Final population balance and connectivity are assessed separately after repair/rebalancing."
+      },
+      "initial_plan": {
+        "district_populations": [
+          500663,
+          500632,
+          500633,
+          500576,
+          500686,
+          500648,
+          500675,
+          500703,
+          500620
+        ],
+        "total_population": 4505836,
+        "target_population": 500648.44444444444,
+        "ideal_population_exact": {
+          "numerator": 4505836,
+          "denominator": 9
+        },
+        "deviation_numerators": [
+          131,
+          -148,
+          -139,
+          -652,
+          338,
+          -4,
+          239,
+          491,
+          -256
+        ],
+        "deviation_denominator": 9,
+        "deviations_people": [
+          14.555555555555555,
+          -16.444444444444443,
+          -15.444444444444445,
+          -72.44444444444444,
+          37.55555555555556,
+          -0.4444444444444444,
+          26.555555555555557,
+          54.55555555555556,
+          -28.444444444444443
+        ],
+        "max_absolute_deviation_numerator": 652,
+        "max_absolute_deviation_people": 72.44444444444444,
+        "max_absolute_deviation_percent": 0.014470122747476827,
+        "squared_deviation_numerator": 961488,
+        "squared_deviation_denominator": 81,
+        "total_range_people": 127,
+        "total_range_percent": 0.025367101687677935,
+        "exact_equal_populations": false,
+        "integer_population_lower_bound": {
+          "floor_population": 500648,
+          "ceiling_population": 500649,
+          "districts_at_floor": 5,
+          "districts_at_ceiling": 4,
+          "max_deviation_numerator": 5,
+          "deviation_denominator": 9,
+          "max_absolute_deviation_people": 0.5555555555555556,
+          "reached": false,
+          "whole_block_feasibility_assumed": false
+        },
+        "district_count": 9,
+        "district_block_counts": [
+          19834,
+          10476,
+          25295,
+          8340,
+          8617,
+          22200,
+          8024,
+          12972,
+          16904
+        ],
+        "shared_edge_components": [
+          11,
+          3,
+          4,
+          4,
+          4,
+          2,
+          4,
+          9,
+          5
+        ],
+        "all_districts_nonempty": true,
+        "all_districts_shared_edge_connected": false,
+        "all_blocks_assigned_once": true,
+        "population_sum_matches_source": true,
+        "tracts_split_across_districts": 155,
+        "physical_part_components": [
+          11,
+          3,
+          4,
+          4,
+          4,
+          2,
+          4,
+          9,
+          5
+        ],
+        "all_districts_physically_part_connected": false,
+        "policy_part_components": [
+          11,
+          3,
+          3,
+          4,
+          4,
+          2,
+          4,
+          9,
+          5
+        ],
+        "all_districts_policy_connected": false
+      },
+      "after_repair_plan": {
+        "district_populations": [
+          500466,
+          500632,
+          500570,
+          500658,
+          500700,
+          500823,
+          500884,
+          500434,
+          500669
+        ],
+        "total_population": 4505836,
+        "target_population": 500648.44444444444,
+        "ideal_population_exact": {
+          "numerator": 4505836,
+          "denominator": 9
+        },
+        "deviation_numerators": [
+          -1642,
+          -148,
+          -706,
+          86,
+          464,
+          1571,
+          2120,
+          -1930,
+          185
+        ],
+        "deviation_denominator": 9,
+        "deviations_people": [
+          -182.44444444444446,
+          -16.444444444444443,
+          -78.44444444444444,
+          9.555555555555555,
+          51.55555555555556,
+          174.55555555555554,
+          235.55555555555554,
+          -214.44444444444446,
+          20.555555555555557
+        ],
+        "max_absolute_deviation_numerator": 2120,
+        "max_absolute_deviation_people": 235.55555555555554,
+        "max_absolute_deviation_percent": 0.047050092369096436,
+        "squared_deviation_numerator": 14160762,
+        "squared_deviation_denominator": 81,
+        "total_range_people": 450,
+        "total_range_percent": 0.08988343117681158,
+        "exact_equal_populations": false,
+        "integer_population_lower_bound": {
+          "floor_population": 500648,
+          "ceiling_population": 500649,
+          "districts_at_floor": 5,
+          "districts_at_ceiling": 4,
+          "max_deviation_numerator": 5,
+          "deviation_denominator": 9,
+          "max_absolute_deviation_people": 0.5555555555555556,
+          "reached": false,
+          "whole_block_feasibility_assumed": false
+        },
+        "district_count": 9,
+        "district_block_counts": [
+          19825,
+          10474,
+          25294,
+          8343,
+          8617,
+          22207,
+          8034,
+          12967,
+          16901
+        ],
+        "shared_edge_components": [
+          1,
+          1,
+          2,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "all_districts_nonempty": true,
+        "all_districts_shared_edge_connected": false,
+        "all_blocks_assigned_once": true,
+        "population_sum_matches_source": true,
+        "tracts_split_across_districts": 153,
+        "physical_part_components": [
+          1,
+          1,
+          2,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "all_districts_physically_part_connected": false,
+        "policy_part_components": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "all_districts_policy_connected": true
+      },
+      "final_plan": {
+        "district_populations": [
+          500648,
+          500650,
+          500647,
+          500647,
+          500650,
+          500649,
+          500649,
+          500649,
+          500647
+        ],
+        "total_population": 4505836,
+        "target_population": 500648.44444444444,
+        "ideal_population_exact": {
+          "numerator": 4505836,
+          "denominator": 9
+        },
+        "deviation_numerators": [
+          -4,
+          14,
+          -13,
+          -13,
+          14,
+          5,
+          5,
+          5,
+          -13
+        ],
+        "deviation_denominator": 9,
+        "deviations_people": [
+          -0.4444444444444444,
+          1.5555555555555556,
+          -1.4444444444444444,
+          -1.4444444444444444,
+          1.5555555555555556,
+          0.5555555555555556,
+          0.5555555555555556,
+          0.5555555555555556,
+          -1.4444444444444444
+        ],
+        "max_absolute_deviation_numerator": 14,
+        "max_absolute_deviation_people": 1.5555555555555556,
+        "max_absolute_deviation_percent": 0.0003107081571544104,
+        "squared_deviation_numerator": 990,
+        "squared_deviation_denominator": 81,
+        "total_range_people": 3,
+        "total_range_percent": 0.0005992228745120772,
+        "exact_equal_populations": false,
+        "integer_population_lower_bound": {
+          "floor_population": 500648,
+          "ceiling_population": 500649,
+          "districts_at_floor": 5,
+          "districts_at_ceiling": 4,
+          "max_deviation_numerator": 5,
+          "deviation_denominator": 9,
+          "max_absolute_deviation_people": 0.5555555555555556,
+          "reached": false,
+          "whole_block_feasibility_assumed": false
+        },
+        "district_count": 9,
+        "district_block_counts": [
+          19827,
+          10474,
+          25301,
+          8341,
+          8617,
+          22203,
+          8031,
+          12967,
+          16901
+        ],
+        "shared_edge_components": [
+          1,
+          1,
+          2,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "all_districts_nonempty": true,
+        "all_districts_shared_edge_connected": false,
+        "all_blocks_assigned_once": true,
+        "population_sum_matches_source": true,
+        "tracts_split_across_districts": 154,
+        "physical_part_components": [
+          1,
+          1,
+          2,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "all_districts_physically_part_connected": false,
+        "policy_part_components": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "all_districts_policy_connected": true
+      },
+      "postprocessing": {
+        "stop_reason": "local_optimum",
+        "repair_move_count": 36,
+        "part_repair_move_count": 0,
+        "rebalance_move_count": 23
+      },
+      "exclave_policy_audit": {
+        "schema_version": 1,
+        "policy": "kentucky-bend-recorded-exclave-v1",
+        "state_fips": "21",
+        "district_count": 9,
+        "source_geometry_modified": false,
+        "synthetic_ownership_edges": false,
+        "source_population": 4505836,
+        "block_count": 132662,
+        "part_count": 132669,
+        "physical_component_count": 2,
+        "physical_edge_count": 330295,
+        "synthetic_edge_count": 1,
+        "augmented_edge_count": 330296,
+        "augmented_component_count": 1,
+        "augmented_graph_connected": true,
+        "eligible_root_count": 1,
+        "groups": [
+          {
+            "group_id": 0,
+            "component_ids": [
+              0,
+              1
+            ],
+            "population": 4505836,
+            "root_component_ids": [
+              0
+            ],
+            "district_count": 9
+          }
+        ],
+        "population_selection": {
+          "policy": "population-aware-rooted-boundary-forest-v1",
+          "district_count": 9,
+          "population_tolerance": 0.01,
+          "ideal_population": 500648.44444444444,
+          "minimum_root_population": 495641.96,
+          "eligible_root_component_ids": [
+            0
+          ],
+          "no_individual_root_fallback": false,
+          "selected_link_ids": [
+            "ky-candidate-00-01"
+          ],
+          "selected_total_distance_m": 5144.856912662275,
+          "groups": [
+            {
+              "group_id": 0,
+              "component_ids": [
+                0,
+                1
+              ],
+              "population": 4505836,
+              "root_component_ids": [
+                0
+              ],
+              "district_count": 9
+            }
+          ],
+          "population_bound": {
+            "feasible_seat_allocation": true,
+            "best_max_deviation_pct": 0.0,
+            "deviation_fraction": [
+              0,
+              1
+            ],
+            "seat_counts": [
+              9
+            ],
+            "ideal_population": 500648.44444444444,
+            "group_ideal_seats": [
+              9.0
+            ],
+            "is_constructed_plan": false,
+            "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+          },
+          "selection_priority": [
+            "Retain the most independently population-compatible original root groups.",
+            "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+            "Break ties by stable candidate IDs and component IDs."
+          ],
+          "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+          "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+          "groupings_examined": 1,
+          "population_feasible_groupings": 1,
+          "geometrically_unconnectable_groupings": 0
+        },
+        "components": [
+          {
+            "component_id": 0,
+            "population": 4505827,
+            "part_count": 132664,
+            "block_count": 132657
+          },
+          {
+            "component_id": 1,
+            "population": 9,
+            "part_count": 5,
+            "block_count": 5
+          }
+        ],
+        "candidate_count": 1,
+        "candidate_connections": [
+          {
+            "id": "ky-candidate-00-01",
+            "component_ids": [
+              0,
+              1
+            ],
+            "distance_m": 5144.856912662275,
+            "planar_candidate_distance_m": 5063.300447424077,
+            "endpoints": [
+              {
+                "geoid": "210759602004000",
+                "part_node": 130538,
+                "part_index": 0,
+                "coordinate": [
+                  -89.41230144260315,
+                  36.51117494957951
+                ],
+                "source_boundary_error_degrees": 1.7110407666062239e-15,
+                "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+              },
+              {
+                "geoid": "210759602004105",
+                "part_node": 122447,
+                "part_index": 0,
+                "coordinate": [
+                  -89.467715,
+                  36.523724
+                ],
+                "source_boundary_error_degrees": 0.0,
+                "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+              }
+            ],
+            "selected_k": [
+              6,
+              8,
+              9,
+              14
+            ],
+            "classification": "positive_gap",
+            "source_boundaries_intersect": false,
+            "exact_geographic_distance_degrees": 0.05600524983122607,
+            "intervening_component_ids": [],
+            "endpoint_component_interior_crossings": [],
+            "endpoint_interior_intersection_length_degrees": {
+              "0": 0.0,
+              "1": 0.0
+            },
+            "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+            "eligible_positive_gap": true,
+            "projection": {
+              "kind": "per-pair-bbox-centered-equirectangular",
+              "lon0": -85.7679955,
+              "lat0": 37.822395
+            }
+          }
+        ],
+        "excluded_candidates": [],
+        "geographic_context": {
+          "crossed_state": "Missouri",
+          "water_only": false,
+          "mapped_water_length_m": 1804.8854352990725,
+          "mapped_land_length_m": 3339.9715683397676,
+          "surface_length_measurement": "Local equirectangular lengths of line intervals intersected with exact 2020 area-water polygons.",
+          "source_year": 2020,
+          "area_water_source_url": "https://www2.census.gov/geo/tiger/TIGER2020/AREAWATER/tl_2020_29143_areawater.zip",
+          "area_water_archive_sha256": "987001cceff747e1c087283e9522f71962364b6c7bb35c353a0a41395919a4bb",
+          "meaning": "Explicit cross-jurisdiction connectivity exception; no Missouri territory, source polygon, bridge, or travel route is added."
+        },
+        "provenance": {
+          "policy": "kentucky-bend-recorded-exclave-v1",
+          "builder_sha256": "4e7a40e495c3462ee7951bbeffc264c35f6d92409d4d55e863d242ca3e40f971",
+          "physical_validation_helpers_sha256": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+          "source_archive_sha256": "ebed3b0de6fee945db0064d378aa66aaebe05f05b460a5ad109a57a14a783b66",
+          "source_files_sha256": {
+            ".shp": "f6fcf8b2648405f173d50fc6055c57b267898c4786ee1e74974e69f0629632c2",
+            ".shx": "51b9bbb8677d5742f8109f3a15797e3602c5424d2bd8a90945eaa4c8fb96875b",
+            ".dbf": "311f0298461610a8acb293b679111e9cbecd8a6d6707077595bfdfdda38846e5"
+          },
+          "diagnostic_evidence_sha256": {
+            "diagnosis.json": "4c179da7207752f210de8378e48ac4c9308a355544c86d044d2ed6db4cd32673",
+            "candidate-links.json": "20ed82660a0ea247de667dd7956d29f816fdacf1035a3f9e18aecbf35dc0a97f",
+            "area-water-audit.json": "a03a31c43ebab7bf820a5efe78a966dc8f28fd04fc195affb75e2a07d6f63c14",
+            "missouri-connection-context.json": "72a6acc4ed007b3225912d9666ae90ab771a8c7e2b9f5e986d7a7ac359c2aa95"
+          },
+          "shapely_version": "2.1.2",
+          "geos_version": "3.13.1"
+        },
+        "endpoint_tolerance_degrees": 1e-09,
+        "elapsed_seconds": 53.23927910000202
+      },
+      "independent_population_audit": {
+        "source": "Original source archive DBF GEOID20/POP20, read independently of runner aggregation",
+        "all_source_geoids_assigned_exactly_once": true,
+        "block_count": 132662,
+        "total_population": 4505836,
+        "district_populations": [
+          500648,
+          500650,
+          500647,
+          500647,
+          500650,
+          500649,
+          500649,
+          500649,
+          500647
+        ],
+        "district_block_counts": [
+          19827,
+          10474,
+          25301,
+          8341,
+          8617,
+          22203,
+          8031,
+          12967,
+          16901
+        ],
+        "deviation_numerators": [
+          -4,
+          14,
+          -13,
+          -13,
+          14,
+          5,
+          5,
+          5,
+          -13
+        ],
+        "deviation_denominator": 9,
+        "max_absolute_deviation_people": 1.5555555555555556,
+        "max_absolute_deviation_percent": 0.0003107081571544104
+      },
+      "verified_compressed_map_artifact_count": 124,
+      "physical_polygon_components": [
+        1,
+        1,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "policy_polygon_components": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "strict_polygon_validation": {
+        "issues": [
+          "District 2 has 2 polygon components."
+        ],
+        "passed": false
+      },
+      "policy_polygon_validation": {
+        "districts": [
+          {
+            "connected_components_after_links": 1,
+            "district_id": 0,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 1,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 2,
+            "physical_polygon_components": 2,
+            "used_link_ids": [
+              "ky-exclave-001"
+            ]
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 3,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 4,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 5,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 6,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 7,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 8,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          }
+        ],
+        "endpoint_boundary_tolerance_degrees": 1e-09,
+        "endpoint_global_part_order": "assignment mapping GEOID order, then original MultiPolygon parts",
+        "independent_district_coverage_valid": true,
+        "independent_source_coverage_valid": true,
+        "issues": [],
+        "passed": true,
+        "policy": "shared_edges_plus_recorded_exclave_connections",
+        "source_coverage_preserved_exactly": true,
+        "source_geometry_modified": false,
+        "used_link_ids": [
+          "ky-exclave-001"
+        ],
+        "validation_basis": "full dissolved polygon components with validated source-part endpoints; independent of graph edges"
+      },
+      "connection_features": [
+        {
+          "geometry": {
+            "coordinates": [
+              [
+                -89.41230144260315,
+                36.51117494957951
+              ],
+              [
+                -89.467715,
+                36.523724
+              ]
+            ],
+            "type": "LineString"
+          },
+          "id": "ky-exclave-001",
+          "properties": {
+            "component_ids": [
+              0,
+              1
+            ],
+            "distance_m": 5144.856912662275,
+            "endpoint_districts": [
+              2,
+              2
+            ],
+            "endpoints": [
+              {
+                "coordinate": [
+                  -89.41230144260315,
+                  36.51117494957951
+                ],
+                "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection.",
+                "geoid": "210759602004000",
+                "part_index": 0,
+                "part_node": 130538,
+                "source_boundary_error_degrees": 1.7110407666062239e-15
+              },
+              {
+                "coordinate": [
+                  -89.467715,
+                  36.523724
+                ],
+                "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance.",
+                "geoid": "210759602004105",
+                "part_index": 0,
+                "part_node": 122447,
+                "source_boundary_error_degrees": 0.0
+              }
+            ],
+            "geographic_context": {
+              "area_water_archive_sha256": "987001cceff747e1c087283e9522f71962364b6c7bb35c353a0a41395919a4bb",
+              "area_water_source_url": "https://www2.census.gov/geo/tiger/TIGER2020/AREAWATER/tl_2020_29143_areawater.zip",
+              "crossed_state": "Missouri",
+              "mapped_land_length_m": 3339.9715683397676,
+              "mapped_water_length_m": 1804.8854352990725,
+              "meaning": "Explicit cross-jurisdiction connectivity exception; no Missouri territory, source polygon, bridge, or travel route is added.",
+              "source_year": 2020,
+              "surface_length_measurement": "Local equirectangular lengths of line intervals intersected with exact 2020 area-water polygons.",
+              "water_only": false
+            },
+            "id": "ky-exclave-001",
+            "kind": "recorded-exclave-connection",
+            "meaning": "declared exclave connectivity exception; no source polygon, foreign-state territory, bridge, or travel route added",
+            "policy": "kentucky-bend-recorded-exclave-v1",
+            "provenance": {
+              "builder_sha256": "4e7a40e495c3462ee7951bbeffc264c35f6d92409d4d55e863d242ca3e40f971",
+              "diagnostic_evidence_sha256": {
+                "area-water-audit.json": "a03a31c43ebab7bf820a5efe78a966dc8f28fd04fc195affb75e2a07d6f63c14",
+                "candidate-links.json": "20ed82660a0ea247de667dd7956d29f816fdacf1035a3f9e18aecbf35dc0a97f",
+                "diagnosis.json": "4c179da7207752f210de8378e48ac4c9308a355544c86d044d2ed6db4cd32673",
+                "missouri-connection-context.json": "72a6acc4ed007b3225912d9666ae90ab771a8c7e2b9f5e986d7a7ac359c2aa95"
+              },
+              "geos_version": "3.13.1",
+              "physical_validation_helpers_sha256": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+              "policy": "kentucky-bend-recorded-exclave-v1",
+              "shapely_version": "2.1.2",
+              "source_archive_sha256": "ebed3b0de6fee945db0064d378aa66aaebe05f05b460a5ad109a57a14a783b66",
+              "source_files_sha256": {
+                ".dbf": "311f0298461610a8acb293b679111e9cbecd8a6d6707077595bfdfdda38846e5",
+                ".shp": "f6fcf8b2648405f173d50fc6055c57b267898c4786ee1e74974e69f0629632c2",
+                ".shx": "51b9bbb8677d5742f8109f3a15797e3602c5424d2bd8a90945eaa4c8fb96875b"
+              }
+            },
+            "state_fips": "21",
+            "used_by_district": 2
+          },
+          "type": "Feature"
+        }
+      ],
+      "recorded_connections": [
+        {
+          "id": "ky-exclave-001",
+          "component_ids": [
+            0,
+            1
+          ],
+          "distance_m": 5144.856912662275,
+          "planar_candidate_distance_m": 5063.300447424077,
+          "endpoints": [
+            {
+              "geoid": "210759602004000",
+              "part_node": 130538,
+              "part_index": 0,
+              "coordinate": [
+                -89.41230144260315,
+                36.51117494957951
+              ],
+              "source_boundary_error_degrees": 1.7110407666062239e-15,
+              "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+            },
+            {
+              "geoid": "210759602004105",
+              "part_node": 122447,
+              "part_index": 0,
+              "coordinate": [
+                -89.467715,
+                36.523724
+              ],
+              "source_boundary_error_degrees": 0.0,
+              "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+            }
+          ],
+          "selected_k": [
+            6,
+            8,
+            9,
+            14
+          ],
+          "classification": "positive_gap",
+          "source_boundaries_intersect": false,
+          "exact_geographic_distance_degrees": 0.05600524983122607,
+          "intervening_component_ids": [],
+          "endpoint_component_interior_crossings": [],
+          "endpoint_interior_intersection_length_degrees": {
+            "0": 0.0,
+            "1": 0.0
+          },
+          "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+          "eligible_positive_gap": true,
+          "projection": {
+            "kind": "per-pair-bbox-centered-equirectangular",
+            "lon0": -85.7679955,
+            "lat0": 37.822395
+          },
+          "candidate_id": "ky-candidate-00-01",
+          "state_fips": "21",
+          "kind": "recorded-exclave-connection",
+          "policy": "kentucky-bend-recorded-exclave-v1",
+          "distance_definition": "Spherical endpoint length of the preserved planar nearest-boundary candidate in census coverage.",
+          "geographic_context": {
+            "crossed_state": "Missouri",
+            "water_only": false,
+            "mapped_water_length_m": 1804.8854352990725,
+            "mapped_land_length_m": 3339.9715683397676,
+            "surface_length_measurement": "Local equirectangular lengths of line intervals intersected with exact 2020 area-water polygons.",
+            "source_year": 2020,
+            "area_water_source_url": "https://www2.census.gov/geo/tiger/TIGER2020/AREAWATER/tl_2020_29143_areawater.zip",
+            "area_water_archive_sha256": "987001cceff747e1c087283e9522f71962364b6c7bb35c353a0a41395919a4bb",
+            "meaning": "Explicit cross-jurisdiction connectivity exception; no Missouri territory, source polygon, bridge, or travel route is added."
+          },
+          "provenance": {
+            "policy": "kentucky-bend-recorded-exclave-v1",
+            "builder_sha256": "4e7a40e495c3462ee7951bbeffc264c35f6d92409d4d55e863d242ca3e40f971",
+            "physical_validation_helpers_sha256": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+            "source_archive_sha256": "ebed3b0de6fee945db0064d378aa66aaebe05f05b460a5ad109a57a14a783b66",
+            "source_files_sha256": {
+              ".shp": "f6fcf8b2648405f173d50fc6055c57b267898c4786ee1e74974e69f0629632c2",
+              ".shx": "51b9bbb8677d5742f8109f3a15797e3602c5424d2bd8a90945eaa4c8fb96875b",
+              ".dbf": "311f0298461610a8acb293b679111e9cbecd8a6d6707077595bfdfdda38846e5"
+            },
+            "diagnostic_evidence_sha256": {
+              "diagnosis.json": "4c179da7207752f210de8378e48ac4c9308a355544c86d044d2ed6db4cd32673",
+              "candidate-links.json": "20ed82660a0ea247de667dd7956d29f816fdacf1035a3f9e18aecbf35dc0a97f",
+              "area-water-audit.json": "a03a31c43ebab7bf820a5efe78a966dc8f28fd04fc195affb75e2a07d6f63c14",
+              "missouri-connection-context.json": "72a6acc4ed007b3225912d9666ae90ab771a8c7e2b9f5e986d7a7ac359c2aa95"
+            },
+            "shapely_version": "2.1.2",
+            "geos_version": "3.13.1"
+          }
+        }
+      ],
+      "selected_connection_count": 1,
+      "used_connection_count": 1,
+      "inner_optimizer_pass_count": 42,
+      "inner_optimizer_failed_pass_count": 0,
+      "payloads": {
+        "district_outlines": {
+          "full": {
+            "coordinate_count": 172147,
+            "gzip_bytes": 1101091,
+            "gzip_path": "districts-full.geojson.gz",
+            "path": "districts-full.geojson",
+            "raw_bytes": 3922701
+          },
+          "national": {
+            "coordinate_count": 5810,
+            "gzip_bytes": 48411,
+            "gzip_path": "districts-national.geojson.gz",
+            "path": "districts-national.geojson",
+            "raw_bytes": 150345
+          },
+          "state": {
+            "coordinate_count": 32131,
+            "gzip_bytes": 252365,
+            "gzip_path": "districts-state.geojson.gz",
+            "path": "districts-state.geojson",
+            "raw_bytes": 824005
+          }
+        },
+        "exclave_connections": {
+          "connection_count": 1,
+          "gzip_bytes": 1483,
+          "gzip_path": "exclave-connections.geojson.gz",
+          "path": "exclave-connections.geojson",
+          "raw_bytes": 2752
+        },
+        "load_scenarios": {
+          "all_county_detail_shards": {
+            "gzip_bytes": 96108566,
+            "raw_bytes": 361032393
+          },
+          "largest_county_detail_shard": {
+            "bbox": [
+              -85.947104,
+              37.99721,
+              -85.404899,
+              38.380239
+            ],
+            "block_count": 10986,
+            "county_fips": "111",
+            "gzip_bytes": 3169663,
+            "gzip_path": "blocks/county-111.geojson.gz",
+            "path": "blocks/county-111.geojson",
+            "population": 782969,
+            "raw_bytes": 12663068
+          },
+          "national_state_only": {
+            "coordinate_count": 5810,
+            "gzip_bytes": 48411,
+            "gzip_path": "districts-national.geojson.gz",
+            "path": "districts-national.geojson",
+            "raw_bytes": 150345
+          },
+          "state_entry_outlines_and_detail_index": {
+            "gzip_bytes": 258316,
+            "raw_bytes": 851436
+          }
+        }
+      }
+    },
+    {
+      "status": "complete_under_exclave_policy",
+      "district_count": 14,
+      "house_sizes": [
+        1000
+      ],
+      "run_kind": "kentucky_recorded_exclave_policy_v1",
+      "configuration": {
+        "seed": 20200955,
+        "max_outer_iterations": 80,
+        "inner_max_iterations": 300,
+        "center_tolerance_m": 0.0001,
+        "physical_adjacency_rule": "polygon parts; disjoint interiors; positive-length shared boundary; F***1****",
+        "connection_policy": "kentucky-bend-recorded-exclave-v1",
+        "connection_kind": "recorded-exclave-connection",
+        "max_rebalance_moves": 1000,
+        "root_eligibility_relative_band": 0.01,
+        "group_population_preflight_tolerance": 0.01,
+        "minimum_district_population_for_root_classification": 318626.97428571427,
+        "minimum_district_population_exact": "111519441/350",
+        "eligibility_note": "99% of ideal classifies original eligible roots; root groups must admit integer district allocations within a 1% optimistic population budget. Neither is final-plan acceptance.",
+        "boundary_metric": "source census coverage, including retained water blocks; no shoreline substitution",
+        "inner_optimization": {
+          "normalization": "population-mass and geometry-derived shifted squared costs; mean-zero weight gauge",
+          "public_units": "centers in source coordinate units; weights in squared source coordinate units",
+          "max_line_search_steps": 100,
+          "failure_policy": "raise on unsuccessful termination or nonfinite output; no completed plan returned"
+        }
+      },
+      "source": {
+        "schema": 1,
+        "state_fips": "21",
+        "state": "Kentucky",
+        "url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_21_tabblock20.zip",
+        "archive_sha256": "ebed3b0de6fee945db0064d378aa66aaebe05f05b460a5ad109a57a14a783b66",
+        "archive_bytes": 265195721,
+        "extracted_file_sha256": {
+          "tl_2020_21_tabblock20.cpg": "3ad3031f5503a4404af825262ee8232cc04d4ea6683d42c5dd0a2f2a27ac9824",
+          "tl_2020_21_tabblock20.dbf": "311f0298461610a8acb293b679111e9cbecd8a6d6707077595bfdfdda38846e5",
+          "tl_2020_21_tabblock20.prj": "0b9041e921d9ebb43247d314608fe9e38a0b008ee793067fc1806199ea1fb9dd",
+          "tl_2020_21_tabblock20.shp": "f6fcf8b2648405f173d50fc6055c57b267898c4786ee1e74974e69f0629632c2",
+          "tl_2020_21_tabblock20.shp.ea.iso.xml": "bfec33140cc7684b1385347718c27347f615d446ae774ab89ef16e900b413d40",
+          "tl_2020_21_tabblock20.shp.iso.xml": "45da72c95bb92b99dd9c6a87abcde6e28e40ff45d01947aee0439d698e44a3c1",
+          "tl_2020_21_tabblock20.shx": "51b9bbb8677d5742f8109f3a15797e3602c5424d2bd8a90945eaa4c8fb96875b"
+        },
+        "download": {
+          "attempts": 1,
+          "etag": null,
+          "expected_bytes": 265195721,
+          "last_modified": "Fri, 06 Jan 2023 21:45:54 GMT",
+          "received_bytes": 265195721,
+          "resumed_bytes": 0,
+          "url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_21_tabblock20.zip"
+        },
+        "hash_provenance": "Locally computed SHA-256; no publisher checksum is provided.",
+        "archive_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\21\\tl_2020_21_tabblock20.zip",
+        "extraction_dir": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\21\\tl_2020_21_tabblock20",
+        "source_shapefile_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\21\\tl_2020_21_tabblock20\\tl_2020_21_tabblock20.shp",
+        "manifest_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\21\\tl_2020_21_tabblock20.manifest.json",
+        "downloaded_in_timed_pipeline": false,
+        "extracted_files_reused": true,
+        "extracted_bytes": 265194779,
+        "crs_wkt": "GEOGCS[\"GCS_North_American_1983\",DATUM[\"D_North_American_1983\",SPHEROID[\"GRS_1980\",6378137,298.257222101]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]"
+      },
+      "code_sha256": {
+        "districting/algorithm.py": "a1b264a2bb855675ab3b633a5b47a38b77f4929e29b7a4086cfb889436e244ac",
+        "districting/connectivity.py": "2d6788d73fac4e2eb550cff4db36dd4b5b430f131254809805c53317bb8cbfed",
+        "districting/part_connectivity.py": "a127aad254e65dc7b8be69f1fe7403aad6f9d18e0a15b8723e32358f9ef833d5",
+        "districting/apportionment.py": "07eb27ebc88d89647dfad66784d4fb3b9623b7919ed6e837122111bfe4323eae",
+        "districting/data/apportionment_2020.py": "86a8ee34675d78aa99ed7edcb0c686fbb3aebd34d04655a106cae10dfbb0461d",
+        "scripts/benchmark_state_blocks.py": "8a1f05e5e428437ff87434408c315e8d94a4df64df5dffa821a7fc952b77a414",
+        "scripts/benchmark_kansas_blocks.py": "20da6d6f95e4b6706341eb97f01c3518e3d58b07e1852a0537e9c85c5dab31bf",
+        "scripts/benchmark_kansas_anchors.py": "adf92735dfcf5fb703c15a1e7d9f1a8f76b203d037e441b3560d2bc0573b50a7",
+        "scripts/district_block_sources.py": "dd041755be227ea77abfed20bbc6c7a9a10050bf8f6a66aaeed2a07c96a1cbbb",
+        "scripts/district_block_adjacency.py": "8e3bd87629631e5452b6294bb94789dffa733a7b490db8a5238687a7609c0efc",
+        "scripts/district_block_graph_cache.py": "46d0c64da93123c23c3a05136ab2c4b3f096122627990f0a25c4c2e1c75b6c7e",
+        "scripts/district_block_map_export.py": "05e29bdfea353a1819fd4000b2e9ebc350fd8b9c6bdccf299d7531a7002499cf",
+        "scripts/state_block_map_export.py": "75e8369f845a261eb3abe2a05979a81d31874ac93d299d1bd4f5d2ff4f7804b2",
+        "scripts/state_block_execution_lock.py": "861c5a915ca9bc7d7065df4c10afae48c641febd680b25133c05d64f4268c6ff",
+        "scripts/district_block_part_graph.py": "49b43929897184c04a5332f4530cd7cf722f9ac604008657855a65694024c490",
+        "scripts/benchmark_kentucky_exclave.py": "c7fbb1697a15a7a30521234ec7ebcd39443f68b8ace4084c09ae16d2589d1364",
+        "scripts/kentucky_exclave_links.py": "4e7a40e495c3462ee7951bbeffc264c35f6d92409d4d55e863d242ca3e40f971",
+        "scripts/hawaii_population_links.py": "b512c901f00b62864eb84f7b5cfed2e8d4fe5915ffe3cc87e50c93345e581519",
+        "scripts/district_block_island_links.py": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+        "scripts/correct_state_block_parts.py": "b4006afd905ac6f9ff72c6ba95ac73cf1c807695e33bf2bc4cdf68233028bacd",
+        "scripts/assets/kentucky-block-viewer.html": "1bc1853a73a4583ceff39f0788c289bb0764dd7b0f816688efa0ccb774740042",
+        "districting/__init__.py": "baf0b8848dc6fffc7ab83fbe1eb2f6a45f6f67e622fda941b62c818d88f8e548"
+      },
+      "phases": {
+        "source_acquisition": {
+          "wall_seconds": 0.26457279999158345,
+          "cpu_seconds": 0.265625,
+          "sampled_peak_rss_bytes": 77479936
+        },
+        "source_extraction": {
+          "wall_seconds": 0.32091229999787174,
+          "cpu_seconds": 0.265625,
+          "sampled_peak_rss_bytes": 77484032
+        },
+        "load_and_validate_blocks": {
+          "wall_seconds": 2.2018600000010338,
+          "cpu_seconds": 2.203125,
+          "sampled_peak_rss_bytes": 142159872
+        },
+        "load_or_build_physical_part_graph": {
+          "wall_seconds": 1.843268699987675,
+          "cpu_seconds": 1.84375,
+          "sampled_peak_rss_bytes": 195026944
+        },
+        "prepare_recorded_exclave_connection": {
+          "wall_seconds": 54.594387000004645,
+          "cpu_seconds": 54.4375,
+          "sampled_peak_rss_bytes": 730013696
+        },
+        "solve": {
+          "wall_seconds": 87.4689328999957,
+          "cpu_seconds": 87.546875,
+          "sampled_peak_rss_bytes": 335810560
+        },
+        "audit_initial_plan": {
+          "wall_seconds": 1.2464938999910373,
+          "cpu_seconds": 1.25,
+          "sampled_peak_rss_bytes": 269762560
+        },
+        "repair_and_rebalance": {
+          "wall_seconds": 2.866942699998617,
+          "cpu_seconds": 2.859375,
+          "sampled_peak_rss_bytes": 264052736
+        },
+        "save_and_audit_final_plan": {
+          "wall_seconds": 2.7739478000003146,
+          "cpu_seconds": 2.765625,
+          "sampled_peak_rss_bytes": 280801280
+        },
+        "independent_polygon_validation_and_map_export": {
+          "wall_seconds": 423.00670959999843,
+          "cpu_seconds": 419.609375,
+          "sampled_peak_rss_bytes": 1125855232
+        },
+        "write_viewer_and_verify_preservation": {
+          "wall_seconds": 0.7507072000007611,
+          "cpu_seconds": 0.546875,
+          "sampled_peak_rss_bytes": 258465792
+        }
+      },
+      "timed_pipeline_wall_seconds": 577.6323637000023,
+      "peak_process_working_set_bytes": 1127612416,
+      "preservation_audit": {
+        "all_original_strict_files_byte_identical": true,
+        "national_suite_byte_identical": true,
+        "source_archive_byte_identical": true,
+        "run_code_unchanged": true,
+        "protected_file_count": 275,
+        "all_original_diagnostic_files_byte_identical": true,
+        "rhode_island_and_hawaii_evidence_byte_identical": true
+      },
+      "started_at": "2026-10-23T20:07:09.126083+00:00",
+      "finished_at": "2026-10-23T20:16:46.752065+00:00",
+      "url": "http://127.0.0.1:8770/policies/kentucky-exclave-v1/states/21/districts-14/",
+      "benchmark_path": ".cache/state-block-benchmark/suite-through-1000/policies/kentucky-exclave-v1/states/21/districts-14/benchmark.json",
+      "benchmark_sha256": "28b4b392e075604355e192433f82dd1a2de44339b4a0e8640fd737ba94a7d8a0",
+      "peak_working_set_mib": 1075.375,
+      "accepted_plan": true,
+      "input": {
+        "state_fips": "21",
+        "state": "Kentucky",
+        "block_count": 132662,
+        "populated_block_count": 91572,
+        "zero_population_block_count": 41090,
+        "water_only_block_count": 6809,
+        "tract_count": 1306,
+        "total_population": 4505836,
+        "largest_block_population": 2400,
+        "source_bbox": [
+          -89.571203,
+          36.497058,
+          -81.964788,
+          39.147732
+        ],
+        "longitude_span_degrees": 7.606414999999998,
+        "source_crosses_antimeridian": false,
+        "shared_edge_antimeridian_normalization_supported": true,
+        "projection": {
+          "kind": "population-centered-equirectangular",
+          "lon0": -85.25697916544878,
+          "lat0": 37.838308240804146,
+          "dateline_unwrapped": false,
+          "distance_model": "approximate local plane; distortion increases across broad states"
+        },
+        "location_source": "TIGER INTPT internal points, not household locations or population centroids",
+        "official_totals_validated": true,
+        "expected_totals": {
+          "block_count": 132662,
+          "resident_population": 4505836
+        },
+        "block_count_source_url": "https://www2.census.gov/geo/docs/maps-data/data/geo_tallies2020/State_Block_Counts_2010_2020.txt",
+        "resident_population_source_url": "https://www2.census.gov/programs-surveys/decennial/2020/data/apportionment/apportionment-2020-table02.pdf"
+      },
+      "solver": {
+        "kind": "balanced_power_diagram",
+        "outer_iterations": 80,
+        "centers_converged": false,
+        "outer_iteration_limit_reached": true,
+        "population_balance": {
+          "district_populations": [
+            321803,
+            322066,
+            321868,
+            321914,
+            321735,
+            321833,
+            321906,
+            321817,
+            321792,
+            321854,
+            321875,
+            321823,
+            321435,
+            322115
+          ],
+          "total_population": 4505836,
+          "target_population": 321845.4285714286,
+          "ideal_population_exact": {
+            "numerator": 4505836,
+            "denominator": 14
+          },
+          "deviation_numerators": [
+            -594,
+            3088,
+            316,
+            960,
+            -1546,
+            -174,
+            848,
+            -398,
+            -748,
+            120,
+            414,
+            -314,
+            -5746,
+            3774
+          ],
+          "deviation_denominator": 14,
+          "deviations_people": [
+            -42.42857142857143,
+            220.57142857142858,
+            22.571428571428573,
+            68.57142857142857,
+            -110.42857142857143,
+            -12.428571428571429,
+            60.57142857142857,
+            -28.428571428571427,
+            -53.42857142857143,
+            8.571428571428571,
+            29.571428571428573,
+            -22.428571428571427,
+            -410.42857142857144,
+            269.57142857142856
+          ],
+          "max_absolute_deviation_numerator": 5746,
+          "max_absolute_deviation_people": 410.42857142857144,
+          "max_absolute_deviation_percent": 0.12752350507208873,
+          "squared_deviation_numerator": 62311424,
+          "squared_deviation_denominator": 196,
+          "total_range_people": 680,
+          "total_range_percent": 0.2112815468649991,
+          "exact_equal_populations": false,
+          "integer_population_lower_bound": {
+            "floor_population": 321845,
+            "ceiling_population": 321846,
+            "districts_at_floor": 8,
+            "districts_at_ceiling": 6,
+            "max_deviation_numerator": 8,
+            "deviation_denominator": 14,
+            "max_absolute_deviation_people": 0.5714285714285714,
+            "reached": false,
+            "whole_block_feasibility_assumed": false
+          }
+        },
+        "all_inner_optimizer_passes_succeeded": true,
+        "normalization": {
+          "normalization": "population-mass and geometry-derived shifted squared costs; mean-zero weight gauge",
+          "public_units": "centers in source coordinate units; weights in squared source coordinate units",
+          "max_line_search_steps": 100,
+          "failure_policy": "raise on unsuccessful termination or nonfinite output; no completed plan returned"
+        }
+      },
+      "outer_termination": {
+        "status": "outer_iteration_limit_without_center_convergence",
+        "outer_iterations": 80,
+        "configured_max_outer_iterations": 80,
+        "centers_converged": false,
+        "outer_iteration_limit_reached": true,
+        "disclosure": "The outer loop reached the 80-iteration limit without center convergence. Successful inner optimizer passes do not establish outer convergence. Final population balance and connectivity are assessed separately after repair/rebalancing."
+      },
+      "initial_plan": {
+        "district_populations": [
+          321803,
+          322066,
+          321868,
+          321914,
+          321735,
+          321833,
+          321906,
+          321817,
+          321792,
+          321854,
+          321875,
+          321823,
+          321435,
+          322115
+        ],
+        "total_population": 4505836,
+        "target_population": 321845.4285714286,
+        "ideal_population_exact": {
+          "numerator": 4505836,
+          "denominator": 14
+        },
+        "deviation_numerators": [
+          -594,
+          3088,
+          316,
+          960,
+          -1546,
+          -174,
+          848,
+          -398,
+          -748,
+          120,
+          414,
+          -314,
+          -5746,
+          3774
+        ],
+        "deviation_denominator": 14,
+        "deviations_people": [
+          -42.42857142857143,
+          220.57142857142858,
+          22.571428571428573,
+          68.57142857142857,
+          -110.42857142857143,
+          -12.428571428571429,
+          60.57142857142857,
+          -28.428571428571427,
+          -53.42857142857143,
+          8.571428571428571,
+          29.571428571428573,
+          -22.428571428571427,
+          -410.42857142857144,
+          269.57142857142856
+        ],
+        "max_absolute_deviation_numerator": 5746,
+        "max_absolute_deviation_people": 410.42857142857144,
+        "max_absolute_deviation_percent": 0.12752350507208873,
+        "squared_deviation_numerator": 62311424,
+        "squared_deviation_denominator": 196,
+        "total_range_people": 680,
+        "total_range_percent": 0.2112815468649991,
+        "exact_equal_populations": false,
+        "integer_population_lower_bound": {
+          "floor_population": 321845,
+          "ceiling_population": 321846,
+          "districts_at_floor": 8,
+          "districts_at_ceiling": 6,
+          "max_deviation_numerator": 8,
+          "deviation_denominator": 14,
+          "max_absolute_deviation_people": 0.5714285714285714,
+          "reached": false,
+          "whole_block_feasibility_assumed": false
+        },
+        "district_count": 14,
+        "district_block_counts": [
+          5203,
+          4665,
+          16553,
+          9925,
+          6889,
+          13599,
+          6456,
+          7925,
+          14203,
+          14585,
+          10410,
+          13040,
+          3856,
+          5353
+        ],
+        "shared_edge_components": [
+          9,
+          3,
+          3,
+          5,
+          4,
+          5,
+          1,
+          3,
+          7,
+          4,
+          4,
+          4,
+          4,
+          3
+        ],
+        "all_districts_nonempty": true,
+        "all_districts_shared_edge_connected": false,
+        "all_blocks_assigned_once": true,
+        "population_sum_matches_source": true,
+        "tracts_split_across_districts": 184,
+        "physical_part_components": [
+          9,
+          3,
+          3,
+          5,
+          4,
+          5,
+          1,
+          3,
+          7,
+          4,
+          4,
+          4,
+          4,
+          3
+        ],
+        "all_districts_physically_part_connected": false,
+        "policy_part_components": [
+          9,
+          3,
+          2,
+          5,
+          4,
+          5,
+          1,
+          3,
+          7,
+          4,
+          4,
+          4,
+          4,
+          3
+        ],
+        "all_districts_policy_connected": false
+      },
+      "after_repair_plan": {
+        "district_populations": [
+          321632,
+          321958,
+          321881,
+          321838,
+          321824,
+          321829,
+          321994,
+          322087,
+          321759,
+          321792,
+          322102,
+          321815,
+          321375,
+          321950
+        ],
+        "total_population": 4505836,
+        "target_population": 321845.4285714286,
+        "ideal_population_exact": {
+          "numerator": 4505836,
+          "denominator": 14
+        },
+        "deviation_numerators": [
+          -2988,
+          1576,
+          498,
+          -104,
+          -300,
+          -230,
+          2080,
+          3382,
+          -1210,
+          -748,
+          3592,
+          -426,
+          -6586,
+          1464
+        ],
+        "deviation_denominator": 14,
+        "deviations_people": [
+          -213.42857142857142,
+          112.57142857142857,
+          35.57142857142857,
+          -7.428571428571429,
+          -21.428571428571427,
+          -16.428571428571427,
+          148.57142857142858,
+          241.57142857142858,
+          -86.42857142857143,
+          -53.42857142857143,
+          256.57142857142856,
+          -30.428571428571427,
+          -470.42857142857144,
+          104.57142857142857
+        ],
+        "max_absolute_deviation_numerator": 6586,
+        "max_absolute_deviation_people": 470.42857142857144,
+        "max_absolute_deviation_percent": 0.14616599450135337,
+        "squared_deviation_numerator": 88204200,
+        "squared_deviation_denominator": 196,
+        "total_range_people": 727,
+        "total_range_percent": 0.22588483025125636,
+        "exact_equal_populations": false,
+        "integer_population_lower_bound": {
+          "floor_population": 321845,
+          "ceiling_population": 321846,
+          "districts_at_floor": 8,
+          "districts_at_ceiling": 6,
+          "max_deviation_numerator": 8,
+          "deviation_denominator": 14,
+          "max_absolute_deviation_people": 0.5714285714285714,
+          "reached": false,
+          "whole_block_feasibility_assumed": false
+        },
+        "district_count": 14,
+        "district_block_counts": [
+          5195,
+          4665,
+          16552,
+          9920,
+          6890,
+          13597,
+          6460,
+          7948,
+          14199,
+          14585,
+          10416,
+          13045,
+          3854,
+          5336
+        ],
+        "shared_edge_components": [
+          1,
+          1,
+          2,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "all_districts_nonempty": true,
+        "all_districts_shared_edge_connected": false,
+        "all_blocks_assigned_once": true,
+        "population_sum_matches_source": true,
+        "tracts_split_across_districts": 180,
+        "physical_part_components": [
+          1,
+          1,
+          2,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "all_districts_physically_part_connected": false,
+        "policy_part_components": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "all_districts_policy_connected": true
+      },
+      "final_plan": {
+        "district_populations": [
+          321845,
+          321849,
+          321843,
+          321843,
+          321846,
+          321847,
+          321846,
+          321844,
+          321843,
+          321846,
+          321847,
+          321844,
+          321845,
+          321848
+        ],
+        "total_population": 4505836,
+        "target_population": 321845.4285714286,
+        "ideal_population_exact": {
+          "numerator": 4505836,
+          "denominator": 14
+        },
+        "deviation_numerators": [
+          -6,
+          50,
+          -34,
+          -34,
+          8,
+          22,
+          8,
+          -20,
+          -34,
+          8,
+          22,
+          -20,
+          -6,
+          36
+        ],
+        "deviation_denominator": 14,
+        "deviations_people": [
+          -0.42857142857142855,
+          3.5714285714285716,
+          -2.4285714285714284,
+          -2.4285714285714284,
+          0.5714285714285714,
+          1.5714285714285714,
+          0.5714285714285714,
+          -1.4285714285714286,
+          -2.4285714285714284,
+          0.5714285714285714,
+          1.5714285714285714,
+          -1.4285714285714286,
+          -0.42857142857142855,
+          2.5714285714285716
+        ],
+        "max_absolute_deviation_numerator": 50,
+        "max_absolute_deviation_people": 3.5714285714285716,
+        "max_absolute_deviation_percent": 0.0011096719898371801,
+        "squared_deviation_numerator": 9296,
+        "squared_deviation_denominator": 196,
+        "total_range_people": 6,
+        "total_range_percent": 0.0018642489429264624,
+        "exact_equal_populations": false,
+        "integer_population_lower_bound": {
+          "floor_population": 321845,
+          "ceiling_population": 321846,
+          "districts_at_floor": 8,
+          "districts_at_ceiling": 6,
+          "max_deviation_numerator": 8,
+          "deviation_denominator": 14,
+          "max_absolute_deviation_people": 0.5714285714285714,
+          "reached": false,
+          "whole_block_feasibility_assumed": false
+        },
+        "district_count": 14,
+        "district_block_counts": [
+          5192,
+          4660,
+          16558,
+          9920,
+          6891,
+          13596,
+          6457,
+          7948,
+          14203,
+          14588,
+          10414,
+          13046,
+          3855,
+          5334
+        ],
+        "shared_edge_components": [
+          1,
+          1,
+          2,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "all_districts_nonempty": true,
+        "all_districts_shared_edge_connected": false,
+        "all_blocks_assigned_once": true,
+        "population_sum_matches_source": true,
+        "tracts_split_across_districts": 182,
+        "physical_part_components": [
+          1,
+          1,
+          2,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "all_districts_physically_part_connected": false,
+        "policy_part_components": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "all_districts_policy_connected": true
+      },
+      "postprocessing": {
+        "stop_reason": "local_optimum",
+        "repair_move_count": 44,
+        "part_repair_move_count": 0,
+        "rebalance_move_count": 56
+      },
+      "exclave_policy_audit": {
+        "schema_version": 1,
+        "policy": "kentucky-bend-recorded-exclave-v1",
+        "state_fips": "21",
+        "district_count": 14,
+        "source_geometry_modified": false,
+        "synthetic_ownership_edges": false,
+        "source_population": 4505836,
+        "block_count": 132662,
+        "part_count": 132669,
+        "physical_component_count": 2,
+        "physical_edge_count": 330295,
+        "synthetic_edge_count": 1,
+        "augmented_edge_count": 330296,
+        "augmented_component_count": 1,
+        "augmented_graph_connected": true,
+        "eligible_root_count": 1,
+        "groups": [
+          {
+            "group_id": 0,
+            "component_ids": [
+              0,
+              1
+            ],
+            "population": 4505836,
+            "root_component_ids": [
+              0
+            ],
+            "district_count": 14
+          }
+        ],
+        "population_selection": {
+          "policy": "population-aware-rooted-boundary-forest-v1",
+          "district_count": 14,
+          "population_tolerance": 0.01,
+          "ideal_population": 321845.4285714286,
+          "minimum_root_population": 318626.97428571427,
+          "eligible_root_component_ids": [
+            0
+          ],
+          "no_individual_root_fallback": false,
+          "selected_link_ids": [
+            "ky-candidate-00-01"
+          ],
+          "selected_total_distance_m": 5144.856912662275,
+          "groups": [
+            {
+              "group_id": 0,
+              "component_ids": [
+                0,
+                1
+              ],
+              "population": 4505836,
+              "root_component_ids": [
+                0
+              ],
+              "district_count": 14
+            }
+          ],
+          "population_bound": {
+            "feasible_seat_allocation": true,
+            "best_max_deviation_pct": 0.0,
+            "deviation_fraction": [
+              0,
+              1
+            ],
+            "seat_counts": [
+              14
+            ],
+            "ideal_population": 321845.4285714286,
+            "group_ideal_seats": [
+              14.0
+            ],
+            "is_constructed_plan": false,
+            "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+          },
+          "selection_priority": [
+            "Retain the most independently population-compatible original root groups.",
+            "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+            "Break ties by stable candidate IDs and component IDs."
+          ],
+          "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+          "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+          "groupings_examined": 1,
+          "population_feasible_groupings": 1,
+          "geometrically_unconnectable_groupings": 0
+        },
+        "components": [
+          {
+            "component_id": 0,
+            "population": 4505827,
+            "part_count": 132664,
+            "block_count": 132657
+          },
+          {
+            "component_id": 1,
+            "population": 9,
+            "part_count": 5,
+            "block_count": 5
+          }
+        ],
+        "candidate_count": 1,
+        "candidate_connections": [
+          {
+            "id": "ky-candidate-00-01",
+            "component_ids": [
+              0,
+              1
+            ],
+            "distance_m": 5144.856912662275,
+            "planar_candidate_distance_m": 5063.300447424077,
+            "endpoints": [
+              {
+                "geoid": "210759602004000",
+                "part_node": 130538,
+                "part_index": 0,
+                "coordinate": [
+                  -89.41230144260315,
+                  36.51117494957951
+                ],
+                "source_boundary_error_degrees": 1.7110407666062239e-15,
+                "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+              },
+              {
+                "geoid": "210759602004105",
+                "part_node": 122447,
+                "part_index": 0,
+                "coordinate": [
+                  -89.467715,
+                  36.523724
+                ],
+                "source_boundary_error_degrees": 0.0,
+                "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+              }
+            ],
+            "selected_k": [
+              6,
+              8,
+              9,
+              14
+            ],
+            "classification": "positive_gap",
+            "source_boundaries_intersect": false,
+            "exact_geographic_distance_degrees": 0.05600524983122607,
+            "intervening_component_ids": [],
+            "endpoint_component_interior_crossings": [],
+            "endpoint_interior_intersection_length_degrees": {
+              "0": 0.0,
+              "1": 0.0
+            },
+            "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+            "eligible_positive_gap": true,
+            "projection": {
+              "kind": "per-pair-bbox-centered-equirectangular",
+              "lon0": -85.7679955,
+              "lat0": 37.822395
+            }
+          }
+        ],
+        "excluded_candidates": [],
+        "geographic_context": {
+          "crossed_state": "Missouri",
+          "water_only": false,
+          "mapped_water_length_m": 1804.8854352990725,
+          "mapped_land_length_m": 3339.9715683397676,
+          "surface_length_measurement": "Local equirectangular lengths of line intervals intersected with exact 2020 area-water polygons.",
+          "source_year": 2020,
+          "area_water_source_url": "https://www2.census.gov/geo/tiger/TIGER2020/AREAWATER/tl_2020_29143_areawater.zip",
+          "area_water_archive_sha256": "987001cceff747e1c087283e9522f71962364b6c7bb35c353a0a41395919a4bb",
+          "meaning": "Explicit cross-jurisdiction connectivity exception; no Missouri territory, source polygon, bridge, or travel route is added."
+        },
+        "provenance": {
+          "policy": "kentucky-bend-recorded-exclave-v1",
+          "builder_sha256": "4e7a40e495c3462ee7951bbeffc264c35f6d92409d4d55e863d242ca3e40f971",
+          "physical_validation_helpers_sha256": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+          "source_archive_sha256": "ebed3b0de6fee945db0064d378aa66aaebe05f05b460a5ad109a57a14a783b66",
+          "source_files_sha256": {
+            ".shp": "f6fcf8b2648405f173d50fc6055c57b267898c4786ee1e74974e69f0629632c2",
+            ".shx": "51b9bbb8677d5742f8109f3a15797e3602c5424d2bd8a90945eaa4c8fb96875b",
+            ".dbf": "311f0298461610a8acb293b679111e9cbecd8a6d6707077595bfdfdda38846e5"
+          },
+          "diagnostic_evidence_sha256": {
+            "diagnosis.json": "4c179da7207752f210de8378e48ac4c9308a355544c86d044d2ed6db4cd32673",
+            "candidate-links.json": "20ed82660a0ea247de667dd7956d29f816fdacf1035a3f9e18aecbf35dc0a97f",
+            "area-water-audit.json": "a03a31c43ebab7bf820a5efe78a966dc8f28fd04fc195affb75e2a07d6f63c14",
+            "missouri-connection-context.json": "72a6acc4ed007b3225912d9666ae90ab771a8c7e2b9f5e986d7a7ac359c2aa95"
+          },
+          "shapely_version": "2.1.2",
+          "geos_version": "3.13.1"
+        },
+        "endpoint_tolerance_degrees": 1e-09,
+        "elapsed_seconds": 53.92591099999845
+      },
+      "independent_population_audit": {
+        "source": "Original source archive DBF GEOID20/POP20, read independently of runner aggregation",
+        "all_source_geoids_assigned_exactly_once": true,
+        "block_count": 132662,
+        "total_population": 4505836,
+        "district_populations": [
+          321845,
+          321849,
+          321843,
+          321843,
+          321846,
+          321847,
+          321846,
+          321844,
+          321843,
+          321846,
+          321847,
+          321844,
+          321845,
+          321848
+        ],
+        "district_block_counts": [
+          5192,
+          4660,
+          16558,
+          9920,
+          6891,
+          13596,
+          6457,
+          7948,
+          14203,
+          14588,
+          10414,
+          13046,
+          3855,
+          5334
+        ],
+        "deviation_numerators": [
+          -6,
+          50,
+          -34,
+          -34,
+          8,
+          22,
+          8,
+          -20,
+          -34,
+          8,
+          22,
+          -20,
+          -6,
+          36
+        ],
+        "deviation_denominator": 14,
+        "max_absolute_deviation_people": 3.5714285714285716,
+        "max_absolute_deviation_percent": 0.0011096719898371801
+      },
+      "verified_compressed_map_artifact_count": 124,
+      "physical_polygon_components": [
+        1,
+        1,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "policy_polygon_components": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "strict_polygon_validation": {
+        "issues": [
+          "District 2 has 2 polygon components."
+        ],
+        "passed": false
+      },
+      "policy_polygon_validation": {
+        "districts": [
+          {
+            "connected_components_after_links": 1,
+            "district_id": 0,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 1,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 2,
+            "physical_polygon_components": 2,
+            "used_link_ids": [
+              "ky-exclave-001"
+            ]
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 3,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 4,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 5,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 6,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 7,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 8,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 9,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 10,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 11,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 12,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          },
+          {
+            "connected_components_after_links": 1,
+            "district_id": 13,
+            "physical_polygon_components": 1,
+            "used_link_ids": []
+          }
+        ],
+        "endpoint_boundary_tolerance_degrees": 1e-09,
+        "endpoint_global_part_order": "assignment mapping GEOID order, then original MultiPolygon parts",
+        "independent_district_coverage_valid": true,
+        "independent_source_coverage_valid": true,
+        "issues": [],
+        "passed": true,
+        "policy": "shared_edges_plus_recorded_exclave_connections",
+        "source_coverage_preserved_exactly": true,
+        "source_geometry_modified": false,
+        "used_link_ids": [
+          "ky-exclave-001"
+        ],
+        "validation_basis": "full dissolved polygon components with validated source-part endpoints; independent of graph edges"
+      },
+      "connection_features": [
+        {
+          "geometry": {
+            "coordinates": [
+              [
+                -89.41230144260315,
+                36.51117494957951
+              ],
+              [
+                -89.467715,
+                36.523724
+              ]
+            ],
+            "type": "LineString"
+          },
+          "id": "ky-exclave-001",
+          "properties": {
+            "component_ids": [
+              0,
+              1
+            ],
+            "distance_m": 5144.856912662275,
+            "endpoint_districts": [
+              2,
+              2
+            ],
+            "endpoints": [
+              {
+                "coordinate": [
+                  -89.41230144260315,
+                  36.51117494957951
+                ],
+                "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection.",
+                "geoid": "210759602004000",
+                "part_index": 0,
+                "part_node": 130538,
+                "source_boundary_error_degrees": 1.7110407666062239e-15
+              },
+              {
+                "coordinate": [
+                  -89.467715,
+                  36.523724
+                ],
+                "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance.",
+                "geoid": "210759602004105",
+                "part_index": 0,
+                "part_node": 122447,
+                "source_boundary_error_degrees": 0.0
+              }
+            ],
+            "geographic_context": {
+              "area_water_archive_sha256": "987001cceff747e1c087283e9522f71962364b6c7bb35c353a0a41395919a4bb",
+              "area_water_source_url": "https://www2.census.gov/geo/tiger/TIGER2020/AREAWATER/tl_2020_29143_areawater.zip",
+              "crossed_state": "Missouri",
+              "mapped_land_length_m": 3339.9715683397676,
+              "mapped_water_length_m": 1804.8854352990725,
+              "meaning": "Explicit cross-jurisdiction connectivity exception; no Missouri territory, source polygon, bridge, or travel route is added.",
+              "source_year": 2020,
+              "surface_length_measurement": "Local equirectangular lengths of line intervals intersected with exact 2020 area-water polygons.",
+              "water_only": false
+            },
+            "id": "ky-exclave-001",
+            "kind": "recorded-exclave-connection",
+            "meaning": "declared exclave connectivity exception; no source polygon, foreign-state territory, bridge, or travel route added",
+            "policy": "kentucky-bend-recorded-exclave-v1",
+            "provenance": {
+              "builder_sha256": "4e7a40e495c3462ee7951bbeffc264c35f6d92409d4d55e863d242ca3e40f971",
+              "diagnostic_evidence_sha256": {
+                "area-water-audit.json": "a03a31c43ebab7bf820a5efe78a966dc8f28fd04fc195affb75e2a07d6f63c14",
+                "candidate-links.json": "20ed82660a0ea247de667dd7956d29f816fdacf1035a3f9e18aecbf35dc0a97f",
+                "diagnosis.json": "4c179da7207752f210de8378e48ac4c9308a355544c86d044d2ed6db4cd32673",
+                "missouri-connection-context.json": "72a6acc4ed007b3225912d9666ae90ab771a8c7e2b9f5e986d7a7ac359c2aa95"
+              },
+              "geos_version": "3.13.1",
+              "physical_validation_helpers_sha256": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+              "policy": "kentucky-bend-recorded-exclave-v1",
+              "shapely_version": "2.1.2",
+              "source_archive_sha256": "ebed3b0de6fee945db0064d378aa66aaebe05f05b460a5ad109a57a14a783b66",
+              "source_files_sha256": {
+                ".dbf": "311f0298461610a8acb293b679111e9cbecd8a6d6707077595bfdfdda38846e5",
+                ".shp": "f6fcf8b2648405f173d50fc6055c57b267898c4786ee1e74974e69f0629632c2",
+                ".shx": "51b9bbb8677d5742f8109f3a15797e3602c5424d2bd8a90945eaa4c8fb96875b"
+              }
+            },
+            "state_fips": "21",
+            "used_by_district": 2
+          },
+          "type": "Feature"
+        }
+      ],
+      "recorded_connections": [
+        {
+          "id": "ky-exclave-001",
+          "component_ids": [
+            0,
+            1
+          ],
+          "distance_m": 5144.856912662275,
+          "planar_candidate_distance_m": 5063.300447424077,
+          "endpoints": [
+            {
+              "geoid": "210759602004000",
+              "part_node": 130538,
+              "part_index": 0,
+              "coordinate": [
+                -89.41230144260315,
+                36.51117494957951
+              ],
+              "source_boundary_error_degrees": 1.7110407666062239e-15,
+              "endpoint_recovery": "Nearest point on unchanged original boundary segment after inverse projection."
+            },
+            {
+              "geoid": "210759602004105",
+              "part_node": 122447,
+              "part_index": 0,
+              "coordinate": [
+                -89.467715,
+                36.523724
+              ],
+              "source_boundary_error_degrees": 0.0,
+              "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+            }
+          ],
+          "selected_k": [
+            6,
+            8,
+            9,
+            14
+          ],
+          "classification": "positive_gap",
+          "source_boundaries_intersect": false,
+          "exact_geographic_distance_degrees": 0.05600524983122607,
+          "intervening_component_ids": [],
+          "endpoint_component_interior_crossings": [],
+          "endpoint_interior_intersection_length_degrees": {
+            "0": 0.0,
+            "1": 0.0
+          },
+          "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+          "eligible_positive_gap": true,
+          "projection": {
+            "kind": "per-pair-bbox-centered-equirectangular",
+            "lon0": -85.7679955,
+            "lat0": 37.822395
+          },
+          "candidate_id": "ky-candidate-00-01",
+          "state_fips": "21",
+          "kind": "recorded-exclave-connection",
+          "policy": "kentucky-bend-recorded-exclave-v1",
+          "distance_definition": "Spherical endpoint length of the preserved planar nearest-boundary candidate in census coverage.",
+          "geographic_context": {
+            "crossed_state": "Missouri",
+            "water_only": false,
+            "mapped_water_length_m": 1804.8854352990725,
+            "mapped_land_length_m": 3339.9715683397676,
+            "surface_length_measurement": "Local equirectangular lengths of line intervals intersected with exact 2020 area-water polygons.",
+            "source_year": 2020,
+            "area_water_source_url": "https://www2.census.gov/geo/tiger/TIGER2020/AREAWATER/tl_2020_29143_areawater.zip",
+            "area_water_archive_sha256": "987001cceff747e1c087283e9522f71962364b6c7bb35c353a0a41395919a4bb",
+            "meaning": "Explicit cross-jurisdiction connectivity exception; no Missouri territory, source polygon, bridge, or travel route is added."
+          },
+          "provenance": {
+            "policy": "kentucky-bend-recorded-exclave-v1",
+            "builder_sha256": "4e7a40e495c3462ee7951bbeffc264c35f6d92409d4d55e863d242ca3e40f971",
+            "physical_validation_helpers_sha256": "e587d8991f0babbf674b1b040b542c633341d27530a27f34a611a48483d91da0",
+            "source_archive_sha256": "ebed3b0de6fee945db0064d378aa66aaebe05f05b460a5ad109a57a14a783b66",
+            "source_files_sha256": {
+              ".shp": "f6fcf8b2648405f173d50fc6055c57b267898c4786ee1e74974e69f0629632c2",
+              ".shx": "51b9bbb8677d5742f8109f3a15797e3602c5424d2bd8a90945eaa4c8fb96875b",
+              ".dbf": "311f0298461610a8acb293b679111e9cbecd8a6d6707077595bfdfdda38846e5"
+            },
+            "diagnostic_evidence_sha256": {
+              "diagnosis.json": "4c179da7207752f210de8378e48ac4c9308a355544c86d044d2ed6db4cd32673",
+              "candidate-links.json": "20ed82660a0ea247de667dd7956d29f816fdacf1035a3f9e18aecbf35dc0a97f",
+              "area-water-audit.json": "a03a31c43ebab7bf820a5efe78a966dc8f28fd04fc195affb75e2a07d6f63c14",
+              "missouri-connection-context.json": "72a6acc4ed007b3225912d9666ae90ab771a8c7e2b9f5e986d7a7ac359c2aa95"
+            },
+            "shapely_version": "2.1.2",
+            "geos_version": "3.13.1"
+          }
+        }
+      ],
+      "selected_connection_count": 1,
+      "used_connection_count": 1,
+      "inner_optimizer_pass_count": 81,
+      "inner_optimizer_failed_pass_count": 0,
+      "payloads": {
+        "district_outlines": {
+          "full": {
+            "coordinate_count": 244196,
+            "gzip_bytes": 1549806,
+            "gzip_path": "districts-full.geojson.gz",
+            "path": "districts-full.geojson",
+            "raw_bytes": 5564502
+          },
+          "national": {
+            "coordinate_count": 7649,
+            "gzip_bytes": 63781,
+            "gzip_path": "districts-national.geojson.gz",
+            "path": "districts-national.geojson",
+            "raw_bytes": 197313
+          },
+          "state": {
+            "coordinate_count": 44429,
+            "gzip_bytes": 347257,
+            "gzip_path": "districts-state.geojson.gz",
+            "path": "districts-state.geojson",
+            "raw_bytes": 1134358
+          }
+        },
+        "exclave_connections": {
+          "connection_count": 1,
+          "gzip_bytes": 1483,
+          "gzip_path": "exclave-connections.geojson.gz",
+          "path": "exclave-connections.geojson",
+          "raw_bytes": 2752
+        },
+        "load_scenarios": {
+          "all_county_detail_shards": {
+            "gzip_bytes": 96113463,
+            "raw_bytes": 361065042
+          },
+          "largest_county_detail_shard": {
+            "bbox": [
+              -85.947104,
+              37.99721,
+              -85.404899,
+              38.380239
+            ],
+            "block_count": 10986,
+            "county_fips": "111",
+            "gzip_bytes": 3170577,
+            "gzip_path": "blocks/county-111.geojson.gz",
+            "path": "blocks/county-111.geojson",
+            "population": 782969,
+            "raw_bytes": 12671976
+          },
+          "national_state_only": {
+            "coordinate_count": 7649,
+            "gzip_bytes": 63781,
+            "gzip_path": "districts-national.geojson.gz",
+            "path": "districts-national.geojson",
+            "raw_bytes": 197313
+          },
+          "state_entry_outlines_and_detail_index": {
+            "gzip_bytes": 353212,
+            "raw_bytes": 1161789
+          }
+        }
+      }
+    }
+  ],
+  "complete_plan_count": 4,
+  "failed_plan_count": 0,
+  "outer_convergence": {
+    "accepted_plan_count": 4,
+    "center_converged_plan_count": 3,
+    "all_accepted_plans_center_converged": false,
+    "district_counts_without_center_convergence": [
+      14
+    ],
+    "district_counts_at_outer_limit_without_center_convergence": [
+      14
+    ],
+    "disclosures": [
+      "14-district run: The outer loop reached the 80-iteration limit without center convergence. Successful inner optimizer passes do not establish outer convergence. Final population balance and connectivity are assessed separately after repair/rebalancing."
+    ]
+  },
+  "validation_note": "415 districting and benchmark regression tests plus 14 independent comparison-verifier tests passed. Browser checks verified all four plan displays, connection overlays and ownership, the connection toggle, and K6 exact outlines with lazy county-block loading.",
+  "preserved_historical_file_count": 275,
+  "source_population_audit": {
+    "archive": ".cache/state-block-benchmark/source/21/tl_2020_21_tabblock20.zip",
+    "archive_sha256": "ebed3b0de6fee945db0064d378aa66aaebe05f05b460a5ad109a57a14a783b66",
+    "all_source_dbf_geoids_unique": true,
+    "source_block_count": 132662,
+    "source_population": 4505836
+  },
+  "same_recorded_connection_across_completed_plans": true,
+  "strict_baseline": {
+    "status": "unsupported_topology",
+    "benchmark_path": ".cache/state-block-benchmark/suite-through-1000/states/21/districts-6/benchmark.json",
+    "benchmark_sha256": "873406b78d803bc673c99e88ffe5a52b1c67ae21350b74587cf48d936a9ee455",
+    "preflight_wall_seconds": 66.15680649999558,
+    "solver_executed": false,
+    "district_plan_exists": false,
+    "note": "K8/K9/K14 reused the K6 source-topology rejection. No prior strict solver runtimes or population results exist."
+  },
+  "crossing_audit": {
+    "path": ".cache/state-block-benchmark/suite-through-1000/diagnostics/kentucky/area-water-audit.json",
+    "sha256": "a03a31c43ebab7bf820a5efe78a966dc8f28fd04fc195affb75e2a07d6f63c14",
+    "record": {
+      "status": "complete",
+      "classification": "crosses_mapped_water_and_land",
+      "candidate_id": "ky-candidate-00-01",
+      "candidate_endpoints": [
+        [
+          -89.41230144260315,
+          36.51117494957951
+        ],
+        [
+          -89.467715,
+          36.523724
+        ]
+      ],
+      "candidate_planar_length_m": 5144.85700363884,
+      "mapped_water_length_m": 1804.8854352990725,
+      "outside_mapped_water_length_m": 3339.9715683397676,
+      "mapped_water_fraction": 0.3508135277661786,
+      "water_only_under_2020_census_area_water": false,
+      "water_intervals_normalized": [
+        [
+          0.0,
+          0.1628675156251308
+        ],
+        [
+          0.8120539878589522,
+          1.0
+        ]
+      ],
+      "outside_water_intervals_normalized": [
+        [
+          0.1628675156251308,
+          0.8120539878589522
+        ]
+      ],
+      "crossed_water_features": [
+        {
+          "name": "Mississippi Riv",
+          "hydroid": "1103714749572",
+          "mtfcc": "H3010"
+        }
+      ],
+      "county_fips": "29143",
+      "county": "New Madrid County, Missouri",
+      "source_url": "https://www2.census.gov/geo/tiger/TIGER2020/AREAWATER/tl_2020_29143_areawater.zip",
+      "source_archive": ".cache/state-block-benchmark/suite-through-1000/diagnostics/kentucky/context-source/tl_2020_29143_areawater.zip",
+      "source_archive_sha256": "987001cceff747e1c087283e9522f71962364b6c7bb35c353a0a41395919a4bb",
+      "source_archive_bytes": 218315,
+      "source_archive_byte_identical_before_after": true,
+      "source_geometry_modified": false,
+      "county_area_water_feature_count": 271,
+      "candidate_file_sha256": "20ed82660a0ea247de667dd7956d29f816fdacf1035a3f9e18aecbf35dc0a97f",
+      "script_sha256": "bbae2e28e062a450eba5e7f6efd5fc0d49930cfcb85e67ab99f694ffb4212f20",
+      "shapely_version": "2.1.2",
+      "geos_version": "3.13.1",
+      "measurement": "Local equirectangular lengths of line intervals intersected with exact 2020 area-water polygons.",
+      "interpretation": "The nearest Kentucky census-coverage connection crosses the Mississippi River twice and Missouri land between those crossings; it is not water-only in the 2020 Census geography.",
+      "limits": [
+        "The water layer describes 2020 mapped geography, not current river levels, navigability, or a travel route.",
+        "This audit checks the nearest straight candidate; it does not search for a longer curved route that stays over water.",
+        "Displayed water polygons are clipped and simplified; line intersections use unsimplified source polygons."
+      ]
+    }
+  },
+  "measurement_notes": [
+    "New plans run serially in fresh processes with cached source and part graphs; shared-desktop timings are observations, not isolated hardware comparisons.",
+    "Full pipeline includes source preparation, link preparation, solve, repair/rebalance, independent polygon validation, map export, viewer generation and preservation checks.",
+    "Process imports, initial preservation inventory and final report flush are outside the pipeline timer.",
+    "Strict topology rejection happened before solving; it is not a before/after solver-performance baseline.",
+    "Physical shared-edge connectivity and policy connectivity are separate. The recorded exclave connection crosses Missouri land and water; no Missouri area or population is assigned.",
+    "Population deviations are independently recomputed from source DBF and final assignments. Local whole-block balancing does not establish global optimality.",
+    "Successful inner optimizer passes, outer center convergence, final postprocessed population balance and policy connectivity are independent outcomes. Outer iteration-limit cases are disclosed explicitly.",
+    "Compressed payloads measure saved map bytes, not browser memory or latency. Missouri diagnostic context loads only on connection/Bend inspection and is separate from the map export sizes."
+  ]
+}
