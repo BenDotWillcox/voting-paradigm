@@ -1,0 +1,13 @@
+# Florida census-block topology diagnosis
+
+The exact polygon-part graph has two components: main Florida/Keys coverage (390,060 blocks; 21,538,176 residents) and Dry Tortugas coverage (6 blocks; 11 residents). All 390,066 blocks, 390,182 polygon parts and 21,538,187 residents remain included. None of the 51 multipart blocks span the two global components; shared block ownership adds no geometric edge.
+
+The six detached blocks contain 10 polygon parts, five zero-population blocks and two water-only blocks. Their combined land area is 646,880 m² and water area is 1,064,413,271 m². These are census coverage components, not dry-land islands. The Dry Tortugas attribution follows source coordinates and the [National Park Service map](https://www.nps.gov/drto/planyourvisit/upload/Map-and-Guide.pdf); [NOAA describes the offshore western Keys setting](https://floridakeys.noaa.gov/zones/ers/tortugas-north.html).
+
+One recorded water edge is selected for all four requested plans (28, 37, 45 and 65 districts). It connects exact boundary vertices of blocks `120879900000030` and `120879801001000`, with a spherical endpoint length of 32,235.2817 meters. Neither endpoint has boundary error; the segment intersects no source-component interior. Its water attribution is a geographic inference from these checks and official regional context, not a global shoreline-intersection certificate. The distance spans water-inclusive census boundaries, not shores or a ferry route.
+
+With strict connectivity and full coverage, at least one district must contain the separate 11-person group. The optimistic maximum-deviation lower bound is therefore about 99.997%–99.999% at these counts. With the recorded connection, the source graph is connected and the optimistic group-population bound is zero; this is only an arithmetic preflight, not achieved district balance. Independent whole-block population and polygon-plus-link validation remain required for every solved plan. A link contributes only when both endpoint blocks belong to that district.
+
+The diagnosis took 178.095 seconds and peaked at 2,341,052,416 bytes of process memory. This includes source preparation, exact part-graph construction and polygon analysis, not district optimization. Five original strict/source/manifest files were preserved byte-for-byte. The original strict topology exception never produced a district plan and is not a solved baseline.
+
+[Interactive diagnosis](http://127.0.0.1:8770/diagnostics/florida/) · [Saved evidence](florida-topology-diagnosis.json) · [Florida runs](http://127.0.0.1:8770/policies/florida-water-v1/)

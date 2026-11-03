@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>All 50 states · Final block-plan inventory</title>
+<style>
+:root{color-scheme:dark;--bg:#10171c;--panel:#16232b;--text:#e7eff1;--muted:#a6b8c1;--line:#30434d;--green:#80e1b5;--amber:#ffd28d;--blue:#8acbfa}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 system-ui,sans-serif}main{max-width:1420px;margin:auto;padding:38px 32px 65px}a{color:var(--blue)}h1{font-size:clamp(27px,4vw,40px);line-height:1.16;margin:12px 0 18px;font-weight:650;letter-spacing:-.025em}h2{font-size:21px;margin:35px 0 10px}.eyebrow{font:12px ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--green)}.lede{max-width:920px;color:var(--muted);font-size:17px}.strip{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:26px 0}.metric{border-top:2px solid var(--line);padding:16px 0}.number{font-size:29px;line-height:1.3;font-variant-numeric:tabular-nums}.label{color:var(--muted);font-size:13px}.note{font-size:13px;color:var(--muted)}.policy{color:var(--amber)}.ok{color:var(--green)}.toolbar{display:flex;align-items:end;gap:18px;flex-wrap:wrap;margin:25px 0 12px}label{display:block;color:var(--muted);font-size:12px}select,input{display:block;margin-top:5px;background:var(--panel);color:var(--text);border:1px solid var(--line);padding:9px 12px;border-radius:5px;font:14px system-ui}input{min-width:210px}button{background:var(--panel);color:var(--text);border:1px solid var(--line);padding:8px 12px;cursor:pointer}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:13px}td,th{padding:12px 11px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}th{color:var(--muted);font-weight:500;white-space:nowrap}th:first-child,td:first-child,th:nth-child(5),td:nth-child(5),th:last-child,td:last-child{text-align:left}tbody tr:hover{background:#18252c}td:first-child a{font-weight:600;text-decoration:none;white-space:nowrap}td small{display:block;font-size:11px;color:var(--muted)}.pill{font-size:11px;white-space:nowrap}.summary{max-width:1020px}.anchor-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.anchor{padding:14px 18px;background:var(--panel);border-radius:6px}.anchor strong{font-size:20px}details{border-top:1px solid var(--line);padding:16px 0;margin:25px 0}summary{cursor:pointer;font-weight:600}li{margin:7px 0}#error{color:#ffaea7}footer{margin-top:30px;font-size:12px;color:var(--muted)}.links{display:flex;gap:20px;flex-wrap:wrap}.empty{padding:30px;text-align:center}
+@media(max-width:850px){main{padding:24px 18px}.strip,.anchor-grid{grid-template-columns:repeat(2,1fr)}.toolbar{gap:10px}.number{font-size:25px}td,th{padding:10px 8px}}
+</style></head>
+<body><main>
+<div class="eyebrow">Nebula Civitas / districting / saved block plans</div>
+<h1 id="headline">Checking the final 50-state inventory</h1>
+<p class="lede" id="intro">Loading the independently checked catalog. This page reads saved results; it does not calculate new district plans.</p>
+<div class="links"><a href="catalog.json">Machine-readable catalog</a><a href="report.md">Audit report</a><a href="../">Original national batch</a></div>
+<p id="error" role="alert"></p>
+<section class="strip" aria-label="Inventory totals">
+<div class="metric"><div class="number" id="coverage">—</div><div class="label">state–House combinations</div></div>
+<div class="metric"><div class="number" id="unique">—</div><div class="label">distinct saved plans</div></div>
+<div class="metric"><div class="number" id="worst">—</div><div class="label">largest population deviation</div></div>
+<div class="metric"><div class="number" id="blocks">—</div><div class="label">source blocks in each national anchor</div></div>
+</section>
+<div class="anchor-grid" id="anchors" aria-label="House anchor coverage"></div>
+<section class="summary"><h2>Connectivity and convergence are separate checks</h2>
+<p id="findings"></p><p class="note" id="solver-note"></p>
+<p class="note">Population deviation is relative to each state’s resident population divided by its district count. A valid saved plan here means complete assignments, reconciled population and verified geometry under its stated connectivity policy. It is not a global optimum or a claim that every optimizer converged.</p></section>
+<h2>Inspect each accepted plan</h2>
+<div class="toolbar">
+<label>House size<select id="house"><option value="435">435</option><option value="574">574</option><option value="692">692</option><option value="1000">1,000</option></select></label>
+<label>Find a state<input id="search" type="search" placeholder="State name" autocomplete="off"></label>
+<label>Connectivity<select id="policy"><option value="all">All policies</option><option value="strict">Shared edges</option><option value="recorded">Recorded connections</option></select></label>
+<label>Order<select id="sort"><option value="state">State name</option><option value="deviation">Largest deviation</option><option value="runtime">Longest pipeline</option><option value="memory">Highest peak memory</option></select></label>
+<span class="note" id="count" role="status" aria-live="polite"></span>
+</div>
+<div class="table-wrap"><table><thead><tr><th>State / map</th><th>Districts</th><th>Max deviation<br>people / %</th><th>Pipeline<br>minutes</th><th>Connectivity</th><th>Peak<br>MiB</th><th>Overview<br>gzip KiB</th><th>Numerical record</th></tr></thead><tbody id="plans"></tbody></table></div>
+<details><summary>What needs to carry into the demo</summary><ul>
+<li>Use the selected report and assignment hashes in this catalog, including the corrected Maryland, Virginia and West Virginia plans.</li>
+<li>Keep water and exclave links visible and labeled. They connect separate polygons under an explicit policy; they are not physical shared edges or travel routes.</li>
+<li>Retain Alaska’s continuous working-longitude frame and wrapped display geometry. Seam splits are separate from connectivity.</li>
+<li>Load national outlines first, state geometry when selected, and county blocks on demand. Payload estimates here exclude links, indexes, manifests and application assets.</li>
+<li>This catalog covers only four anchors. The existing continuous 435–11,037 slider needs an explicit intermediate-value strategy before block-plan integration.</li>
+<li>Preserve solver warnings and runtime provenance. The batch spans concurrent and serial execution, several implementations, and correction-only timings.</li>
+</ul></details>
+<details><summary>Audit scope and evidence</summary><p id="audit" class="note"></p><p class="note">The audit rereads source population records, validates every selected assignment and compressed payload, and independently checks final full-polygon validity and connectivity under the recorded links. It also checks historical graph/source-coverage evidence. It does not rebuild every source graph or redissolve every source block. Exact per-plan checks and limitations are available in the JSON catalog.</p></details>
+<footer id="footer"></footer>
+</main><script>
+let catalog;
+const $=s=>document.querySelector(s);
+const fmt=(x,d=0)=>x==null?'—':Number(x).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const scaled=(x,by,d=0)=>fmt(x==null?null:x/by,d);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function policyLabel(r){if(r.connectivity_policy==='strict_shared_edge')return 'Shared edges';if(r.state_fips==='21')return 'Recorded exclave';if(r.state_fips==='36')return 'Water + exclave';return 'Recorded water';}
+function render(){
+ const cap=Number($('#house').value),q=$('#search').value.toLowerCase().trim(),p=$('#policy').value;
+ let rows=catalog.plans.filter(r=>r.house_sizes.includes(cap)&&r.state.toLowerCase().includes(q)&&(p==='all'||(p==='strict')===(r.connectivity_policy==='strict_shared_edge')));
+ const order=$('#sort').value;
+ rows.sort((a,b)=>order==='state'?a.state.localeCompare(b.state):order==='deviation'?b.max_deviation_percent-a.max_deviation_percent:order==='runtime'?(b.pipeline_seconds||0)-(a.pipeline_seconds||0):(b.peak_process_working_set_bytes||0)-(a.peak_process_working_set_bytes||0));
+ $('#count').textContent=`${rows.length} states shown`;
+ $('#plans').innerHTML=rows.length?rows.map(r=>{
+  let n=[];const o=r.optimizer;
+  if(o.unsuccessful_inner_pass_count)n.push(`${o.unsuccessful_inner_pass_count} legacy inner warnings`);
+  if(o.outer_iteration_limit_reached)n.push('Outer iteration cap');
+  if(o.kind==='direct_all_blocks_assignment')n.push('Direct assignment');
+  else if(o.centers_converged)n.push('Centers converged');
+  if(r.runtime_scope==='correction_only_original_solve_reused')n.push('Original solve reused');
+  return `<tr><td><a href="${esc(r.map_url)}">${esc(r.state)}</a><small><a href="validation/${esc(r.plan_id)}.json">Validation record</a></small></td><td>${r.district_count}</td><td>${fmt(r.max_deviation_people,3)}<small>${fmt(r.max_deviation_percent,6)}%</small></td><td>${scaled(r.pipeline_seconds,60,2)}${r.runtime_scope==='correction_only_original_solve_reused'?'<small>correction only</small>':''}</td><td><span class="pill ${r.connectivity_policy==='strict_shared_edge'?'ok':'policy'}">${policyLabel(r)}</span></td><td>${scaled(r.peak_process_working_set_bytes,1048576,1)}</td><td>${scaled(r.national_outline_gzip_bytes,1024,1)}</td><td>${n.map(esc).join('<br>')||'See record'}</td></tr>`;
+ }).join(''):'<tr><td colspan="8" class="empty">No states match these filters.</td></tr>';
+}
+fetch('catalog.json').then(r=>{if(!r.ok)throw Error(`Catalog HTTP ${r.status}`);return r.json()}).then(data=>{
+ catalog=data;const a=data.aggregate,ready=data.status==='complete';
+ $('#headline').textContent=ready?'All 50 states have accepted plans at all four anchors':'The final inventory has unresolved checks';
+ $('#intro').textContent=ready?'The preserved block plans now cover House sizes 435, 574, 692 and 1,000. This inventory identifies the exact accepted result for every state before demo integration.':'Only independently accepted plans are listed below. Failed verification records remain in the catalog; missing coverage must be resolved before integration.';
+ $('#coverage').textContent=`${a.state_anchor_combinations} / 200`;$('#unique').textContent=fmt(a.unique_plans);
+ $('#worst').textContent=data.plans.length?fmt(Math.max(...data.plans.map(r=>r.max_deviation_percent)),5)+'%':'Unavailable';$('#blocks').textContent=a.anchors.length?fmt(Math.max(...a.anchors.map(r=>r.block_count))):'Unavailable';
+ $('#anchors').innerHTML=a.anchors.map(r=>`<div class="anchor"><strong>House ${fmt(r.house_size)}</strong><div>${r.states_validated} / 50 states · ${fmt(r.district_count)} districts</div><div class="note">${fmt(r.national_outline_gzip_bytes/1048576,2)} MiB of national outlines</div></div>`).join('');
+ $('#findings').textContent=`${a.strict_shared_edge_plans} distinct plans pass strict shared-edge connectivity. ${a.recorded_connection_plans} use explicitly recorded water or exclave connections in Alaska, California, Florida, Hawaii, Kentucky, New York and Rhode Island.`;
+ $('#solver-note').textContent=`${a.plans_with_legacy_unsuccessful_inner_passes} selected historical plans retain unsuccessful inner-pass records; ${a.plans_at_outer_iteration_cap} reached an outer iteration cap. Final-map checks and population balance are evaluated independently of those warnings.`;
+ $('#audit').textContent=`${a.unique_plans} selected results checked in ${fmt(data.audit_wall_seconds/60,1)} minutes. Reports, assignments, original attempts and maps were preserved. Exact rational apportionment independently matches the scheduler at all four anchors.`;
+ $('#footer').textContent=`Audit generated ${data.generated_at} · Offline census-block results · The live demo’s tract plans are unchanged.`;
+ if(data.errors.length)$('#error').textContent=data.errors.map(e=>`${e.plan_id}: ${e.error}`).join(' / ');
+ for(const id of ['house','policy','sort'])$('#'+id).addEventListener('change',render);$('#search').addEventListener('input',render);render();
+}).catch(e=>{$('#headline').textContent='The catalog could not be loaded';$('#error').textContent=e.message;});
+</script></body></html>

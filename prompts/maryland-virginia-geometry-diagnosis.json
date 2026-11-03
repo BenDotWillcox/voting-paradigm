@@ -1,0 +1,561 @@
+{
+  "scope": "Diagnostic analysis and candidate-only whole-block repairs; original failed benchmark artifacts preserved",
+  "states": {
+    "maryland": {
+      "state": "Maryland",
+      "state_fips": "24",
+      "district_count": 19,
+      "house_sizes": [
+        1000
+      ],
+      "failed_district_id": 16,
+      "failed_display_district": 17,
+      "status": "diagnosed_original_failed_plan_preserved",
+      "source_run": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\states\\24\\districts-19",
+      "source_archive_sha256": "152395105863f058c32dbfd8321e8c0f364be1e4b115d38ccf6940cfce1f4990",
+      "original_report_sha256": "719436fe9d70827d16f7747820840eeeb808c0f36dac72a8dcfae74ebef65da0",
+      "original_assignments_sha256": "4b3a8c2bf3390ba8930639ec0dac73d4baf24ee4403f598799238f3bb443abe1",
+      "components": [
+        {
+          "component_index": 0,
+          "main": true,
+          "district_id": 16,
+          "area_m2": 10292887831.327522,
+          "bbox": [
+            -76.541168,
+            37.886605,
+            -74.986282,
+            39.190043
+          ],
+          "representative_lonlat": [
+            -76.06606588552711,
+            38.5398085
+          ]
+        },
+        {
+          "component_index": 1,
+          "main": false,
+          "district_id": 16,
+          "area_m2": 39653.12261339857,
+          "bbox": [
+            -76.372745,
+            38.764989,
+            -76.37069,
+            38.768267
+          ],
+          "representative_lonlat": [
+            -76.37181041800643,
+            38.76662
+          ]
+        },
+        {
+          "component_index": 2,
+          "main": false,
+          "district_id": 16,
+          "area_m2": 11018.84273014414,
+          "bbox": [
+            -76.373087,
+            38.768658,
+            -76.371695,
+            38.770298
+          ],
+          "representative_lonlat": [
+            -76.37232750000001,
+            38.769478
+          ]
+        }
+      ],
+      "focus_bbox": [
+        -76.37808000000001,
+        38.745173,
+        -76.359297,
+        38.774297999999995
+      ],
+      "multipart_block": {
+        "geoid": "240419608001043",
+        "district_id": 16,
+        "population": 0,
+        "county_fips": "041",
+        "county_name": "Talbot",
+        "geometry_type": "MultiPolygon",
+        "parts": [
+          {
+            "part_index": 0,
+            "area_m2": 39653.12261339855,
+            "bbox": [
+              -76.372745,
+              38.764989,
+              -76.37069,
+              38.768267
+            ],
+            "representative_lonlat": [
+              -76.37181041800643,
+              38.76662
+            ],
+            "district_component_index": 1,
+            "shared_edge_neighbors": [
+              {
+                "geoid": "240419608001013",
+                "district_id": 15,
+                "population": 0,
+                "shared_edge_meters": 607.7358660539762
+              },
+              {
+                "geoid": "240419608001000",
+                "district_id": 15,
+                "population": 1,
+                "shared_edge_meters": 394.73665302780495
+              }
+            ]
+          },
+          {
+            "part_index": 1,
+            "area_m2": 11018.842730144142,
+            "bbox": [
+              -76.373087,
+              38.768658,
+              -76.371695,
+              38.770298
+            ],
+            "representative_lonlat": [
+              -76.37232750000001,
+              38.769478
+            ],
+            "district_component_index": 2,
+            "shared_edge_neighbors": [
+              {
+                "geoid": "240419608001013",
+                "district_id": 15,
+                "population": 0,
+                "shared_edge_meters": 439.9181784795453
+              },
+              {
+                "geoid": "240419608001000",
+                "district_id": 15,
+                "population": 1,
+                "shared_edge_meters": 153.27016119922678
+              }
+            ]
+          },
+          {
+            "part_index": 2,
+            "area_m2": 280082.6892500557,
+            "bbox": [
+              -76.37408,
+              38.749173,
+              -76.363297,
+              38.755322
+            ],
+            "representative_lonlat": [
+              -76.36747003744941,
+              38.752246
+            ],
+            "district_component_index": 0,
+            "shared_edge_neighbors": [
+              {
+                "geoid": "240419608001014",
+                "district_id": 16,
+                "population": 0,
+                "shared_edge_meters": 404.432403539461
+              },
+              {
+                "geoid": "240419608001012",
+                "district_id": 16,
+                "population": 0,
+                "shared_edge_meters": 931.9345312234566
+              },
+              {
+                "geoid": "240419608001013",
+                "district_id": 15,
+                "population": 0,
+                "shared_edge_meters": 1332.0082317661906
+              },
+              {
+                "geoid": "240419608001000",
+                "district_id": 15,
+                "population": 1,
+                "shared_edge_meters": 712.0824611962455
+              }
+            ]
+          }
+        ]
+      },
+      "finding": "Both detached district polygons exactly equal separate parts of one zero-population multipart block. Its third part has true shared-edge neighbors in the main district, so a one-node-per-whole-block graph masks the two disconnected pieces.",
+      "candidate": {
+        "status": "diagnostic_candidate_only_not_applied",
+        "move": {
+          "geoid": "240419608001043",
+          "from_district_id": 16,
+          "to_district_id": 15,
+          "population": 0
+        },
+        "graph_component_counts_before": {
+          "0": 1,
+          "1": 1,
+          "2": 1,
+          "3": 1,
+          "4": 1,
+          "5": 1,
+          "6": 1,
+          "7": 1,
+          "8": 1,
+          "9": 1,
+          "10": 1,
+          "11": 1,
+          "12": 1,
+          "13": 1,
+          "14": 1,
+          "15": 1,
+          "16": 1,
+          "17": 1,
+          "18": 1
+        },
+        "graph_component_counts_after": {
+          "0": 1,
+          "1": 1,
+          "2": 1,
+          "3": 1,
+          "4": 1,
+          "5": 1,
+          "6": 1,
+          "7": 1,
+          "8": 1,
+          "9": 1,
+          "10": 1,
+          "11": 1,
+          "12": 1,
+          "13": 1,
+          "14": 1,
+          "15": 1,
+          "16": 1,
+          "17": 1,
+          "18": 1
+        },
+        "polygon_component_counts_after": {
+          "0": 1,
+          "1": 1,
+          "2": 1,
+          "3": 1,
+          "4": 1,
+          "5": 1,
+          "6": 1,
+          "7": 1,
+          "8": 1,
+          "9": 1,
+          "10": 1,
+          "11": 1,
+          "12": 1,
+          "13": 1,
+          "14": 1,
+          "15": 1,
+          "16": 1,
+          "17": 1,
+          "18": 1
+        },
+        "all_geometries_valid": true,
+        "district_coverage_is_valid": true,
+        "union_coverage_equal_to_original": true,
+        "symmetric_difference_area_m2": 0.0,
+        "district_overlap_area_m2": 0.0,
+        "all_district_populations_unchanged": true,
+        "population_max_deviation_people": 20.94736842105263,
+        "population_max_deviation_percent": 0.006443023597654869,
+        "whole_block_move_preserves_indivisibility": true,
+        "moved_block_geoids": [
+          "240419608001043"
+        ]
+      },
+      "notes": [
+        "Areas and edge lengths use the same approximate equirectangular scale as the exporter.",
+        "Block shards retain original source coordinate precision; no simplification, buffering or snapping is used in validation.",
+        "Only new diagnostic artifacts were written; no saved benchmark assignments/statuses/maps changed.",
+        "The candidate is a copied-plan whole-block reassignment verified here, not a replacement benchmark or measured rerun."
+      ],
+      "assignment_history": {
+        "initial-solver-result.json": 16,
+        "after-repair-result.json": 16,
+        "solver-result.json": 16
+      },
+      "detached_components_exactly_equal_block_parts": true
+    },
+    "virginia": {
+      "schema_version": 1,
+      "state": "Virginia",
+      "state_fips": "51",
+      "district_count": 26,
+      "house_sizes": [
+        1000
+      ],
+      "original_status": "failed",
+      "bad_district_id": 18,
+      "bad_district_display": 19,
+      "original_benchmark_unchanged": true,
+      "area_measurement": "Approximate equirectangular plane at latitude 37.9 degrees; no geometric snapping/buffering used for adjacency or candidate validation.",
+      "components": [
+        {
+          "component_index": 0,
+          "area_m2": 9348626264.115547,
+          "main": true,
+          "district_id": 18,
+          "bbox": [
+            -77.361365,
+            36.947771,
+            -75.952987,
+            38.167032
+          ],
+          "representative_lonlat": [
+            -76.82306458382101,
+            37.5573935
+          ],
+          "centroid_lonlat": [
+            -76.7886018220819,
+            37.60638339008967
+          ]
+        },
+        {
+          "component_index": 1,
+          "area_m2": 2711.355503699835,
+          "main": false,
+          "district_id": 18,
+          "bbox": [
+            -76.008282,
+            37.900798,
+            -76.007646,
+            37.90137
+          ],
+          "representative_lonlat": [
+            -76.00796818155678,
+            37.901129499999996
+          ],
+          "centroid_lonlat": [
+            -76.00797230019829,
+            37.901087100915326
+          ]
+        }
+      ],
+      "focus_bbox": [
+        -76.012484,
+        37.866653,
+        -75.982738,
+        37.90137
+      ],
+      "source_block": {
+        "geoid": "510010906001010",
+        "population": 0,
+        "part_count": 2,
+        "record": {
+          "STATEFP20": "51",
+          "COUNTYFP20": "001",
+          "TRACTCE20": "090600",
+          "BLOCKCE20": "1010",
+          "GEOID20": "510010906001010",
+          "NAME20": "Block 1010",
+          "MTFCC20": "G5040",
+          "UR20": "R",
+          "UACE20": "",
+          "UATYPE20": "",
+          "FUNCSTAT20": "S",
+          "ALAND20": 157291,
+          "AWATER20": 2715985,
+          "INTPTLAT20": "+37.8815685",
+          "INTPTLON20": "-075.9968901",
+          "HOUSING20": 0,
+          "POP20": 0
+        },
+        "assignment_at_each_saved_stage": {
+          "initial-solver-result.json": 18,
+          "after-repair-result.json": 18,
+          "solver-result.json": 18
+        },
+        "parts": [
+          {
+            "part_index": 0,
+            "bbox": [
+              -76.008282,
+              37.900798,
+              -76.007646,
+              37.90137
+            ],
+            "area_m2": 2711.355503699835,
+            "adjacent_blocks": [
+              {
+                "geoid": "510010906001004",
+                "district_id": 14,
+                "population": 0,
+                "shared_edge_m": 190.7928162088868
+              }
+            ]
+          },
+          {
+            "part_index": 1,
+            "bbox": [
+              -76.012484,
+              37.866653,
+              -75.982738,
+              37.88635
+            ],
+            "area_m2": 2868038.080744583,
+            "adjacent_blocks": [
+              {
+                "geoid": "510010906001028",
+                "district_id": 18,
+                "population": 0,
+                "shared_edge_m": 1415.4321712262683
+              },
+              {
+                "geoid": "510010906001004",
+                "district_id": 14,
+                "population": 0,
+                "shared_edge_m": 5328.545180007348
+              },
+              {
+                "geoid": "510010906001024",
+                "district_id": 18,
+                "population": 0,
+                "shared_edge_m": 826.955855825567
+              },
+              {
+                "geoid": "510010906001031",
+                "district_id": 18,
+                "population": 0,
+                "shared_edge_m": 464.18405127524494
+              }
+            ]
+          }
+        ]
+      },
+      "confirmed_mechanism": "One zero-population multipart block is one graph node. Its large part shares edges with District 19, but its tiny part only shares an edge with District 15. Whole-block graph connectivity treats both parts as intrinsically connected; the physical union therefore has a detached piece.",
+      "graph_cache": {
+        "key": "9b18925735ec741026fc43d0722db3cc7e1e12b486712b04bb7d6c59a9af1229",
+        "identity_and_payload_verified": true,
+        "original_components_by_district": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "target_neighbors": [
+          "510010906001028",
+          "510010906001004",
+          "510010906001024",
+          "510010906001031"
+        ]
+      },
+      "candidate": {
+        "status": "diagnostic_only_locally_validated",
+        "moved_block_geoids": [
+          "510010906001010"
+        ],
+        "source_district_id": 18,
+        "target_district_id": 14,
+        "source_district_display": 19,
+        "target_district_display": 15,
+        "whole_blocks_moved": 1,
+        "population_moved": 0,
+        "proposed_components_by_district": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "proposed_polygon_components_by_district": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "all_polygons_valid": true,
+        "affected_union_symmetric_difference_empty": true,
+        "affected_overlap_area_m2": 0.0,
+        "all_other_district_geometries_unchanged": true,
+        "population_totals_unchanged": true,
+        "max_population_deviation_people": 17.346153846153847,
+        "max_population_deviation_percent": 0.0052251125629432,
+        "remaining_requirement": "Promote through a separately recorded assignment correction and official export/validation; original failed benchmark is preserved."
+      },
+      "provenance": {
+        "benchmark_sha256": "0b77f18cbc5a8d6143ad4a8ada1a44a0fc906fa1fa0b1f839856bc73eacd8fb1",
+        "final_assignments_file_sha256": "c96fd5ec136cf4188b9e0b6f1b93f7249dec2eea723cfd0079650f605635459f",
+        "map_inputs": {
+          "blocks/county-001.geojson.gz": {
+            "gzip_sha256": "5feb1d82c063f0a45a3975fc4c43c9007ed124e78bc20959bb47026e1da44f49",
+            "raw_sha256": "57e61402025dcd102445c0d24c0812044b990ab773652de5c3e6fa3b1c1f7588",
+            "manifest_verified": true
+          },
+          "districts-full.geojson.gz": {
+            "gzip_sha256": "49826f5627a7472d66ba6a68fb7de5558c3be40c5c4a7fb89ed1a2904a10b9d8",
+            "raw_sha256": "85c0e0c735f869426bf21778061bb6af7cb13a323521dc1eea74bd8b6270d6a8",
+            "manifest_verified": true
+          }
+        },
+        "source_dbf_sha256_verified": true
+      }
+    }
+  }
+}

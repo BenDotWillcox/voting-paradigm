@@ -9,7 +9,9 @@ Problem
 ------------------------------------------------------------------------
 Given a state's population units (e.g. census tracts) — each with a 2D
 centroid `x_j` and population `p_j` — partition them into `k` districts
-of nearly-equal population, with cells that are convex by construction.
+of nearly-equal population. The continuous power cells are convex, but unions
+of the whole geographic units assigned by their representative points need not
+be connected or convex.
 
 ------------------------------------------------------------------------
 Algorithm (constrained Lloyd iteration)
@@ -21,16 +23,17 @@ Outer loop, until the cell centers stop moving:
     2. Inner solve: find additive weights `w_i` such that the
        power-diagram assignment
            j → argmin_i (||c_i − x_j||² − w_i)
-       gives every cell exactly its target population
-       `target_i ≈ total_pop / k`.
+       brings each cell toward its target population
+       `target_i ≈ total_pop / k`, subject to indivisible input units.
     3. Move each center to the population-weighted centroid of its
        cell.
     4. Repeat from step 2.
 
-The cells are convex polyhedra at every step because any power diagram
-(additively-weighted Voronoi) is convex by construction; the
-contiguity of the cells follows for free at the resolution of our
-input units.
+The continuous cells are convex polyhedra at every step. Assigning whole block
+or tract polygons by their representative points does not preserve this
+property. Shared-edge contiguity requires a separate adjacency check and, when
+necessary, the graph postprocessing in districting.connectivity. Postprocessed
+assignments need not remain an exact power diagram.
 
 ------------------------------------------------------------------------
 Inner solve (semi-discrete optimal transport)
@@ -46,7 +49,7 @@ with gradient (where defined)
 
     ∂D/∂w_i = target_i − pop_assigned_to_cell_i.
 
-At the optimum every cell holds exactly its target.  We maximize D by
+An exact target may be unattainable with indivisible weighted points. We maximize D by
 minimizing −D with `scipy.optimize.minimize(method='L-BFGS-B')`.  The
 potential is piecewise linear so the gradient is piecewise constant;
 L-BFGS handles this well in practice for the OT setting (it is what
@@ -147,6 +150,25 @@ class DistrictingError(ValueError):
     """Raised for invalid districting inputs."""
 
 
+class DistrictingOptimizationError(RuntimeError):
+    """An inner optimizer failed; no completed district plan is returned.
+
+    A discrete transport objective can legitimately stall at a kink. That does
+    not certify a balanced assignment, so unsuccessful termination remains an
+    explicit failure instead of becoming an outer-center convergence claim.
+    """
+
+    def __init__(self, reason: str, *, status: int, message: str,
+                 iterations: int, function_evaluations: int) -> None:
+        self.reason = reason
+        self.status = status
+        self.optimizer_message = message
+        self.iterations = iterations
+        self.function_evaluations = function_evaluations
+        super().__init__(f"Inner population optimizer failed ({reason}; status={status}; "
+                         f"iterations={iterations}; evaluations={function_evaluations}): {message}")
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
@@ -195,6 +217,9 @@ def balanced_power_diagram(
     DistrictingError
         For invalid inputs (negative `n_districts`, fewer units than
         districts, zero total population, etc.).
+    DistrictingOptimizationError
+        If an inner optimizer fails or returns nonfinite numerical output.
+        No plan or center-convergence success is returned in that case.
     """
     # --- Validate ------------------------------------------------------
     if n_districts < 1:
@@ -208,6 +233,8 @@ def balanced_power_diagram(
 
     coords = np.asarray([u.centroid for u in units], dtype=float)
     pops = np.asarray([u.population for u in units], dtype=float)
+    if not np.all(np.isfinite(coords)) or not np.all(np.isfinite(pops)):
+        raise DistrictingError("Coordinates and populations must be finite.")
     geoids = [u.geoid for u in units]
     n = len(units)
     k = n_districts
@@ -365,43 +392,69 @@ def _balance_weights(
 
         D(w) = ∑_j p_j · min_i (||c_i − x_j||² − w_i) + ∑_i target_i · w_i
 
-    via L-BFGS-B on −D.  Returns the weights along with the assignment
-    they induce.
+    via L-BFGS-B on a dimensionless −D. Returns weights in the input
+    coordinates' squared units, along with the assignments they induce.
+
+    Each unit's minimum unweighted cost is an irrelevant additive constant;
+    removing it avoids large geographic offsets dominating objective values.
+    Cost differences and population mass are normalized separately. Public
+    weights and warm starts keep their original units, independent of whether
+    input coordinates are supplied in meters, kilometers, or another unit.
     """
     k = centers.shape[0]
-    n = coords.shape[0]
 
     # (n, k) squared distances unit_j → center_i.  This is the dominant
     # cost of the inner solve; computed once per outer iteration.
     sq_dist = np.sum(
         (coords[:, None, :] - centers[None, :, :]) ** 2, axis=2
     )
+    if not np.all(np.isfinite(sq_dist)):
+        raise DistrictingError("Squared coordinate distances must be finite.")
+    total = float(pops.sum())
+    if not np.isfinite(total) or total <= 0:
+        raise DistrictingError("Inner optimization requires positive finite population.")
+    shifted_cost = sq_dist - sq_dist.min(axis=1, keepdims=True)
+    # Zero-population units influence final assignment, but remote empty
+    # islands must not set the numerical scale of the population objective.
+    cost_scale = float(shifted_cost[pops > 0].max())
+    if cost_scale == 0:
+        cost_scale = 1.0  # Coincident centers: no nonzero geometric scale.
+    costs = shifted_cost / cost_scale
+    if not np.all(np.isfinite(costs)):
+        raise DistrictingError("Normalized coordinate costs must be finite.")
+    masses = pops / total
+    target_masses = targets / total
 
     if weights_init is None:
         w0 = np.zeros(k)
     else:
         w0 = np.asarray(weights_init, dtype=float).copy()
+    if w0.shape != (k,) or not np.all(np.isfinite(w0)):
+        raise DistrictingError("Initial power weights must be finite, one per district.")
+    # Adding a common constant to all weights cannot change the diagram.
+    w0 = (w0 - w0.mean()) / cost_scale
+    if not np.all(np.isfinite(w0)):
+        raise DistrictingError("Normalized initial power weights must be finite.")
 
-    # Closure over sq_dist, pops, targets — not held beyond the optimize call.
+    # Closure over dimensionless costs and masses; not held beyond this solve.
     def neg_dual(w: np.ndarray) -> tuple[float, np.ndarray]:
         # scores[j, i] = sq_dist[j, i] − w[i]; lower is better.
-        scores = sq_dist - w[None, :]
+        scores = costs - w[None, :]
         u_j = scores.min(axis=1)  # the dual variables for the unit side
         assignments_local = scores.argmin(axis=1)
         # D(w) = Σ_j p_j u_j + Σ_i target_i w_i
-        d_value = float(np.sum(pops * u_j) + np.sum(targets * w))
+        d_value = float(np.sum(masses * u_j) + np.sum(target_masses * w))
         # ∂D/∂w_i = target_i − pop_assigned_to_i
         pop_assigned = np.bincount(
-            assignments_local, weights=pops, minlength=k
+            assignments_local, weights=masses, minlength=k
         )
-        grad = targets - pop_assigned
+        grad = target_masses - pop_assigned
         # We minimize −D
         return -d_value, -grad
 
-    # `gtol` of 1e-6 is much tighter than we need (population
-    # imbalances of 0.5 person are already invisible) but cheap, and
-    # the piecewise-linear nature of the objective means L-BFGS often
-    # terminates on `ftol` first anyway.
+    # Retain the former 1e-6-person gradient criterion after mass scaling.
+    # Function convergence is not a population-balance certificate: the
+    # whole-unit dual is nonsmooth and exact targets can be unattainable.
     result = minimize(
         neg_dual,
         x0=w0,
@@ -409,15 +462,33 @@ def _balance_weights(
         method="L-BFGS-B",
         options={
             "maxiter": max_iter,
-            "gtol": 1e-6,
+            "gtol": 1e-6 / total,
             "ftol": 1e-12,
+            "maxls": 100,
         },
     )
 
-    weights = result.x
+    normalized_weights = np.asarray(result.x, dtype=float)
+    normalized_gradient = np.asarray(result.jac, dtype=float)
+    finite = (normalized_weights.shape == (k,) and np.all(np.isfinite(normalized_weights))
+              and np.ndim(result.fun) == 0 and np.isfinite(result.fun)
+              and normalized_gradient.shape == (k,) and np.all(np.isfinite(normalized_gradient)))
+    if not result.success or not finite:
+        raise DistrictingOptimizationError(
+            "unsuccessful termination" if not result.success else "nonfinite optimizer output",
+            status=int(result.status), message=str(result.message), iterations=int(result.nit),
+            function_evaluations=int(result.nfev),
+        )
+    weights = (normalized_weights - normalized_weights.mean()) * cost_scale
+    if not np.all(np.isfinite(weights)):
+        raise DistrictingOptimizationError(
+            "nonfinite rescaled power weights", status=int(result.status), message=str(result.message),
+            iterations=int(result.nit), function_evaluations=int(result.nfev),
+        )
+    # Recompute with public-unit weights so assignments match the serialized
+    # power diagram even at floating-point ties after rescaling.
     final_scores = sq_dist - weights[None, :]
     assignments = final_scores.argmin(axis=1).astype(np.int64)
-    _ = n  # (silences unused-var: kept for clarity above)
     return weights, assignments
 
 

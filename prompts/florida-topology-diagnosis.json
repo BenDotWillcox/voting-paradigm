@@ -1,0 +1,1141 @@
+{
+  "scope": "Florida source topology and recorded water connection; no district optimizer run in this diagnosis",
+  "diagnosis": {
+    "schema_version": 1,
+    "state": "Florida",
+    "state_fips": "12",
+    "status": "diagnostic_complete_no_district_plans_generated",
+    "total_population": 21538187,
+    "block_count": 390066,
+    "part_count": 390182,
+    "physical_component_count": 2,
+    "original_whole_block_component_count": 2,
+    "source": {
+      "schema": 1,
+      "state_fips": "12",
+      "state": "Florida",
+      "url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_12_tabblock20.zip",
+      "archive_sha256": "ce5d7a02e47df17dadfa9c889edb6d35a89dfb520b8669bc4d302c2c0e100418",
+      "archive_bytes": 353358123,
+      "extracted_file_sha256": {
+        "tl_2020_12_tabblock20.cpg": "3ad3031f5503a4404af825262ee8232cc04d4ea6683d42c5dd0a2f2a27ac9824",
+        "tl_2020_12_tabblock20.dbf": "699d718ff703dee7d86d207f1a6dd5e5088139be10347283c6dc9c66ee160cb5",
+        "tl_2020_12_tabblock20.prj": "0b9041e921d9ebb43247d314608fe9e38a0b008ee793067fc1806199ea1fb9dd",
+        "tl_2020_12_tabblock20.shp": "4c9729f3e6adbf349d3f92429d01fd3ad19a4998e4ca5df56a8f74e04626db89",
+        "tl_2020_12_tabblock20.shp.ea.iso.xml": "bfec33140cc7684b1385347718c27347f615d446ae774ab89ef16e900b413d40",
+        "tl_2020_12_tabblock20.shx": "69cdbdcc8e23158480e5a6c0718c2238f89c83c6602ccdff4f46a84a11561f23",
+        "tl_2020_12_tabblock20.shp.iso.xml": "b6df9473d45ccf8dd200547c1eecd051994474c2733e37f863c39074620e73a0"
+      },
+      "download": {
+        "attempts": 1,
+        "etag": null,
+        "expected_bytes": 353358123,
+        "last_modified": "Fri, 06 Jan 2023 21:45:46 GMT",
+        "received_bytes": 353358123,
+        "resumed_bytes": 0,
+        "url": "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_12_tabblock20.zip"
+      },
+      "hash_provenance": "Locally computed SHA-256; no publisher checksum is provided.",
+      "archive_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\12\\tl_2020_12_tabblock20.zip",
+      "extraction_dir": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\12\\tl_2020_12_tabblock20",
+      "source_shapefile_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\12\\tl_2020_12_tabblock20\\tl_2020_12_tabblock20.shp",
+      "manifest_path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\source\\12\\tl_2020_12_tabblock20.manifest.json",
+      "downloaded_in_timed_pipeline": false,
+      "extracted_files_reused": false,
+      "extracted_bytes": 353357181,
+      "crs_wkt": "GEOGCS[\"GCS_North_American_1983\",DATUM[\"D_North_American_1983\",SPHEROID[\"GRS_1980\",6378137,298.257222101]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]"
+    },
+    "input": {
+      "state_fips": "12",
+      "state": "Florida",
+      "block_count": 390066,
+      "populated_block_count": 289652,
+      "zero_population_block_count": 100414,
+      "water_only_block_count": 14553,
+      "tract_count": 5160,
+      "total_population": 21538187,
+      "largest_block_population": 6107,
+      "source_bbox": [
+        -87.634896,
+        24.396308,
+        -79.974306,
+        31.000968
+      ],
+      "longitude_span_degrees": 7.660589999999999,
+      "source_crosses_antimeridian": false,
+      "shared_edge_antimeridian_normalization_supported": true,
+      "projection": {
+        "kind": "population-centered-equirectangular",
+        "lon0": -81.6502175772803,
+        "lat0": 27.839295295396536,
+        "dateline_unwrapped": false,
+        "distance_model": "approximate local plane; distortion increases across broad states"
+      },
+      "location_source": "TIGER INTPT internal points, not household locations or population centroids",
+      "official_totals_validated": true,
+      "expected_totals": {
+        "block_count": 390066,
+        "resident_population": 21538187
+      },
+      "block_count_source_url": "https://www2.census.gov/geo/docs/maps-data/data/geo_tallies2020/State_Block_Counts_2010_2020.txt",
+      "resident_population_source_url": "https://www2.census.gov/programs-surveys/decennial/2020/data/apportionment/apportionment-2020-table02.pdf"
+    },
+    "part_graph": {
+      "definition": "source Polygon parts with disjoint interiors and shared boundary of positive length",
+      "de9im_pattern": "F***1****",
+      "source_coordinates_modified": false,
+      "all_source_geometries_valid": true,
+      "synthetic_ownership_edges": false,
+      "part_order": "ordered GEOIDs, then source MultiPolygon parts",
+      "block_count": 390066,
+      "node_count": 390182,
+      "part_count": 390182,
+      "edge_count": 952329,
+      "multipart_block_count": 51,
+      "candidate_pair_count": 1690985,
+      "excluded_corner_pair_count": 285634,
+      "interior_overlap_pair_count": 0,
+      "component_count": 2,
+      "component_sizes": [
+        390172,
+        10
+      ],
+      "isolated_part_count": 0,
+      "isolated_part_indices": [],
+      "isolated_part_geoids": [],
+      "source_coordinate_count": 17175932,
+      "query_batch_size": 2000,
+      "query_batch_count": 196,
+      "max_batch_candidate_pair_count": 15961,
+      "geometry_load_seconds": 54.0935185999997,
+      "topology_build_seconds": 39.392080700000406,
+      "graph_validation_seconds": 3.6925442000001567,
+      "elapsed_seconds": 97.17814410000028
+    },
+    "part_graph_cache": {
+      "status": "built",
+      "cache_hit": false,
+      "key": "7209299cb779126f0cac7dddb0c025e694e6cfbb7bcd864ae934f9d8cb610977",
+      "path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\graph-cache\\12\\shared-edge-parts-7209299cb779126f0cac7dddb0c025e694e6cfbb7bcd864ae934f9d8cb610977.npz",
+      "identity": {
+        "schema": 1,
+        "topology_rule": "polygon parts; F***1****; original coordinates; no synthetic ownership edges",
+        "source_archive_sha256": "ce5d7a02e47df17dadfa9c889edb6d35a89dfb520b8669bc4d302c2c0e100418",
+        "ordered_geoids_sha256": "6dd765dbe317e4a3e0a999eebcd3bc6a83008683f410ab6fb4c4f08a419e3a40",
+        "block_count": 390066,
+        "part_builder_sha256": "49b43929897184c04a5332f4530cd7cf722f9ac604008657855a65694024c490",
+        "part_domain_sha256": "a127aad254e65dc7b8be69f1fe7403aad6f9d18e0a15b8723e32358f9ef833d5",
+        "shapely_version": "2.1.2",
+        "geos_version": "3.13.1",
+        "pyshp_version": "3.0.3"
+      },
+      "bytes": 7122855,
+      "load_seconds": 5.1799999710056e-05,
+      "build_seconds": 97.22764220000045,
+      "write_seconds": 7.275456399999712,
+      "total_seconds": 104.84453889999986,
+      "source_hash_verified_by_caller": true,
+      "original_build_timing_reused": false,
+      "invalid_cache_reason": null
+    },
+    "components": [
+      {
+        "id": 0,
+        "label": "Main Florida coverage",
+        "population": 21538176,
+        "block_count": 390060,
+        "part_count": 390172,
+        "water_only_block_count": 14551,
+        "zero_population_block_count": 100409,
+        "land_area_m2": 138957837439,
+        "water_area_m2": 44911394946,
+        "bounds": [
+          -87.634896,
+          24.396308,
+          -79.974306,
+          31.000968
+        ],
+        "county_fips": [
+          "001",
+          "003",
+          "005",
+          "007",
+          "009",
+          "011",
+          "013",
+          "015",
+          "017",
+          "019",
+          "021",
+          "023",
+          "027",
+          "029",
+          "031",
+          "033",
+          "035",
+          "037",
+          "039",
+          "041",
+          "043",
+          "045",
+          "047",
+          "049",
+          "051",
+          "053",
+          "055",
+          "057",
+          "059",
+          "061",
+          "063",
+          "065",
+          "067",
+          "069",
+          "071",
+          "073",
+          "075",
+          "077",
+          "079",
+          "081",
+          "083",
+          "085",
+          "086",
+          "087",
+          "089",
+          "091",
+          "093",
+          "095",
+          "097",
+          "099",
+          "101",
+          "103",
+          "105",
+          "107",
+          "109",
+          "111",
+          "113",
+          "115",
+          "117",
+          "119",
+          "121",
+          "123",
+          "125",
+          "127",
+          "129",
+          "131",
+          "133"
+        ],
+        "example_geoids": [
+          "120210104191007",
+          "120210106022000",
+          "120210106042016",
+          "120210112141006",
+          "120210102151004"
+        ],
+        "population_definition": "Whole-block population, only blocks exclusively owned by this physical component.",
+        "representative_point": [
+          -81.6190495498146,
+          27.697775
+        ],
+        "polygon_component_count": 1
+      },
+      {
+        "id": 1,
+        "label": "Detached Florida component 1",
+        "population": 11,
+        "block_count": 6,
+        "part_count": 10,
+        "water_only_block_count": 2,
+        "zero_population_block_count": 5,
+        "land_area_m2": 646880,
+        "water_area_m2": 1064413271,
+        "bounds": [
+          -83.108914,
+          24.476981,
+          -82.639914,
+          24.800469
+        ],
+        "county_fips": [
+          "087"
+        ],
+        "example_geoids": [
+          "120879801001002",
+          "120879801001004",
+          "120879801001003",
+          "120879801001001",
+          "120879801001000"
+        ],
+        "population_definition": "Whole-block population, only blocks exclusively owned by this physical component.",
+        "representative_point": [
+          -82.87435553366808,
+          24.6356355
+        ],
+        "polygon_component_count": 1
+      }
+    ],
+    "links": [
+      {
+        "id": "fl-candidate-00-01",
+        "component_ids": [
+          0,
+          1
+        ],
+        "distance_m": 32235.28168456963,
+        "planar_candidate_distance_m": 31412.521240968697,
+        "endpoints": [
+          {
+            "geoid": "120879900000030",
+            "part_node": 362862,
+            "part_index": 0,
+            "coordinate": [
+              -82.3265,
+              24.58373
+            ],
+            "source_boundary_error_degrees": 0.0,
+            "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+          },
+          {
+            "geoid": "120879801001000",
+            "part_node": 377335,
+            "part_index": 0,
+            "coordinate": [
+              -82.641492,
+              24.628712
+            ],
+            "source_boundary_error_degrees": 0.0,
+            "endpoint_recovery": "Exact original boundary vertex, within inverse-projection roundoff tolerance."
+          }
+        ],
+        "selected_k": [
+          28,
+          37,
+          45,
+          65
+        ],
+        "classification": "positive_gap",
+        "source_boundaries_intersect": false,
+        "exact_geographic_distance_degrees": 0.31818758679119213,
+        "intervening_component_ids": [],
+        "endpoint_component_interior_crossings": [],
+        "endpoint_interior_intersection_length_degrees": {
+          "0": 0.0,
+          "1": 0.0
+        },
+        "computed_line_intersection_roundoff_tolerance_degrees": 1e-10,
+        "eligible_positive_gap": true,
+        "projection": {
+          "kind": "per-pair-bbox-centered-equirectangular",
+          "lon0": -83.80460099999999,
+          "lat0": 27.698638000000003
+        }
+      }
+    ],
+    "plans": [
+      {
+        "district_count": 28,
+        "house_sizes": [
+          435
+        ],
+        "ideal_population": 769220.9642857143,
+        "strict_population_bound": {
+          "feasible_seat_allocation": true,
+          "best_max_deviation_pct": 99.99856998177238,
+          "deviation_fraction": [
+            1957989,
+            1958017
+          ],
+          "seat_counts": [
+            27,
+            1
+          ],
+          "ideal_population": 769220.9642857143,
+          "group_ideal_seats": [
+            27.999985699817724,
+            1.4300182276251942e-05
+          ],
+          "is_constructed_plan": false,
+          "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+        },
+        "policy_population_bound": {
+          "feasible_seat_allocation": true,
+          "best_max_deviation_pct": 0.0,
+          "deviation_fraction": [
+            0,
+            1
+          ],
+          "seat_counts": [
+            28
+          ],
+          "ideal_population": 769220.9642857143,
+          "group_ideal_seats": [
+            28.0
+          ],
+          "is_constructed_plan": false,
+          "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+        },
+        "selected_link_ids": [
+          "fl-candidate-00-01"
+        ],
+        "augmented_component_count": 1,
+        "policy": {
+          "policy": "population-aware-rooted-boundary-forest-v1",
+          "district_count": 28,
+          "population_tolerance": 0.01,
+          "ideal_population": 769220.9642857143,
+          "minimum_root_population": 761528.7546428571,
+          "eligible_root_component_ids": [
+            0
+          ],
+          "no_individual_root_fallback": false,
+          "selected_link_ids": [
+            "fl-candidate-00-01"
+          ],
+          "selected_total_distance_m": 32235.28168456963,
+          "groups": [
+            {
+              "group_id": 0,
+              "component_ids": [
+                0,
+                1
+              ],
+              "population": 21538187,
+              "root_component_ids": [
+                0
+              ],
+              "district_count": 28
+            }
+          ],
+          "population_bound": {
+            "feasible_seat_allocation": true,
+            "best_max_deviation_pct": 0.0,
+            "deviation_fraction": [
+              0,
+              1
+            ],
+            "seat_counts": [
+              28
+            ],
+            "ideal_population": 769220.9642857143,
+            "group_ideal_seats": [
+              28.0
+            ],
+            "is_constructed_plan": false,
+            "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+          },
+          "selection_priority": [
+            "Retain the most independently population-compatible original root groups.",
+            "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+            "Break ties by stable candidate IDs and component IDs."
+          ],
+          "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+          "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+          "groupings_examined": 1,
+          "population_feasible_groupings": 1,
+          "geometrically_unconnectable_groupings": 0
+        },
+        "actual_district_plan_generated": false,
+        "augmented_graph_validation": {
+          "independent_full_graph_traversal": true,
+          "node_count": 390182,
+          "physical_component_count": 2,
+          "augmented_component_count": 1,
+          "component_sizes": [
+            390182
+          ],
+          "inserted_part_edge_pairs": [
+            [
+              362862,
+              377335
+            ]
+          ],
+          "all_source_parts_reached": true,
+          "physical_adjacency_modified": false
+        }
+      },
+      {
+        "district_count": 37,
+        "house_sizes": [
+          574
+        ],
+        "ideal_population": 582113.1621621621,
+        "strict_population_bound": {
+          "feasible_seat_allocation": true,
+          "best_max_deviation_pct": 99.99811033305636,
+          "deviation_fraction": [
+            1957980,
+            1958017
+          ],
+          "seat_counts": [
+            36,
+            1
+          ],
+          "ideal_population": 582113.1621621621,
+          "group_ideal_seats": [
+            36.99998110333056,
+            1.8896669436475783e-05
+          ],
+          "is_constructed_plan": false,
+          "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+        },
+        "policy_population_bound": {
+          "feasible_seat_allocation": true,
+          "best_max_deviation_pct": 0.0,
+          "deviation_fraction": [
+            0,
+            1
+          ],
+          "seat_counts": [
+            37
+          ],
+          "ideal_population": 582113.1621621621,
+          "group_ideal_seats": [
+            37.0
+          ],
+          "is_constructed_plan": false,
+          "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+        },
+        "selected_link_ids": [
+          "fl-candidate-00-01"
+        ],
+        "augmented_component_count": 1,
+        "policy": {
+          "policy": "population-aware-rooted-boundary-forest-v1",
+          "district_count": 37,
+          "population_tolerance": 0.01,
+          "ideal_population": 582113.1621621621,
+          "minimum_root_population": 576292.0305405406,
+          "eligible_root_component_ids": [
+            0
+          ],
+          "no_individual_root_fallback": false,
+          "selected_link_ids": [
+            "fl-candidate-00-01"
+          ],
+          "selected_total_distance_m": 32235.28168456963,
+          "groups": [
+            {
+              "group_id": 0,
+              "component_ids": [
+                0,
+                1
+              ],
+              "population": 21538187,
+              "root_component_ids": [
+                0
+              ],
+              "district_count": 37
+            }
+          ],
+          "population_bound": {
+            "feasible_seat_allocation": true,
+            "best_max_deviation_pct": 0.0,
+            "deviation_fraction": [
+              0,
+              1
+            ],
+            "seat_counts": [
+              37
+            ],
+            "ideal_population": 582113.1621621621,
+            "group_ideal_seats": [
+              37.0
+            ],
+            "is_constructed_plan": false,
+            "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+          },
+          "selection_priority": [
+            "Retain the most independently population-compatible original root groups.",
+            "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+            "Break ties by stable candidate IDs and component IDs."
+          ],
+          "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+          "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+          "groupings_examined": 1,
+          "population_feasible_groupings": 1,
+          "geometrically_unconnectable_groupings": 0
+        },
+        "actual_district_plan_generated": false,
+        "augmented_graph_validation": {
+          "independent_full_graph_traversal": true,
+          "node_count": 390182,
+          "physical_component_count": 2,
+          "augmented_component_count": 1,
+          "component_sizes": [
+            390182
+          ],
+          "inserted_part_edge_pairs": [
+            [
+              362862,
+              377335
+            ]
+          ],
+          "all_source_parts_reached": true,
+          "physical_adjacency_modified": false
+        }
+      },
+      {
+        "district_count": 45,
+        "house_sizes": [
+          692
+        ],
+        "ideal_population": 478626.3777777778,
+        "strict_population_bound": {
+          "feasible_seat_allocation": true,
+          "best_max_deviation_pct": 99.99770175641989,
+          "deviation_fraction": [
+            1957972,
+            1958017
+          ],
+          "seat_counts": [
+            44,
+            1
+          ],
+          "ideal_population": 478626.3777777778,
+          "group_ideal_seats": [
+            44.9999770175642,
+            2.2982435801119192e-05
+          ],
+          "is_constructed_plan": false,
+          "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+        },
+        "policy_population_bound": {
+          "feasible_seat_allocation": true,
+          "best_max_deviation_pct": 0.0,
+          "deviation_fraction": [
+            0,
+            1
+          ],
+          "seat_counts": [
+            45
+          ],
+          "ideal_population": 478626.3777777778,
+          "group_ideal_seats": [
+            45.0
+          ],
+          "is_constructed_plan": false,
+          "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+        },
+        "selected_link_ids": [
+          "fl-candidate-00-01"
+        ],
+        "augmented_component_count": 1,
+        "policy": {
+          "policy": "population-aware-rooted-boundary-forest-v1",
+          "district_count": 45,
+          "population_tolerance": 0.01,
+          "ideal_population": 478626.3777777778,
+          "minimum_root_population": 473840.114,
+          "eligible_root_component_ids": [
+            0
+          ],
+          "no_individual_root_fallback": false,
+          "selected_link_ids": [
+            "fl-candidate-00-01"
+          ],
+          "selected_total_distance_m": 32235.28168456963,
+          "groups": [
+            {
+              "group_id": 0,
+              "component_ids": [
+                0,
+                1
+              ],
+              "population": 21538187,
+              "root_component_ids": [
+                0
+              ],
+              "district_count": 45
+            }
+          ],
+          "population_bound": {
+            "feasible_seat_allocation": true,
+            "best_max_deviation_pct": 0.0,
+            "deviation_fraction": [
+              0,
+              1
+            ],
+            "seat_counts": [
+              45
+            ],
+            "ideal_population": 478626.3777777778,
+            "group_ideal_seats": [
+              45.0
+            ],
+            "is_constructed_plan": false,
+            "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+          },
+          "selection_priority": [
+            "Retain the most independently population-compatible original root groups.",
+            "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+            "Break ties by stable candidate IDs and component IDs."
+          ],
+          "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+          "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+          "groupings_examined": 1,
+          "population_feasible_groupings": 1,
+          "geometrically_unconnectable_groupings": 0
+        },
+        "actual_district_plan_generated": false,
+        "augmented_graph_validation": {
+          "independent_full_graph_traversal": true,
+          "node_count": 390182,
+          "physical_component_count": 2,
+          "augmented_component_count": 1,
+          "component_sizes": [
+            390182
+          ],
+          "inserted_part_edge_pairs": [
+            [
+              362862,
+              377335
+            ]
+          ],
+          "all_source_parts_reached": true,
+          "physical_adjacency_modified": false
+        }
+      },
+      {
+        "district_count": 65,
+        "house_sizes": [
+          1000
+        ],
+        "ideal_population": 331356.72307692305,
+        "strict_population_bound": {
+          "feasible_seat_allocation": true,
+          "best_max_deviation_pct": 99.99668031482872,
+          "deviation_fraction": [
+            1957952,
+            1958017
+          ],
+          "seat_counts": [
+            64,
+            1
+          ],
+          "ideal_population": 331356.72307692305,
+          "group_ideal_seats": [
+            64.99996680314828,
+            3.319685171272772e-05
+          ],
+          "is_constructed_plan": false,
+          "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+        },
+        "policy_population_bound": {
+          "feasible_seat_allocation": true,
+          "best_max_deviation_pct": 0.0,
+          "deviation_fraction": [
+            0,
+            1
+          ],
+          "seat_counts": [
+            65
+          ],
+          "ideal_population": 331356.72307692305,
+          "group_ideal_seats": [
+            65.0
+          ],
+          "is_constructed_plan": false,
+          "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+        },
+        "selected_link_ids": [
+          "fl-candidate-00-01"
+        ],
+        "augmented_component_count": 1,
+        "policy": {
+          "policy": "population-aware-rooted-boundary-forest-v1",
+          "district_count": 65,
+          "population_tolerance": 0.01,
+          "ideal_population": 331356.72307692305,
+          "minimum_root_population": 328043.15584615385,
+          "eligible_root_component_ids": [
+            0
+          ],
+          "no_individual_root_fallback": false,
+          "selected_link_ids": [
+            "fl-candidate-00-01"
+          ],
+          "selected_total_distance_m": 32235.28168456963,
+          "groups": [
+            {
+              "group_id": 0,
+              "component_ids": [
+                0,
+                1
+              ],
+              "population": 21538187,
+              "root_component_ids": [
+                0
+              ],
+              "district_count": 65
+            }
+          ],
+          "population_bound": {
+            "feasible_seat_allocation": true,
+            "best_max_deviation_pct": 0.0,
+            "deviation_fraction": [
+              0,
+              1
+            ],
+            "seat_counts": [
+              65
+            ],
+            "ideal_population": 331356.72307692305,
+            "group_ideal_seats": [
+              65.0
+            ],
+            "is_constructed_plan": false,
+            "interpretation": "Optimistic necessary bound: divisible people, ignoring whole blocks, internal geometry, and bridge endpoints."
+          },
+          "selection_priority": [
+            "Retain the most independently population-compatible original root groups.",
+            "Minimize total length among deterministic constrained-Kruskal forests for those feasible groupings.",
+            "Break ties by stable candidate IDs and component IDs."
+          ],
+          "distance_optimality": "Best among enumerated constrained-Kruskal forests, not a globally optimal geometric or Steiner forest.",
+          "population_guarantee": "Necessary group-allocation test only; actual whole-block balance and same-district connectivity require solving and independent validation.",
+          "groupings_examined": 1,
+          "population_feasible_groupings": 1,
+          "geometrically_unconnectable_groupings": 0
+        },
+        "actual_district_plan_generated": false,
+        "augmented_graph_validation": {
+          "independent_full_graph_traversal": true,
+          "node_count": 390182,
+          "physical_component_count": 2,
+          "augmented_component_count": 1,
+          "component_sizes": [
+            390182
+          ],
+          "inserted_part_edge_pairs": [
+            [
+              362862,
+              377335
+            ]
+          ],
+          "all_source_parts_reached": true,
+          "physical_adjacency_modified": false
+        }
+      }
+    ],
+    "original_runs": [
+      {
+        "district_count": 28,
+        "house_sizes": [
+          435
+        ],
+        "status": "unsupported_topology",
+        "unsupported_reason": {
+          "code": "disconnected_source_graph",
+          "message": "The current workflow requires one connected, nonoverlapping shared-edge graph before computing district plans.",
+          "component_count": 2,
+          "required_next_step": "Inspect the saved source components and explicitly choose a geographic policy; no synthetic edges were added."
+        },
+        "source_components": [
+          {
+            "block_count": 390060,
+            "population": 21538176,
+            "example_geoid": "120210104191007"
+          },
+          {
+            "block_count": 6,
+            "population": 11,
+            "example_geoid": "120879801001002"
+          }
+        ],
+        "elapsed_seconds": 119.7121468999976,
+        "path": "states/12/districts-28/benchmark.json",
+        "individual_report_exists": true,
+        "reused_topology_exception": false,
+        "suite_job": {
+          "district_count": 28,
+          "house_sizes": [
+            435
+          ],
+          "relative_output": "states/12/districts-28",
+          "status": "unsupported_topology",
+          "started_at": "2026-10-23T07:47:54.429625+00:00",
+          "log": "states/12/districts-28.log",
+          "pid": 37992,
+          "latest_progress": "Report: C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\suite-through-1000\\states\\12\\districts-28\\benchmark.json",
+          "process_exit_code": 0,
+          "finished_at": "2026-10-23T07:49:55.571764+00:00",
+          "report": "states/12/districts-28/benchmark.json",
+          "timed_pipeline_wall_seconds": 119.7121468999976,
+          "peak_process_working_set_bytes": 921829376,
+          "graph_cache": {
+            "status": "built",
+            "cache_hit": false,
+            "key": "27dd317a7925a4f2ecaafdddbfdc5541c4758f48b0f7c5e0a993bb11f298221d",
+            "path": "C:\\Users\\benja\\projects\\voting_paradigm\\.cache\\state-block-benchmark\\graph-cache\\12\\shared-edge-27dd317a7925a4f2ecaafdddbfdc5541c4758f48b0f7c5e0a993bb11f298221d.npz",
+            "identity": {
+              "schema": 1,
+              "topology_rule": "F***1****; original source coordinates; no snapping or buffering",
+              "source_archive_sha256": "ce5d7a02e47df17dadfa9c889edb6d35a89dfb520b8669bc4d302c2c0e100418",
+              "ordered_geoids_sha256": "6dd765dbe317e4a3e0a999eebcd3bc6a83008683f410ab6fb4c4f08a419e3a40",
+              "node_count": 390066,
+              "adjacency_builder_sha256": "8e3bd87629631e5452b6294bb94789dffa733a7b490db8a5238687a7609c0efc",
+              "shapely_version": "2.1.2",
+              "geos_version": "3.13.1"
+            },
+            "bytes": 6528489,
+            "load_seconds": 8.200001320801675e-05,
+            "build_seconds": 99.36668979999376,
+            "write_seconds": 4.231782899994869,
+            "total_seconds": 103.7931205000059,
+            "source_hash_verified_by_caller": true,
+            "original_build_timing_reused": false,
+            "invalid_cache_reason": null
+          },
+          "source_components": [
+            {
+              "block_count": 390060,
+              "population": 21538176,
+              "example_geoid": "120210104191007"
+            },
+            {
+              "block_count": 6,
+              "population": 11,
+              "example_geoid": "120879801001002"
+            }
+          ],
+          "unsupported_reason": {
+            "code": "disconnected_source_graph",
+            "message": "The current workflow requires one connected, nonoverlapping shared-edge graph before computing district plans.",
+            "component_count": 2,
+            "required_next_step": "Inspect the saved source components and explicitly choose a geographic policy; no synthetic edges were added."
+          }
+        }
+      },
+      {
+        "district_count": 37,
+        "house_sizes": [
+          574
+        ],
+        "status": "unsupported_topology",
+        "unsupported_reason": {
+          "code": "disconnected_source_graph",
+          "message": "The current workflow requires one connected, nonoverlapping shared-edge graph before computing district plans.",
+          "component_count": 2,
+          "required_next_step": "Inspect the saved source components and explicitly choose a geographic policy; no synthetic edges were added."
+        },
+        "source_components": [
+          {
+            "block_count": 390060,
+            "population": 21538176,
+            "example_geoid": "120210104191007"
+          },
+          {
+            "block_count": 6,
+            "population": 11,
+            "example_geoid": "120879801001002"
+          }
+        ],
+        "elapsed_seconds": null,
+        "path": null,
+        "individual_report_exists": false,
+        "reused_topology_exception": true,
+        "suite_job": {
+          "district_count": 37,
+          "house_sizes": [
+            574
+          ],
+          "relative_output": "states/12/districts-37",
+          "status": "unsupported_topology",
+          "topology_report": "states/12/districts-28/benchmark.json"
+        }
+      },
+      {
+        "district_count": 45,
+        "house_sizes": [
+          692
+        ],
+        "status": "unsupported_topology",
+        "unsupported_reason": {
+          "code": "disconnected_source_graph",
+          "message": "The current workflow requires one connected, nonoverlapping shared-edge graph before computing district plans.",
+          "component_count": 2,
+          "required_next_step": "Inspect the saved source components and explicitly choose a geographic policy; no synthetic edges were added."
+        },
+        "source_components": [
+          {
+            "block_count": 390060,
+            "population": 21538176,
+            "example_geoid": "120210104191007"
+          },
+          {
+            "block_count": 6,
+            "population": 11,
+            "example_geoid": "120879801001002"
+          }
+        ],
+        "elapsed_seconds": null,
+        "path": null,
+        "individual_report_exists": false,
+        "reused_topology_exception": true,
+        "suite_job": {
+          "district_count": 45,
+          "house_sizes": [
+            692
+          ],
+          "relative_output": "states/12/districts-45",
+          "status": "unsupported_topology",
+          "topology_report": "states/12/districts-28/benchmark.json"
+        }
+      },
+      {
+        "district_count": 65,
+        "house_sizes": [
+          1000
+        ],
+        "status": "unsupported_topology",
+        "unsupported_reason": {
+          "code": "disconnected_source_graph",
+          "message": "The current workflow requires one connected, nonoverlapping shared-edge graph before computing district plans.",
+          "component_count": 2,
+          "required_next_step": "Inspect the saved source components and explicitly choose a geographic policy; no synthetic edges were added."
+        },
+        "source_components": [
+          {
+            "block_count": 390060,
+            "population": 21538176,
+            "example_geoid": "120210104191007"
+          },
+          {
+            "block_count": 6,
+            "population": 11,
+            "example_geoid": "120879801001002"
+          }
+        ],
+        "elapsed_seconds": null,
+        "path": null,
+        "individual_report_exists": false,
+        "reused_topology_exception": true,
+        "suite_job": {
+          "district_count": 65,
+          "house_sizes": [
+            1000
+          ],
+          "relative_output": "states/12/districts-65",
+          "status": "unsupported_topology",
+          "topology_report": "states/12/districts-28/benchmark.json"
+        }
+      }
+    ],
+    "blocks_spanning_components": [],
+    "population_assignment_ambiguity": {
+      "positive_population_blocks_spanning_components": 0,
+      "zero_population_blocks_spanning_components": 0,
+      "area_weighted_population_estimates_used": false
+    },
+    "strict_feasibility": {
+      "positive_population_component_count": 2,
+      "minimum_required_districts": 2,
+      "interpretation": "Every physical source component requires one or more districts under exact shared-edge connectivity; population bounds assume divisible population and ignore whole-block/internal geometry."
+    },
+    "policy": {
+      "name": "population-aware-rooted-boundary-forest-v1",
+      "population_tolerance": 0.01,
+      "source_geometry_modified": false,
+      "adapter_status": "Analytical selector reused unchanged; Florida benchmark adapter not implemented; no district plans generated."
+    },
+    "distance_model": {
+      "candidate_search": "Per-pair bounding-box-centered equirectangular nearest boundary points.",
+      "reported_length": "Spherical great-circle distance between candidate endpoints.",
+      "earth_radius_m": 6371000.0,
+      "certified_geodesic_minimum": false,
+      "all_endpoints_verified_on_original_source_parts": true,
+      "meaning": "Distances between included census-coverage boundaries, not shoreline distances, bridges, or ferry routes."
+    },
+    "independent_dissolved_polygon_check_passed": true,
+    "map_simplification_degrees": 0.00025,
+    "limitations": [
+      "Connected augmented source graph does not guarantee a balanced whole-block connected district partition.",
+      "A recorded connection supports a district only if both exact endpoint blocks share that district.",
+      "No optimizer, repair, district polygon validation, or district maps ran in this diagnosis.",
+      "Positive gap does not by itself establish that its path is exclusively water; geography requires separately attributed context."
+    ],
+    "preservation": {
+      "original_strict_files_byte_identical": true,
+      "national_suite_byte_identical": true,
+      "source_archive_byte_identical": true,
+      "preserved_file_count": 5
+    },
+    "code_sha256": {
+      "scripts/diagnose_florida_topology.py": "2799d4ec9c14768c1b0b0727e197860614590fedd5b88526d6428f53be7fa538",
+      "scripts/district_block_part_graph.py": "49b43929897184c04a5332f4530cd7cf722f9ac604008657855a65694024c490",
+      "scripts/hawaii_population_links.py": "b512c901f00b62864eb84f7b5cfed2e8d4fe5915ffe3cc87e50c93345e581519"
+    },
+    "artifact_sha256": {
+      "components.geojson": "111571c0d95ed1c017e131196fea0054ac6a5c6e75be2b418370d33f8d2d28c4",
+      "candidates.geojson": "2b95183ee91b1c8361bb13931f89f9af1908f1cc42c37caeff4af609cfcd6856",
+      "candidate-links.json": "d08f371408f62e756d573b28a11ff1bce8a1c7ecd72fa8498de2268c6b2b736f",
+      "detail-blocks.geojson": "8c9018a272b83b1b673985f9196142833ab6516364de1fcdd29084571ccb5db5",
+      "preserved-file-inventory.json": "77c9beadb3036be98dac2edf3e595c27ec868aa04c6b77e301c799f4a62268dc"
+    },
+    "elapsed_seconds": 178.0952211999993,
+    "diagnostic_peak_rss_bytes": 2341052416,
+    "analysis_seconds": 178.0952211999993
+  },
+  "geography": {
+    "summary": "The exact census source has two coverage components: the main Florida component (including the Keys and retained water coverage) and the Dry Tortugas component. The detached group has six whole blocks, ten polygon parts and 11 residents. Attribution follows its coordinates and the National Park Service map. The selected gap lies between the Dry Tortugas coverage and the western Keys coverage; it is interpreted as a water connection from the source clearance checks and official regional geography, not an independent global land-mask certificate.",
+    "components": [
+      {
+        "id": 0,
+        "label": "Main Florida and Keys coverage",
+        "interpretation": "Connected census land-and-water coverage, not continuous dry land."
+      },
+      {
+        "id": 1,
+        "label": "Dry Tortugas coverage",
+        "interpretation": "Location attribution from source bounds and the NPS map. Includes water polygons surrounding the island group; component bounds are not the park boundary."
+      }
+    ],
+    "sources": [
+      {
+        "title": "National Park Service: Dry Tortugas map and guide (page 2 visually inspected)",
+        "url": "https://www.nps.gov/drto/planyourvisit/upload/Map-and-Guide.pdf",
+        "local_file": "official-geography/nps-dry-tortugas-map.pdf",
+        "sha256": "0af978a4d350a1795631b04be379b17041e28a494cb0a3d0e7d8212d5c8eaba7"
+      },
+      {
+        "title": "National Park Service: Dry Tortugas directions and offshore setting",
+        "url": "https://www.nps.gov/drto/planyourvisit/directions.htm?fullweb=1"
+      },
+      {
+        "title": "NOAA: Tortugas North Ecological Reserve at the westernmost Florida Keys",
+        "url": "https://floridakeys.noaa.gov/zones/ers/tortugas-north.html"
+      }
+    ],
+    "reviewed_at": "2026-10-26",
+    "links": [
+      {
+        "candidate_id": "fl-candidate-00-01",
+        "summary": "Recorded water connection across the gap between Dry Tortugas census coverage and the main Florida/Keys coverage. Both endpoints are exact source boundary vertices, with zero endpoint error. The segment crosses no source component interior. Its offshore-water attribution follows the checked coordinates and official regional geography; no independent global shoreline-intersection test was performed. The 32.235 km length spans census coverage boundaries, not shorelines or a ferry route.",
+        "endpoint_coordinates": [
+          [
+            -82.3265,
+            24.58373
+          ],
+          [
+            -82.641492,
+            24.628712
+          ]
+        ]
+      }
+    ],
+    "water_context_validation": {
+      "source_component_clearance_verified": true,
+      "official_regional_geography_reviewed": true,
+      "independent_global_land_mask_tested": false,
+      "foreign_land_exclave_identified": false,
+      "connection_kind": "proposed recorded-water-connection"
+    },
+    "limits": [
+      "The geographic water attribution is an inference from source geometry and official regional context.",
+      "Source polygons and all 390,066 block population totals remain unchanged.",
+      "A connection is counted only when both endpoint blocks belong to the same district.",
+      "This diagnosis does not establish achieved district balance or final connectivity."
+    ]
+  },
+  "diagnosis_sha256": "194944247f3faea9f6fefd02fe90b576bb83a8a0edfc9d50232ac434ddc32e3a",
+  "geography_sha256": "50b003eb8f380bed1daac314ded547242cdddb000b19a2a8535fdacd598b0e4e",
+  "map_url": "http://127.0.0.1:8770/diagnostics/florida/"
+}

@@ -17,6 +17,7 @@ Boundary rules (per CLAUDE.md):
 from .algorithm import (
     DistrictCenter,
     DistrictingError,
+    DistrictingOptimizationError,
     DistrictingResult,
     Unit,
     balanced_power_diagram,
@@ -38,6 +39,7 @@ __all__ = [
     "DistrictCenter",
     "DistrictingResult",
     "DistrictingError",
+    "DistrictingOptimizationError",
     # Precompute planning
     "CAP_ANCHORS",
     "CACHE_VERSION",
