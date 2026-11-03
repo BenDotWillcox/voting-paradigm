@@ -1,0 +1,566 @@
+{
+  "schemaVersion": 1,
+  "status": "complete",
+  "houseSizeBenchmark": 1000,
+  "comparison": {
+    "schemaVersion": 1,
+    "status": "complete",
+    "createdAtUtc": "2026-10-28T23:57:11.663896+00:00",
+    "houseSize": 1000,
+    "samplesPerVersion": 5,
+    "metrics": {
+      "warmDecodedAnchorReturnMs": {
+        "beforeMedianMs": 1830.6937999999936,
+        "afterMedianMs": 0.6655000000000655,
+        "ratioBeforeToAfter": 2750.8546957172252,
+        "reductionPercent": 99.96364766188644
+      },
+      "gzipInflateMs": {
+        "beforeMedianMs": 815.9980999999971,
+        "afterMedianMs": 76.78260000000023,
+        "ratioBeforeToAfter": 10.627383026883624,
+        "reductionPercent": 90.59034573732457
+      },
+      "staticSvgSerializationMs": {
+        "beforeMedianMs": 116.8637000000017,
+        "afterMedianMs": 15.823900000000322,
+        "ratioBeforeToAfter": 7.385265326499746,
+        "reductionPercent": 86.45952507065915
+      },
+      "coldCpuThroughPreparedPathsMs": {
+        "beforeMedianMs": 3569.109900000003,
+        "afterMedianMs": 911.3598000000002,
+        "ratioBeforeToAfter": 3.9162467995625905,
+        "reductionPercent": 74.46534778881426
+      },
+      "svgPathGenerationMs": {
+        "beforeMedianMs": 1888.4712,
+        "afterMedianMs": 467.14120000000094,
+        "ratioBeforeToAfter": 4.04261323985124,
+        "reductionPercent": 75.26352533202514
+      },
+      "validationMs": {
+        "beforeMedianMs": 45.926000000003114,
+        "afterMedianMs": 27.272500000000036,
+        "ratioBeforeToAfter": 1.6839673663948318,
+        "reductionPercent": 40.61642642512262
+      },
+      "reactElementCreationMs": {
+        "beforeMedianMs": 5.210500000001048,
+        "afterMedianMs": 5.481200000000172,
+        "ratioBeforeToAfter": 0.9506130044517414,
+        "reductionPercent": -5.195278764016309
+      },
+      "decodeMs": {
+        "beforeMedianMs": 1505.222600000001,
+        "afterMedianMs": 383.58989999999994,
+        "ratioBeforeToAfter": 3.924041274287986,
+        "reductionPercent": 74.5160682546223
+      },
+      "combineMs": {
+        "beforeMedianMs": 0.8352999999988242,
+        "afterMedianMs": 0.8201000000008207,
+        "ratioBeforeToAfter": 1.018534325079854,
+        "reductionPercent": 1.819705494795265
+      },
+      "jsonParseMs": {
+        "beforeMedianMs": 682.0544999999984,
+        "afterMedianMs": 304.97800000000007,
+        "ratioBeforeToAfter": 2.2364055767956974,
+        "reductionPercent": 55.2853914166682
+      },
+      "projectionFitMs": {
+        "beforeMedianMs": 156.57870000000003,
+        "afterMedianMs": 33.411699999999655,
+        "ratioBeforeToAfter": 4.686343406651012,
+        "reductionPercent": 78.6614015827187
+      }
+    },
+    "sizes": {
+      "compressedBytes": {
+        "before": 16531177,
+        "after": 7077307,
+        "reductionPercent": 57.188123991413306
+      },
+      "decodedJsonBytes": {
+        "before": 61618072,
+        "after": 33221023,
+        "reductionPercent": 46.08558508614161
+      },
+      "pathCharacters": {
+        "before": 25659069,
+        "after": 6416508,
+        "reductionPercent": 74.99321584894604
+      },
+      "estimatedUtf16PathBytes": {
+        "before": 51318138,
+        "after": 12833016,
+        "reductionPercent": 74.99321584894604
+      },
+      "svgPathElements": {
+        "before": 1326,
+        "after": 1326,
+        "reductionPercent": 0.0
+      },
+      "storedPathStrings": {
+        "before": 1276,
+        "after": 1276,
+        "reductionPercent": 0.0
+      }
+    },
+    "afterCache": {
+      "entries": 1,
+      "estimatedBytes": 13009144,
+      "hitReturnsSameMap": true,
+      "factoryCalls": 1,
+      "projectionCalls": 1,
+      "estimatedPreparedBytes": 13009144
+    },
+    "peakNodeRssKiB": {
+      "before": 1534672,
+      "after": 522484
+    },
+    "beforeBenchmarkSha256": "8bca93f635be5da8dfac14e0f1cb0eaaca07c50e2b19a026058d90c2e4531a2e",
+    "afterBenchmarkSha256": "796f3eed535d8c1c4809da759fec28b5ec1fdbabf910d10c674ae5c5d53c05ed",
+    "limitations": [
+      "Node CPU and resident-memory evidence; not browser FPS, DOM/GPU paint, network latency or browser memory.",
+      "Warm return measures decoded/validated anchor-return or remount, not hover latency.",
+      "Static SVG serialization emits all paths; it does not measure isolated React hover reconciliation.",
+      "Desktop scheduling can still vary; medians use serial runs with the same runtime/sample methodology."
+    ],
+    "deterministicHoverWorkload": {
+      "evidence": "frontend-hover-workload.json",
+      "sourceHashesMatchFinal": true,
+      "exactSameInputSvgPathsPreserved": true,
+      "crossHoverCaliforniaToTexas": {
+        "before": {
+          "rootRenders": 1,
+          "jsxCalls": 1583,
+          "hostElementDescriptors": 1573,
+          "memoComponentOffers": 0,
+          "districtFillDescriptors": 1000,
+          "staticMeshPathDescriptors": 100,
+          "derivedPathDescriptors": 50,
+          "recordedPathDescriptors": 76,
+          "stateButtonDescriptors": 50,
+          "borderPathDescriptors": 100,
+          "borderGroupDescriptors": 50,
+          "geometryDraws": 0,
+          "projectionPreparations": 0,
+          "preparedMapFactories": 0,
+          "colorsComputed": 1000
+        },
+        "after": {
+          "rootRenders": 1,
+          "jsxCalls": 141,
+          "hostElementDescriptors": 37,
+          "memoComponentOffers": 104,
+          "districtFillDescriptors": 0,
+          "staticMeshPathDescriptors": 0,
+          "derivedPathDescriptors": 0,
+          "recordedPathDescriptors": 0,
+          "stateButtonDescriptors": 2,
+          "borderPathDescriptors": 4,
+          "borderGroupDescriptors": 2,
+          "geometryDraws": 0,
+          "projectionPreparations": 0,
+          "preparedMapFactories": 0,
+          "colorsComputed": 0
+        }
+      },
+      "scope": "Real components in an inert hook/memo host using identical original geometry; descriptor counts, not browser elapsed time or FPS."
+    }
+  },
+  "preservation": {
+    "allOriginalManifestFieldsExact": true,
+    "allOriginalIndexMetadataExceptManifestHashExact": true,
+    "originalAssetCount": 520468,
+    "totalAssetCount": 520480,
+    "plansPreserved": 181,
+    "sourceProofsPreserved": 181,
+    "allNewAssetsIndependentlyHashVerified": 12,
+    "originalConnectionFilesIndependentlyHashVerified": 8,
+    "allFourAnchorsOriginalPlanMembershipExact": true,
+    "allFourAnchorsDerivedAndRecordedConnectionRefsExact": true
+  },
+  "geometry": {
+    "435": {
+      "inputPoints": 743457,
+      "outputPoints": 190086,
+      "inputGzipBytes": 10805753,
+      "outputGzipBytes": 2993822,
+      "retainedStates": [
+        "54-2"
+      ]
+    },
+    "574": {
+      "inputPoints": 799767,
+      "outputPoints": 193792,
+      "inputGzipBytes": 11469935,
+      "outputGzipBytes": 3039312,
+      "retainedStates": []
+    },
+    "692": {
+      "inputPoints": 830738,
+      "outputPoints": 200423,
+      "inputGzipBytes": 11833095,
+      "outputGzipBytes": 3129435,
+      "retainedStates": [
+        "54-4"
+      ]
+    },
+    "1000": {
+      "inputPoints": 905440,
+      "outputPoints": 209252,
+      "inputGzipBytes": 12702780,
+      "outputGzipBytes": 3248910,
+      "retainedStates": [
+        "54-5"
+      ]
+    }
+  },
+  "tests": {
+    "passed": 94,
+    "seconds": 48.14
+  },
+  "evidenceDirectory": ".cache/block-main-port/national-performance-v1",
+  "previewUrl": "http://127.0.0.1:3011/districts/explore?cap=1000",
+  "build": {
+    "status": "passed",
+    "buildId": "YoQe2B8Rl5lp573JLHZMU",
+    "explorerFirstLoadJavaScriptDisplay": "163 kB"
+  },
+  "browserQa": {
+    "startedAt": "2026-10-29T00:04:31.034Z",
+    "anchors": [
+      {
+        "alerts": [],
+        "cache": "miss",
+        "census": false,
+        "derived": 7480,
+        "districts": 1000,
+        "insets": 2,
+        "invalidPaths": false,
+        "pathCharacters": 8224432,
+        "paths": 1326,
+        "preparedBytes": "13009144",
+        "recorded": 76,
+        "shortcuts": 8,
+        "states": 50,
+        "svgLabel": "District outlines for all 50 states at House size 1000. Select a state for detail."
+      },
+      {
+        "alerts": [],
+        "cache": "miss",
+        "census": false,
+        "derived": 6976,
+        "districts": 435,
+        "insets": 2,
+        "invalidPaths": false,
+        "pathCharacters": 7722336,
+        "paths": 761,
+        "preparedBytes": "11950762",
+        "recorded": 76,
+        "shortcuts": 8,
+        "states": 50,
+        "svgLabel": "District outlines for all 50 states at House size 435. Select a state for detail."
+      },
+      {
+        "alerts": [],
+        "cache": "miss",
+        "census": false,
+        "derived": 7168,
+        "districts": 574,
+        "insets": 2,
+        "invalidPaths": false,
+        "pathCharacters": 7804784,
+        "paths": 900,
+        "preparedBytes": "12146084",
+        "recorded": 76,
+        "shortcuts": 8,
+        "states": 50,
+        "svgLabel": "District outlines for all 50 states at House size 574. Select a state for detail."
+      },
+      {
+        "alerts": [],
+        "cache": "miss",
+        "census": false,
+        "derived": 7241,
+        "districts": 692,
+        "insets": 2,
+        "invalidPaths": false,
+        "pathCharacters": 7988176,
+        "paths": 1018,
+        "preparedBytes": "12512670",
+        "recorded": 76,
+        "shortcuts": 8,
+        "states": 50,
+        "svgLabel": "District outlines for all 50 states at House size 692. Select a state for detail."
+      },
+      {
+        "alerts": [],
+        "cache": "miss",
+        "census": false,
+        "derived": 7480,
+        "districts": 1000,
+        "insets": 2,
+        "invalidPaths": false,
+        "pathCharacters": 8224432,
+        "paths": 1326,
+        "preparedBytes": "13009144",
+        "recorded": 76,
+        "shortcuts": 8,
+        "states": 50,
+        "svgLabel": "District outlines for all 50 states at House size 1000. Select a state for detail."
+      }
+    ],
+    "warm692": {
+      "alerts": [],
+      "cache": "hit",
+      "census": false,
+      "derived": 7241,
+      "districts": 692,
+      "insets": 2,
+      "invalidPaths": false,
+      "pathCharacters": 7988176,
+      "paths": 1018,
+      "preparedBytes": "12512670",
+      "recorded": 76,
+      "shortcuts": 8,
+      "states": 50,
+      "svgLabel": "District outlines for all 50 states at House size 692. Select a state for detail."
+    },
+    "warm1000": {
+      "alerts": [],
+      "cache": "hit",
+      "census": false,
+      "derived": 7480,
+      "districts": 1000,
+      "insets": 2,
+      "invalidPaths": false,
+      "pathCharacters": 8224432,
+      "paths": 1326,
+      "preparedBytes": "13009144",
+      "recorded": 76,
+      "shortcuts": 8,
+      "states": 50,
+      "svgLabel": "District outlines for all 50 states at House size 1000. Select a state for detail."
+    },
+    "census1000": {
+      "alerts": [],
+      "cache": "miss",
+      "census": true,
+      "derived": 0,
+      "districts": 1000,
+      "insets": 2,
+      "invalidPaths": false,
+      "pathCharacters": 6763596,
+      "paths": 1100,
+      "preparedBytes": "12607402",
+      "recorded": 0,
+      "shortcuts": 8,
+      "states": 50,
+      "svgLabel": "District outlines for all 50 states at House size 1000. Select a state for detail."
+    },
+    "landReturn1000": {
+      "alerts": [],
+      "cache": "hit",
+      "census": false,
+      "derived": 7480,
+      "districts": 1000,
+      "insets": 2,
+      "invalidPaths": false,
+      "pathCharacters": 8224432,
+      "paths": 1326,
+      "preparedBytes": "13009144",
+      "recorded": 76,
+      "shortcuts": 8,
+      "states": 50,
+      "svgLabel": "District outlines for all 50 states at House size 1000. Select a state for detail."
+    },
+    "northeastShortcut": {
+      "url": "http://127.0.0.1:3011/districts/explore?cap=1000&state=44",
+      "text": "Rhode Island\nBack\n\u2212\n+\nFit selection\nReset view\nInspect\nDistricts\nCounties\nBlocks\n\nClick any district to inspect it. Drag to pan \u00b7 scroll or use +/\u2212 to zoom.\n\nProvidence\nCranston\nWarwick\nPawtucket\nWoonsocket\nNewport\nWesterly\nValley Falls\n1.0\u00d7 \u00b7 Simplified land boundaries\nSolid light lines \u00b7 computed district boundaries\nDotted \u00b7 counties\nWhite points \u00b7 cities & places\nPink/amber dashes \u00b7 recorded connections\nAdvanced controls\nREFERENCE LAYERS\nCounties\nOpacity\n45%\nCities & places\nOpacity\n90%\nPopulation density\nCongressional districts\nBoundary display\nBOUNDARY DISPLAY\nFull census extent\nExact district outlines\nBlocks + full census extent\nConnections\nCONNECTIONS\nDerived water connections\nRecorded connections (1)\nSources and interpretation\nInspect recorded connections (1)\nRhode Island\n2020 Census \u00b7 House 1000\nPopulation\n1,097,379\nComputed districts\n3\nIdeal population per district\n365,793\nLargest population deviation\n1 people\nDistrict\nChoose on the map\nDistrict 1\nDistrict 2\nDistrict 3\nCounty\n\nDistricts and Counties use simplified boundaries at every zoom. Choose Blocks to zoom closer and inspect census data.\n\nMap selection: state"
+    },
+    "alaska": {
+      "url": "http://127.0.0.1:3011/districts/explore?cap=1000&state=02",
+      "pathCount": 84,
+      "exactPathsPreserved": true,
+      "exactCardTextPreserved": true
+    },
+    "michigan": {
+      "exactPathsPreserved": true,
+      "exactCardTextPreserved": true,
+      "pathCount": 254
+    },
+    "kentCard": "Kent County\n2020 Census \u00b7 House 1000\nPopulation\n657,974\nCensus blocks\n9,304\nDistricts intersected\n5\nSelected district context\nAll districts\n\nThese shares describe all residents of Kent County. Shares are based on residents, not land area.\n\nDistrict 5: 0.81% \u00b7 5,297 residents\nDistrict 15: 39.72% \u00b7 261,378 residents\nDistrict 17: 8.20% \u00b7 53,984 residents\nDistrict 24: 1.99% \u00b7 13,107 residents\nDistrict 25: 49.27% \u00b7 324,208 residents",
+    "michiganBlocks": {
+      "attributes": {
+        "aria-label": "Michigan interactive district explorer",
+        "class": "space-y-3"
+      },
+      "canvases": 1,
+      "card": "Kent County2020 Census \u00b7 House 1000Population657,974Census blocks9,304Districts intersected5Selected district contextAll districtsThese shares describe all residents of Kent County. Shares are based on residents, not land area.District 5: 0.81% \u00b7 5,297 residentsDistrict 15: 39.72% \u00b7 261,378 residentsDistrict 17: 8.20% \u00b7 53,984 residentsDistrict 24: 1.99% \u00b7 13,107 residentsDistrict 25: 49.27% \u00b7 324,208 residents",
+      "statuses": [
+        "19,950 blocks loaded for this view. Visible blocks are included across county and district lines; county cards retain whole-county totals."
+      ]
+    },
+    "michiganPan": {
+      "canvases": 1,
+      "data": [
+        [
+          "data-map-inspection",
+          "blocks"
+        ],
+        [
+          "data-zoom-min",
+          "6"
+        ],
+        [
+          "data-zoom-max",
+          "256"
+        ],
+        [
+          "data-retained-detail-assets",
+          "2"
+        ],
+        [
+          "data-cached-chunks",
+          "143"
+        ],
+        [
+          "data-block-chunks",
+          "133"
+        ],
+        [
+          "data-inspection-target",
+          "blocks"
+        ],
+        [
+          "data-visible-chunks",
+          "c005-g0751-1062,c005-g0752-1062,c005-g0753-1062,c005-g0754-1062,c005-g0755-1062,c015-g0755-1062,c015-g0756-1061,c015-g0756-1062,c015-g0757-1061a,c015-g0757-1061b,c015-g0757-1062,c015-g0758-1061,c015-g0758-1062,c015-g0759-1061,c015-g0759-1062,c045-g0759-1061,c045-g0759-1062,c045-g0760-1061,c045-g0760-1062,c067-g0757-1062,c067-g0757-1063,c067-g0757-1064,c067-g0758-1062,c067-g0758-1063,c067-g0758-1064a,c067-g0758-1064b,c067-g0759-1062,c067-g0759-1063a,c067-g0759-1063b,c067-g0759-1064,c067-g0760-1062,c067-g0760-1063,c067-g0760-1064,c067-g0761-1063,c081-g0753-1062,c081-g0753-1063a,c081-g0753-1063b,c081-g0753-1064,c081-g0753-1065,c081-g0753-1066,c081-g0754-1062aa,c081-g0754-1062ab,c081-g0754-1062ba,c081-g0754-1062bb,c081-g0754-1063aaaa,c081-g0754-1063aaab,c081-g0754-1063aaba,c081-g0754-1063aabb,c081-g0754-1063abaa,c081-g0754-1063abab,c081-g0754-1063abba,c081-g0754-1063abbb,c081-g0754-1063baaa,c081-g0754-1063baab,c081-g0754-1063baba,c081-g0754-1063babb,c081-g0754-1063bbaa,c081-g0754-1063bbab,c081-g0754-1063bbba,c081-g0754-1063bbbb,c081-g0754-1064aa,c081-g0754-1064ab,c081-g0754-1064ba,c081-g0754-1064bb,c081-g0754-1065a,c081-g0754-1065b,c081-g0754-1066,c081-g0755-1062a,c081-g0755-1062b,c081-g0755-1063aa,c081-g0755-1063ab,c081-g0755-1063ba,c081-g0755-1063bb,c081-g0755-1064aa,c081-g0755-1064ab,c081-g0755-1064ba,c081-g0755-1064bb,c081-g0755-1065a,c081-g0755-1065b,c081-g0755-1066,c081-g0756-1062,c081-g0756-1063a,c081-g0756-1063b,c081-g0756-1064,c081-g0756-1065,c081-g0756-1066,c081-g0757-1062,c081-g0757-1063,c081-g0757-1064,c081-g0757-1065,c081-g0757-1066,c117-g0755-1066,c117-g0756-1066,c117-g0757-1065,c117-g0757-1066,c117-g0758-1064,c117-g0758-1065,c117-g0758-1066,c117-g0759-1064,c117-g0759-1065,c117-g0759-1066,c117-g0760-1064,c117-g0760-1065,c117-g0760-1066,c117-g0761-1066,c121-g0751-1064,c121-g0751-1065,c121-g0751-1066,c121-g0752-1065,c121-g0752-1066,c121-g0753-1065,c121-g0753-1066,c123-g0751-1066,c123-g0752-1066,c123-g0753-1066,c123-g0754-1066,c123-g0755-1066,c139-g0751-1062aa,c139-g0751-1062ab,c139-g0751-1062ba,c139-g0751-1062bb,c139-g0751-1063,c139-g0751-1064,c139-g0752-1062,c139-g0752-1063a,c139-g0752-1063b,c139-g0752-1064,c139-g0752-1065,c139-g0753-1062,c139-g0753-1063a,c139-g0753-1063b,c139-g0753-1064,c139-g0753-1065"
+        ],
+        [
+          "data-prepared-chunks",
+          "143"
+        ],
+        [
+          "data-cached-raw-bytes",
+          "17348588"
+        ]
+      ],
+      "statuses": [
+        "18,280 blocks loaded for this view. Visible blocks are included across county and district lines; county cards retain whole-county totals."
+      ]
+    },
+    "michiganBlockRelease": {
+      "canvases": 0
+    },
+    "countySwitch": "Ionia County\n2020 Census \u00b7 House 1000\nPopulation\n66,804\nCensus blocks\n2,256\nDistricts intersected\n3\nSelected district context\nAll districts\n\nThese shares describe all residents of Ionia County. Shares are based on residents, not land area.\n\nDistrict 5: 89.83% \u00b7 60,010 residents\nDistrict 15: 10.16% \u00b7 6,790 residents\nDistrict 25: 0.01% \u00b7 4 residents",
+    "hawaiiInset": {
+      "url": "http://127.0.0.1:3011/districts/explore?cap=1000&state=15",
+      "text": "Hawaii\n2020 Census \u00b7 House 1000\nPopulation\n1,455,271\nComputed districts\n4\nIdeal population per district\n363,817.75\nLargest population deviation\n10.75 people"
+    },
+    "keyboardFocus": {
+      "activeLabel": "California, 120 districts. Open state map.",
+      "highlighted": "true"
+    },
+    "keyboardOpen": "http://127.0.0.1:3011/districts/explore?cap=1000&state=06",
+    "finalNational": {
+      "alerts": [],
+      "cache": "hit",
+      "census": false,
+      "derived": 7480,
+      "districts": 1000,
+      "insets": 2,
+      "invalidPaths": false,
+      "pathCharacters": 8224432,
+      "paths": 1326,
+      "preparedBytes": "13009144",
+      "recorded": 76,
+      "shortcuts": 8,
+      "states": 50,
+      "svgLabel": "District outlines for all 50 states at House size 1000. Select a state for detail."
+    },
+    "console": [
+      {
+        "level": "warn",
+        "message": "MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 close listeners added. Use emitter.setMaxListeners() to increase limit",
+        "timestamp": "2026-10-28T23:16:34.899Z",
+        "url": "chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/scripts/contentscript.js"
+      },
+      {
+        "level": "warn",
+        "message": "MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 end listeners added. Use emitter.setMaxListeners() to increase limit",
+        "timestamp": "2026-10-28T23:16:34.899Z",
+        "url": "chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/scripts/contentscript.js"
+      },
+      {
+        "level": "warn",
+        "message": "ObjectMultiplex - orphaned data for stream \"app-init-liveness\"",
+        "timestamp": "2026-10-28T23:16:34.899Z",
+        "url": "chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/scripts/contentscript.js"
+      },
+      {
+        "level": "warn",
+        "message": "ObjectMultiplex - orphaned data for stream \"app-init-liveness\"",
+        "timestamp": "2026-10-28T23:16:34.900Z",
+        "url": "chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/scripts/contentscript.js"
+      },
+      {
+        "level": "warn",
+        "message": "ObjectMultiplex - orphaned data for stream \"background-liveness\"",
+        "timestamp": "2026-10-28T23:16:34.900Z",
+        "url": "chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/scripts/contentscript.js"
+      },
+      {
+        "level": "warn",
+        "message": "ObjectMultiplex - orphaned data for stream \"background-liveness\"",
+        "timestamp": "2026-10-28T23:16:34.900Z",
+        "url": "chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/scripts/contentscript.js"
+      },
+      {
+        "level": "warn",
+        "message": "MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 close listeners added. Use emitter.setMaxListeners() to increase limit",
+        "timestamp": "2026-10-29T00:04:19.390Z",
+        "url": "chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/scripts/contentscript.js"
+      },
+      {
+        "level": "warn",
+        "message": "MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 end listeners added. Use emitter.setMaxListeners() to increase limit",
+        "timestamp": "2026-10-29T00:04:19.392Z",
+        "url": "chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/scripts/contentscript.js"
+      },
+      {
+        "level": "warn",
+        "message": "ObjectMultiplex - orphaned data for stream \"app-init-liveness\"",
+        "timestamp": "2026-10-29T00:04:19.436Z",
+        "url": "chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/scripts/contentscript.js"
+      },
+      {
+        "level": "warn",
+        "message": "ObjectMultiplex - orphaned data for stream \"app-init-liveness\"",
+        "timestamp": "2026-10-29T00:04:19.437Z",
+        "url": "chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/scripts/contentscript.js"
+      },
+      {
+        "level": "warn",
+        "message": "ObjectMultiplex - orphaned data for stream \"background-liveness\"",
+        "timestamp": "2026-10-29T00:04:19.438Z",
+        "url": "chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/scripts/contentscript.js"
+      },
+      {
+        "level": "warn",
+        "message": "ObjectMultiplex - orphaned data for stream \"background-liveness\"",
+        "timestamp": "2026-10-29T00:04:19.438Z",
+        "url": "chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/scripts/contentscript.js"
+      }
+    ],
+    "completedAt": "2026-10-29T00:08:48.718Z",
+    "appConsole": [],
+    "status": "passed",
+    "geometryDomReductionPercent": 72.84456559117667
+  },
+  "screenshot": ".cache/block-main-port/national-performance-v1/after.jpg",
+  "noCommit": true
+}

@@ -45,7 +45,7 @@ export function StateDistrictSidebar({ activeFips }: StateDistrictSidebarProps) 
       event.preventDefault();
       setPendingFips(fips);
       startTransition(() => {
-        router.push(`/districts/explore?${params.toString()}`, { scroll: false });
+        router.push(`/districts?${params.toString()}`, { scroll: false });
       });
     },
     [activeFips, isLoadingState, router, searchParams]
@@ -77,7 +77,7 @@ export function StateDistrictSidebar({ activeFips }: StateDistrictSidebarProps) 
             return (
               <Link
                 key={state.fips}
-                href={`/districts/explore?state=${state.fips}`}
+                href={`/districts?state=${state.fips}`}
                 prefetch={false}
                 aria-current={active ? "page" : undefined}
                 aria-disabled={active || isLoadingState}

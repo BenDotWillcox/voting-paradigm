@@ -130,7 +130,7 @@ function StateDetail({ state, size }: { state: EssayState; size: number }) {
         </dl>
         <p className="mt-4 text-xs text-story-muted">
           <Link
-            href={`/districts/explore?state=${state.fips}`}
+            href={`/districts?state=${state.fips}`}
             className="underline decoration-story-axis underline-offset-2 hover:text-story-ink"
           >
             See {state.name}’s district plan

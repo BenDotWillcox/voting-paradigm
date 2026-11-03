@@ -12,6 +12,8 @@
     "api:dev": "python -m uvicorn api.main:app --reload --port 8000",
     "dev:all": "concurrently -n web,api -c blue,green \"npm run dev\" \"npm run api:dev\"",
     "fetch:map-data": "python scripts/fetch_map_data.py",
+    "prepare:block-plans": "node scripts/prepare-block-plans.mjs",
+    "publish:block-plans": "node scripts/publish-block-plan-assets.mjs",
     "build:map-display": "node scripts/build-district-display.mjs"
   },
   "dependencies": {
@@ -90,6 +92,7 @@
     "@types/react-dom": "^19",
     "@types/topojson-client": "^3.1.5",
     "@types/topojson-specification": "^1.0.5",
+    "aws4fetch": "1.0.20",
     "concurrently": "^9.1.0",
     "drizzle-kit": "^0.30.6",
     "eslint": "^9",

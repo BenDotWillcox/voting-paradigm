@@ -25,7 +25,7 @@ Each demo is a top-level route in the web app and a domain package on the Python
 |---|------|-------|--------|---------------|
 | 1 | **Voting methods comparison** — same ballots, multiple resolution methods, side-by-side winners | `/methods` (instrument) | Instrument, paradox gallery, atlas and simulation built | Voting theory rigor, electoral criteria, reproducibility |
 | 2 | **Agent voting via preference models** — LLM-elicited preference posterior; agent casts a ballot under uncertainty | `/preferences` | In progress | Bayesian inference, embeddings, active learning, LLM orchestration |
-| 3 | **Algorithmic districting** — fair, transparent district maps under explicit constraints | `/districts` (story), `/districts/explore` | Tract-level plans for all 50 states live; enacted-map comparison planned | Optimization, graph algorithms, geo data, fairness metrics |
+| 3 | **Algorithmic districting** — fair, transparent district maps under explicit constraints | `/districts` | One page: the nine-chapter Michigan algorithm walkthrough (`prompts/demo-3-explainer.md`), ending in enacted-map and gerrymander comparisons, followed by the 50-state block-plan explorer | Optimization, graph algorithms, geo data, fairness metrics |
 | 4 | **Apportionment** — how many seats each state gets, and how House size drives interstate district inequality | `/apportionment` (story), `/apportionment/explore` | Live; methods comparison deferred | Apportionment math, data storytelling, reproducibility |
 | 5 | **Liquid democracy** — delegation graphs, transitive trust, topic-conditional delegates | `/delegation` | Planned | Network analysis, simulation, dynamics on graphs |
 
@@ -93,7 +93,7 @@ Two processes. One web app, one Python service.
 
 ```
 .claude/skills/              Versioned project review checklists
-app/                        Next.js App Router pages (demo stories, the /methods instrument, /districts/explore)
+app/                        Next.js App Router pages (demo stories, the /methods instrument, the /districts explorer)
 components/                 React components (domain subfolders + ui/ for shadcn)
   story/                    Scrollytelling kit: layout, Scrolly, figures, chart primitives
 actions/                    Server Actions — "use server", return ActionResult<T>
@@ -401,7 +401,11 @@ The API is visible in the portfolio; treat it as product surface.
 - **JSONB columns** — always Zod-validate on read. Drizzle types JSONB as `unknown`; don't cast away with `as unknown as T`.
 - **Path alias:** `@/*` maps to project root.
 - **Style:** Tailwind CSS 4, shadcn/ui (new-york), dark mode via class strategy.
-- **Story pages** (`/districts`, `/apportionment`): editorial scrollytelling built from
+- **Districting page** (`/districts`): explorer and algorithm walkthrough in one page,
+  scoped by `.districts-ui` in `app/globals.css` (Peridot palette, circuit-board
+  backdrop, mono readouts; tokens mirrored in `lib/districts-palette.ts`). Map
+  data colors (district fills, density, connection kinds) stay outside the palette.
+- **Story pages** (`/apportionment`): editorial scrollytelling built from
   `components/story/` inside `<StoryRoot>`, which scopes the `.story` tokens in
   `app/globals.css` (serif prose, warm surfaces, validated chart palette in
   `lib/story/palette.ts`). Stories are static-first: data comes from
@@ -429,9 +433,22 @@ npm run api:dev                  # starts FastAPI on :8000
 
 # Run everything
 npm run dev:all                  # web + api concurrently
+
+# Districting block plans (generated data, never committed)
+npm run prepare:block-plans      # rebuild data/districting-block-plans/ from the cache
+npm run publish:block-plans      # verify and upload missing assets to R2 (--dry-run to verify only)
 ```
 
 Database URL from `.env.local` (see `drizzle.config.ts`). Python API URL from `VOTING_API_URL` (default `http://localhost:8000`).
+
+Block-plan assets (~15 GB across 520k content-addressed files, including the
+historical `.cache` payloads) are too large for git or a Vercel function.
+Locally, `/api/district-plans` streams them from `data/districting-block-plans/`
+and `BLOCK_PLAN_CACHE_ROOT`. Deployments set `BLOCK_PLAN_ASSET_ORIGIN` to the
+public R2 origin, and `next.config.ts` rewrites that route to the bucket; the
+page itself needs only the tracked manifest and final catalog. Publishing reads
+`R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` and `R2_BUCKET`
+from `.env.local`, and must run from a checkout that holds the generated bundle.
 
 ## Build phases
 
@@ -588,14 +605,11 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 
 ### Demo 3: Algorithmic districting
 
-**Status:** Tract-level 435-seat plans for all 50 states implemented (apportionment now lives in demo 4). Design doc at [`prompts/demo-3-districting.md`](prompts/demo-3-districting.md). The current slice ships simplified display artifacts, a canvas tract map with hover inspection, per-plan population-balance metrics, and the Michigan algorithm walkthrough. The enacted-map comparison, recorded solver snapshots, and block-level plans are still planned.
+**Status:** `/districts` is one page: the nine-chapter Michigan walkthrough (`prompts/demo-3-explainer.md`), ending in enacted-map and gerrymander comparisons, then the census-block explorer for all 50 states at House 435 / 574 / 692 / 1,000 (181 accepted plans, `prompts/state-block-final-catalog.md`). The block solver adds shared-edge and polygon-part connectivity repair (`districting/connectivity.py`, `districting/part_connectivity.py`); its benchmark suite, recorded water/exclave link policies and catalog builder live in `scripts/`, with reports in `prompts/`. Generated assets are served from R2 in production (see Commands). Design doc at [`prompts/demo-3-districting.md`](prompts/demo-3-districting.md); integration and verification history in `prompts/block-plan-main-integration.md`. The first slice's tract artifacts remain in `public/data/district-plans/`.
 
 **Next, in order:**
-1. Add methodology writeup page explaining the algorithm, constraints, seed policy, and limits of geometric fairness.
-2. Precompute pipeline for one state end-to-end.
-3. Scale precompute to all 50 states across cap range [435, 1000].
-4. State detail page with real district polygons + metrics (Polsby-Popper, population deviation, edge count).
-5. *(Deferred)* Live seed regeneration, block-group resolution, DC/territories, cross-demo composition with methods.
+1. Compactness metrics (Polsby-Popper or similar) beside population balance in the explorer.
+2. *(Deferred)* Live seed regeneration, DC/territories, cross-demo composition with methods.
 
 ### Demo 4: Apportionment
 
