@@ -62,30 +62,44 @@ _RETRY_STATUSES = frozenset({408, 429, 500, 502, 503, 504, 529})
 _LONGEST_WAIT = 30.0
 
 
+def read_setting(
+    name: str,
+    env_file: Path | None = None,
+    environ: Mapping[str, str] | None = None,
+) -> str | None:
+    """
+    Read one setting from the environment or an env file.
+
+    The environment is checked first, then `NAME=value` lines in the env
+    file. Surrounding quotes are dropped.
+
+    Returns:
+        The value, or None when it is not set anywhere.
+    """
+    source = os.environ if environ is None else environ
+    value = source.get(name, "").strip()
+    if value:
+        return value
+    if env_file is None or not env_file.exists():
+        return None
+    for line in env_file.read_text(encoding="utf-8").splitlines():
+        key, separator, raw = line.partition("=")
+        if separator and key.strip() == name:
+            cleaned = raw.strip().strip("\"'")
+            return cleaned or None
+    return None
+
+
 def read_api_key(
     env_file: Path | None = None, environ: Mapping[str, str] | None = None
 ) -> str | None:
     """
     Find the TypeSafe API key without revealing it.
 
-    The environment is checked first, then `KEY=value` lines in the env
-    file. Surrounding quotes are dropped.
-
     Returns:
         The key, or None when it is not set anywhere.
     """
-    source = os.environ if environ is None else environ
-    value = source.get(API_KEY_VARIABLE, "").strip()
-    if value:
-        return value
-    if env_file is None or not env_file.exists():
-        return None
-    for line in env_file.read_text(encoding="utf-8").splitlines():
-        name, separator, raw = line.partition("=")
-        if separator and name.strip() == API_KEY_VARIABLE:
-            cleaned = raw.strip().strip("\"'")
-            return cleaned or None
-    return None
+    return read_setting(API_KEY_VARIABLE, env_file, environ)
 
 
 @dataclass(frozen=True)

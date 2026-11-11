@@ -27,7 +27,7 @@ Each demo is a top-level route in the web app and a domain package on the Python
 | 2 | **Agent voting via preference models** — LLM-elicited preference posterior; agent casts a ballot under uncertainty | `/preferences` | In progress | Bayesian inference, embeddings, active learning, LLM orchestration |
 | 3 | **Algorithmic districting** — fair, transparent district maps under explicit constraints | `/districts` | One page: the nine-chapter Michigan algorithm walkthrough (`prompts/demo-3-explainer.md`), ending in enacted-map and gerrymander comparisons, followed by the 50-state block-plan explorer | Optimization, graph algorithms, geo data, fairness metrics |
 | 4 | **Apportionment** — how many seats each state gets, and how House size drives interstate district inequality | `/apportionment` (story), `/apportionment/explore` | Live; methods comparison deferred | Apportionment math, data storytelling, reproducibility |
-| 5 | **Liquid democracy** — delegation graphs, transitive trust, topic-conditional delegates | `/liquid` | Planned | Network analysis, simulation, dynamics on graphs |
+| 5 | **Liquid democracy** — voters hand self-written categories of decisions to people they trust; each ballot question is routed per voter | `/liquid` (placeholder) | Core package, Jev router evaluation, nested-category rule, synthetic network and API built; the `/liquid` page is not | Decision-model routing, graph algorithms, simulation |
 | 6 | **Expressive ballots** — question-specific interfaces for directly declared utility | `/expressive` | In progress; tax ballot and same-electorate results walkthrough | Preference elicitation, constrained interaction, explicit aggregation assumptions |
 
 Apportionment was split out of districting (2026-09-29): it answers a
@@ -68,7 +68,7 @@ Two processes. One web app, one Python service.
 │ Routes: /methods,   │        │  /api/voting/...             │
 │ /preferences,       │        │  /api/preferences/...        │
 │ /districts (future),│        │  /api/districting/... (future)│
-│ /liquid (future)    │        │  /api/delegation/...  (future)│
+│ /liquid (future)    │        │  /api/delegation/...          │
 │ Server Actions →    │        │  /api/personas/...    (future)│
 │ Python API client   │        │  /api/agents/...      (future)│
 └──────────┬──────────┘        └────────────┬─────────────────┘
@@ -352,7 +352,7 @@ parity script compares them).
 - **Election processing.** The unit of work is one (voter, question) pair. Residents of a ballot paper's jurisdiction originate the votes; the resolver can be anyone in the network, and each holder applies their own delegations. One voter's questions can end with different resolvers.
 - **Resolution.** Each voter's ballot is a copy of their resolver's ballot under the voter's own id, so `voting/` is used unchanged and there are no weighted ballots. This is the natural cross-demo composition: liquid democracy is "demo 1 with a delegation layer in front."
 - **Loops.** Creating a delegation that would close a loop in the identical category is rejected; a loop that depends on the question is warned about against reference questions. When a question is resolved, everyone on a loop keeps the decision, so every vote ends at exactly one resolver.
-- **Simulation surface (not built).** A seeded synthetic network with a few delegation behaviours, compared against direct voting. Concentration (largest share held by one resolver, Gini on effective weights) is reported per question, not limited.
+- **Simulation surface.** A seeded synthetic network (`delegation/simulate.py`): one city of three districts, people outside it who can still be delegates, and three delegation behaviours, compared against direct voting. Concentration (largest share held by one resolver, Gini on effective weights) is reported per question, not limited. The behaviours and their shares are assumptions, not data.
 - **Scope cuts.** No tables in the first version, one delegate per category, and no weight caps or ranked backup delegates.
 
 **Router evaluation (2026-11-10, `jev-1.14.0`, `eval/benchmarks/delegation_router_v1/`).** On a synthetic pool of 30 categories and 68 labelled questions, routing at the 0.7 threshold sent 4 of 292 delegated cases to a category the question was not about and kept 21 of 309 cases that had an acceptable category. The pool and labels were written by one author, so these rates reflect the labels as well as the model.
@@ -408,7 +408,7 @@ Every demo must be verifiable by anyone who clicks. Every stochastic operation i
 - **LLM calls** — `temperature=0` for rationales and structured outputs; use the `seed` parameter where supported (OpenAI). Cache responses keyed on the full prompt.
 - **Preference model inference** — RNG for MCMC / variational fits is seeded and recorded.
 - **Districting ensembles (demo 3, when built)** — the MCMC chain seed and parameter set are part of every reported result; an ensemble run is identified by `(jurisdiction_id, params_hash, seed, n_steps)`.
-- **Delegation-graph simulations (demo 5, when built)** — graph generation seed and any random delegation-strategy seeds are recorded on the run.
+- **Delegation-graph simulations (demo 5)** — graph generation seed and any random delegation-strategy seeds are recorded on the run.
 - **Decision-model judgments (demo 5)** — hosted Jev is pinned to a versioned model id and is not repeatable to the last digit. Every judgment is recorded, resolution reads only recorded judgments, and the judgment snapshot hash is part of the run key. This is demo 5's one documented non-deterministic input.
 
 If a change breaks determinism (e.g., switching to an ungrounded LLM call), document the non-determinism explicitly and justify it.
@@ -675,14 +675,14 @@ companion explorer at `/apportionment/explore`
 
 ### Demo 5: Liquid democracy
 
-**Status:** Build steps 1 and 2 of four are done. Design doc at [`prompts/demo-5-liquid-democracy.md`](prompts/demo-5-liquid-democracy.md). `/liquid` is still the placeholder page.
+**Status:** Build steps 1 to 3 of four are done. Design doc at [`prompts/demo-5-liquid-democracy.md`](prompts/demo-5-liquid-democracy.md). `/liquid` is still the placeholder page.
 
 **Done:**
 - `delegation/` core (PR #77): voter-written categories, the per-voter routing rule, creation-time loop checks, per-question resolution in which everyone on a loop keeps the decision, vote copying through `voting/`, and concentration metrics. It reads judgments as plain probabilities and makes no network calls. Tests cover the nine resolution invariants over 300 seeded random networks; `mypy --strict` is clean on the package.
 - Jev judgments: `delegation/judgments.py` records the first response per question and category and replays it, failing closed when a judgment is missing; `delegation/nesting.py` does the same for which categories sit inside which; `delegation/jev.py` is the adapter, pinned to `jev-1.14.0` over plain HTTP, and is the one module that uses the network. The key is read from `TYPESAFE_API_KEY` in the environment or `.env.local`.
 - Router evaluation: `eval/delegation_router.py` and `python -m eval.run_delegation_router_eval` (`plan`, `smoke`, `collect`, `report`; the paid commands need `--live`), with recorded answers, summary and README in `eval/benchmarks/delegation_router_v1/`. The report rebuilds byte for byte from the recorded answers with no network use.
+- Network and API: `delegation/simulate.py` builds the seeded population and its sincere ballots; `delegation/data/scenario_v1.json` holds the category pool, a city-wide and a single-district ballot paper, and their recorded judgments and nesting, built from the evaluation's recorded answers by `scripts/build_delegation_scenario.py`. Routes under `/api/delegation`: `GET /scenario`, `POST /delegations/validate`, `POST /judgments`, `POST /resolve`. Requests carry only the viewer's delegations and votes; resolution reads recorded judgments only. The server asks Jev about a viewer-written category only when it has the API key and `DELEGATION_LIVE_JUDGMENTS` is switched on, and records the answers under `.cache/delegation/`.
 
 **Next, in order:**
-1. Seeded synthetic network, curated ballot papers with recorded judgments, and the `/api/delegation/*` endpoints.
-2. The `/liquid` page.
-3. *(Deferred)* Delegate recommendations driven by demo 2's preference posterior, saved networks, ranked backup delegates.
+1. The `/liquid` page.
+2. *(Deferred)* Delegate recommendations driven by demo 2's preference posterior, saved networks, ranked backup delegates.

@@ -319,3 +319,28 @@ class TestGatheredJudgmentsDriveRouting:
             resolve_question(network, "levy", ["voter"], judgments).resolver_of("voter")
             == "voter"
         )
+
+
+class TestFirstWordingStays:
+    def test_a_judged_category_is_known_by_its_first_wording(
+        self, tmp_path: Path
+    ) -> None:
+        path = tmp_path / "judgments.jsonl"
+        store = JudgmentStore(path)
+        assert store.wording(TAXES.id) is None
+
+        gather_judgments(
+            [LEVY], [TAXES], store, model=MODEL, source=ScriptedSource(TABLE)
+        )
+        respelled = create_category("ALL things  taxes")
+        assert respelled.id == TAXES.id and respelled.text != TAXES.text
+
+        assert store.wording(respelled.id) == "all things taxes"
+        assert JudgmentStore(path).wording(TAXES.id) == "all things taxes"
+
+    def test_a_respelling_is_a_different_request_until_the_first_wording_is_reused(
+        self,
+    ) -> None:
+        # The judgment records exactly what was asked, wording included.
+        respelled = create_category("ALL things  taxes")
+        assert judgment_key(MODEL, LEVY, respelled) != judgment_key(MODEL, LEVY, TAXES)

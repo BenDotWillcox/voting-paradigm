@@ -6,6 +6,7 @@ Single service, multiple routers:
   - /api/elections/...     voting resolution + curated demo scenarios (lab)
   - /api/preferences/...   preference elicitation (stateless)
   - /api/expressive/...    authored tax ballots and same-electorate comparison
+  - /api/delegation/...    liquid democracy: scenario, checks, judgments, resolution
 
 Run with: uvicorn api.main:app --reload --port 8000
 """
@@ -14,6 +15,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .routers.atlas import router as atlas_router
+from .routers.delegation import router as delegation_router
 from .routers.districting import router as districting_router
 from .routers.expressive import router as expressive_router
 from .routers.profiles import router as profiles_router
@@ -65,6 +67,17 @@ tags_metadata = [
             "districting algorithm itself follows in later build steps."
         ),
     },
+    {
+        "name": "delegation",
+        "description": (
+            "Liquid democracy. Voters hand self-written categories of "
+            "decisions to people they trust; a ballot paper is routed question "
+            "by question through a seeded synthetic network and counted "
+            "beside the direct vote. Stateless: each request carries the "
+            "viewer's delegations and votes. Resolution reads recorded "
+            "decision-model judgments only."
+        ),
+    },
 ]
 
 app = FastAPI(
@@ -85,6 +98,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(delegation_router)
 app.include_router(districting_router)
 app.include_router(expressive_router)
 app.include_router(profiles_router)
