@@ -128,6 +128,7 @@ def test_relabelling_persons_does_not_matter(seed: int) -> None:
             Delegation(new_id[d.delegator], d.category, new_id[d.delegate])
             for d in scenario.network.delegations
         ],
+        nesting=scenario.network.nesting,
     )
     relabelled = resolve_question(
         network,

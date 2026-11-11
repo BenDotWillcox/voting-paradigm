@@ -3,8 +3,14 @@
 Living design document for the liquid democracy demo. Edit when decisions change.
 
 Status: design agreed 2026-11-09; categories revised the same day to be
-voter-defined. Build step 1 (the core, in `delegation/`) is implemented;
-steps 2 to 4 are not.
+voter-defined. Build step 1 (the core, in `delegation/`) is implemented.
+Step 2 is implemented and run (judgment store, Jev adapter, category pool,
+labelled questions, router evaluation); its results are in
+`eval/benchmarks/delegation_router_v1/`. The evaluation led to one rule
+change, decided 2026-11-10: a narrower category overrules the broader one it
+sits inside. The rule is implemented, and Jev's ability to tell which
+categories are nested has been measured: it found 11 of 14 labelled pairs
+and no others. Steps 3 and 4 are not built.
 
 ## What we're building
 
@@ -18,7 +24,7 @@ Three technical pieces carry the demo. Each has one decided answer:
 
 | Piece | Decision |
 |---|---|
-| **Category routing** | Voters write their own categories, at any granularity. A Jev-style decision model (hosted Jev, pinned to `jev-1.14.0`) gives one yes/no probability per (question, category). The voter's highest-scoring category wins if it clears a threshold; otherwise the voter keeps the decision. |
+| **Category routing** | Voters write their own categories, at any granularity. A Jev-style decision model (hosted Jev, pinned to `jev-1.14.0`) gives one yes/no probability per (question, category). Categories below a threshold drop out, a narrower category overrules the broader one it sits inside, and the highest score among the rest wins; if nothing clears the threshold the voter keeps the decision. |
 | **Election processing** | The unit of work is one (voter, question) pair. Votes originate at eligible residents; the person who resolves a vote can be anyone in the network. Tallies are produced by copying each resolver's ballot back to the voters they answer for, so `voting/` is used unchanged. |
 | **Circular delegation** | Two layers. Creating a delegation that would close a loop in the identical category is rejected, and one that loops on a reference question raises a warning. At resolution, if a question's chain still loops, everyone on the loop keeps that decision. Every vote therefore ends at exactly one resolver. |
 
@@ -95,16 +101,19 @@ route(person, question):
     C = categories this person has delegated
     if C is empty:                                 keep
     if any judgment for C is missing:              keep (router unavailable)
-    c* = the category in C with the highest probability
+    C = the categories in C whose probability >= threshold
+    if C is empty:                                 keep (none of the available)
+    drop from C any category that has a narrower category inside it still in C
+    c* = the category left in C with the highest probability
          (exact ties broken by the order of the person's category list)
-    if probability(question, c*) >= threshold:     send to delegate(person, c*)
-    otherwise:                                     keep (none of the available)
+    send to delegate(person, c*)
 ```
 
-Every category the voter has is scored and the highest score wins. The
-threshold is only a floor: if the best category does not clear it, the
-decision returns to the voter. The output contract is the one originally
-proposed: the voter's own categories, or none of the available.
+Every category the voter has is scored. The threshold is a floor: if nothing
+clears it, the decision returns to the voter. Among the categories that clear
+it, specific overrules general, and then the highest score wins. The output
+contract is the one originally proposed: the voter's own categories, or none
+of the available.
 
 ### Voter-defined categories
 
@@ -126,27 +135,59 @@ proposed: the voter's own categories, or none of the available.
 
 ### Nested and overlapping categories
 
-There is no special handling: the highest score wins. Decided 2026-11-09, with
-a test attached.
+A narrower category overrules the broader one it sits inside, when both clear
+the threshold. Decided 2026-11-10, after the router evaluation. The first
+decision (2026-11-09) was no special handling, with a test attached; this
+section keeps that history.
 
 - **Overlapping categories.** A carbon tax is about both "taxes" and "the
-  environment". Either delegate is a reasonable outcome for the voter.
-- **Nested categories are the open risk.** A yes/no score measures whether the
+  environment". Either delegate is a reasonable outcome for the voter, and
+  the higher score wins.
+- **Why nested categories needed a rule.** A yes/no score measures whether the
   statement is true, not which category fits best. If "tree frogs in the
   Amazon" sits inside "the environment", the broad statement is true whenever
-  the narrow one is, so a well-calibrated model should score the broad
-  category at least as high. The narrow category would then rarely win, even
+  the narrow one is, so nothing makes the narrow category score higher even
   though the voter created it as a carve-out.
-- **Unknown for Jev.** The "primarily about" wording may pull scores toward
-  the best-fitting level, in which case nothing more is needed.
-- **Test in build step 2.** Include nested pairs in the router evaluation and
-  measure how often the narrow category wins on questions squarely inside it.
-- **Only if the broad category wins systematically,** add one of two fixes.
-  Both keep the judgment with Jev and ask nothing extra of the voter:
-  - When a category is created, ask Jev whether it sits inside one of the
-    voter's existing categories, and let the narrower one win when both pass.
-  - When several categories pass the threshold, ask one follow-up choice
-    question among just those.
+- **Measured on 2026-11-10.** In the router evaluation, 28 cases put a
+  question squarely inside a narrow category while the voter also held the
+  broad category above it. The narrow category got the vote in 17, the broad
+  one in 10, and one was an exact tie. Neither prediction held: the broad
+  category does not win systematically, and the scores do not reliably prefer
+  the narrow one. In 18 of the 28 the two scores are within 0.04 of each
+  other, in either direction. Five go to the broad category by 0.13 or more,
+  including both tree-frog questions.
+- **The rule (`delegation/routing.py`).** A category that clears the threshold
+  gives way when a narrower category inside it also clears. The narrow
+  category must clear the threshold itself; if it does not, the broad one
+  still gets the question. The receipt lists the categories that gave way.
+- **Where nesting comes from (`delegation/nesting.py`).** Voters declare
+  nothing. For two categories A and B that one voter holds, Jev is asked
+  whether every decision about A is also a decision about B, in both
+  directions. A pair is nested only when the answer is yes one way and no the
+  other; yes both ways means two wordings of one thing. These judgments are
+  recorded and replayed like question judgments, and nesting cannot loop.
+  When a judgment is missing the pair is not nested and the higher score
+  wins.
+- **Effect on the evaluation's cases.** With the nesting declared in the
+  fixture, the narrow category gets 26 of the 28 nested cases, up from 17.
+  The other two score below the threshold and fall back to the broad one.
+  The error counts on the 544 voter cases do not change.
+- **Detection, measured 2026-11-10.** All 870 ordered pairs of the 30 pool
+  categories were asked. Jev detected 11 of the 14 nested pairs labelled in
+  the fixture and none of the other 856. The eleven score 0.73 to 0.91; no
+  unlabelled pair scores above 0.48. The misses are the fire department
+  inside "policing and public safety" (0.29, an arguable label), police
+  oversight inside the same (0.63) and street trees inside the environment
+  (0.64).
+- **Effect with detected nesting.** The narrow category gets 24 of the 28
+  nested cases, against 26 with the labelled nesting and 17 with none, and
+  the error counts on the 544 voter cases are again unchanged.
+- **Nesting threshold.** 0.7, set before the data was seen. Any value from
+  0.49 to 0.63 would detect 13 of the 14 with no extra pairs. It has not
+  been lowered, because 14 labelled pairs is a small sample to tune on.
+- **Not taken.** Asking one follow-up choice question among the categories
+  that clear the threshold. It needs a request per voter and question, and
+  the choice form leans toward the first option listed.
 
 ### Why yes/no per category and not one choice question
 
@@ -176,6 +217,12 @@ the labelled decisions. Sending a decision to a delegate the voter would not
 have chosen is the expensive error; keeping a decision that could have been
 delegated only costs the voter a vote they can cast themself. The threshold is
 a run parameter and is shown on every receipt.
+
+The evaluation supports keeping 0.7. Of 292 cases sent to a delegate, 4 went
+to a category the question was not about (1.4%), and 21 of 309 cases with an
+acceptable category were kept (6.8%). At 0.75 those are 3 and 23; at 0.85
+they are 0 and 60. With 68 questions the threshold should not be tuned more
+finely than that.
 
 ### Failing closed
 
@@ -216,6 +263,28 @@ without a key:
   nested pair wins on questions squarely inside it; repeat-call spread on a
   subset.
 - **Not used:** anything under `eval/restricted_bank/`.
+
+Results (2026-11-10, `jev-1.14.0`; full tables and limits in
+`eval/benchmarks/delegation_router_v1/README.md`):
+
+- **Routing errors at 0.7:** 4 false delegations in 292 delegated cases and
+  21 false keeps in 309 delegable ones. All four false delegations went to
+  one of two broadly worded categories, "the city budget and spending" and
+  "housing and land use". Questions that belong to no category never scored
+  above 0.08.
+- **Nested categories:** under highest score alone the narrow category won
+  17 of 28. With the narrower-category rule it gets 26 using the labelled
+  nesting and 24 using the nesting Jev detected; see above.
+- **Single-choice arm:** it never missed an acceptable category but made 14
+  false delegations to the yes/no form's 4. At matched coverage the two are
+  close (11 against 14), so the yes/no form's advantage is the threshold, not
+  a large accuracy gap.
+- **Repeat spread:** 242 of 360 judgments were identical across four calls.
+  The largest spread was 0.06, four times TypeSafe's published figure, and
+  one judgment crossed the threshold between calls.
+- **Labels:** one author wrote and labelled the pool and questions, and some
+  unlabelled high scores are defensible, so the error rates reflect the
+  labels as well as the model.
 
 ## Piece 2: Election processing
 
@@ -371,16 +440,21 @@ delegation/
   election.py    issue -> route -> resolve -> cast -> tally via voting/  [built]
   metrics.py     delegated share, largest share, Gini, chain lengths [built]
   tests/         unit tests and the nine invariants                  [built]
-  judgments.py   JudgmentSource protocol, recorded-judgment store    (step 2)
-  jev.py         Jev adapter (typesafe-sdk imported lazily)          (step 2)
-  data/          recorded judgments for curated ballots              (step 2)
+  judgments.py   JudgmentSource protocol, recorded-judgment store,
+                 gathering with failing closed                       [built]
+  jev.py         Jev adapter over plain HTTP (httpx); the one module
+                 that uses the network, not imported by the package  [built]
+  data/          recorded judgments for curated ballots              (step 3)
   simulate.py    seeded synthetic network and sincere ballots        (step 3)
 api/
   routers/delegation.py     HTTP only
   schemas/delegation.py     Pydantic request and response models
   services/delegation.py    orchestration
 eval/
-  delegation_router.py      labelled set and router evaluation
+  delegation_router.py              router evaluation (pure)        [built]
+  run_delegation_router_eval.py     plan, smoke, collect, report    [built]
+  fixtures/delegation_router_v1.json  30 categories, 68 questions   [built]
+  benchmarks/delegation_router_v1/  recorded answers and summary    [built]
 app/liquid/                 the demo page (route already exists)
 ```
 
@@ -435,9 +509,15 @@ app/liquid/                 the demo page (route already exists)
    network calls. *Done.*
 2. **Jev judgments.** Adapter, pinned model, recorded-judgment store, failing
    closed, category pool, labelled set, router evaluation including the
-   nested-pair test. Needs `TYPESAFE_API_KEY`. The
-   first paid run needs explicit approval; expected spend is well under a
-   dollar.
+   nested-pair test. *Done.* The
+   adapter calls the HTTP API directly with `httpx`, which the repo already
+   depends on, so there is no SDK to install and no alias or hidden retry
+   behaviour. The key is read from `TYPESAFE_API_KEY` in the environment or
+   `.env.local`. The collections sent 690 requests in all and were billed
+   365,220 input tokens, about $0.015 at list price. The `plan` command's
+   rough estimate was about a third low for the question judgments and
+   close for the containment ones. Paid commands refuse to
+   run without `--live`, and each paid run needs explicit approval.
 3. **Network and API.** Synthetic network, curated ballots with recorded
    judgments, the four endpoints.
 4. **UI.** The `/liquid` page.
@@ -475,20 +555,20 @@ requests.
 1. **Category pool and labelled set source.** Default: write a synthetic pool
    and question set first. A Ballotpedia ingest is more realistic but is its
    own project.
-2. **Route name.** The placeholder and navigation use `/liquid`; CLAUDE.md
-   says `/delegation`. Default: keep `/liquid` and correct CLAUDE.md.
-3. **Jev access.** The launch post describes early access with a waitlist. The
+2. **Jev access.** The launch post describes early access with a waitlist. The
    key has to be created by the repo owner.
-4. **Nested categories.** Whether highest score lets a narrow category beat
-   the broad one it sits inside. Settled by the build step 2 test; see Piece 1.
+3. **Nesting threshold.** At 0.7 Jev's containment answers find 11 of the
+   14 labelled nested pairs and no others. Lowering it to about 0.6 would
+   find 13. Whether to lower it is undecided; see Piece 1.
+
+The route name is settled: the page stays at `/liquid`, which the placeholder
+and the navigation already use.
 
 ## Follow-ups outside this doc
 
-When the first demo 5 change lands, CLAUDE.md's demo 5 section needs these
-corrections: the route name, voter-written categories in place of the
-`domain`/`program` taxonomy, vote copying in place of "weighted ballots with
-minor adapter code", the cycle rule, the answered scoping questions, and a
-reproducibility line for recorded Jev judgments.
+CLAUDE.md and AGENTS.md now carry the demo 5 summary and status. README.md
+still lists liquid democracy as demo 4, planned, at `/delegation`, and has no
+apportionment demo; it was not part of this update.
 
 ## Deferred
 

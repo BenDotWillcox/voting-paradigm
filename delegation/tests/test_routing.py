@@ -58,9 +58,9 @@ class TestHighestScoreWins:
         assert decision.delegate == "dana"
         assert [score.probability for score in decision.scores] == [0.75, 0.10, 0.99]
 
-    def test_nested_categories_get_no_special_handling(self) -> None:
-        # The broad category outscores the narrow one inside it, so it wins.
-        # Whether that is acceptable is what the router evaluation measures.
+    def test_with_no_nesting_recorded_the_higher_score_wins(self) -> None:
+        # This network records no nesting, so the broad category wins on
+        # score. test_nesting.py covers the rule once nesting is known.
         decision = route(
             VOTER_NETWORK,
             "voter",

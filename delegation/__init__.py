@@ -6,13 +6,16 @@ arrives, each question is routed per voter: to the delegate for the voter's
 best-matching category, or kept. Delegation is transitive, and every vote
 ends at exactly one resolver.
 
-This package is the pure core: the routing rule, the loop checks, per-question
-resolution, election processing through voting/, and metrics. It reads
-judgments (probabilities per question and category) but does not produce
-them. Design: prompts/demo-5-liquid-democracy.md.
+The core is pure: the routing rule, the loop checks, per-question resolution,
+election processing through voting/, and metrics. It reads judgments
+(probabilities per question and category), which judgments.py records and
+replays. Design: prompts/demo-5-liquid-democracy.md.
 
 Boundary rules (per CLAUDE.md):
-  - Pure Python; no DB writes, no HTTP, no I/O at import time.
+  - Pure Python; no DB writes, no I/O at import time.
+  - No HTTP, with one exception that this package does not import:
+    delegation.jev asks hosted Jev for judgments. Callers that want live
+    judgments import it themselves; everything else reads recorded ones.
   - May import from the foundational primitive voting/.
     Does NOT import from preferences/, districting/, or other demo packages.
 """
@@ -36,12 +39,35 @@ from .graph import (
     remove_delegation,
     resolve_question,
 )
+from .judgments import (
+    NOUL_INSTRUCTION,
+    GatherReport,
+    JudgmentRecord,
+    JudgmentSource,
+    JudgmentStore,
+    JudgmentUnavailable,
+    SourceAnswer,
+    gather_judgments,
+    judgment_key,
+)
 from .metrics import (
     chain_length_counts,
     delegated_share,
     largest_share,
     weight_gini,
     winners_differ,
+)
+from .nesting import (
+    DEFAULT_NESTING_THRESHOLD,
+    NestingRecord,
+    NestingReport,
+    NestingSource,
+    NestingStore,
+    co_held_pairs,
+    derive_nesting,
+    gather_nesting,
+    nesting_key,
+    with_nesting,
 )
 from .routing import (
     DEFAULT_THRESHOLD,
@@ -112,6 +138,27 @@ __all__ = [
     "VoteTrace",
     "QuestionResolution",
     "resolve_question",
+    # Judgments: recorded, replayed, and gathered from a source
+    "NOUL_INSTRUCTION",
+    "JudgmentSource",
+    "SourceAnswer",
+    "JudgmentUnavailable",
+    "JudgmentRecord",
+    "JudgmentStore",
+    "GatherReport",
+    "gather_judgments",
+    "judgment_key",
+    # Nesting: which categories sit inside which
+    "DEFAULT_NESTING_THRESHOLD",
+    "NestingSource",
+    "NestingRecord",
+    "NestingStore",
+    "NestingReport",
+    "co_held_pairs",
+    "derive_nesting",
+    "gather_nesting",
+    "nesting_key",
+    "with_nesting",
     # Election processing
     "eligible_voters",
     "resolve_ballot_paper",

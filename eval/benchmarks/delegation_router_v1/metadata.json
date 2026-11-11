@@ -1,0 +1,17 @@
+{
+  "study": "delegation_router_v1",
+  "generator": "python -m eval.run_delegation_router_eval report",
+  "python": "3.11.3",
+  "model": "jev-1.14.0",
+  "source_sha256": "383b1003335a2689baa2fe13a7dc74e3d12eb7f92b932955ffc82598263b58ba",
+  "recorded": {
+    "judgments.jsonl": "c06637371a0c8a8f84b4f6cce80972b29101781ce3ceefa1ebabe2e78b73be66",
+    "choice.jsonl": "af1e65266a46158c13a8ad1c55fafd742a302b8bf636ef293f094f0816305a2f",
+    "repeats.jsonl": "d68bcc99f6208583ce0ea7f970c5d141d3caf47d0f91a81d5dc031fa1499925e",
+    "nesting.jsonl": "ff8ff03383a766e97e8f9377e1d1a6b541020a79847dadf4a1956cdaf0abb0c3"
+  },
+  "outputs": {
+    "config.json": "040194c37240a2f2fe616fd9d7c954ebc8ca7ca851a10a92d911c8f46d0878a3",
+    "summary.json": "5a4b7619a776f862c2cccdfe343cdc7f8f4291a9d94229c85f988ab0509eb75f"
+  }
+}
