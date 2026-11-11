@@ -3,12 +3,13 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/header";
+import { SITE_NAME } from "@/lib/site";
 // The variable backs Tailwind's `font-sans` (app/globals.css), so sans
 // utilities resolve to Inter even inside the story pages' serif columns.
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "Nebula Civitas",
+  title: { default: SITE_NAME, template: `%s · ${SITE_NAME}` },
   description:
     "A portfolio of demos exploring voting methods, preference modeling, districting, and delegation.",
 };

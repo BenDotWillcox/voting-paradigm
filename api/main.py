@@ -5,6 +5,7 @@ Single service, multiple routers:
   - /api/voting/...        profile resolution for the methods instrument
   - /api/elections/...     voting resolution + curated demo scenarios (lab)
   - /api/preferences/...   preference elicitation (stateless)
+  - /api/expressive/...    authored tax ballots and same-electorate comparison
 
 Run with: uvicorn api.main:app --reload --port 8000
 """
@@ -14,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .routers.atlas import router as atlas_router
 from .routers.districting import router as districting_router
+from .routers.expressive import router as expressive_router
 from .routers.profiles import router as profiles_router
 from .routers.voting import router as voting_router
 
@@ -23,6 +25,15 @@ except ModuleNotFoundError:
     preferences_router = None
 
 tags_metadata = [
+    {
+        "name": "expressive",
+        "description": (
+            "Directly authored tax ballots and a reproducible comparison of yes/no "
+            "and declared-score outcomes for the same synthetic electorate. "
+            "Stateless evaluation with explicit score semantics; no saved ballots. "
+            "Budget transfer previews remain available for the retired prototype."
+        ),
+    },
     {
         "name": "voting",
         "description": (
@@ -75,6 +86,7 @@ app.add_middleware(
 )
 
 app.include_router(districting_router)
+app.include_router(expressive_router)
 app.include_router(profiles_router)
 app.include_router(atlas_router)
 app.include_router(voting_router)
