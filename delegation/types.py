@@ -137,20 +137,32 @@ class Network:
     order, are their category list, which breaks exact score ties when a
     question is routed.
 
+    `nesting` records which categories sit inside which: a pair
+    (narrow, broad) says every decision about the narrow category is also
+    about the broad one. It is a fact about the two texts, not about any
+    voter, and the routing rule only applies it between categories one voter
+    holds. Nesting is transitive and cannot loop.
+
     Construction validates that the parts fit together. It does not reject
     delegation loops; graph.add_delegation does that when a delegation is
     created, and graph.resolve_question handles any loop that remains.
 
     Raises:
         InvalidNetworkError: If an id is inconsistent, a delegation names an
-            unknown person or category, a person delegates to themself, or a
-            person delegates the same category twice
+            unknown person or category, a person delegates to themself, a
+            person delegates the same category twice, or the nesting names an
+            unknown category or makes a category broader than itself
     """
 
     persons: Mapping[PersonId, Person]
     categories: Mapping[CategoryId, Category]
     delegations: tuple[Delegation, ...] = ()
+    nesting: frozenset[tuple[CategoryId, CategoryId]] = frozenset()
     _by_delegator: Mapping[PersonId, tuple[Delegation, ...]] = field(
+        init=False, repr=False, compare=False
+    )
+    # Every category broader than a given one, following nesting transitively
+    _broader: Mapping[CategoryId, frozenset[CategoryId]] = field(
         init=False, repr=False, compare=False
     )
 
@@ -158,6 +170,7 @@ class Network:
         persons = dict(self.persons)
         categories = dict(self.categories)
         delegations = tuple(self.delegations)
+        nesting = frozenset(self.nesting)
 
         for person_id, person in persons.items():
             if person.id != person_id:
@@ -192,18 +205,47 @@ class Network:
             seen.add(key)
             by_delegator.setdefault(delegation.delegator, []).append(delegation)
 
+        directly_broader: dict[CategoryId, set[CategoryId]] = {}
+        for narrow, broad in nesting:
+            for category_id in (narrow, broad):
+                if category_id not in categories:
+                    raise InvalidNetworkError(
+                        f"Nesting names unknown category {category_id!r}"
+                    )
+            directly_broader.setdefault(narrow, set()).add(broad)
+        broader: dict[CategoryId, frozenset[CategoryId]] = {}
+        for start in directly_broader:
+            reached: set[CategoryId] = set()
+            frontier = list(directly_broader[start])
+            while frontier:
+                current = frontier.pop()
+                if current not in reached:
+                    reached.add(current)
+                    frontier.extend(directly_broader.get(current, ()))
+            if start in reached:
+                raise InvalidNetworkError(
+                    f"Nesting makes category {start!r} broader than itself"
+                )
+            broader[start] = frozenset(reached)
+
         object.__setattr__(self, "persons", persons)
         object.__setattr__(self, "categories", categories)
         object.__setattr__(self, "delegations", delegations)
+        object.__setattr__(self, "nesting", nesting)
         object.__setattr__(
             self,
             "_by_delegator",
             {person: tuple(items) for person, items in by_delegator.items()},
         )
+        object.__setattr__(self, "_broader", broader)
 
     def delegations_of(self, person: PersonId) -> tuple[Delegation, ...]:
         """This person's delegations, in their category list order."""
         return self._by_delegator.get(person, ())
+
+    def is_inside(self, narrow: CategoryId, broad: CategoryId) -> bool:
+        """Whether one category sits inside another, directly or through others."""
+        return broad in self._broader.get(narrow, frozenset())
 
     def delegate_for(self, person: PersonId, category: CategoryId) -> PersonId | None:
         """Who this person delegates the category to, if anyone."""
@@ -217,9 +259,16 @@ def create_network(
     persons: Iterable[Person],
     categories: Iterable[Category] = (),
     delegations: Iterable[Delegation] = (),
+    nesting: Iterable[tuple[CategoryId, CategoryId]] = (),
 ) -> Network:
     """
     Create a network from its parts.
+
+    Args:
+        persons: The members of the network
+        categories: The categories in use
+        delegations: Who delegates what to whom, in category list order
+        nesting: (narrow, broad) pairs of category ids
 
     Raises:
         InvalidNetworkError: If a person or category id repeats, or the parts
@@ -240,6 +289,7 @@ def create_network(
         persons=person_map,
         categories=category_map,
         delegations=tuple(delegations),
+        nesting=frozenset(nesting),
     )
 
 

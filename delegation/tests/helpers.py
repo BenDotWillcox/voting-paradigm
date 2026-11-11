@@ -110,8 +110,19 @@ def random_scenario(seed: int, *, guarded: bool = False) -> Scenario:
             delegate = rng.choice([other for other in ids if other != person])
             proposed.append((person, category, delegate))
 
+    # Nesting only ever points from a lower-numbered topic to a higher one,
+    # so it cannot loop. It has its own random stream, so adding it left
+    # every other part of each scenario as it was.
+    nesting_rng = random.Random(f"nesting:{seed}")
+    nesting = [
+        (categories[low].id, categories[high].id)
+        for low in range(len(categories))
+        for high in range(low + 1, len(categories))
+        if nesting_rng.random() < 0.25
+    ]
+
     if guarded:
-        network = create_network(persons, categories)
+        network = create_network(persons, categories, nesting=nesting)
         for delegator, category, delegate in proposed:
             try:
                 network = add_delegation(network, delegator, category, delegate)
@@ -125,6 +136,7 @@ def random_scenario(seed: int, *, guarded: bool = False) -> Scenario:
                 Delegation(delegator, category.id, delegate)
                 for delegator, category, delegate in proposed
             ],
+            nesting=nesting,
         )
 
     judgments: dict[tuple[str, CategoryId], float] = {}

@@ -123,8 +123,8 @@ The schema grows per-demo. Each demo owns its own tables, namespaced by clear pr
 ### Shared (used by ≥2 demos)
 
 - **`user`** — actors (simulated personas authored by one real user). Used everywhere voters appear.
-- **`domain`, `program`** — two-level topic taxonomy. Used for measure filtering (demo 1) and will be reused for topic-conditional delegation (demo 5).
-- **`electorate`** — a named simulated population with generation parameters and a seed. Reproducible. Used by demos 1, 2, 3, and 4 — different demos populate it from different sources (synthetic preference distributions, geo-grounded sampling, etc).
+- **`domain`, `program`** — two-level topic taxonomy. Used for measure filtering (demo 1). Demo 5 does not reuse it: delegation categories are voter-written text.
+- **`electorate`** — a named simulated population with generation parameters and a seed. Reproducible. Used by demos 1, 2, 3, and 5 — different demos populate it from different sources (synthetic preference distributions, geo-grounded sampling, etc).
 
 ### Demos 1 + 2 (methods comparison + agent voting)
 
@@ -141,9 +141,9 @@ These two demos share the ballot-measure backbone because demo 2 is structurally
 
 Anticipated: tables for jurisdictions, units (e.g. census blocks), proposed district maps, and run records of districting algorithms with their parameters and fairness metrics. Geo data lives in PostGIS columns or referenced shapefiles — to be decided when demo 3 is scoped.
 
-### Demo 5 (liquid democracy) — schema TBD
+### Demo 5 (liquid democracy) — no tables in the first version
 
-Anticipated: a delegation graph (edges with topic + weight), per-topic effective vote weights, and snapshots of the resolved graph at the time of each `resolution_run`. Reuses `user` and `ballot_measure`; the resolution-run cache key extends to include the delegation snapshot id.
+The first version keeps the viewer's delegations in browser session state and adds no tables. If networks are saved later, the anticipated tables are delegations as `(delegator, category text, delegate)`, recorded decision-model judgments, and run records keyed by (ballot hash, network hash, judgment snapshot hash, threshold, method, seed). There are no edge weights and no per-topic vote weights: each voter's ballot is a copy of their resolver's ballot.
 
 ### Schema vocabulary
 
@@ -292,12 +292,29 @@ All LLM calls live in Python. One framework for prompts, Pydantic output schemas
 
 **Final block-plan anchor catalog:** `scripts/finalize_state_block_catalog.py` joins explicit historical baseline and correction/policy selections for all 50 states at House sizes 435 / 574 / 692 / 1,000 (200 state-anchor combinations, 181 distinct state/count plans). It independently reconciles apportionment with exact rational priorities and uses `scripts/final_state_plan_validation.py` to reread Census DBF populations, verify every assignment and compressed payload, and check full exported polygon connectivity and recorded-link endpoint ownership. Historical source-coverage and graph audits are checked but not rebuilt. It writes a new `final-anchors-vN/` inventory and `prompts/state-block-final-catalog.md/.json`; historical attempts stay read-only. Physical connectivity, policy connectivity, population quality, legacy inner-solver warnings, outer caps, and correction-only runtime remain separate fields. The catalog supplies only the four computed anchors. The block demo uses a separate manifest contract from the preserved historical tract summaries/topology, with explicit anchor selection, recorded links, Alaska longitude frames, lazy county detail, and truthful convergence labels.
 
-## Demo 5: Liquid democracy (planned)
+## Demo 5: Liquid democracy
 
-**Friction it dissolves:** direct democracy doesn't scale (voters can't research every issue) and representative democracy alienates (one elected agent represents your views on everything). Liquid democracy lets each voter delegate per-topic to whomever they trust, with delegation transitive and revocable. The technology — a maintained delegation graph and a vote-flow algorithm — is straightforward; what's missing is a credible demonstration that it produces sensible outcomes and resists pathologies (cycles, super-delegate concentration, low-participation collapse).
+**Friction it dissolves:** direct democracy doesn't scale (voters can't research every issue) and representative democracy alienates (one elected agent represents your views on everything). Liquid democracy lets each voter delegate per-topic to whomever they trust, with delegation transitive and revocable. The technology — a maintained delegation graph and a vote-flow algorithm — is straightforward; what's missing is a credible demonstration that it produces sensible outcomes and resists pathologies (cycles, super-delegate concentration, low-participation collapse). Per-topic delegation also needs something to decide which topic a decision belongs to, for each voter's own topics; a small decision model can now do that per question.
 
-**Anticipated technical surface — to be confirmed when scoping starts:**
+**Design locked in (2026-11-09).** Full design — routing, election processing, the loop rule, build sequence and open questions — is in [`prompts/demo-5-liquid-democracy.md`](prompts/demo-5-liquid-democracy.md). Headline decisions:
 
+- **Categories are voter-written text** at any granularity ("all things taxes", "the well-being of tree frogs in the Amazon"). There is no shared taxonomy; two voters share a category only when the text is identical after normalising case and whitespace. A delegation is `(delegator, category, delegate)`, with one delegate per category and no weights.
+- **Category routing.** A Jev-style decision model (hosted Jev, pinned to a versioned model id) gives one yes/no probability per (question, category). Code makes the decision: every category the voter has delegated is scored, those below a threshold drop out, a narrower category overrules the broader one it sits inside, and the highest score among the rest wins. If nothing clears the threshold the voter keeps the decision. A direct vote always overrides a delegation, and a missing judgment keeps the vote with the voter.
+- **Election processing.** The unit of work is one (voter, question) pair. Residents of a ballot paper's jurisdiction originate the votes; the resolver can be anyone in the network, and each holder applies their own delegations. One voter's questions can end with different resolvers.
+- **Resolution.** Each voter's ballot is a copy of their resolver's ballot under the voter's own id, so `voting/` is used unchanged and there are no weighted ballots. This is the natural cross-demo composition: liquid democracy is "demo 1 with a delegation layer in front."
+- **Loops.** Creating a delegation that would close a loop in the identical category is rejected; a loop that depends on the question is warned about against reference questions. When a question is resolved, everyone on a loop keeps the decision, so every vote ends at exactly one resolver.
+- **Simulation surface (not built).** A seeded synthetic network with a few delegation behaviours, compared against direct voting. Concentration (largest share held by one resolver, Gini on effective weights) is reported per question, not limited.
+- **Scope cuts.** No tables in the first version, one delegate per category, and no weight caps or ranked backup delegates.
+
+**Router evaluation (2026-11-10, `jev-1.14.0`, `eval/benchmarks/delegation_router_v1/`).** On a synthetic pool of 30 categories and 68 labelled questions, routing at the 0.7 threshold sent 4 of 292 delegated cases to a category the question was not about and kept 21 of 309 cases that had an acceptable category. The pool and labels were written by one author, so these rates reflect the labels as well as the model.
+
+**Nested categories (decided 2026-11-10).** Scores alone do not prefer a narrow category: where a question sat squarely inside one and the voter also held the broad category above it, the narrow one won 17 of 28 cases and the broad one 10. The routing rule therefore lets a narrower category overrule the broader one when both clear the threshold (`delegation/routing.py`). Which categories are nested is asked of Jev, both ways, for categories one voter holds together, and recorded like any other judgment (`delegation/nesting.py`). With the nesting declared in the evaluation fixture the narrow category gets 26 of 28, with no change in the error counts.
+
+**Nesting detection (2026-11-10).** Asked all 870 ordered pairs of the pool's categories, Jev detected 11 of the 14 nested pairs labelled in the fixture and none of the other 856. With the detected nesting the narrow category gets 24 of 28, again with no change in the error counts.
+
+**Open:** the nesting threshold. It is 0.7, set before the data was seen; a value near 0.6 would detect 13 of the 14 with no extra pairs, but 14 pairs is a small sample to tune on.
+
+**Deferred:** a delegate-recommendation agent that, given a user's stated preferences (from demo 2's posterior) and observed delegate voting records, suggests delegates per category. This remains the only natural cross-demo composition between demos 2 and 5.
 - **Graph data model.** Directed delegation edges with `(delegator, delegate, topic, weight)`. Topic taxonomy reuses `domain`/`program`. Cycles must be detected and broken (standard rule: voter's own vote takes precedence; cycles fall back to abstain or to a default delegate).
 - **Vote-flow algorithm.** Given a delegation graph and a measure on a given topic, compute effective vote weights. This is a topic-conditional reachability + weight propagation problem.
 - **Resolution.** Effective weights feed into `voting/` — every existing resolution method works on weighted ballots with minor adapter code. This is the natural cross-demo composition: liquid democracy is "demo 1 with a delegation layer in front."
@@ -337,7 +354,7 @@ Proper ML evaluation, reproducible seeds, held-out splits. Each demo contributes
   generalization gaps, test-retest stability, and secondary ballot-format
   fidelity.
 - **Demo 3 — districting:** ensemble-based fairness comparisons (where does a proposed map sit in the distribution of ensemble maps?), efficiency gap, compactness scores.
-- **Demo 5 — delegation dynamics:** participation rates, super-delegate concentration (Gini on effective weights), outcome divergence vs. direct democracy, robustness to delegation churn.
+- **Demo 5 — delegation:** the router's false-delegation rate against coverage across thresholds; then the share of votes delegated, super-delegate concentration (largest share, Gini on effective weights), and outcome divergence vs. direct voting.
 
 ## Reproducibility (first-class invariant, applies to every demo)
 
@@ -350,6 +367,7 @@ Every demo must be verifiable by anyone who clicks. Every stochastic operation i
 - **Preference model inference** — RNG for MCMC / variational fits is seeded and recorded.
 - **Districting ensembles (demo 3, when built)** — the MCMC chain seed and parameter set are part of every reported result; an ensemble run is identified by `(jurisdiction_id, params_hash, seed, n_steps)`.
 - **Delegation-graph simulations (demo 5, when built)** — graph generation seed and any random delegation-strategy seeds are recorded on the run.
+- **Decision-model judgments (demo 5)** — hosted Jev is pinned to a versioned model id and is not repeatable to the last digit. Every judgment is recorded, resolution reads only recorded judgments, and the judgment snapshot hash is part of the run key. This is demo 5's one documented non-deterministic input.
 
 If a change breaks determinism (e.g., switching to an ungrounded LLM call), document the non-determinism explicitly and justify it.
 
@@ -532,9 +550,17 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 
 ### Demo 5: Liquid democracy
 
-**Status:** Not started. Scope before building. Open questions in the demo 5 section above.
+**Status:** Build steps 1 and 2 of four are done. Design doc at [`prompts/demo-5-liquid-democracy.md`](prompts/demo-5-liquid-democracy.md). `/liquid` is still the placeholder page.
 
-The most interesting cross-demo synthesis is "delegate recommendations driven by demo 2's preference posterior" — flag for design attention when both demos are mature.
+**Done:**
+- `delegation/` core (PR #77): voter-written categories, the per-voter routing rule, creation-time loop checks, per-question resolution in which everyone on a loop keeps the decision, vote copying through `voting/`, and concentration metrics. It reads judgments as plain probabilities and makes no network calls. Tests cover the nine resolution invariants over 300 seeded random networks; `mypy --strict` is clean on the package.
+- Jev judgments: `delegation/judgments.py` records the first response per question and category and replays it, failing closed when a judgment is missing; `delegation/nesting.py` does the same for which categories sit inside which; `delegation/jev.py` is the adapter, pinned to `jev-1.14.0` over plain HTTP, and is the one module that uses the network. The key is read from `TYPESAFE_API_KEY` in the environment or `.env.local`.
+- Router evaluation: `eval/delegation_router.py` and `python -m eval.run_delegation_router_eval` (`plan`, `smoke`, `collect`, `report`; the paid commands need `--live`), with recorded answers, summary and README in `eval/benchmarks/delegation_router_v1/`. The report rebuilds byte for byte from the recorded answers with no network use.
+
+**Next, in order:**
+1. Seeded synthetic network, curated ballot papers with recorded judgments, and the `/api/delegation/*` endpoints.
+2. The `/liquid` page.
+3. *(Deferred)* Delegate recommendations driven by demo 2's preference posterior, saved networks, ranked backup delegates.
 
 
 ## Current block explorer integration

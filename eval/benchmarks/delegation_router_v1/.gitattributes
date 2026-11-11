@@ -1,0 +1,4 @@
+# Preserve recorded and reported bytes when core.autocrlf is enabled on
+# Windows, so the hashes in metadata.json hold on every platform.
+*.json text eol=lf
+*.jsonl text eol=lf

@@ -1,0 +1,544 @@
+{"choice": "property_tax_seniors", "keys": ["property_tax_seniors", "housing", "fire_ems", "bike_lanes", "budget"], "probabilities": {"bike_lanes": 0.0, "budget": 0.0, "fire_ems": 0.0, "housing": 0.0, "none of these": 0.0, "property_tax_seniors": 1.0}, "question": "q01"}
+{"choice": null, "keys": ["sales_tax", "minimum_wage"], "probabilities": {"minimum_wage": 0.0, "none of these": 1.0, "sales_tax": 0.0}, "question": "q01"}
+{"choice": "taxes", "keys": ["taxes"], "probabilities": {"none of these": 0.02, "taxes": 0.98}, "question": "q01"}
+{"choice": "property_tax_seniors", "keys": ["property_tax_seniors", "police_oversight", "school_buildings", "elections"], "probabilities": {"elections": 0.0, "none of these": 0.0, "police_oversight": 0.0, "property_tax_seniors": 1.0, "school_buildings": 0.0}, "question": "q01"}
+{"choice": "property_tax_seniors", "keys": ["sales_tax", "bus_service", "property_tax_seniors", "bike_lanes"], "probabilities": {"bike_lanes": 0.0, "bus_service": 0.0, "none of these": 0.0, "property_tax_seniors": 1.0, "sales_tax": 0.0}, "question": "q01"}
+{"choice": null, "keys": ["bike_lanes"], "probabilities": {"bike_lanes": 0.0, "none of these": 1.0}, "question": "q01"}
+{"choice": "property_tax_seniors", "keys": ["property_tax_seniors"], "probabilities": {"none of these": 0.0, "property_tax_seniors": 1.0}, "question": "q01"}
+{"choice": null, "keys": ["elections", "labor", "height_limits", "bus_service"], "probabilities": {"bus_service": 0.0, "elections": 0.0, "height_limits": 0.0, "labor": 0.0, "none of these": 1.0}, "question": "q01"}
+{"choice": "taxes", "keys": ["transport", "taxes"], "probabilities": {"none of these": 0.01, "taxes": 0.99, "transport": 0.0}, "question": "q02"}
+{"choice": null, "keys": ["safety", "water", "libraries", "transport", "nightlife"], "probabilities": {"libraries": 0.0, "nightlife": 0.0, "none of these": 1.0, "safety": 0.0, "transport": 0.0, "water": 0.0}, "question": "q02"}
+{"choice": "taxes", "keys": ["taxes"], "probabilities": {"none of these": 0.02, "taxes": 0.98}, "question": "q02"}
+{"choice": null, "keys": ["school_meals", "street_trees", "minimum_wage", "budget", "nightlife"], "probabilities": {"budget": 0.16, "minimum_wage": 0.0, "nightlife": 0.0, "none of these": 0.84, "school_meals": 0.0, "street_trees": 0.0}, "question": "q02"}
+{"choice": "property_tax_seniors", "keys": ["property_tax_seniors"], "probabilities": {"none of these": 0.01, "property_tax_seniors": 0.99}, "question": "q02"}
+{"choice": null, "keys": ["height_limits", "schools", "animals"], "probabilities": {"animals": 0.0, "height_limits": 0.0, "none of these": 0.99, "schools": 0.01}, "question": "q02"}
+{"choice": "property_tax_seniors", "keys": ["schools", "property_tax_seniors", "animals", "bike_lanes"], "probabilities": {"animals": 0.0, "bike_lanes": 0.0, "none of these": 0.0, "property_tax_seniors": 1.0, "schools": 0.0}, "question": "q02"}
+{"choice": "housing", "keys": ["budget", "transport", "nightlife", "fire_ems", "housing"], "probabilities": {"budget": 0.01, "fire_ems": 0.0, "housing": 0.94, "nightlife": 0.0, "none of these": 0.05, "transport": 0.0}, "question": "q02"}
+{"choice": "taxes", "keys": ["bus_service", "taxes", "environment", "minimum_wage", "libraries"], "probabilities": {"bus_service": 0.01, "environment": 0.0, "libraries": 0.0, "minimum_wage": 0.0, "none of these": 0.01, "taxes": 0.98}, "question": "q03"}
+{"choice": null, "keys": ["schools"], "probabilities": {"none of these": 0.94, "schools": 0.06}, "question": "q03"}
+{"choice": "taxes", "keys": ["animals", "taxes"], "probabilities": {"animals": 0.0, "none of these": 0.01, "taxes": 0.99}, "question": "q03"}
+{"choice": null, "keys": ["ranked_choice", "water", "bus_service", "fire_ems", "property_tax_seniors"], "probabilities": {"bus_service": 0.01, "fire_ems": 0.01, "none of these": 0.97, "property_tax_seniors": 0.0, "ranked_choice": 0.0, "water": 0.01}, "question": "q03"}
+{"choice": "sales_tax", "keys": ["sales_tax", "parks", "budget"], "probabilities": {"budget": 0.0, "none of these": 0.0, "parks": 0.0, "sales_tax": 1.0}, "question": "q03"}
+{"choice": "sales_tax", "keys": ["sales_tax"], "probabilities": {"none of these": 0.0, "sales_tax": 1.0}, "question": "q03"}
+{"choice": "sales_tax", "keys": ["sales_tax", "health", "labor", "environment"], "probabilities": {"environment": 0.0, "health": 0.0, "labor": 0.0, "none of these": 0.0, "sales_tax": 1.0}, "question": "q03"}
+{"choice": null, "keys": ["bus_service"], "probabilities": {"bus_service": 0.04, "none of these": 0.96}, "question": "q03"}
+{"choice": "sales_tax", "keys": ["environment", "safety", "sales_tax"], "probabilities": {"environment": 0.0, "none of these": 0.01, "safety": 0.0, "sales_tax": 0.99}, "question": "q04"}
+{"choice": null, "keys": ["police_oversight"], "probabilities": {"none of these": 1.0, "police_oversight": 0.0}, "question": "q04"}
+{"choice": "sales_tax", "keys": ["sales_tax"], "probabilities": {"none of these": 0.02, "sales_tax": 0.98}, "question": "q04"}
+{"choice": null, "keys": ["elections", "police_oversight", "broadband", "bike_lanes", "environment"], "probabilities": {"bike_lanes": 0.0, "broadband": 0.0, "elections": 0.0, "environment": 0.0, "none of these": 1.0, "police_oversight": 0.0}, "question": "q04"}
+{"choice": "taxes", "keys": ["parks", "broadband", "taxes", "bike_lanes", "bus_service"], "probabilities": {"bike_lanes": 0.0, "broadband": 0.0, "bus_service": 0.0, "none of these": 0.0, "parks": 0.0, "taxes": 1.0}, "question": "q04"}
+{"choice": null, "keys": ["water", "bike_lanes", "street_trees", "minimum_wage", "safety"], "probabilities": {"bike_lanes": 0.0, "minimum_wage": 0.0, "none of these": 1.0, "safety": 0.0, "street_trees": 0.0, "water": 0.0}, "question": "q04"}
+{"choice": "sales_tax", "keys": ["sales_tax", "police_oversight"], "probabilities": {"none of these": 0.01, "police_oversight": 0.0, "sales_tax": 0.99}, "question": "q04"}
+{"choice": null, "keys": ["transport", "ranked_choice", "health", "property_tax_seniors"], "probabilities": {"health": 0.0, "none of these": 1.0, "property_tax_seniors": 0.0, "ranked_choice": 0.0, "transport": 0.0}, "question": "q04"}
+{"choice": "taxes", "keys": ["rent_control", "health", "ranked_choice", "taxes"], "probabilities": {"health": 0.0, "none of these": 0.0, "ranked_choice": 0.0, "rent_control": 0.0, "taxes": 1.0}, "question": "q05"}
+{"choice": "sales_tax", "keys": ["street_trees", "height_limits", "sales_tax"], "probabilities": {"height_limits": 0.0, "none of these": 0.21, "sales_tax": 0.79, "street_trees": 0.0}, "question": "q05"}
+{"choice": "taxes", "keys": ["police_oversight", "ranked_choice", "taxes", "school_buildings"], "probabilities": {"none of these": 0.0, "police_oversight": 0.0, "ranked_choice": 0.0, "school_buildings": 0.0, "taxes": 1.0}, "question": "q05"}
+{"choice": null, "keys": ["transport", "housing"], "probabilities": {"housing": 0.4, "none of these": 0.59, "transport": 0.01}, "question": "q05"}
+{"choice": "taxes", "keys": ["taxes"], "probabilities": {"none of these": 0.01, "taxes": 0.99}, "question": "q05"}
+{"choice": null, "keys": ["bus_service"], "probabilities": {"bus_service": 0.0, "none of these": 1.0}, "question": "q05"}
+{"choice": "taxes", "keys": ["environment", "taxes", "housing", "libraries", "bus_service"], "probabilities": {"bus_service": 0.0, "environment": 0.0, "housing": 0.01, "libraries": 0.0, "none of these": 0.0, "taxes": 0.99}, "question": "q05"}
+{"choice": null, "keys": ["labor", "libraries"], "probabilities": {"labor": 0.0, "libraries": 0.0, "none of these": 1.0}, "question": "q05"}
+{"choice": "taxes", "keys": ["taxes", "elections", "police_oversight", "environment"], "probabilities": {"elections": 0.0, "environment": 0.0, "none of these": 0.0, "police_oversight": 0.0, "taxes": 1.0}, "question": "q06"}
+{"choice": "taxes", "keys": ["fire_ems", "labor", "taxes", "property_tax_seniors"], "probabilities": {"fire_ems": 0.0, "labor": 0.0, "none of these": 0.0, "property_tax_seniors": 0.0, "taxes": 1.0}, "question": "q06"}
+{"choice": "taxes", "keys": ["schools", "taxes", "health", "broadband"], "probabilities": {"broadband": 0.0, "health": 0.0, "none of these": 0.01, "schools": 0.0, "taxes": 0.99}, "question": "q06"}
+{"choice": null, "keys": ["school_buildings", "bus_service", "bike_lanes", "housing"], "probabilities": {"bike_lanes": 0.0, "bus_service": 0.0, "housing": 0.0, "none of these": 1.0, "school_buildings": 0.0}, "question": "q06"}
+{"choice": "taxes", "keys": ["minimum_wage", "taxes", "bike_lanes"], "probabilities": {"bike_lanes": 0.0, "minimum_wage": 0.0, "none of these": 0.0, "taxes": 1.0}, "question": "q06"}
+{"choice": null, "keys": ["ranked_choice"], "probabilities": {"none of these": 1.0, "ranked_choice": 0.0}, "question": "q06"}
+{"choice": "taxes", "keys": ["schools", "bus_service", "minimum_wage", "taxes"], "probabilities": {"bus_service": 0.0, "minimum_wage": 0.0, "none of these": 0.0, "schools": 0.0, "taxes": 1.0}, "question": "q06"}
+{"choice": null, "keys": ["health", "environment", "school_buildings"], "probabilities": {"environment": 0.0, "health": 0.0, "none of these": 1.0, "school_buildings": 0.0}, "question": "q06"}
+{"choice": "budget", "keys": ["height_limits", "budget"], "probabilities": {"budget": 0.99, "height_limits": 0.0, "none of these": 0.01}, "question": "q07"}
+{"choice": null, "keys": ["fire_ems", "transport"], "probabilities": {"fire_ems": 0.0, "none of these": 1.0, "transport": 0.0}, "question": "q07"}
+{"choice": "budget", "keys": ["school_buildings", "transport", "budget"], "probabilities": {"budget": 1.0, "none of these": 0.0, "school_buildings": 0.0, "transport": 0.0}, "question": "q07"}
+{"choice": null, "keys": ["sales_tax"], "probabilities": {"none of these": 1.0, "sales_tax": 0.0}, "question": "q07"}
+{"choice": "budget", "keys": ["elections", "budget", "transport", "safety"], "probabilities": {"budget": 1.0, "elections": 0.0, "none of these": 0.0, "safety": 0.0, "transport": 0.0}, "question": "q07"}
+{"choice": null, "keys": ["libraries", "labor"], "probabilities": {"labor": 0.0, "libraries": 0.0, "none of these": 1.0}, "question": "q07"}
+{"choice": "budget", "keys": ["health", "budget"], "probabilities": {"budget": 0.99, "health": 0.0, "none of these": 0.01}, "question": "q07"}
+{"choice": null, "keys": ["environment"], "probabilities": {"environment": 0.0, "none of these": 1.0}, "question": "q07"}
+{"choice": "budget", "keys": ["budget", "water"], "probabilities": {"budget": 1.0, "none of these": 0.0, "water": 0.0}, "question": "q08"}
+{"choice": null, "keys": ["elections"], "probabilities": {"elections": 0.01, "none of these": 0.99}, "question": "q08"}
+{"choice": "budget", "keys": ["budget"], "probabilities": {"budget": 0.99, "none of these": 0.01}, "question": "q08"}
+{"choice": null, "keys": ["schools"], "probabilities": {"none of these": 1.0, "schools": 0.0}, "question": "q08"}
+{"choice": "budget", "keys": ["tree_frogs", "budget", "animals"], "probabilities": {"animals": 0.0, "budget": 1.0, "none of these": 0.0, "tree_frogs": 0.0}, "question": "q08"}
+{"choice": null, "keys": ["sales_tax", "animals", "police_oversight", "fire_ems", "libraries"], "probabilities": {"animals": 0.0, "fire_ems": 0.0, "libraries": 0.0, "none of these": 1.0, "police_oversight": 0.0, "sales_tax": 0.0}, "question": "q08"}
+{"choice": "budget", "keys": ["budget"], "probabilities": {"budget": 0.99, "none of these": 0.01}, "question": "q08"}
+{"choice": null, "keys": ["environment", "housing", "school_buildings"], "probabilities": {"environment": 0.0, "housing": 0.01, "none of these": 0.99, "school_buildings": 0.0}, "question": "q08"}
+{"choice": "taxes", "keys": ["broadband", "tree_frogs", "taxes", "height_limits"], "probabilities": {"broadband": 0.0, "height_limits": 0.0, "none of these": 0.05, "taxes": 0.95, "tree_frogs": 0.0}, "question": "q09"}
+{"choice": null, "keys": ["transport"], "probabilities": {"none of these": 1.0, "transport": 0.0}, "question": "q09"}
+{"choice": "budget", "keys": ["elections", "budget", "transport", "environment"], "probabilities": {"budget": 1.0, "elections": 0.0, "environment": 0.0, "none of these": 0.0, "transport": 0.0}, "question": "q09"}
+{"choice": null, "keys": ["water", "ranked_choice"], "probabilities": {"none of these": 1.0, "ranked_choice": 0.0, "water": 0.0}, "question": "q09"}
+{"choice": "taxes", "keys": ["taxes", "broadband", "health"], "probabilities": {"broadband": 0.0, "health": 0.0, "none of these": 0.11, "taxes": 0.89}, "question": "q09"}
+{"choice": null, "keys": ["rent_control"], "probabilities": {"none of these": 1.0, "rent_control": 0.0}, "question": "q09"}
+{"choice": "budget", "keys": ["budget", "bus_service"], "probabilities": {"budget": 1.0, "bus_service": 0.0, "none of these": 0.0}, "question": "q09"}
+{"choice": null, "keys": ["street_trees", "police_oversight"], "probabilities": {"none of these": 1.0, "police_oversight": 0.0, "street_trees": 0.0}, "question": "q09"}
+{"choice": "environment", "keys": ["environment", "street_trees"], "probabilities": {"environment": 0.99, "none of these": 0.01, "street_trees": 0.0}, "question": "q10"}
+{"choice": "environment", "keys": ["water", "environment", "minimum_wage", "tree_frogs"], "probabilities": {"environment": 0.75, "minimum_wage": 0.0, "none of these": 0.01, "tree_frogs": 0.24, "water": 0.0}, "question": "q10"}
+{"choice": "tree_frogs", "keys": ["ranked_choice", "libraries", "tree_frogs"], "probabilities": {"libraries": 0.0, "none of these": 0.03, "ranked_choice": 0.0, "tree_frogs": 0.97}, "question": "q10"}
+{"choice": null, "keys": ["ranked_choice", "police_oversight", "bus_service", "elections"], "probabilities": {"bus_service": 0.0, "elections": 0.0, "none of these": 1.0, "police_oversight": 0.0, "ranked_choice": 0.0}, "question": "q10"}
+{"choice": "tree_frogs", "keys": ["transport", "tree_frogs", "bus_service", "schools", "property_tax_seniors"], "probabilities": {"bus_service": 0.0, "none of these": 0.02, "property_tax_seniors": 0.0, "schools": 0.0, "transport": 0.0, "tree_frogs": 0.98}, "question": "q10"}
+{"choice": null, "keys": ["transport"], "probabilities": {"none of these": 1.0, "transport": 0.0}, "question": "q10"}
+{"choice": "environment", "keys": ["police_oversight", "environment"], "probabilities": {"environment": 0.99, "none of these": 0.01, "police_oversight": 0.0}, "question": "q10"}
+{"choice": null, "keys": ["safety", "schools"], "probabilities": {"none of these": 1.0, "safety": 0.0, "schools": 0.0}, "question": "q10"}
+{"choice": "environment", "keys": ["labor", "environment", "schools"], "probabilities": {"environment": 1.0, "labor": 0.0, "none of these": 0.0, "schools": 0.0}, "question": "q11"}
+{"choice": null, "keys": ["housing", "water"], "probabilities": {"housing": 0.01, "none of these": 0.99, "water": 0.0}, "question": "q11"}
+{"choice": "environment", "keys": ["environment", "housing"], "probabilities": {"environment": 1.0, "housing": 0.0, "none of these": 0.0}, "question": "q11"}
+{"choice": null, "keys": ["libraries", "school_meals"], "probabilities": {"libraries": 0.0, "none of these": 1.0, "school_meals": 0.0}, "question": "q11"}
+{"choice": "tree_frogs", "keys": ["school_meals", "tree_frogs", "taxes", "safety"], "probabilities": {"none of these": 0.01, "safety": 0.0, "school_meals": 0.0, "taxes": 0.0, "tree_frogs": 0.99}, "question": "q11"}
+{"choice": null, "keys": ["water", "transport"], "probabilities": {"none of these": 1.0, "transport": 0.0, "water": 0.0}, "question": "q11"}
+{"choice": "environment", "keys": ["housing", "environment", "health"], "probabilities": {"environment": 1.0, "health": 0.0, "housing": 0.0, "none of these": 0.0}, "question": "q11"}
+{"choice": "environment", "keys": ["transport", "environment", "elections", "school_meals", "school_buildings"], "probabilities": {"elections": 0.0, "environment": 1.0, "none of these": 0.0, "school_buildings": 0.0, "school_meals": 0.0, "transport": 0.0}, "question": "q11"}
+{"choice": "environment", "keys": ["environment"], "probabilities": {"environment": 0.97, "none of these": 0.03}, "question": "q12"}
+{"choice": "parks", "keys": ["parks", "libraries", "safety", "elections", "taxes"], "probabilities": {"elections": 0.0, "libraries": 0.0, "none of these": 0.26, "parks": 0.66, "safety": 0.0, "taxes": 0.08}, "question": "q12"}
+{"choice": "environment", "keys": ["environment", "labor", "broadband"], "probabilities": {"broadband": 0.0, "environment": 0.99, "labor": 0.0, "none of these": 0.01}, "question": "q12"}
+{"choice": null, "keys": ["fire_ems"], "probabilities": {"fire_ems": 0.0, "none of these": 1.0}, "question": "q12"}
+{"choice": "environment", "keys": ["environment"], "probabilities": {"environment": 0.97, "none of these": 0.03}, "question": "q12"}
+{"choice": null, "keys": ["libraries", "elections", "broadband", "bus_service", "taxes"], "probabilities": {"broadband": 0.0, "bus_service": 0.0, "elections": 0.0, "libraries": 0.0, "none of these": 0.84, "taxes": 0.16}, "question": "q12"}
+{"choice": "street_trees", "keys": ["health", "environment", "street_trees"], "probabilities": {"environment": 0.0, "health": 0.0, "none of these": 0.0, "street_trees": 1.0}, "question": "q12"}
+{"choice": null, "keys": ["schools", "broadband", "elections"], "probabilities": {"broadband": 0.0, "elections": 0.0, "none of these": 1.0, "schools": 0.0}, "question": "q12"}
+{"choice": "street_trees", "keys": ["budget", "street_trees"], "probabilities": {"budget": 0.0, "none of these": 0.01, "street_trees": 0.99}, "question": "q13"}
+{"choice": null, "keys": ["water", "sales_tax", "parks"], "probabilities": {"none of these": 0.54, "parks": 0.46, "sales_tax": 0.0, "water": 0.0}, "question": "q13"}
+{"choice": "street_trees", "keys": ["safety", "parks", "street_trees", "police_oversight", "sales_tax"], "probabilities": {"none of these": 0.0, "parks": 0.0, "police_oversight": 0.0, "safety": 0.0, "sales_tax": 0.0, "street_trees": 1.0}, "question": "q13"}
+{"choice": null, "keys": ["school_buildings", "libraries", "police_oversight", "rent_control"], "probabilities": {"libraries": 0.0, "none of these": 1.0, "police_oversight": 0.0, "rent_control": 0.0, "school_buildings": 0.0}, "question": "q13"}
+{"choice": "street_trees", "keys": ["street_trees"], "probabilities": {"none of these": 0.01, "street_trees": 0.99}, "question": "q13"}
+{"choice": "street_trees", "keys": ["water", "elections", "height_limits", "street_trees", "housing"], "probabilities": {"elections": 0.0, "height_limits": 0.0, "housing": 0.01, "none of these": 0.0, "street_trees": 0.99, "water": 0.0}, "question": "q13"}
+{"choice": "street_trees", "keys": ["parks", "minimum_wage", "school_buildings", "street_trees", "environment"], "probabilities": {"environment": 0.01, "minimum_wage": 0.0, "none of these": 0.0, "parks": 0.0, "school_buildings": 0.0, "street_trees": 0.99}, "question": "q13"}
+{"choice": null, "keys": ["minimum_wage"], "probabilities": {"minimum_wage": 0.0, "none of these": 1.0}, "question": "q13"}
+{"choice": "environment", "keys": ["safety", "housing", "environment", "sales_tax"], "probabilities": {"environment": 1.0, "housing": 0.0, "none of these": 0.0, "safety": 0.0, "sales_tax": 0.0}, "question": "q14"}
+{"choice": null, "keys": ["tree_frogs", "fire_ems"], "probabilities": {"fire_ems": 0.0, "none of these": 1.0, "tree_frogs": 0.0}, "question": "q14"}
+{"choice": "environment", "keys": ["environment"], "probabilities": {"environment": 0.99, "none of these": 0.01}, "question": "q14"}
+{"choice": null, "keys": ["nightlife", "bike_lanes"], "probabilities": {"bike_lanes": 0.0, "nightlife": 0.0, "none of these": 1.0}, "question": "q14"}
+{"choice": "environment", "keys": ["environment"], "probabilities": {"environment": 0.99, "none of these": 0.01}, "question": "q14"}
+{"choice": null, "keys": ["transport"], "probabilities": {"none of these": 1.0, "transport": 0.0}, "question": "q14"}
+{"choice": "environment", "keys": ["environment", "budget"], "probabilities": {"budget": 0.0, "environment": 0.99, "none of these": 0.01}, "question": "q14"}
+{"choice": null, "keys": ["police_oversight", "sales_tax"], "probabilities": {"none of these": 1.0, "police_oversight": 0.0, "sales_tax": 0.0}, "question": "q14"}
+{"choice": "environment", "keys": ["environment", "minimum_wage"], "probabilities": {"environment": 1.0, "minimum_wage": 0.0, "none of these": 0.0}, "question": "q15"}
+{"choice": null, "keys": ["bike_lanes"], "probabilities": {"bike_lanes": 0.0, "none of these": 1.0}, "question": "q15"}
+{"choice": "environment", "keys": ["parks", "water", "bus_service", "environment", "tree_frogs"], "probabilities": {"bus_service": 0.0, "environment": 0.99, "none of these": 0.01, "parks": 0.0, "tree_frogs": 0.0, "water": 0.0}, "question": "q15"}
+{"choice": null, "keys": ["parks", "budget", "transport", "housing"], "probabilities": {"budget": 0.03, "housing": 0.0, "none of these": 0.66, "parks": 0.0, "transport": 0.31}, "question": "q15"}
+{"choice": "environment", "keys": ["libraries", "environment", "height_limits", "police_oversight"], "probabilities": {"environment": 1.0, "height_limits": 0.0, "libraries": 0.0, "none of these": 0.0, "police_oversight": 0.0}, "question": "q15"}
+{"choice": null, "keys": ["street_trees"], "probabilities": {"none of these": 0.99, "street_trees": 0.01}, "question": "q15"}
+{"choice": "environment", "keys": ["ranked_choice", "transport", "environment"], "probabilities": {"environment": 1.0, "none of these": 0.0, "ranked_choice": 0.0, "transport": 0.0}, "question": "q15"}
+{"choice": null, "keys": ["elections", "taxes", "water", "safety"], "probabilities": {"elections": 0.0, "none of these": 1.0, "safety": 0.0, "taxes": 0.0, "water": 0.0}, "question": "q15"}
+{"choice": "environment", "keys": ["parks", "street_trees", "transport", "schools", "environment"], "probabilities": {"environment": 1.0, "none of these": 0.0, "parks": 0.0, "schools": 0.0, "street_trees": 0.0, "transport": 0.0}, "question": "q16"}
+{"choice": "water", "keys": ["labor", "height_limits", "water"], "probabilities": {"height_limits": 0.0, "labor": 0.0, "none of these": 0.05, "water": 0.95}, "question": "q16"}
+{"choice": "environment", "keys": ["broadband", "street_trees", "environment", "elections"], "probabilities": {"broadband": 0.0, "elections": 0.0, "environment": 1.0, "none of these": 0.0, "street_trees": 0.0}, "question": "q16"}
+{"choice": null, "keys": ["police_oversight", "health", "animals", "fire_ems", "bike_lanes"], "probabilities": {"animals": 0.0, "bike_lanes": 0.0, "fire_ems": 0.0, "health": 0.0, "none of these": 1.0, "police_oversight": 0.0}, "question": "q16"}
+{"choice": "water", "keys": ["water"], "probabilities": {"none of these": 0.1, "water": 0.9}, "question": "q16"}
+{"choice": null, "keys": ["school_buildings", "bike_lanes", "street_trees", "housing"], "probabilities": {"bike_lanes": 0.0, "housing": 0.07, "none of these": 0.93, "school_buildings": 0.0, "street_trees": 0.0}, "question": "q16"}
+{"choice": "water", "keys": ["water", "housing"], "probabilities": {"housing": 0.07, "none of these": 0.06, "water": 0.87}, "question": "q16"}
+{"choice": null, "keys": ["school_buildings"], "probabilities": {"none of these": 1.0, "school_buildings": 0.0}, "question": "q16"}
+{"choice": "water", "keys": ["animals", "water", "housing", "sales_tax", "taxes"], "probabilities": {"animals": 0.0, "housing": 0.0, "none of these": 0.0, "sales_tax": 0.0, "taxes": 0.0, "water": 1.0}, "question": "q17"}
+{"choice": null, "keys": ["animals", "housing", "height_limits", "taxes"], "probabilities": {"animals": 0.0, "height_limits": 0.0, "housing": 0.02, "none of these": 0.66, "taxes": 0.32}, "question": "q17"}
+{"choice": "water", "keys": ["water", "elections", "animals"], "probabilities": {"animals": 0.0, "elections": 0.0, "none of these": 0.0, "water": 1.0}, "question": "q17"}
+{"choice": null, "keys": ["nightlife", "animals", "safety", "environment", "broadband"], "probabilities": {"animals": 0.0, "broadband": 0.0, "environment": 0.2, "nightlife": 0.0, "none of these": 0.8, "safety": 0.0}, "question": "q17"}
+{"choice": "health", "keys": ["health", "bus_service"], "probabilities": {"bus_service": 0.0, "health": 0.95, "none of these": 0.05}, "question": "q17"}
+{"choice": null, "keys": ["transport", "bus_service"], "probabilities": {"bus_service": 0.0, "none of these": 1.0, "transport": 0.0}, "question": "q17"}
+{"choice": "health", "keys": ["health", "elections"], "probabilities": {"elections": 0.0, "health": 0.92, "none of these": 0.08}, "question": "q17"}
+{"choice": null, "keys": ["parks", "housing"], "probabilities": {"housing": 0.03, "none of these": 0.97, "parks": 0.0}, "question": "q17"}
+{"choice": "water", "keys": ["nightlife", "water", "street_trees", "bus_service"], "probabilities": {"bus_service": 0.0, "nightlife": 0.0, "none of these": 0.0, "street_trees": 0.0, "water": 1.0}, "question": "q18"}
+{"choice": null, "keys": ["environment", "property_tax_seniors", "height_limits", "labor", "nightlife"], "probabilities": {"environment": 0.35, "height_limits": 0.0, "labor": 0.0, "nightlife": 0.0, "none of these": 0.65, "property_tax_seniors": 0.0}, "question": "q18"}
+{"choice": "water", "keys": ["fire_ems", "water", "broadband", "schools"], "probabilities": {"broadband": 0.0, "fire_ems": 0.0, "none of these": 0.0, "schools": 0.0, "water": 1.0}, "question": "q18"}
+{"choice": null, "keys": ["fire_ems", "street_trees"], "probabilities": {"fire_ems": 0.0, "none of these": 1.0, "street_trees": 0.0}, "question": "q18"}
+{"choice": "water", "keys": ["school_meals", "water", "minimum_wage", "budget"], "probabilities": {"budget": 0.0, "minimum_wage": 0.0, "none of these": 0.0, "school_meals": 0.0, "water": 1.0}, "question": "q18"}
+{"choice": "taxes", "keys": ["taxes"], "probabilities": {"none of these": 0.3, "taxes": 0.7}, "question": "q18"}
+{"choice": "water", "keys": ["rent_control", "bus_service", "water", "minimum_wage"], "probabilities": {"bus_service": 0.0, "minimum_wage": 0.0, "none of these": 0.0, "rent_control": 0.0, "water": 1.0}, "question": "q18"}
+{"choice": "water", "keys": ["water", "ranked_choice"], "probabilities": {"none of these": 0.0, "ranked_choice": 0.0, "water": 1.0}, "question": "q18"}
+{"choice": "school_meals", "keys": ["school_meals", "rent_control", "bus_service"], "probabilities": {"bus_service": 0.0, "none of these": 0.0, "rent_control": 0.0, "school_meals": 1.0}, "question": "q19"}
+{"choice": "school_meals", "keys": ["school_meals", "street_trees", "bus_service", "transport", "water"], "probabilities": {"bus_service": 0.0, "none of these": 0.0, "school_meals": 1.0, "street_trees": 0.0, "transport": 0.0, "water": 0.0}, "question": "q19"}
+{"choice": "schools", "keys": ["safety", "schools", "housing", "property_tax_seniors", "street_trees"], "probabilities": {"housing": 0.0, "none of these": 0.0, "property_tax_seniors": 0.0, "safety": 0.0, "schools": 1.0, "street_trees": 0.0}, "question": "q19"}
+{"choice": null, "keys": ["taxes", "safety"], "probabilities": {"none of these": 0.85, "safety": 0.0, "taxes": 0.15}, "question": "q19"}
+{"choice": "school_meals", "keys": ["animals", "bus_service", "school_meals", "budget"], "probabilities": {"animals": 0.0, "budget": 0.0, "bus_service": 0.0, "none of these": 0.0, "school_meals": 1.0}, "question": "q19"}
+{"choice": null, "keys": ["libraries"], "probabilities": {"libraries": 0.0, "none of these": 1.0}, "question": "q19"}
+{"choice": "school_meals", "keys": ["school_meals", "libraries", "minimum_wage", "school_buildings", "fire_ems"], "probabilities": {"fire_ems": 0.0, "libraries": 0.0, "minimum_wage": 0.0, "none of these": 0.0, "school_buildings": 0.0, "school_meals": 1.0}, "question": "q19"}
+{"choice": null, "keys": ["taxes", "bus_service", "parks", "police_oversight", "labor"], "probabilities": {"bus_service": 0.0, "labor": 0.0, "none of these": 0.93, "parks": 0.0, "police_oversight": 0.0, "taxes": 0.07}, "question": "q19"}
+{"choice": "schools", "keys": ["schools"], "probabilities": {"none of these": 0.02, "schools": 0.98}, "question": "q20"}
+{"choice": null, "keys": ["housing", "police_oversight", "taxes"], "probabilities": {"housing": 0.01, "none of these": 0.98, "police_oversight": 0.0, "taxes": 0.01}, "question": "q20"}
+{"choice": "schools", "keys": ["transport", "schools"], "probabilities": {"none of these": 0.04, "schools": 0.96, "transport": 0.0}, "question": "q20"}
+{"choice": null, "keys": ["sales_tax", "libraries", "bus_service", "taxes", "fire_ems"], "probabilities": {"bus_service": 0.0, "fire_ems": 0.0, "libraries": 0.0, "none of these": 1.0, "sales_tax": 0.0, "taxes": 0.0}, "question": "q20"}
+{"choice": "school_meals", "keys": ["school_meals", "budget"], "probabilities": {"budget": 0.0, "none of these": 0.0, "school_meals": 1.0}, "question": "q20"}
+{"choice": null, "keys": ["labor", "school_buildings", "water"], "probabilities": {"labor": 0.0, "none of these": 1.0, "school_buildings": 0.0, "water": 0.0}, "question": "q20"}
+{"choice": "school_meals", "keys": ["school_meals", "sales_tax", "broadband"], "probabilities": {"broadband": 0.0, "none of these": 0.0, "sales_tax": 0.0, "school_meals": 1.0}, "question": "q20"}
+{"choice": null, "keys": ["school_buildings"], "probabilities": {"none of these": 1.0, "school_buildings": 0.0}, "question": "q20"}
+{"choice": "school_buildings", "keys": ["school_buildings"], "probabilities": {"none of these": 0.0, "school_buildings": 1.0}, "question": "q21"}
+{"choice": null, "keys": ["health", "police_oversight", "transport", "rent_control"], "probabilities": {"health": 0.0, "none of these": 1.0, "police_oversight": 0.0, "rent_control": 0.0, "transport": 0.0}, "question": "q21"}
+{"choice": "schools", "keys": ["ranked_choice", "schools", "libraries", "health", "street_trees"], "probabilities": {"health": 0.0, "libraries": 0.0, "none of these": 0.0, "ranked_choice": 0.0, "schools": 1.0, "street_trees": 0.0}, "question": "q21"}
+{"choice": "school_buildings", "keys": ["school_buildings", "property_tax_seniors", "parks"], "probabilities": {"none of these": 0.0, "parks": 0.0, "property_tax_seniors": 0.0, "school_buildings": 1.0}, "question": "q21"}
+{"choice": "schools", "keys": ["tree_frogs", "property_tax_seniors", "schools"], "probabilities": {"none of these": 0.0, "property_tax_seniors": 0.0, "schools": 1.0, "tree_frogs": 0.0}, "question": "q21"}
+{"choice": null, "keys": ["environment", "school_meals"], "probabilities": {"environment": 0.0, "none of these": 1.0, "school_meals": 0.0}, "question": "q21"}
+{"choice": "schools", "keys": ["sales_tax", "safety", "schools"], "probabilities": {"none of these": 0.0, "safety": 0.0, "sales_tax": 0.0, "schools": 1.0}, "question": "q21"}
+{"choice": null, "keys": ["fire_ems", "nightlife"], "probabilities": {"fire_ems": 0.0, "nightlife": 0.0, "none of these": 1.0}, "question": "q21"}
+{"choice": "school_buildings", "keys": ["property_tax_seniors", "broadband", "school_buildings", "rent_control", "police_oversight"], "probabilities": {"broadband": 0.0, "none of these": 0.01, "police_oversight": 0.0, "property_tax_seniors": 0.0, "rent_control": 0.0, "school_buildings": 0.99}, "question": "q22"}
+{"choice": null, "keys": ["school_meals"], "probabilities": {"none of these": 1.0, "school_meals": 0.0}, "question": "q22"}
+{"choice": "schools", "keys": ["taxes", "schools", "property_tax_seniors", "libraries", "height_limits"], "probabilities": {"height_limits": 0.0, "libraries": 0.0, "none of these": 0.0, "property_tax_seniors": 0.0, "schools": 1.0, "taxes": 0.0}, "question": "q22"}
+{"choice": null, "keys": ["taxes"], "probabilities": {"none of these": 0.82, "taxes": 0.18}, "question": "q22"}
+{"choice": "schools", "keys": ["schools", "school_meals"], "probabilities": {"none of these": 0.0, "school_meals": 0.0, "schools": 1.0}, "question": "q22"}
+{"choice": null, "keys": ["taxes", "nightlife", "elections", "school_meals", "broadband"], "probabilities": {"broadband": 0.0, "elections": 0.0, "nightlife": 0.0, "none of these": 0.95, "school_meals": 0.01, "taxes": 0.04}, "question": "q22"}
+{"choice": "school_buildings", "keys": ["housing", "tree_frogs", "school_buildings"], "probabilities": {"housing": 0.0, "none of these": 0.01, "school_buildings": 0.99, "tree_frogs": 0.0}, "question": "q22"}
+{"choice": null, "keys": ["broadband", "safety", "ranked_choice"], "probabilities": {"broadband": 0.0, "none of these": 1.0, "ranked_choice": 0.0, "safety": 0.0}, "question": "q22"}
+{"choice": "schools", "keys": ["schools"], "probabilities": {"none of these": 0.0, "schools": 1.0}, "question": "q23"}
+{"choice": null, "keys": ["libraries", "height_limits", "bus_service", "rent_control", "broadband"], "probabilities": {"broadband": 0.0, "bus_service": 0.02, "height_limits": 0.0, "libraries": 0.0, "none of these": 0.98, "rent_control": 0.0}, "question": "q23"}
+{"choice": "schools", "keys": ["schools"], "probabilities": {"none of these": 0.0, "schools": 1.0}, "question": "q23"}
+{"choice": null, "keys": ["police_oversight", "animals", "parks", "school_buildings"], "probabilities": {"animals": 0.0, "none of these": 0.98, "parks": 0.0, "police_oversight": 0.0, "school_buildings": 0.02}, "question": "q23"}
+{"choice": "schools", "keys": ["bus_service", "parks", "fire_ems", "schools"], "probabilities": {"bus_service": 0.0, "fire_ems": 0.0, "none of these": 0.0, "parks": 0.0, "schools": 1.0}, "question": "q23"}
+{"choice": null, "keys": ["tree_frogs", "budget", "environment"], "probabilities": {"budget": 0.01, "environment": 0.0, "none of these": 0.99, "tree_frogs": 0.0}, "question": "q23"}
+{"choice": "schools", "keys": ["schools"], "probabilities": {"none of these": 0.0, "schools": 1.0}, "question": "q23"}
+{"choice": null, "keys": ["environment", "transport", "school_buildings"], "probabilities": {"environment": 0.0, "none of these": 0.96, "school_buildings": 0.01, "transport": 0.03}, "question": "q23"}
+{"choice": "schools", "keys": ["schools", "taxes", "bus_service", "bike_lanes"], "probabilities": {"bike_lanes": 0.0, "bus_service": 0.0, "none of these": 0.0, "schools": 1.0, "taxes": 0.0}, "question": "q24"}
+{"choice": null, "keys": ["rent_control", "bus_service"], "probabilities": {"bus_service": 0.0, "none of these": 1.0, "rent_control": 0.0}, "question": "q24"}
+{"choice": "schools", "keys": ["height_limits", "safety", "nightlife", "animals", "schools"], "probabilities": {"animals": 0.0, "height_limits": 0.0, "nightlife": 0.0, "none of these": 0.0, "safety": 0.0, "schools": 1.0}, "question": "q24"}
+{"choice": null, "keys": ["health", "minimum_wage", "rent_control", "nightlife"], "probabilities": {"health": 0.0, "minimum_wage": 0.0, "nightlife": 0.0, "none of these": 1.0, "rent_control": 0.0}, "question": "q24"}
+{"choice": "schools", "keys": ["broadband", "minimum_wage", "nightlife", "water", "schools"], "probabilities": {"broadband": 0.0, "minimum_wage": 0.0, "nightlife": 0.0, "none of these": 0.0, "schools": 1.0, "water": 0.0}, "question": "q24"}
+{"choice": null, "keys": ["street_trees"], "probabilities": {"none of these": 1.0, "street_trees": 0.0}, "question": "q24"}
+{"choice": "schools", "keys": ["property_tax_seniors", "ranked_choice", "schools", "minimum_wage"], "probabilities": {"minimum_wage": 0.0, "none of these": 0.0, "property_tax_seniors": 0.0, "ranked_choice": 0.0, "schools": 1.0}, "question": "q24"}
+{"choice": null, "keys": ["animals"], "probabilities": {"animals": 0.0, "none of these": 1.0}, "question": "q24"}
+{"choice": "schools", "keys": ["schools"], "probabilities": {"none of these": 0.0, "schools": 1.0}, "question": "q25"}
+{"choice": null, "keys": ["parks", "rent_control", "height_limits", "sales_tax"], "probabilities": {"height_limits": 0.0, "none of these": 0.99, "parks": 0.0, "rent_control": 0.0, "sales_tax": 0.01}, "question": "q25"}
+{"choice": "taxes", "keys": ["street_trees", "animals", "elections", "taxes"], "probabilities": {"animals": 0.0, "elections": 0.0, "none of these": 0.0, "street_trees": 0.0, "taxes": 1.0}, "question": "q25"}
+{"choice": "taxes", "keys": ["tree_frogs", "fire_ems", "taxes"], "probabilities": {"fire_ems": 0.0, "none of these": 0.01, "taxes": 0.99, "tree_frogs": 0.0}, "question": "q25"}
+{"choice": "schools", "keys": ["transport", "broadband", "schools"], "probabilities": {"broadband": 0.0, "none of these": 0.0, "schools": 1.0, "transport": 0.0}, "question": "q25"}
+{"choice": null, "keys": ["ranked_choice", "tree_frogs", "transport", "property_tax_seniors"], "probabilities": {"none of these": 0.98, "property_tax_seniors": 0.02, "ranked_choice": 0.0, "transport": 0.0, "tree_frogs": 0.0}, "question": "q25"}
+{"choice": "taxes", "keys": ["minimum_wage", "libraries", "height_limits", "taxes"], "probabilities": {"height_limits": 0.0, "libraries": 0.0, "minimum_wage": 0.0, "none of these": 0.02, "taxes": 0.98}, "question": "q25"}
+{"choice": null, "keys": ["bike_lanes", "animals"], "probabilities": {"animals": 0.0, "bike_lanes": 0.0, "none of these": 1.0}, "question": "q25"}
+{"choice": "rent_control", "keys": ["health", "school_buildings", "rent_control", "housing", "sales_tax"], "probabilities": {"health": 0.0, "housing": 0.01, "none of these": 0.0, "rent_control": 0.99, "sales_tax": 0.0, "school_buildings": 0.0}, "question": "q26"}
+{"choice": null, "keys": ["ranked_choice"], "probabilities": {"none of these": 1.0, "ranked_choice": 0.0}, "question": "q26"}
+{"choice": "housing", "keys": ["housing"], "probabilities": {"housing": 1.0, "none of these": 0.0}, "question": "q26"}
+{"choice": null, "keys": ["labor", "safety", "height_limits"], "probabilities": {"height_limits": 0.0, "labor": 0.01, "none of these": 0.99, "safety": 0.0}, "question": "q26"}
+{"choice": "rent_control", "keys": ["rent_control", "minimum_wage"], "probabilities": {"minimum_wage": 0.0, "none of these": 0.0, "rent_control": 1.0}, "question": "q26"}
+{"choice": null, "keys": ["schools", "ranked_choice", "elections", "bike_lanes"], "probabilities": {"bike_lanes": 0.0, "elections": 0.0, "none of these": 1.0, "ranked_choice": 0.0, "schools": 0.0}, "question": "q26"}
+{"choice": "housing", "keys": ["school_buildings", "housing"], "probabilities": {"housing": 0.99, "none of these": 0.01, "school_buildings": 0.0}, "question": "q26"}
+{"choice": null, "keys": ["school_meals", "police_oversight", "bus_service", "nightlife", "safety"], "probabilities": {"bus_service": 0.0, "nightlife": 0.0, "none of these": 1.0, "police_oversight": 0.0, "safety": 0.0, "school_meals": 0.0}, "question": "q26"}
+{"choice": "rent_control", "keys": ["animals", "rent_control"], "probabilities": {"animals": 0.0, "none of these": 0.0, "rent_control": 1.0}, "question": "q27"}
+{"choice": null, "keys": ["bike_lanes", "safety", "property_tax_seniors"], "probabilities": {"bike_lanes": 0.0, "none of these": 1.0, "property_tax_seniors": 0.0, "safety": 0.0}, "question": "q27"}
+{"choice": "rent_control", "keys": ["nightlife", "rent_control", "water"], "probabilities": {"nightlife": 0.0, "none of these": 0.0, "rent_control": 1.0, "water": 0.0}, "question": "q27"}
+{"choice": null, "keys": ["schools", "water", "nightlife"], "probabilities": {"nightlife": 0.0, "none of these": 1.0, "schools": 0.0, "water": 0.0}, "question": "q27"}
+{"choice": "rent_control", "keys": ["health", "elections", "rent_control", "tree_frogs"], "probabilities": {"elections": 0.0, "health": 0.0, "none of these": 0.0, "rent_control": 1.0, "tree_frogs": 0.0}, "question": "q27"}
+{"choice": "housing", "keys": ["housing", "bus_service", "tree_frogs", "animals"], "probabilities": {"animals": 0.0, "bus_service": 0.0, "housing": 1.0, "none of these": 0.0, "tree_frogs": 0.0}, "question": "q27"}
+{"choice": "housing", "keys": ["animals", "housing", "police_oversight"], "probabilities": {"animals": 0.0, "housing": 1.0, "none of these": 0.0, "police_oversight": 0.0}, "question": "q27"}
+{"choice": null, "keys": ["school_meals"], "probabilities": {"none of these": 1.0, "school_meals": 0.0}, "question": "q27"}
+{"choice": "height_limits", "keys": ["height_limits", "elections"], "probabilities": {"elections": 0.0, "height_limits": 1.0, "none of these": 0.0}, "question": "q28"}
+{"choice": null, "keys": ["safety"], "probabilities": {"none of these": 1.0, "safety": 0.0}, "question": "q28"}
+{"choice": "housing", "keys": ["safety", "health", "parks", "fire_ems", "housing"], "probabilities": {"fire_ems": 0.0, "health": 0.0, "housing": 1.0, "none of these": 0.0, "parks": 0.0, "safety": 0.0}, "question": "q28"}
+{"choice": null, "keys": ["taxes", "health"], "probabilities": {"health": 0.0, "none of these": 1.0, "taxes": 0.0}, "question": "q28"}
+{"choice": "height_limits", "keys": ["sales_tax", "height_limits", "property_tax_seniors", "health", "budget"], "probabilities": {"budget": 0.0, "health": 0.0, "height_limits": 1.0, "none of these": 0.0, "property_tax_seniors": 0.0, "sales_tax": 0.0}, "question": "q28"}
+{"choice": "height_limits", "keys": ["animals", "health", "housing", "height_limits", "police_oversight"], "probabilities": {"animals": 0.0, "health": 0.0, "height_limits": 0.94, "housing": 0.06, "none of these": 0.0, "police_oversight": 0.0}, "question": "q28"}
+{"choice": "housing", "keys": ["housing", "ranked_choice"], "probabilities": {"housing": 1.0, "none of these": 0.0, "ranked_choice": 0.0}, "question": "q28"}
+{"choice": null, "keys": ["animals", "minimum_wage", "rent_control", "health", "transport"], "probabilities": {"animals": 0.0, "health": 0.0, "minimum_wage": 0.0, "none of these": 1.0, "rent_control": 0.0, "transport": 0.0}, "question": "q28"}
+{"choice": "housing", "keys": ["water", "elections", "broadband", "taxes", "housing"], "probabilities": {"broadband": 0.0, "elections": 0.0, "housing": 1.0, "none of these": 0.0, "taxes": 0.0, "water": 0.0}, "question": "q29"}
+{"choice": null, "keys": ["property_tax_seniors"], "probabilities": {"none of these": 1.0, "property_tax_seniors": 0.0}, "question": "q29"}
+{"choice": "housing", "keys": ["school_buildings", "rent_control", "housing", "bike_lanes", "taxes"], "probabilities": {"bike_lanes": 0.0, "housing": 1.0, "none of these": 0.0, "rent_control": 0.0, "school_buildings": 0.0, "taxes": 0.0}, "question": "q29"}
+{"choice": "housing", "keys": ["school_meals", "housing", "rent_control", "nightlife", "libraries"], "probabilities": {"housing": 1.0, "libraries": 0.0, "nightlife": 0.0, "none of these": 0.0, "rent_control": 0.0, "school_meals": 0.0}, "question": "q29"}
+{"choice": "housing", "keys": ["taxes", "bike_lanes", "housing"], "probabilities": {"bike_lanes": 0.0, "housing": 1.0, "none of these": 0.0, "taxes": 0.0}, "question": "q29"}
+{"choice": "height_limits", "keys": ["height_limits", "health", "bike_lanes", "labor", "sales_tax"], "probabilities": {"bike_lanes": 0.0, "health": 0.0, "height_limits": 1.0, "labor": 0.0, "none of these": 0.0, "sales_tax": 0.0}, "question": "q29"}
+{"choice": "housing", "keys": ["housing", "broadband", "budget", "tree_frogs"], "probabilities": {"broadband": 0.0, "budget": 0.0, "housing": 1.0, "none of these": 0.0, "tree_frogs": 0.0}, "question": "q29"}
+{"choice": "housing", "keys": ["housing"], "probabilities": {"housing": 0.99, "none of these": 0.01}, "question": "q29"}
+{"choice": "housing", "keys": ["height_limits", "police_oversight", "environment", "housing", "elections"], "probabilities": {"elections": 0.0, "environment": 0.0, "height_limits": 0.0, "housing": 1.0, "none of these": 0.0, "police_oversight": 0.0}, "question": "q30"}
+{"choice": null, "keys": ["property_tax_seniors", "minimum_wage"], "probabilities": {"minimum_wage": 0.0, "none of these": 1.0, "property_tax_seniors": 0.0}, "question": "q30"}
+{"choice": "housing", "keys": ["housing", "labor", "school_buildings"], "probabilities": {"housing": 1.0, "labor": 0.0, "none of these": 0.0, "school_buildings": 0.0}, "question": "q30"}
+{"choice": null, "keys": ["rent_control", "libraries", "nightlife", "schools", "school_meals"], "probabilities": {"libraries": 0.0, "nightlife": 0.0, "none of these": 0.95, "rent_control": 0.05, "school_meals": 0.0, "schools": 0.0}, "question": "q30"}
+{"choice": "housing", "keys": ["animals", "sales_tax", "water", "housing", "transport"], "probabilities": {"animals": 0.0, "housing": 1.0, "none of these": 0.0, "sales_tax": 0.0, "transport": 0.0, "water": 0.0}, "question": "q30"}
+{"choice": "budget", "keys": ["budget", "height_limits", "animals"], "probabilities": {"animals": 0.0, "budget": 0.88, "height_limits": 0.0, "none of these": 0.12}, "question": "q30"}
+{"choice": "housing", "keys": ["housing", "environment", "fire_ems"], "probabilities": {"environment": 0.0, "fire_ems": 0.0, "housing": 1.0, "none of these": 0.0}, "question": "q30"}
+{"choice": null, "keys": ["minimum_wage", "safety"], "probabilities": {"minimum_wage": 0.0, "none of these": 1.0, "safety": 0.0}, "question": "q30"}
+{"choice": "housing", "keys": ["housing", "police_oversight", "budget"], "probabilities": {"budget": 0.0, "housing": 1.0, "none of these": 0.0, "police_oversight": 0.0}, "question": "q31"}
+{"choice": null, "keys": ["budget"], "probabilities": {"budget": 0.0, "none of these": 1.0}, "question": "q31"}
+{"choice": "housing", "keys": ["property_tax_seniors", "housing", "taxes", "fire_ems", "bike_lanes"], "probabilities": {"bike_lanes": 0.0, "fire_ems": 0.0, "housing": 1.0, "none of these": 0.0, "property_tax_seniors": 0.0, "taxes": 0.0}, "question": "q31"}
+{"choice": null, "keys": ["safety", "libraries"], "probabilities": {"libraries": 0.0, "none of these": 1.0, "safety": 0.0}, "question": "q31"}
+{"choice": "housing", "keys": ["fire_ems", "housing"], "probabilities": {"fire_ems": 0.0, "housing": 1.0, "none of these": 0.0}, "question": "q31"}
+{"choice": null, "keys": ["school_meals", "height_limits"], "probabilities": {"height_limits": 0.14, "none of these": 0.86, "school_meals": 0.0}, "question": "q31"}
+{"choice": "housing", "keys": ["property_tax_seniors", "police_oversight", "housing"], "probabilities": {"housing": 1.0, "none of these": 0.0, "police_oversight": 0.0, "property_tax_seniors": 0.0}, "question": "q31"}
+{"choice": "housing", "keys": ["labor", "housing", "libraries"], "probabilities": {"housing": 1.0, "labor": 0.0, "libraries": 0.0, "none of these": 0.0}, "question": "q31"}
+{"choice": "housing", "keys": ["housing", "nightlife"], "probabilities": {"housing": 0.99, "nightlife": 0.0, "none of these": 0.01}, "question": "q32"}
+{"choice": null, "keys": ["elections"], "probabilities": {"elections": 0.0, "none of these": 1.0}, "question": "q32"}
+{"choice": "housing", "keys": ["housing"], "probabilities": {"housing": 0.99, "none of these": 0.01}, "question": "q32"}
+{"choice": "transport", "keys": ["transport", "labor", "fire_ems", "rent_control", "parks"], "probabilities": {"fire_ems": 0.0, "labor": 0.0, "none of these": 0.02, "parks": 0.0, "rent_control": 0.0, "transport": 0.98}, "question": "q32"}
+{"choice": "transport", "keys": ["budget", "transport"], "probabilities": {"budget": 0.12, "none of these": 0.05, "transport": 0.83}, "question": "q32"}
+{"choice": null, "keys": ["environment", "police_oversight", "safety", "school_meals"], "probabilities": {"environment": 0.05, "none of these": 0.95, "police_oversight": 0.0, "safety": 0.0, "school_meals": 0.0}, "question": "q32"}
+{"choice": "transport", "keys": ["tree_frogs", "transport", "broadband", "ranked_choice"], "probabilities": {"broadband": 0.0, "none of these": 0.04, "ranked_choice": 0.0, "transport": 0.96, "tree_frogs": 0.0}, "question": "q32"}
+{"choice": null, "keys": ["tree_frogs", "animals", "minimum_wage", "police_oversight"], "probabilities": {"animals": 0.0, "minimum_wage": 0.0, "none of these": 1.0, "police_oversight": 0.0, "tree_frogs": 0.0}, "question": "q32"}
+{"choice": "transport", "keys": ["transport", "safety", "budget"], "probabilities": {"budget": 0.0, "none of these": 0.0, "safety": 0.0, "transport": 1.0}, "question": "q33"}
+{"choice": null, "keys": ["fire_ems", "broadband", "rent_control", "labor", "parks"], "probabilities": {"broadband": 0.0, "fire_ems": 0.0, "labor": 0.0, "none of these": 0.91, "parks": 0.09, "rent_control": 0.0}, "question": "q33"}
+{"choice": "bike_lanes", "keys": ["bike_lanes", "ranked_choice", "nightlife", "transport", "fire_ems"], "probabilities": {"bike_lanes": 0.98, "fire_ems": 0.0, "nightlife": 0.0, "none of these": 0.0, "ranked_choice": 0.0, "transport": 0.02}, "question": "q33"}
+{"choice": null, "keys": ["height_limits"], "probabilities": {"height_limits": 0.0, "none of these": 1.0}, "question": "q33"}
+{"choice": "transport", "keys": ["transport"], "probabilities": {"none of these": 0.0, "transport": 1.0}, "question": "q33"}
+{"choice": null, "keys": ["rent_control", "sales_tax", "fire_ems", "police_oversight"], "probabilities": {"fire_ems": 0.0, "none of these": 1.0, "police_oversight": 0.0, "rent_control": 0.0, "sales_tax": 0.0}, "question": "q33"}
+{"choice": "bike_lanes", "keys": ["rent_control", "bike_lanes", "parks"], "probabilities": {"bike_lanes": 1.0, "none of these": 0.0, "parks": 0.0, "rent_control": 0.0}, "question": "q33"}
+{"choice": null, "keys": ["labor", "housing", "parks", "police_oversight", "health"], "probabilities": {"health": 0.01, "housing": 0.35, "labor": 0.0, "none of these": 0.57, "parks": 0.07, "police_oversight": 0.0}, "question": "q33"}
+{"choice": "bike_lanes", "keys": ["bike_lanes", "libraries"], "probabilities": {"bike_lanes": 1.0, "libraries": 0.0, "none of these": 0.0}, "question": "q34"}
+{"choice": "bike_lanes", "keys": ["ranked_choice", "bike_lanes"], "probabilities": {"bike_lanes": 1.0, "none of these": 0.0, "ranked_choice": 0.0}, "question": "q34"}
+{"choice": "bike_lanes", "keys": ["safety", "bike_lanes", "labor"], "probabilities": {"bike_lanes": 1.0, "labor": 0.0, "none of these": 0.0, "safety": 0.0}, "question": "q34"}
+{"choice": "bike_lanes", "keys": ["bike_lanes"], "probabilities": {"bike_lanes": 1.0, "none of these": 0.0}, "question": "q34"}
+{"choice": "bike_lanes", "keys": ["parks", "taxes", "transport", "bike_lanes"], "probabilities": {"bike_lanes": 0.9, "none of these": 0.0, "parks": 0.0, "taxes": 0.0, "transport": 0.1}, "question": "q34"}
+{"choice": null, "keys": ["bus_service", "nightlife", "tree_frogs"], "probabilities": {"bus_service": 0.03, "nightlife": 0.0, "none of these": 0.97, "tree_frogs": 0.0}, "question": "q34"}
+{"choice": "bike_lanes", "keys": ["bike_lanes"], "probabilities": {"bike_lanes": 1.0, "none of these": 0.0}, "question": "q34"}
+{"choice": null, "keys": ["safety"], "probabilities": {"none of these": 0.99, "safety": 0.01}, "question": "q34"}
+{"choice": "transport", "keys": ["transport", "schools", "elections", "bike_lanes", "minimum_wage"], "probabilities": {"bike_lanes": 0.0, "elections": 0.0, "minimum_wage": 0.0, "none of these": 0.0, "schools": 0.0, "transport": 1.0}, "question": "q35"}
+{"choice": null, "keys": ["housing", "bike_lanes", "taxes"], "probabilities": {"bike_lanes": 0.0, "housing": 0.0, "none of these": 0.92, "taxes": 0.08}, "question": "q35"}
+{"choice": "bus_service", "keys": ["safety", "transport", "school_buildings", "bus_service", "libraries"], "probabilities": {"bus_service": 0.98, "libraries": 0.0, "none of these": 0.0, "safety": 0.0, "school_buildings": 0.0, "transport": 0.02}, "question": "q35"}
+{"choice": "budget", "keys": ["school_buildings", "budget", "parks", "health"], "probabilities": {"budget": 0.87, "health": 0.0, "none of these": 0.13, "parks": 0.0, "school_buildings": 0.0}, "question": "q35"}
+{"choice": "transport", "keys": ["transport", "police_oversight", "parks"], "probabilities": {"none of these": 0.0, "parks": 0.0, "police_oversight": 0.0, "transport": 1.0}, "question": "q35"}
+{"choice": null, "keys": ["parks", "water", "school_meals", "tree_frogs"], "probabilities": {"none of these": 1.0, "parks": 0.0, "school_meals": 0.0, "tree_frogs": 0.0, "water": 0.0}, "question": "q35"}
+{"choice": "bus_service", "keys": ["budget", "bus_service"], "probabilities": {"budget": 0.01, "bus_service": 0.99, "none of these": 0.0}, "question": "q35"}
+{"choice": "bus_service", "keys": ["elections", "schools", "parks", "bus_service"], "probabilities": {"bus_service": 1.0, "elections": 0.0, "none of these": 0.0, "parks": 0.0, "schools": 0.0}, "question": "q35"}
+{"choice": "transport", "keys": ["transport", "bus_service"], "probabilities": {"bus_service": 0.44, "none of these": 0.02, "transport": 0.54}, "question": "q36"}
+{"choice": null, "keys": ["parks", "housing", "police_oversight", "school_buildings", "fire_ems"], "probabilities": {"fire_ems": 0.0, "housing": 0.0, "none of these": 1.0, "parks": 0.0, "police_oversight": 0.0, "school_buildings": 0.0}, "question": "q36"}
+{"choice": "transport", "keys": ["transport"], "probabilities": {"none of these": 0.0, "transport": 1.0}, "question": "q36"}
+{"choice": null, "keys": ["street_trees", "environment"], "probabilities": {"environment": 0.07, "none of these": 0.93, "street_trees": 0.0}, "question": "q36"}
+{"choice": "bus_service", "keys": ["sales_tax", "libraries", "bus_service", "taxes", "police_oversight"], "probabilities": {"bus_service": 0.97, "libraries": 0.0, "none of these": 0.02, "police_oversight": 0.0, "sales_tax": 0.0, "taxes": 0.01}, "question": "q36"}
+{"choice": null, "keys": ["school_buildings", "sales_tax", "parks", "tree_frogs", "broadband"], "probabilities": {"broadband": 0.0, "none of these": 1.0, "parks": 0.0, "sales_tax": 0.0, "school_buildings": 0.0, "tree_frogs": 0.0}, "question": "q36"}
+{"choice": "transport", "keys": ["transport"], "probabilities": {"none of these": 0.0, "transport": 1.0}, "question": "q36"}
+{"choice": null, "keys": ["taxes", "nightlife", "fire_ems"], "probabilities": {"fire_ems": 0.0, "nightlife": 0.0, "none of these": 0.86, "taxes": 0.14}, "question": "q36"}
+{"choice": "transport", "keys": ["animals", "parks", "nightlife", "transport", "elections"], "probabilities": {"animals": 0.0, "elections": 0.0, "nightlife": 0.0, "none of these": 0.0, "parks": 0.0, "transport": 1.0}, "question": "q37"}
+{"choice": null, "keys": ["fire_ems", "safety", "bus_service", "school_meals", "height_limits"], "probabilities": {"bus_service": 0.0, "fire_ems": 0.0, "height_limits": 0.0, "none of these": 1.0, "safety": 0.0, "school_meals": 0.0}, "question": "q37"}
+{"choice": "transport", "keys": ["school_meals", "housing", "transport"], "probabilities": {"housing": 0.0, "none of these": 0.0, "school_meals": 0.0, "transport": 1.0}, "question": "q37"}
+{"choice": null, "keys": ["parks", "safety", "health", "property_tax_seniors"], "probabilities": {"health": 0.0, "none of these": 1.0, "parks": 0.0, "property_tax_seniors": 0.0, "safety": 0.0}, "question": "q37"}
+{"choice": "transport", "keys": ["transport"], "probabilities": {"none of these": 0.0, "transport": 1.0}, "question": "q37"}
+{"choice": "budget", "keys": ["budget"], "probabilities": {"budget": 0.96, "none of these": 0.04}, "question": "q37"}
+{"choice": "transport", "keys": ["transport"], "probabilities": {"none of these": 0.0, "transport": 1.0}, "question": "q37"}
+{"choice": null, "keys": ["schools", "sales_tax"], "probabilities": {"none of these": 1.0, "sales_tax": 0.0, "schools": 0.0}, "question": "q37"}
+{"choice": "transport", "keys": ["property_tax_seniors", "sales_tax", "libraries", "transport", "animals"], "probabilities": {"animals": 0.0, "libraries": 0.0, "none of these": 0.0, "property_tax_seniors": 0.0, "sales_tax": 0.0, "transport": 1.0}, "question": "q38"}
+{"choice": null, "keys": ["height_limits", "housing"], "probabilities": {"height_limits": 0.0, "housing": 0.09, "none of these": 0.91}, "question": "q38"}
+{"choice": "safety", "keys": ["safety", "height_limits"], "probabilities": {"height_limits": 0.0, "none of these": 0.21, "safety": 0.79}, "question": "q38"}
+{"choice": null, "keys": ["sales_tax", "property_tax_seniors"], "probabilities": {"none of these": 1.0, "property_tax_seniors": 0.0, "sales_tax": 0.0}, "question": "q38"}
+{"choice": "transport", "keys": ["school_buildings", "nightlife", "transport", "bus_service"], "probabilities": {"bus_service": 0.0, "nightlife": 0.0, "none of these": 0.0, "school_buildings": 0.0, "transport": 1.0}, "question": "q38"}
+{"choice": null, "keys": ["street_trees", "labor", "budget"], "probabilities": {"budget": 0.0, "labor": 0.0, "none of these": 1.0, "street_trees": 0.0}, "question": "q38"}
+{"choice": "transport", "keys": ["transport"], "probabilities": {"none of these": 0.0, "transport": 1.0}, "question": "q38"}
+{"choice": null, "keys": ["housing", "libraries", "ranked_choice"], "probabilities": {"housing": 0.16, "libraries": 0.0, "none of these": 0.84, "ranked_choice": 0.0}, "question": "q38"}
+{"choice": "safety", "keys": ["elections", "height_limits", "safety"], "probabilities": {"elections": 0.0, "height_limits": 0.0, "none of these": 0.0, "safety": 1.0}, "question": "q39"}
+{"choice": null, "keys": ["broadband", "libraries", "tree_frogs"], "probabilities": {"broadband": 0.0, "libraries": 0.0, "none of these": 1.0, "tree_frogs": 0.0}, "question": "q39"}
+{"choice": "police_oversight", "keys": ["taxes", "tree_frogs", "safety", "school_buildings", "police_oversight"], "probabilities": {"none of these": 0.0, "police_oversight": 0.99, "safety": 0.01, "school_buildings": 0.0, "taxes": 0.0, "tree_frogs": 0.0}, "question": "q39"}
+{"choice": null, "keys": ["libraries", "sales_tax"], "probabilities": {"libraries": 0.0, "none of these": 1.0, "sales_tax": 0.0}, "question": "q39"}
+{"choice": "safety", "keys": ["safety", "transport"], "probabilities": {"none of these": 0.0, "safety": 1.0, "transport": 0.0}, "question": "q39"}
+{"choice": "safety", "keys": ["safety", "libraries"], "probabilities": {"libraries": 0.0, "none of these": 0.0, "safety": 1.0}, "question": "q39"}
+{"choice": "safety", "keys": ["safety"], "probabilities": {"none of these": 0.0, "safety": 1.0}, "question": "q39"}
+{"choice": null, "keys": ["animals", "libraries", "ranked_choice", "height_limits", "water"], "probabilities": {"animals": 0.0, "height_limits": 0.0, "libraries": 0.0, "none of these": 1.0, "ranked_choice": 0.0, "water": 0.0}, "question": "q39"}
+{"choice": "police_oversight", "keys": ["police_oversight", "minimum_wage"], "probabilities": {"minimum_wage": 0.0, "none of these": 0.03, "police_oversight": 0.97}, "question": "q40"}
+{"choice": "safety", "keys": ["safety", "tree_frogs"], "probabilities": {"none of these": 0.0, "safety": 1.0, "tree_frogs": 0.0}, "question": "q40"}
+{"choice": "police_oversight", "keys": ["police_oversight", "school_meals", "broadband", "bus_service"], "probabilities": {"broadband": 0.0, "bus_service": 0.0, "none of these": 0.02, "police_oversight": 0.98, "school_meals": 0.0}, "question": "q40"}
+{"choice": "police_oversight", "keys": ["schools", "police_oversight", "bike_lanes", "ranked_choice", "water"], "probabilities": {"bike_lanes": 0.0, "none of these": 0.01, "police_oversight": 0.99, "ranked_choice": 0.0, "schools": 0.0, "water": 0.0}, "question": "q40"}
+{"choice": "police_oversight", "keys": ["water", "police_oversight", "environment", "property_tax_seniors", "nightlife"], "probabilities": {"environment": 0.0, "nightlife": 0.0, "none of these": 0.0, "police_oversight": 1.0, "property_tax_seniors": 0.0, "water": 0.0}, "question": "q40"}
+{"choice": "safety", "keys": ["labor", "safety", "transport"], "probabilities": {"labor": 0.0, "none of these": 0.0, "safety": 1.0, "transport": 0.0}, "question": "q40"}
+{"choice": "police_oversight", "keys": ["police_oversight", "sales_tax"], "probabilities": {"none of these": 0.02, "police_oversight": 0.98, "sales_tax": 0.0}, "question": "q40"}
+{"choice": "safety", "keys": ["nightlife", "sales_tax", "budget", "safety", "property_tax_seniors"], "probabilities": {"budget": 0.0, "nightlife": 0.0, "none of these": 0.0, "property_tax_seniors": 0.0, "safety": 1.0, "sales_tax": 0.0}, "question": "q40"}
+{"choice": "fire_ems", "keys": ["fire_ems", "property_tax_seniors"], "probabilities": {"fire_ems": 1.0, "none of these": 0.0, "property_tax_seniors": 0.0}, "question": "q41"}
+{"choice": "safety", "keys": ["libraries", "street_trees", "safety", "water"], "probabilities": {"libraries": 0.0, "none of these": 0.01, "safety": 0.99, "street_trees": 0.0, "water": 0.0}, "question": "q41"}
+{"choice": "fire_ems", "keys": ["health", "transport", "labor", "fire_ems"], "probabilities": {"fire_ems": 1.0, "health": 0.0, "labor": 0.0, "none of these": 0.0, "transport": 0.0}, "question": "q41"}
+{"choice": null, "keys": ["schools", "property_tax_seniors", "water", "health"], "probabilities": {"health": 0.06, "none of these": 0.94, "property_tax_seniors": 0.0, "schools": 0.0, "water": 0.0}, "question": "q41"}
+{"choice": "fire_ems", "keys": ["animals", "schools", "budget", "fire_ems"], "probabilities": {"animals": 0.0, "budget": 0.0, "fire_ems": 1.0, "none of these": 0.0, "schools": 0.0}, "question": "q41"}
+{"choice": "safety", "keys": ["street_trees", "minimum_wage", "safety", "broadband"], "probabilities": {"broadband": 0.0, "minimum_wage": 0.0, "none of these": 0.01, "safety": 0.99, "street_trees": 0.0}, "question": "q41"}
+{"choice": "fire_ems", "keys": ["broadband", "fire_ems"], "probabilities": {"broadband": 0.0, "fire_ems": 1.0, "none of these": 0.0}, "question": "q41"}
+{"choice": null, "keys": ["rent_control"], "probabilities": {"none of these": 1.0, "rent_control": 0.0}, "question": "q41"}
+{"choice": "fire_ems", "keys": ["property_tax_seniors", "bike_lanes", "fire_ems"], "probabilities": {"bike_lanes": 0.0, "fire_ems": 1.0, "none of these": 0.0, "property_tax_seniors": 0.0}, "question": "q42"}
+{"choice": null, "keys": ["street_trees", "school_buildings", "broadband", "schools"], "probabilities": {"broadband": 0.0, "none of these": 1.0, "school_buildings": 0.0, "schools": 0.0, "street_trees": 0.0}, "question": "q42"}
+{"choice": "fire_ems", "keys": ["tree_frogs", "fire_ems", "safety", "health"], "probabilities": {"fire_ems": 0.99, "health": 0.01, "none of these": 0.0, "safety": 0.0, "tree_frogs": 0.0}, "question": "q42"}
+{"choice": "safety", "keys": ["sales_tax", "schools", "safety", "school_buildings", "nightlife"], "probabilities": {"nightlife": 0.0, "none of these": 0.02, "safety": 0.98, "sales_tax": 0.0, "school_buildings": 0.0, "schools": 0.0}, "question": "q42"}
+{"choice": "fire_ems", "keys": ["bike_lanes", "labor", "fire_ems", "broadband"], "probabilities": {"bike_lanes": 0.0, "broadband": 0.0, "fire_ems": 1.0, "labor": 0.0, "none of these": 0.0}, "question": "q42"}
+{"choice": null, "keys": ["schools", "transport", "parks", "school_meals"], "probabilities": {"none of these": 0.97, "parks": 0.0, "school_meals": 0.0, "schools": 0.0, "transport": 0.03}, "question": "q42"}
+{"choice": "safety", "keys": ["safety", "environment"], "probabilities": {"environment": 0.0, "none of these": 0.05, "safety": 0.95}, "question": "q42"}
+{"choice": "fire_ems", "keys": ["fire_ems", "property_tax_seniors"], "probabilities": {"fire_ems": 1.0, "none of these": 0.0, "property_tax_seniors": 0.0}, "question": "q42"}
+{"choice": "safety", "keys": ["safety"], "probabilities": {"none of these": 0.0, "safety": 1.0}, "question": "q43"}
+{"choice": null, "keys": ["police_oversight", "nightlife", "property_tax_seniors", "bike_lanes", "elections"], "probabilities": {"bike_lanes": 0.0, "elections": 0.0, "nightlife": 0.0, "none of these": 0.98, "police_oversight": 0.02, "property_tax_seniors": 0.0}, "question": "q43"}
+{"choice": "safety", "keys": ["housing", "elections", "street_trees", "school_meals", "safety"], "probabilities": {"elections": 0.0, "housing": 0.0, "none of these": 0.0, "safety": 1.0, "school_meals": 0.0, "street_trees": 0.0}, "question": "q43"}
+{"choice": "budget", "keys": ["libraries", "elections", "taxes", "environment", "budget"], "probabilities": {"budget": 0.98, "elections": 0.0, "environment": 0.0, "libraries": 0.0, "none of these": 0.02, "taxes": 0.0}, "question": "q43"}
+{"choice": "safety", "keys": ["ranked_choice", "water", "health", "safety"], "probabilities": {"health": 0.0, "none of these": 0.0, "ranked_choice": 0.0, "safety": 1.0, "water": 0.0}, "question": "q43"}
+{"choice": null, "keys": ["bike_lanes", "ranked_choice"], "probabilities": {"bike_lanes": 0.0, "none of these": 1.0, "ranked_choice": 0.0}, "question": "q43"}
+{"choice": "safety", "keys": ["school_buildings", "housing", "safety", "transport", "health"], "probabilities": {"health": 0.0, "housing": 0.0, "none of these": 0.0, "safety": 1.0, "school_buildings": 0.0, "transport": 0.0}, "question": "q43"}
+{"choice": null, "keys": ["elections"], "probabilities": {"elections": 0.0, "none of these": 1.0}, "question": "q43"}
+{"choice": "safety", "keys": ["safety"], "probabilities": {"none of these": 0.01, "safety": 0.99}, "question": "q44"}
+{"choice": null, "keys": ["labor", "animals", "bus_service", "nightlife"], "probabilities": {"animals": 0.0, "bus_service": 0.0, "labor": 0.0, "nightlife": 0.03, "none of these": 0.97}, "question": "q44"}
+{"choice": "safety", "keys": ["taxes", "safety"], "probabilities": {"none of these": 0.0, "safety": 1.0, "taxes": 0.0}, "question": "q44"}
+{"choice": null, "keys": ["school_meals"], "probabilities": {"none of these": 1.0, "school_meals": 0.0}, "question": "q44"}
+{"choice": "safety", "keys": ["safety"], "probabilities": {"none of these": 0.0, "safety": 1.0}, "question": "q44"}
+{"choice": null, "keys": ["housing", "bike_lanes", "school_meals", "school_buildings"], "probabilities": {"bike_lanes": 0.0, "housing": 0.0, "none of these": 1.0, "school_buildings": 0.0, "school_meals": 0.0}, "question": "q44"}
+{"choice": "safety", "keys": ["street_trees", "property_tax_seniors", "housing", "safety", "transport"], "probabilities": {"housing": 0.0, "none of these": 0.0, "property_tax_seniors": 0.0, "safety": 1.0, "street_trees": 0.0, "transport": 0.0}, "question": "q44"}
+{"choice": null, "keys": ["elections", "bike_lanes", "transport"], "probabilities": {"bike_lanes": 0.0, "elections": 0.0, "none of these": 1.0, "transport": 0.0}, "question": "q44"}
+{"choice": "health", "keys": ["property_tax_seniors", "health", "environment"], "probabilities": {"environment": 0.0, "health": 0.76, "none of these": 0.24, "property_tax_seniors": 0.0}, "question": "q45"}
+{"choice": null, "keys": ["environment"], "probabilities": {"environment": 0.0, "none of these": 1.0}, "question": "q45"}
+{"choice": "labor", "keys": ["labor", "street_trees", "property_tax_seniors", "school_buildings"], "probabilities": {"labor": 1.0, "none of these": 0.0, "property_tax_seniors": 0.0, "school_buildings": 0.0, "street_trees": 0.0}, "question": "q45"}
+{"choice": null, "keys": ["environment", "transport", "elections", "safety"], "probabilities": {"elections": 0.0, "environment": 0.0, "none of these": 1.0, "safety": 0.0, "transport": 0.0}, "question": "q45"}
+{"choice": "health", "keys": ["health", "taxes"], "probabilities": {"health": 0.65, "none of these": 0.34, "taxes": 0.01}, "question": "q45"}
+{"choice": "labor", "keys": ["labor", "rent_control", "tree_frogs"], "probabilities": {"labor": 1.0, "none of these": 0.0, "rent_control": 0.0, "tree_frogs": 0.0}, "question": "q45"}
+{"choice": "labor", "keys": ["labor"], "probabilities": {"labor": 1.0, "none of these": 0.0}, "question": "q45"}
+{"choice": null, "keys": ["fire_ems"], "probabilities": {"fire_ems": 0.0, "none of these": 1.0}, "question": "q45"}
+{"choice": "health", "keys": ["health"], "probabilities": {"health": 1.0, "none of these": 0.0}, "question": "q46"}
+{"choice": null, "keys": ["tree_frogs", "minimum_wage", "schools", "parks", "housing"], "probabilities": {"housing": 0.0, "minimum_wage": 0.0, "none of these": 1.0, "parks": 0.0, "schools": 0.0, "tree_frogs": 0.0}, "question": "q46"}
+{"choice": "health", "keys": ["labor", "health", "bus_service", "tree_frogs"], "probabilities": {"bus_service": 0.0, "health": 1.0, "labor": 0.0, "none of these": 0.0, "tree_frogs": 0.0}, "question": "q46"}
+{"choice": null, "keys": ["broadband", "nightlife", "labor", "housing"], "probabilities": {"broadband": 0.0, "housing": 0.0, "labor": 0.0, "nightlife": 0.0, "none of these": 1.0}, "question": "q46"}
+{"choice": "health", "keys": ["health", "ranked_choice", "housing"], "probabilities": {"health": 1.0, "housing": 0.0, "none of these": 0.0, "ranked_choice": 0.0}, "question": "q46"}
+{"choice": "budget", "keys": ["safety", "budget", "bus_service"], "probabilities": {"budget": 0.97, "bus_service": 0.0, "none of these": 0.03, "safety": 0.0}, "question": "q46"}
+{"choice": "health", "keys": ["minimum_wage", "health", "broadband"], "probabilities": {"broadband": 0.0, "health": 1.0, "minimum_wage": 0.0, "none of these": 0.0}, "question": "q46"}
+{"choice": null, "keys": ["labor", "school_meals"], "probabilities": {"labor": 0.0, "none of these": 1.0, "school_meals": 0.0}, "question": "q46"}
+{"choice": "health", "keys": ["minimum_wage", "school_buildings", "health", "rent_control"], "probabilities": {"health": 0.99, "minimum_wage": 0.0, "none of these": 0.01, "rent_control": 0.0, "school_buildings": 0.0}, "question": "q47"}
+{"choice": null, "keys": ["parks", "rent_control", "bike_lanes", "environment"], "probabilities": {"bike_lanes": 0.0, "environment": 0.0, "none of these": 1.0, "parks": 0.0, "rent_control": 0.0}, "question": "q47"}
+{"choice": "health", "keys": ["health", "libraries"], "probabilities": {"health": 0.99, "libraries": 0.0, "none of these": 0.01}, "question": "q47"}
+{"choice": null, "keys": ["libraries", "school_meals", "budget", "transport"], "probabilities": {"budget": 0.0, "libraries": 0.0, "none of these": 1.0, "school_meals": 0.0, "transport": 0.0}, "question": "q47"}
+{"choice": "health", "keys": ["sales_tax", "schools", "safety", "police_oversight", "health"], "probabilities": {"health": 0.99, "none of these": 0.01, "police_oversight": 0.0, "safety": 0.0, "sales_tax": 0.0, "schools": 0.0}, "question": "q47"}
+{"choice": null, "keys": ["bike_lanes", "transport", "parks"], "probabilities": {"bike_lanes": 0.0, "none of these": 1.0, "parks": 0.0, "transport": 0.0}, "question": "q47"}
+{"choice": "health", "keys": ["health"], "probabilities": {"health": 0.99, "none of these": 0.01}, "question": "q47"}
+{"choice": "health", "keys": ["broadband", "health", "ranked_choice"], "probabilities": {"broadband": 0.0, "health": 0.99, "none of these": 0.01, "ranked_choice": 0.0}, "question": "q47"}
+{"choice": "labor", "keys": ["sales_tax", "labor"], "probabilities": {"labor": 1.0, "none of these": 0.0, "sales_tax": 0.0}, "question": "q48"}
+{"choice": "labor", "keys": ["labor"], "probabilities": {"labor": 1.0, "none of these": 0.0}, "question": "q48"}
+{"choice": "minimum_wage", "keys": ["environment", "water", "labor", "transport", "minimum_wage"], "probabilities": {"environment": 0.0, "labor": 0.02, "minimum_wage": 0.98, "none of these": 0.0, "transport": 0.0, "water": 0.0}, "question": "q48"}
+{"choice": "minimum_wage", "keys": ["budget", "minimum_wage", "health", "bike_lanes"], "probabilities": {"bike_lanes": 0.0, "budget": 0.0, "health": 0.0, "minimum_wage": 1.0, "none of these": 0.0}, "question": "q48"}
+{"choice": "minimum_wage", "keys": ["elections", "minimum_wage", "school_meals"], "probabilities": {"elections": 0.0, "minimum_wage": 1.0, "none of these": 0.0, "school_meals": 0.0}, "question": "q48"}
+{"choice": null, "keys": ["schools"], "probabilities": {"none of these": 1.0, "schools": 0.0}, "question": "q48"}
+{"choice": "labor", "keys": ["labor"], "probabilities": {"labor": 1.0, "none of these": 0.0}, "question": "q48"}
+{"choice": null, "keys": ["bike_lanes", "nightlife", "school_meals", "fire_ems"], "probabilities": {"bike_lanes": 0.0, "fire_ems": 0.0, "nightlife": 0.0, "none of these": 1.0, "school_meals": 0.0}, "question": "q48"}
+{"choice": "labor", "keys": ["nightlife", "budget", "labor", "street_trees", "parks"], "probabilities": {"budget": 0.0, "labor": 1.0, "nightlife": 0.0, "none of these": 0.0, "parks": 0.0, "street_trees": 0.0}, "question": "q49"}
+{"choice": null, "keys": ["animals"], "probabilities": {"animals": 0.0, "none of these": 1.0}, "question": "q49"}
+{"choice": "minimum_wage", "keys": ["housing", "minimum_wage", "bike_lanes"], "probabilities": {"bike_lanes": 0.0, "housing": 0.0, "minimum_wage": 1.0, "none of these": 0.0}, "question": "q49"}
+{"choice": "minimum_wage", "keys": ["minimum_wage", "sales_tax", "bike_lanes"], "probabilities": {"bike_lanes": 0.0, "minimum_wage": 1.0, "none of these": 0.0, "sales_tax": 0.0}, "question": "q49"}
+{"choice": "labor", "keys": ["school_buildings", "height_limits", "labor", "bike_lanes"], "probabilities": {"bike_lanes": 0.0, "height_limits": 0.0, "labor": 1.0, "none of these": 0.0, "school_buildings": 0.0}, "question": "q49"}
+{"choice": "minimum_wage", "keys": ["minimum_wage", "safety", "elections", "libraries", "fire_ems"], "probabilities": {"elections": 0.0, "fire_ems": 0.0, "libraries": 0.0, "minimum_wage": 1.0, "none of these": 0.0, "safety": 0.0}, "question": "q49"}
+{"choice": "labor", "keys": ["sales_tax", "labor", "water", "schools"], "probabilities": {"labor": 1.0, "none of these": 0.0, "sales_tax": 0.0, "schools": 0.0, "water": 0.0}, "question": "q49"}
+{"choice": null, "keys": ["broadband"], "probabilities": {"broadband": 0.0, "none of these": 1.0}, "question": "q49"}
+{"choice": "labor", "keys": ["labor"], "probabilities": {"labor": 1.0, "none of these": 0.0}, "question": "q50"}
+{"choice": null, "keys": ["school_meals"], "probabilities": {"none of these": 1.0, "school_meals": 0.0}, "question": "q50"}
+{"choice": "labor", "keys": ["safety", "parks", "labor", "transport"], "probabilities": {"labor": 1.0, "none of these": 0.0, "parks": 0.0, "safety": 0.0, "transport": 0.0}, "question": "q50"}
+{"choice": null, "keys": ["parks", "property_tax_seniors"], "probabilities": {"none of these": 1.0, "parks": 0.0, "property_tax_seniors": 0.0}, "question": "q50"}
+{"choice": "labor", "keys": ["property_tax_seniors", "health", "labor"], "probabilities": {"health": 0.0, "labor": 1.0, "none of these": 0.0, "property_tax_seniors": 0.0}, "question": "q50"}
+{"choice": null, "keys": ["environment", "bus_service", "tree_frogs", "school_buildings", "fire_ems"], "probabilities": {"bus_service": 0.0, "environment": 0.0, "fire_ems": 0.0, "none of these": 1.0, "school_buildings": 0.0, "tree_frogs": 0.0}, "question": "q50"}
+{"choice": "labor", "keys": ["labor"], "probabilities": {"labor": 1.0, "none of these": 0.0}, "question": "q50"}
+{"choice": null, "keys": ["minimum_wage"], "probabilities": {"minimum_wage": 0.07, "none of these": 0.93}, "question": "q50"}
+{"choice": "labor", "keys": ["schools", "tree_frogs", "transport", "labor"], "probabilities": {"labor": 1.0, "none of these": 0.0, "schools": 0.0, "transport": 0.0, "tree_frogs": 0.0}, "question": "q51"}
+{"choice": null, "keys": ["height_limits"], "probabilities": {"height_limits": 0.0, "none of these": 1.0}, "question": "q51"}
+{"choice": "health", "keys": ["health", "street_trees"], "probabilities": {"health": 0.91, "none of these": 0.09, "street_trees": 0.0}, "question": "q51"}
+{"choice": "health", "keys": ["housing", "police_oversight", "health", "sales_tax", "nightlife"], "probabilities": {"health": 0.92, "housing": 0.0, "nightlife": 0.0, "none of these": 0.08, "police_oversight": 0.0, "sales_tax": 0.0}, "question": "q51"}
+{"choice": "labor", "keys": ["police_oversight", "labor", "property_tax_seniors"], "probabilities": {"labor": 1.0, "none of these": 0.0, "police_oversight": 0.0, "property_tax_seniors": 0.0}, "question": "q51"}
+{"choice": null, "keys": ["elections"], "probabilities": {"elections": 0.01, "none of these": 0.99}, "question": "q51"}
+{"choice": "health", "keys": ["health"], "probabilities": {"health": 0.9, "none of these": 0.1}, "question": "q51"}
+{"choice": null, "keys": ["rent_control", "minimum_wage", "taxes", "transport", "broadband"], "probabilities": {"broadband": 0.0, "minimum_wage": 0.01, "none of these": 0.99, "rent_control": 0.0, "taxes": 0.0, "transport": 0.0}, "question": "q51"}
+{"choice": "ranked_choice", "keys": ["schools", "ranked_choice", "street_trees"], "probabilities": {"none of these": 0.0, "ranked_choice": 1.0, "schools": 0.0, "street_trees": 0.0}, "question": "q52"}
+{"choice": null, "keys": ["street_trees", "transport", "health", "schools", "bike_lanes"], "probabilities": {"bike_lanes": 0.0, "health": 0.0, "none of these": 1.0, "schools": 0.0, "street_trees": 0.0, "transport": 0.0}, "question": "q52"}
+{"choice": "ranked_choice", "keys": ["sales_tax", "ranked_choice"], "probabilities": {"none of these": 0.0, "ranked_choice": 1.0, "sales_tax": 0.0}, "question": "q52"}
+{"choice": "elections", "keys": ["elections", "nightlife", "bike_lanes", "tree_frogs"], "probabilities": {"bike_lanes": 0.0, "elections": 1.0, "nightlife": 0.0, "none of these": 0.0, "tree_frogs": 0.0}, "question": "q52"}
+{"choice": "ranked_choice", "keys": ["elections", "school_buildings", "height_limits", "ranked_choice", "labor"], "probabilities": {"elections": 0.07, "height_limits": 0.0, "labor": 0.0, "none of these": 0.0, "ranked_choice": 0.93, "school_buildings": 0.0}, "question": "q52"}
+{"choice": null, "keys": ["health", "housing", "bike_lanes", "nightlife", "labor"], "probabilities": {"bike_lanes": 0.0, "health": 0.0, "housing": 0.0, "labor": 0.0, "nightlife": 0.0, "none of these": 1.0}, "question": "q52"}
+{"choice": "ranked_choice", "keys": ["housing", "street_trees", "ranked_choice"], "probabilities": {"housing": 0.0, "none of these": 0.0, "ranked_choice": 1.0, "street_trees": 0.0}, "question": "q52"}
+{"choice": "elections", "keys": ["budget", "school_meals", "housing", "street_trees", "elections"], "probabilities": {"budget": 0.0, "elections": 1.0, "housing": 0.0, "none of these": 0.0, "school_meals": 0.0, "street_trees": 0.0}, "question": "q52"}
+{"choice": "ranked_choice", "keys": ["ranked_choice", "elections"], "probabilities": {"elections": 0.17, "none of these": 0.0, "ranked_choice": 0.83}, "question": "q53"}
+{"choice": null, "keys": ["parks", "environment", "fire_ems", "property_tax_seniors", "libraries"], "probabilities": {"environment": 0.0, "fire_ems": 0.0, "libraries": 0.0, "none of these": 1.0, "parks": 0.0, "property_tax_seniors": 0.0}, "question": "q53"}
+{"choice": "elections", "keys": ["tree_frogs", "budget", "school_buildings", "elections"], "probabilities": {"budget": 0.0, "elections": 1.0, "none of these": 0.0, "school_buildings": 0.0, "tree_frogs": 0.0}, "question": "q53"}
+{"choice": "ranked_choice", "keys": ["ranked_choice", "bike_lanes", "sales_tax", "labor", "nightlife"], "probabilities": {"bike_lanes": 0.0, "labor": 0.0, "nightlife": 0.0, "none of these": 0.0, "ranked_choice": 1.0, "sales_tax": 0.0}, "question": "q53"}
+{"choice": "ranked_choice", "keys": ["property_tax_seniors", "ranked_choice", "libraries", "fire_ems", "police_oversight"], "probabilities": {"fire_ems": 0.0, "libraries": 0.0, "none of these": 0.0, "police_oversight": 0.0, "property_tax_seniors": 0.0, "ranked_choice": 1.0}, "question": "q53"}
+{"choice": null, "keys": ["bus_service", "school_buildings", "taxes"], "probabilities": {"bus_service": 0.0, "none of these": 1.0, "school_buildings": 0.0, "taxes": 0.0}, "question": "q53"}
+{"choice": "elections", "keys": ["elections"], "probabilities": {"elections": 1.0, "none of these": 0.0}, "question": "q53"}
+{"choice": null, "keys": ["safety", "bike_lanes"], "probabilities": {"bike_lanes": 0.0, "none of these": 1.0, "safety": 0.0}, "question": "q53"}
+{"choice": "elections", "keys": ["sales_tax", "elections", "transport", "tree_frogs", "property_tax_seniors"], "probabilities": {"elections": 1.0, "none of these": 0.0, "property_tax_seniors": 0.0, "sales_tax": 0.0, "transport": 0.0, "tree_frogs": 0.0}, "question": "q54"}
+{"choice": null, "keys": ["property_tax_seniors", "police_oversight", "ranked_choice"], "probabilities": {"none of these": 1.0, "police_oversight": 0.0, "property_tax_seniors": 0.0, "ranked_choice": 0.0}, "question": "q54"}
+{"choice": "elections", "keys": ["elections"], "probabilities": {"elections": 0.99, "none of these": 0.01}, "question": "q54"}
+{"choice": "elections", "keys": ["elections", "nightlife", "labor", "height_limits", "libraries"], "probabilities": {"elections": 1.0, "height_limits": 0.0, "labor": 0.0, "libraries": 0.0, "nightlife": 0.0, "none of these": 0.0}, "question": "q54"}
+{"choice": "elections", "keys": ["water", "school_meals", "safety", "elections", "bike_lanes"], "probabilities": {"bike_lanes": 0.0, "elections": 1.0, "none of these": 0.0, "safety": 0.0, "school_meals": 0.0, "water": 0.0}, "question": "q54"}
+{"choice": "elections", "keys": ["budget", "water", "elections", "taxes", "school_meals"], "probabilities": {"budget": 0.0, "elections": 1.0, "none of these": 0.0, "school_meals": 0.0, "taxes": 0.0, "water": 0.0}, "question": "q54"}
+{"choice": "elections", "keys": ["elections", "school_buildings", "ranked_choice", "safety"], "probabilities": {"elections": 1.0, "none of these": 0.0, "ranked_choice": 0.0, "safety": 0.0, "school_buildings": 0.0}, "question": "q54"}
+{"choice": null, "keys": ["bus_service", "housing", "water"], "probabilities": {"bus_service": 0.0, "housing": 0.0, "none of these": 1.0, "water": 0.0}, "question": "q54"}
+{"choice": "elections", "keys": ["elections", "environment"], "probabilities": {"elections": 0.98, "environment": 0.0, "none of these": 0.02}, "question": "q55"}
+{"choice": null, "keys": ["school_buildings", "fire_ems", "safety", "nightlife", "environment"], "probabilities": {"environment": 0.0, "fire_ems": 0.0, "nightlife": 0.0, "none of these": 1.0, "safety": 0.0, "school_buildings": 0.0}, "question": "q55"}
+{"choice": "elections", "keys": ["taxes", "housing", "schools", "libraries", "elections"], "probabilities": {"elections": 0.98, "housing": 0.0, "libraries": 0.0, "none of these": 0.02, "schools": 0.0, "taxes": 0.0}, "question": "q55"}
+{"choice": null, "keys": ["parks", "nightlife", "labor", "housing"], "probabilities": {"housing": 0.0, "labor": 0.0, "nightlife": 0.0, "none of these": 1.0, "parks": 0.0}, "question": "q55"}
+{"choice": "elections", "keys": ["animals", "elections"], "probabilities": {"animals": 0.0, "elections": 0.94, "none of these": 0.06}, "question": "q55"}
+{"choice": null, "keys": ["safety"], "probabilities": {"none of these": 1.0, "safety": 0.0}, "question": "q55"}
+{"choice": "elections", "keys": ["elections"], "probabilities": {"elections": 0.96, "none of these": 0.04}, "question": "q55"}
+{"choice": null, "keys": ["police_oversight"], "probabilities": {"none of these": 1.0, "police_oversight": 0.0}, "question": "q55"}
+{"choice": "taxes", "keys": ["taxes", "nightlife"], "probabilities": {"nightlife": 0.0, "none of these": 0.03, "taxes": 0.97}, "question": "q56"}
+{"choice": "parks", "keys": ["broadband", "school_buildings", "schools", "environment", "parks"], "probabilities": {"broadband": 0.0, "environment": 0.0, "none of these": 0.0, "parks": 1.0, "school_buildings": 0.0, "schools": 0.0}, "question": "q56"}
+{"choice": "parks", "keys": ["school_meals", "parks"], "probabilities": {"none of these": 0.0, "parks": 1.0, "school_meals": 0.0}, "question": "q56"}
+{"choice": null, "keys": ["libraries", "health", "property_tax_seniors", "ranked_choice"], "probabilities": {"health": 0.0, "libraries": 0.0, "none of these": 1.0, "property_tax_seniors": 0.0, "ranked_choice": 0.0}, "question": "q56"}
+{"choice": "parks", "keys": ["labor", "parks", "taxes"], "probabilities": {"labor": 0.0, "none of these": 0.0, "parks": 0.86, "taxes": 0.14}, "question": "q56"}
+{"choice": "taxes", "keys": ["libraries", "taxes", "ranked_choice"], "probabilities": {"libraries": 0.0, "none of these": 0.08, "ranked_choice": 0.0, "taxes": 0.92}, "question": "q56"}
+{"choice": "parks", "keys": ["environment", "parks", "property_tax_seniors", "bus_service"], "probabilities": {"bus_service": 0.0, "environment": 0.0, "none of these": 0.0, "parks": 1.0, "property_tax_seniors": 0.0}, "question": "q56"}
+{"choice": "environment", "keys": ["environment", "water"], "probabilities": {"environment": 0.61, "none of these": 0.38, "water": 0.01}, "question": "q56"}
+{"choice": "parks", "keys": ["parks", "environment"], "probabilities": {"environment": 0.0, "none of these": 0.0, "parks": 1.0}, "question": "q57"}
+{"choice": null, "keys": ["police_oversight"], "probabilities": {"none of these": 1.0, "police_oversight": 0.0}, "question": "q57"}
+{"choice": "parks", "keys": ["parks"], "probabilities": {"none of these": 0.0, "parks": 1.0}, "question": "q57"}
+{"choice": null, "keys": ["elections", "libraries"], "probabilities": {"elections": 0.0, "libraries": 0.0, "none of these": 1.0}, "question": "q57"}
+{"choice": "parks", "keys": ["parks", "taxes"], "probabilities": {"none of these": 0.0, "parks": 1.0, "taxes": 0.0}, "question": "q57"}
+{"choice": null, "keys": ["school_buildings", "transport", "animals", "health"], "probabilities": {"animals": 0.0, "health": 0.0, "none of these": 0.99, "school_buildings": 0.0, "transport": 0.01}, "question": "q57"}
+{"choice": "parks", "keys": ["nightlife", "parks"], "probabilities": {"nightlife": 0.0, "none of these": 0.0, "parks": 1.0}, "question": "q57"}
+{"choice": "housing", "keys": ["broadband", "housing", "fire_ems", "street_trees", "bus_service"], "probabilities": {"broadband": 0.0, "bus_service": 0.0, "fire_ems": 0.0, "housing": 0.83, "none of these": 0.17, "street_trees": 0.0}, "question": "q57"}
+{"choice": "parks", "keys": ["taxes", "parks", "labor", "animals", "school_meals"], "probabilities": {"animals": 0.0, "labor": 0.0, "none of these": 0.0, "parks": 1.0, "school_meals": 0.0, "taxes": 0.0}, "question": "q58"}
+{"choice": null, "keys": ["school_meals", "minimum_wage", "schools", "labor"], "probabilities": {"labor": 0.0, "minimum_wage": 0.0, "none of these": 1.0, "school_meals": 0.0, "schools": 0.0}, "question": "q58"}
+{"choice": "environment", "keys": ["height_limits", "taxes", "parks", "minimum_wage", "environment"], "probabilities": {"environment": 0.7, "height_limits": 0.0, "minimum_wage": 0.0, "none of these": 0.0, "parks": 0.3, "taxes": 0.0}, "question": "q58"}
+{"choice": null, "keys": ["libraries", "height_limits", "sales_tax", "bus_service"], "probabilities": {"bus_service": 0.0, "height_limits": 0.0, "libraries": 0.0, "none of these": 1.0, "sales_tax": 0.0}, "question": "q58"}
+{"choice": "environment", "keys": ["school_buildings", "environment", "schools", "transport"], "probabilities": {"environment": 1.0, "none of these": 0.0, "school_buildings": 0.0, "schools": 0.0, "transport": 0.0}, "question": "q58"}
+{"choice": null, "keys": ["fire_ems", "bike_lanes"], "probabilities": {"bike_lanes": 0.01, "fire_ems": 0.0, "none of these": 0.99}, "question": "q58"}
+{"choice": "parks", "keys": ["police_oversight", "ranked_choice", "minimum_wage", "tree_frogs", "parks"], "probabilities": {"minimum_wage": 0.0, "none of these": 0.01, "parks": 0.99, "police_oversight": 0.0, "ranked_choice": 0.0, "tree_frogs": 0.0}, "question": "q58"}
+{"choice": "housing", "keys": ["minimum_wage", "tree_frogs", "broadband", "animals", "housing"], "probabilities": {"animals": 0.0, "broadband": 0.0, "housing": 0.92, "minimum_wage": 0.0, "none of these": 0.08, "tree_frogs": 0.0}, "question": "q58"}
+{"choice": "libraries", "keys": ["libraries", "tree_frogs", "school_meals"], "probabilities": {"libraries": 1.0, "none of these": 0.0, "school_meals": 0.0, "tree_frogs": 0.0}, "question": "q59"}
+{"choice": null, "keys": ["school_buildings", "animals"], "probabilities": {"animals": 0.0, "none of these": 1.0, "school_buildings": 0.0}, "question": "q59"}
+{"choice": "libraries", "keys": ["height_limits", "bike_lanes", "libraries"], "probabilities": {"bike_lanes": 0.0, "height_limits": 0.0, "libraries": 1.0, "none of these": 0.0}, "question": "q59"}
+{"choice": null, "keys": ["police_oversight", "housing"], "probabilities": {"housing": 0.01, "none of these": 0.99, "police_oversight": 0.0}, "question": "q59"}
+{"choice": "libraries", "keys": ["rent_control", "labor", "ranked_choice", "libraries", "animals"], "probabilities": {"animals": 0.0, "labor": 0.0, "libraries": 1.0, "none of these": 0.0, "ranked_choice": 0.0, "rent_control": 0.0}, "question": "q59"}
+{"choice": "libraries", "keys": ["broadband", "school_meals", "libraries"], "probabilities": {"broadband": 0.0, "libraries": 1.0, "none of these": 0.0, "school_meals": 0.0}, "question": "q59"}
+{"choice": "libraries", "keys": ["street_trees", "libraries", "property_tax_seniors", "tree_frogs", "bus_service"], "probabilities": {"bus_service": 0.0, "libraries": 1.0, "none of these": 0.0, "property_tax_seniors": 0.0, "street_trees": 0.0, "tree_frogs": 0.0}, "question": "q59"}
+{"choice": "libraries", "keys": ["libraries", "school_buildings"], "probabilities": {"libraries": 1.0, "none of these": 0.0, "school_buildings": 0.0}, "question": "q59"}
+{"choice": "libraries", "keys": ["school_meals", "taxes", "libraries", "labor"], "probabilities": {"labor": 0.0, "libraries": 1.0, "none of these": 0.0, "school_meals": 0.0, "taxes": 0.0}, "question": "q60"}
+{"choice": null, "keys": ["school_meals", "street_trees", "labor"], "probabilities": {"labor": 0.0, "none of these": 1.0, "school_meals": 0.0, "street_trees": 0.0}, "question": "q60"}
+{"choice": "libraries", "keys": ["housing", "taxes", "animals", "libraries"], "probabilities": {"animals": 0.0, "housing": 0.0, "libraries": 1.0, "none of these": 0.0, "taxes": 0.0}, "question": "q60"}
+{"choice": null, "keys": ["parks", "labor", "health", "transport"], "probabilities": {"health": 0.0, "labor": 0.0, "none of these": 1.0, "parks": 0.0, "transport": 0.0}, "question": "q60"}
+{"choice": "libraries", "keys": ["minimum_wage", "elections", "taxes", "libraries", "water"], "probabilities": {"elections": 0.0, "libraries": 0.99, "minimum_wage": 0.0, "none of these": 0.0, "taxes": 0.01, "water": 0.0}, "question": "q60"}
+{"choice": "budget", "keys": ["budget", "taxes"], "probabilities": {"budget": 0.87, "none of these": 0.04, "taxes": 0.09}, "question": "q60"}
+{"choice": "libraries", "keys": ["libraries"], "probabilities": {"libraries": 0.99, "none of these": 0.01}, "question": "q60"}
+{"choice": null, "keys": ["parks"], "probabilities": {"none of these": 0.99, "parks": 0.01}, "question": "q60"}
+{"choice": "animals", "keys": ["animals"], "probabilities": {"animals": 0.99, "none of these": 0.01}, "question": "q61"}
+{"choice": null, "keys": ["broadband", "bus_service"], "probabilities": {"broadband": 0.0, "bus_service": 0.0, "none of these": 1.0}, "question": "q61"}
+{"choice": "animals", "keys": ["street_trees", "animals", "rent_control"], "probabilities": {"animals": 1.0, "none of these": 0.0, "rent_control": 0.0, "street_trees": 0.0}, "question": "q61"}
+{"choice": null, "keys": ["housing", "parks", "environment"], "probabilities": {"environment": 0.34, "housing": 0.01, "none of these": 0.62, "parks": 0.03}, "question": "q61"}
+{"choice": "animals", "keys": ["nightlife", "animals"], "probabilities": {"animals": 1.0, "nightlife": 0.0, "none of these": 0.0}, "question": "q61"}
+{"choice": null, "keys": ["libraries", "height_limits", "health", "schools", "bus_service"], "probabilities": {"bus_service": 0.0, "health": 0.02, "height_limits": 0.0, "libraries": 0.0, "none of these": 0.98, "schools": 0.0}, "question": "q61"}
+{"choice": "animals", "keys": ["height_limits", "police_oversight", "animals", "taxes"], "probabilities": {"animals": 1.0, "height_limits": 0.0, "none of these": 0.0, "police_oversight": 0.0, "taxes": 0.0}, "question": "q61"}
+{"choice": null, "keys": ["property_tax_seniors", "police_oversight"], "probabilities": {"none of these": 1.0, "police_oversight": 0.0, "property_tax_seniors": 0.0}, "question": "q61"}
+{"choice": "animals", "keys": ["ranked_choice", "animals"], "probabilities": {"animals": 1.0, "none of these": 0.0, "ranked_choice": 0.0}, "question": "q62"}
+{"choice": null, "keys": ["minimum_wage", "height_limits", "labor"], "probabilities": {"height_limits": 0.0, "labor": 0.0, "minimum_wage": 0.0, "none of these": 1.0}, "question": "q62"}
+{"choice": "animals", "keys": ["animals"], "probabilities": {"animals": 1.0, "none of these": 0.0}, "question": "q62"}
+{"choice": null, "keys": ["property_tax_seniors", "rent_control"], "probabilities": {"none of these": 1.0, "property_tax_seniors": 0.0, "rent_control": 0.0}, "question": "q62"}
+{"choice": "animals", "keys": ["fire_ems", "schools", "minimum_wage", "animals"], "probabilities": {"animals": 1.0, "fire_ems": 0.0, "minimum_wage": 0.0, "none of these": 0.0, "schools": 0.0}, "question": "q62"}
+{"choice": "animals", "keys": ["rent_control", "taxes", "height_limits", "minimum_wage", "animals"], "probabilities": {"animals": 1.0, "height_limits": 0.0, "minimum_wage": 0.0, "none of these": 0.0, "rent_control": 0.0, "taxes": 0.0}, "question": "q62"}
+{"choice": "animals", "keys": ["animals"], "probabilities": {"animals": 1.0, "none of these": 0.0}, "question": "q62"}
+{"choice": null, "keys": ["street_trees"], "probabilities": {"none of these": 1.0, "street_trees": 0.0}, "question": "q62"}
+{"choice": "broadband", "keys": ["labor", "nightlife", "broadband", "height_limits", "police_oversight"], "probabilities": {"broadband": 1.0, "height_limits": 0.0, "labor": 0.0, "nightlife": 0.0, "none of these": 0.0, "police_oversight": 0.0}, "question": "q63"}
+{"choice": null, "keys": ["height_limits"], "probabilities": {"height_limits": 0.0, "none of these": 1.0}, "question": "q63"}
+{"choice": "broadband", "keys": ["broadband", "housing", "water"], "probabilities": {"broadband": 1.0, "housing": 0.0, "none of these": 0.0, "water": 0.0}, "question": "q63"}
+{"choice": null, "keys": ["safety"], "probabilities": {"none of these": 1.0, "safety": 0.0}, "question": "q63"}
+{"choice": "broadband", "keys": ["safety", "height_limits", "broadband", "sales_tax", "street_trees"], "probabilities": {"broadband": 1.0, "height_limits": 0.0, "none of these": 0.0, "safety": 0.0, "sales_tax": 0.0, "street_trees": 0.0}, "question": "q63"}
+{"choice": null, "keys": ["taxes"], "probabilities": {"none of these": 0.97, "taxes": 0.03}, "question": "q63"}
+{"choice": "broadband", "keys": ["animals", "broadband", "libraries", "bike_lanes", "transport"], "probabilities": {"animals": 0.0, "bike_lanes": 0.0, "broadband": 1.0, "libraries": 0.0, "none of these": 0.0, "transport": 0.0}, "question": "q63"}
+{"choice": null, "keys": ["rent_control", "school_meals", "nightlife"], "probabilities": {"nightlife": 0.0, "none of these": 1.0, "rent_control": 0.0, "school_meals": 0.0}, "question": "q63"}
+{"choice": "nightlife", "keys": ["nightlife"], "probabilities": {"nightlife": 1.0, "none of these": 0.0}, "question": "q64"}
+{"choice": null, "keys": ["tree_frogs"], "probabilities": {"none of these": 1.0, "tree_frogs": 0.0}, "question": "q64"}
+{"choice": "nightlife", "keys": ["taxes", "nightlife", "police_oversight", "water"], "probabilities": {"nightlife": 1.0, "none of these": 0.0, "police_oversight": 0.0, "taxes": 0.0, "water": 0.0}, "question": "q64"}
+{"choice": null, "keys": ["street_trees"], "probabilities": {"none of these": 1.0, "street_trees": 0.0}, "question": "q64"}
+{"choice": "nightlife", "keys": ["rent_control", "street_trees", "school_meals", "nightlife", "property_tax_seniors"], "probabilities": {"nightlife": 1.0, "none of these": 0.0, "property_tax_seniors": 0.0, "rent_control": 0.0, "school_meals": 0.0, "street_trees": 0.0}, "question": "q64"}
+{"choice": null, "keys": ["budget"], "probabilities": {"budget": 0.0, "none of these": 1.0}, "question": "q64"}
+{"choice": "nightlife", "keys": ["labor", "height_limits", "budget", "nightlife"], "probabilities": {"budget": 0.0, "height_limits": 0.0, "labor": 0.0, "nightlife": 1.0, "none of these": 0.0}, "question": "q64"}
+{"choice": "housing", "keys": ["sales_tax", "safety", "animals", "budget", "housing"], "probabilities": {"animals": 0.0, "budget": 0.0, "housing": 0.49, "none of these": 0.43, "safety": 0.08, "sales_tax": 0.0}, "question": "q64"}
+{"choice": "nightlife", "keys": ["rent_control", "police_oversight", "nightlife"], "probabilities": {"nightlife": 1.0, "none of these": 0.0, "police_oversight": 0.0, "rent_control": 0.0}, "question": "q65"}
+{"choice": "nightlife", "keys": ["property_tax_seniors", "nightlife", "housing", "budget", "tree_frogs"], "probabilities": {"budget": 0.0, "housing": 0.0, "nightlife": 0.99, "none of these": 0.01, "property_tax_seniors": 0.0, "tree_frogs": 0.0}, "question": "q65"}
+{"choice": "nightlife", "keys": ["sales_tax", "nightlife", "housing", "fire_ems", "budget"], "probabilities": {"budget": 0.0, "fire_ems": 0.0, "housing": 0.0, "nightlife": 0.99, "none of these": 0.01, "sales_tax": 0.0}, "question": "q65"}
+{"choice": null, "keys": ["broadband", "minimum_wage", "bike_lanes", "libraries"], "probabilities": {"bike_lanes": 0.0, "broadband": 0.0, "libraries": 0.0, "minimum_wage": 0.0, "none of these": 1.0}, "question": "q65"}
+{"choice": "nightlife", "keys": ["bike_lanes", "health", "nightlife"], "probabilities": {"bike_lanes": 0.0, "health": 0.0, "nightlife": 1.0, "none of these": 0.0}, "question": "q65"}
+{"choice": null, "keys": ["police_oversight", "safety", "taxes"], "probabilities": {"none of these": 0.66, "police_oversight": 0.0, "safety": 0.34, "taxes": 0.0}, "question": "q65"}
+{"choice": "nightlife", "keys": ["transport", "broadband", "nightlife"], "probabilities": {"broadband": 0.0, "nightlife": 1.0, "none of these": 0.0, "transport": 0.0}, "question": "q65"}
+{"choice": "nightlife", "keys": ["safety", "tree_frogs", "nightlife", "libraries"], "probabilities": {"libraries": 0.0, "nightlife": 1.0, "none of these": 0.0, "safety": 0.0, "tree_frogs": 0.0}, "question": "q65"}
+{"choice": null, "keys": ["housing"], "probabilities": {"housing": 0.01, "none of these": 0.99}, "question": "q66"}
+{"choice": null, "keys": ["parks", "housing", "safety"], "probabilities": {"housing": 0.0, "none of these": 1.0, "parks": 0.0, "safety": 0.0}, "question": "q66"}
+{"choice": null, "keys": ["height_limits"], "probabilities": {"height_limits": 0.0, "none of these": 1.0}, "question": "q66"}
+{"choice": null, "keys": ["minimum_wage"], "probabilities": {"minimum_wage": 0.0, "none of these": 1.0}, "question": "q66"}
+{"choice": null, "keys": ["street_trees", "bike_lanes", "school_meals", "water"], "probabilities": {"bike_lanes": 0.0, "none of these": 1.0, "school_meals": 0.0, "street_trees": 0.0, "water": 0.0}, "question": "q66"}
+{"choice": null, "keys": ["nightlife", "bike_lanes", "safety", "street_trees", "animals"], "probabilities": {"animals": 0.0, "bike_lanes": 0.0, "nightlife": 0.0, "none of these": 1.0, "safety": 0.0, "street_trees": 0.0}, "question": "q66"}
+{"choice": null, "keys": ["broadband", "school_meals", "bike_lanes", "animals"], "probabilities": {"animals": 0.0, "bike_lanes": 0.0, "broadband": 0.0, "none of these": 1.0, "school_meals": 0.0}, "question": "q66"}
+{"choice": null, "keys": ["tree_frogs", "school_buildings", "parks"], "probabilities": {"none of these": 1.0, "parks": 0.0, "school_buildings": 0.0, "tree_frogs": 0.0}, "question": "q66"}
+{"choice": null, "keys": ["schools", "environment"], "probabilities": {"environment": 0.0, "none of these": 1.0, "schools": 0.0}, "question": "q67"}
+{"choice": null, "keys": ["height_limits", "street_trees", "animals"], "probabilities": {"animals": 0.0, "height_limits": 0.0, "none of these": 1.0, "street_trees": 0.0}, "question": "q67"}
+{"choice": null, "keys": ["property_tax_seniors", "bus_service", "libraries"], "probabilities": {"bus_service": 0.0, "libraries": 0.0, "none of these": 1.0, "property_tax_seniors": 0.0}, "question": "q67"}
+{"choice": null, "keys": ["housing", "street_trees", "bus_service", "bike_lanes"], "probabilities": {"bike_lanes": 0.0, "bus_service": 0.0, "housing": 0.0, "none of these": 1.0, "street_trees": 0.0}, "question": "q67"}
+{"choice": null, "keys": ["elections", "nightlife", "transport", "height_limits", "environment"], "probabilities": {"elections": 0.0, "environment": 0.0, "height_limits": 0.0, "nightlife": 0.0, "none of these": 1.0, "transport": 0.0}, "question": "q67"}
+{"choice": null, "keys": ["environment", "ranked_choice", "bus_service", "schools"], "probabilities": {"bus_service": 0.0, "environment": 0.0, "none of these": 1.0, "ranked_choice": 0.0, "schools": 0.0}, "question": "q67"}
+{"choice": null, "keys": ["environment", "school_buildings", "sales_tax", "school_meals", "safety"], "probabilities": {"environment": 0.0, "none of these": 1.0, "safety": 0.0, "sales_tax": 0.0, "school_buildings": 0.0, "school_meals": 0.0}, "question": "q67"}
+{"choice": null, "keys": ["budget", "taxes", "parks"], "probabilities": {"budget": 0.0, "none of these": 0.99, "parks": 0.01, "taxes": 0.0}, "question": "q67"}
+{"choice": null, "keys": ["street_trees", "school_meals", "libraries", "broadband"], "probabilities": {"broadband": 0.0, "libraries": 0.0, "none of these": 1.0, "school_meals": 0.0, "street_trees": 0.0}, "question": "q68"}
+{"choice": null, "keys": ["animals", "rent_control", "libraries", "taxes"], "probabilities": {"animals": 0.0, "libraries": 0.0, "none of these": 1.0, "rent_control": 0.0, "taxes": 0.0}, "question": "q68"}
+{"choice": null, "keys": ["fire_ems", "sales_tax", "safety", "water"], "probabilities": {"fire_ems": 0.0, "none of these": 1.0, "safety": 0.0, "sales_tax": 0.0, "water": 0.0}, "question": "q68"}
+{"choice": null, "keys": ["labor", "rent_control", "school_meals", "bike_lanes", "health"], "probabilities": {"bike_lanes": 0.0, "health": 0.0, "labor": 0.0, "none of these": 1.0, "rent_control": 0.0, "school_meals": 0.0}, "question": "q68"}
+{"choice": null, "keys": ["school_buildings", "height_limits", "school_meals", "taxes"], "probabilities": {"height_limits": 0.0, "none of these": 1.0, "school_buildings": 0.0, "school_meals": 0.0, "taxes": 0.0}, "question": "q68"}
+{"choice": null, "keys": ["transport", "budget", "housing"], "probabilities": {"budget": 0.0, "housing": 0.0, "none of these": 1.0, "transport": 0.0}, "question": "q68"}
+{"choice": null, "keys": ["bike_lanes", "fire_ems", "taxes", "sales_tax"], "probabilities": {"bike_lanes": 0.0, "fire_ems": 0.0, "none of these": 1.0, "sales_tax": 0.0, "taxes": 0.0}, "question": "q68"}
+{"choice": null, "keys": ["police_oversight", "health", "schools"], "probabilities": {"health": 0.0, "none of these": 1.0, "police_oversight": 0.0, "schools": 0.0}, "question": "q68"}

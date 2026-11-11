@@ -1,17 +1,26 @@
 """
 The per-voter routing rule: which delegate, if any, gets one question.
 
-The decision model makes the judgments; this module makes the decision.
-Every category the person has delegated is scored and the highest score
-wins. The threshold is only a floor: if the best category does not clear
-it, the person keeps the decision.
+The decision model makes the judgments; this module makes the decision:
+
+  1. Every category the person has delegated is scored.
+  2. Categories below the threshold drop out. If none are left, the person
+     keeps the decision.
+  3. A category gives way when a narrower category inside it is also still
+     in. Specific overrules general.
+  4. Of what remains, the highest score wins.
 
 The rule never guesses. A person with a direct vote keeps the decision, and
 so does a person for whom any judgment is missing.
 
-Nested categories get no special handling here. Whether a narrow category
-can outscore the broad one it sits inside is an open question that the
-router evaluation settles (see prompts/demo-5-liquid-democracy.md).
+Step 3 exists because scores alone do not prefer the narrow category. A
+yes/no score measures whether a statement is true, and "this is about the
+environment" is true of every question about tree frogs. In the router
+evaluation the broad category took 10 of 28 questions that sat squarely
+inside a narrow one, so a voter's carve-out lost to its own parent a third
+of the time (eval/benchmarks/delegation_router_v1/). Which categories sit
+inside which comes from the network's nesting; with none recorded, step 3
+does nothing and the rule is plain highest-score-wins.
 """
 
 from __future__ import annotations
@@ -70,6 +79,9 @@ class RoutingDecision:
     # The winning category and its delegate; set only when delegated
     category: CategoryId | None = None
     delegate: PersonId | None = None
+    # Categories that cleared the threshold but gave way to a narrower
+    # category inside them, in the person's category list order
+    set_aside: tuple[CategoryId, ...] = ()
 
     @property
     def kept(self) -> bool:
@@ -98,8 +110,10 @@ def route(
         direct_vote: Whether the person cast their own vote on the question
 
     Returns:
-        The routing decision. Exact score ties go to the category that
-        comes first in the person's category list.
+        The routing decision. A category that clears the threshold gives
+        way to any narrower category inside it that also clears. Exact
+        score ties among the rest go to the category that comes first in
+        the person's category list.
 
     Raises:
         InvalidNetworkError: If the person is not in the network
@@ -136,13 +150,8 @@ def route(
             scores=tuple(scores),
         )
 
-    # Strict comparison, so the first category in the list wins an exact tie.
-    best = scores[0]
-    for score in scores[1:]:
-        if score.probability > best.probability:
-            best = score
-
-    if best.probability < threshold:
+    cleared = [score for score in scores if score.probability >= threshold]
+    if not cleared:
         return RoutingDecision(
             person,
             question,
@@ -151,7 +160,22 @@ def route(
             scores=tuple(scores),
         )
 
-    delegate = network.delegate_for(person, best.category)
+    # Specific overrules general: a category gives way when a narrower
+    # category inside it also cleared. Nesting cannot loop, so the narrowest
+    # categories always remain.
+    set_aside = tuple(
+        score.category
+        for score in cleared
+        if any(network.is_inside(other.category, score.category) for other in cleared)
+    )
+    remaining = [score for score in cleared if score.category not in set_aside]
+
+    # Strict comparison, so the first category in the list wins an exact tie.
+    best = remaining[0]
+    for score in remaining[1:]:
+        if score.probability > best.probability:
+            best = score
+
     return RoutingDecision(
         person,
         question,
@@ -159,5 +183,6 @@ def route(
         threshold,
         scores=tuple(scores),
         category=best.category,
-        delegate=delegate,
+        delegate=network.delegate_for(person, best.category),
+        set_aside=set_aside,
     )

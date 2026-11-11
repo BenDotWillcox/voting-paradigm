@@ -131,6 +131,7 @@ def add_delegation(
         categories=categories,
         delegations=network.delegations
         + (Delegation(delegator, category.id, delegate),),
+        nesting=network.nesting,
     )
 
 
@@ -155,6 +156,7 @@ def remove_delegation(
             for delegation in network.delegations
             if (delegation.delegator, delegation.category) != (delegator, category)
         ),
+        nesting=network.nesting,
     )
 
 
