@@ -319,7 +319,7 @@ export function ElectorateResults({ data, ballot }: { data: ScalarComparisonResp
   }, [combined]);
 
   return <div className={styles.results}>
-    <div className={styles.browserHeading}><div><p className={styles.eyebrow}>First, see what a yes/no answer leaves out</p><h3>100 curves. One narrow choice.</h3><p>Scroll through the electorate, ordered by ideal rate. Every curve is different; many produce the same mark.</p></div><button type="button" className={styles.quietButton} onClick={() => setSelectedIndex(Math.max(0, yourIndex))}>Your ballot <ArrowRight size={14} aria-hidden="true" /></button></div>
+    <div className={styles.browserHeading}><div><p className={styles.eyebrow}>First, see what a yes/no answer leaves out</p><h3>100 curves. One narrow choice.</h3><p>Scroll through the electorate, ordered by ideal rate. Every curve is different; many produce the same mark.</p></div></div>
     <div className={styles.browser}>
       <div className={styles.selectedHeader}>
         <div aria-live="polite" aria-atomic="true"><span className={styles.voterPosition}>Voter {selectedIndex + 1} of 100</span><h4>{isYou ? "Your submitted ballot" : selected.label}<span>Ideal {rateText(selected.ballot.ideal)}</span></h4></div>
@@ -341,7 +341,7 @@ export function ElectorateResults({ data, ballot }: { data: ScalarComparisonResp
       </div>
       <VoterStrip voters={voters} selectedIndex={selectedIndex} onSelect={setSelectedIndex} />
       <div className={styles.browseRange}><label htmlFor={rangeId}>Browse all 100</label><input id={rangeId} type="range" min={0} max={voters.length - 1} step={1} value={selectedIndex} onChange={(event) => setSelectedIndex(Number(event.target.value))} aria-valuetext={`Voter ${selectedIndex + 1} of 100. ${selected.label}. Ideal ${rateText(selected.ballot.ideal)}. ${voteText(selected.binary_vote)}.`} /><output htmlFor={rangeId}>{selectedIndex + 1} / 100</output></div>
-      <div className={styles.jumpExamples}><span>Same answer, different preferences:</span>{(["yes", "no"] as const).map((vote) => <button key={vote} type="button" onClick={() => jumpToDifferentCurve(vote)} className={voteClass(vote)} disabled={!voters.some((voter, index) => index !== selectedIndex && voter.binary_vote === vote)}>Another {voteText(vote)} curve <ArrowRight size={12} aria-hidden="true" /></button>)}</div>
+      <div className={styles.jumpExamples}><span>Same answer, different preferences:</span>{(["yes", "no"] as const).map((vote) => <button key={vote} type="button" onClick={() => jumpToDifferentCurve(vote)} className={voteClass(vote)} disabled={!voters.some((voter, index) => index !== selectedIndex && voter.binary_vote === vote)}>Another {voteText(vote)} curve <ArrowRight size={12} aria-hidden="true" /></button>)}<button type="button" onClick={() => setSelectedIndex(Math.max(0, yourIndex))}>Your ballot <ArrowRight size={12} aria-hidden="true" /></button></div>
       <BinaryTally data={data} />
     </div>
 
