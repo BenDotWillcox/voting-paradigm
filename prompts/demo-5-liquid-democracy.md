@@ -10,7 +10,9 @@ labelled questions, router evaluation); its results are in
 change, decided 2026-11-10: a narrower category overrules the broader one it
 sits inside. The rule is implemented, and Jev's ability to tell which
 categories are nested has been measured: it found 11 of 14 labelled pairs
-and no others. Steps 3 and 4 are not built.
+and no others. Step 3 is implemented: the seeded synthetic network, the
+curated scenario with its recorded judgments, and the four
+`/api/delegation` routes. Step 4, the `/liquid` page, is not built.
 
 ## What we're building
 
@@ -444,12 +446,19 @@ delegation/
                  gathering with failing closed                       [built]
   jev.py         Jev adapter over plain HTTP (httpx); the one module
                  that uses the network, not imported by the package  [built]
-  data/          recorded judgments for curated ballots              (step 3)
-  simulate.py    seeded synthetic network and sincere ballots        (step 3)
+  nesting.py     which categories sit inside which: asking, recording,
+                 deriving                                            [built]
+  simulate.py    seeded synthetic network and sincere ballots        [built]
+  scenario.py    loads the curated scenario                          [built]
+  data/scenario_v1.json  the pool, two ballot papers and their
+                 recorded judgments and nesting                      [built]
 api/
-  routers/delegation.py     HTTP only
-  schemas/delegation.py     Pydantic request and response models
-  services/delegation.py    orchestration
+  routers/delegation.py     HTTP only                                [built]
+  schemas/delegation.py     Pydantic request and response models     [built]
+  services/delegation.py    orchestration                            [built]
+scripts/
+  build_delegation_scenario.py  builds scenario_v1.json from the
+                 evaluation's recorded answers; no network           [built]
 eval/
   delegation_router.py              router evaluation (pure)        [built]
   run_delegation_router_eval.py     plan, smoke, collect, report    [built]
@@ -466,28 +475,67 @@ app/liquid/                 the demo page (route already exists)
 
 ### Endpoints
 
-- `GET /api/delegation/scenario` — the seeded network and the curated ballots.
-- `POST /api/delegation/delegations/validate` — the creation checks: a
-  rejection, or the reference questions that would loop.
-- `POST /api/delegation/judgments` — judgments for given questions and
-  categories: recorded first, live Jev if a key is configured, otherwise an
-  explicit unavailable result.
-- `POST /api/delegation/resolve` — network, ballot, judgments, direct votes,
-  threshold, method and seed in; receipts, inboxes, tallies and metrics out.
+The server rebuilds the network and ballot papers from the scenario file and
+a seed, so a request carries only what the viewer changed: their delegations,
+in list order, and any votes they cast themself.
+
+- `GET /api/delegation/scenario` — the seeded network and the curated ballot
+  papers.
+- `POST /api/delegation/delegations/validate` — the creation checks on one
+  proposed delegation: a rejection with the chain, or the curated questions
+  on which it would come back to the viewer.
+- `POST /api/delegation/judgments` — a category's judgments for every curated
+  question, and its nesting against the viewer's other categories. Recorded
+  answers first; the rest are asked of Jev only when live judgments are
+  switched on, and otherwise reported as missing.
+- `POST /api/delegation/resolve` — a ballot paper, the viewer's delegations
+  and votes, threshold and tiebreak seed in; per question, the delegated and
+  direct tallies, concentration measures, the viewer's receipt and the votes
+  the viewer answers for. Reads recorded judgments only.
+
+Three behaviours worth knowing:
+
+- **Live judgments are opt-in twice.** The server asks Jev about a
+  viewer-written category only when it has `TYPESAFE_API_KEY` and
+  `DELEGATION_LIVE_JUDGMENTS` is switched on. A key alone does nothing. New
+  answers are recorded under the git-ignored `.cache/delegation/`.
+- **The first wording of a category stays.** A category's identity ignores
+  case and whitespace, but a judgment records the exact wording asked. The
+  service reuses the pool's wording, or the wording a written category was
+  first judged under, so every spelling shares the same judgments.
+- **The viewer's vote is their direct vote.** A vote the viewer casts on a
+  question overrides their delegations for it and is the ballot used for
+  anyone they answer for. Until they vote, the votes they hold count as
+  abstentions.
 
 ## Synthetic network (scope cut)
 
-- One city with a few districts, a few hundred persons, some of whom live
-  outside the city and can still be delegates. All seeded.
-- Each person has a position per category. A question's options have
-  positions too, and a person's sincere ballot is the nearest option. This
-  supplies resolver ballots and the direct-voting baseline. It is a simple
-  spatial model and makes no claim about real voters.
-- Each person's categories are drawn from the curated pool at mixed
-  granularity, so broad, narrow and nested categories all occur.
-- Three delegation behaviours: none, trust a well-known person in the
-  category, trust someone in your own district.
-- The viewer plays one resident and edits their own delegations.
+Built in `delegation/simulate.py`; the scenario's settings are in
+`delegation/scenario.py`.
+
+- One city of three districts with 80 residents each, 20 people who live
+  outside it and can still be delegates, and the viewer: 261 people, all
+  seeded.
+- Each person has a position on one dimension. Each question has a direction
+  and a cutpoint on it, and a little seeded noise decides close calls. A
+  person's sincere ballot is the side they fall on. This supplies resolver
+  ballots and the direct-voting baseline. It is a toy spatial model and makes
+  no claim about real voters.
+- A delegating person hands over three to seven pool categories, with broad
+  categories three times as likely as narrow ones.
+- Three delegation behaviours: keep every decision (30% of the population as
+  drawn), trust one of eight well-known people for the category (42%), trust
+  someone in your own district (28%). Every delegation goes through the
+  creation check.
+- The viewer is a District 1 resident with no delegations of their own. Six
+  residents, two per district, each hand the viewer one authored category, so
+  the viewer answers for others on both ballot papers.
+- Two ballot papers drawn from the evaluation's questions: a 15-question city
+  general ballot and a 5-question special ballot for District 2, which the
+  viewer is not issued.
+- On the general ballot, 12% to 32% of votes are resolved by someone else,
+  the heaviest resolver holds up to 19%, and chains run up to four hops.
+  These shares come from the assumed behaviours above, not from data.
 
 ## UI plan (`/liquid`)
 
@@ -519,7 +567,8 @@ app/liquid/                 the demo page (route already exists)
    close for the containment ones. Paid commands refuse to
    run without `--live`, and each paid run needs explicit approval.
 3. **Network and API.** Synthetic network, curated ballots with recorded
-   judgments, the four endpoints.
+   judgments, the four endpoints. *Done.* No network calls were made: the
+   scenario file is built from answers already recorded in step 2.
 4. **UI.** The `/liquid` page.
 
 ## Reproducibility
@@ -529,8 +578,9 @@ app/liquid/                 the demo page (route already exists)
 - **Recorded judgments.** Each (model id, state, question) is hashed and its
   first response stored, append-only. The question includes the category
   text. Judgments for the curated ballots against the curated category pool
-  are committed, so that part of the public demo replays without a key. A
-  category the viewer writes is judged live and needs the key.
+  are committed in `delegation/data/scenario_v1.json`, so that part of the
+  public demo replays without a key. A category the viewer writes is judged
+  live, which needs the key and the `DELEGATION_LIVE_JUDGMENTS` switch.
 - **Resolution reads only recorded judgments.** A run is deterministic given
   its inputs. The run key is (ballot hash, network hash, judgment snapshot
   hash, threshold, method, seed).

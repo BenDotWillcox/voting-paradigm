@@ -214,6 +214,25 @@ class JudgmentStore(RecordStore[JudgmentRecord]):
 
     def __init__(self, path: Path | None = None) -> None:
         super().__init__(JudgmentRecord, path)
+        self._wordings: dict[CategoryId, str] = {}
+        for stored in self._records.values():
+            self._wordings.setdefault(stored.category, stored.category_text)
+
+    def record(self, record: JudgmentRecord) -> JudgmentRecord:
+        kept = super().record(record)
+        self._wordings.setdefault(kept.category, kept.category_text)
+        return kept
+
+    def wording(self, category: CategoryId) -> str | None:
+        """
+        The wording a category was first judged under, if it has been judged.
+
+        A judgment records exactly what the model was asked, wording
+        included, while a category's identity ignores case and whitespace.
+        Reusing the first wording lets every spelling of a category share
+        its judgments.
+        """
+        return self._wordings.get(category)
 
 
 @dataclass(frozen=True)
