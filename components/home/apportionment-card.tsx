@@ -98,12 +98,9 @@ export function ApportionmentCard({ demo }: { demo: ShowcaseDemo }) {
       )}
     >
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs text-story-muted">Demo {demo.number}</p>
-          <h2 className="font-story-serif text-2xl leading-tight font-medium tracking-[-0.01em]">
-            {demo.title}
-          </h2>
-        </div>
+        <h2 className="font-story-serif text-2xl leading-tight font-medium tracking-[-0.01em]">
+          {demo.title}
+        </h2>
         <span className="rounded-full border border-[var(--story-rule)] px-2.5 py-0.5 text-xs font-medium text-story-accent">
           {statusLabel[demo.status]}
         </span>
@@ -135,7 +132,7 @@ export function ApportionmentCard({ demo }: { demo: ShowcaseDemo }) {
         </dl>
       </div>
 
-      <p className="mt-4 text-sm leading-6 text-story-ink-2">{demo.description}</p>
+      <p className="home-card-description mt-4 text-sm leading-6 text-story-ink-2">{demo.description}</p>
       <ul className="mt-4 flex flex-wrap gap-1.5">
         {demo.showcase.map((tag) => (
           <li

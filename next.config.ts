@@ -78,19 +78,25 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
-    if (!blockPlanAssetOrigin) return [];
-    // beforeFiles shadows the local route, so asset URLs inside the manifest
-    // and nested indexes resolve to the bucket without being rewritten.
-    return {
-      beforeFiles: [
-        {
-          source: "/api/district-plans/:sha([a-f0-9]{64})/:name",
-          destination: `${blockPlanAssetOrigin}/:sha/:name`,
-        },
-      ],
-      afterFiles: [],
-      fallback: [],
-    };
+    const beforeFiles = [];
+    if (process.env.VERCEL === "1") {
+      // Vercel's file-based Python function receives the original request path.
+      // Shadow only these Next proxies so the demo uses this deployment's
+      // Python code, independently of the shared external API environment.
+      beforeFiles.push(
+        { source: "/api/expressive/scalar/compare", destination: "/api/main" },
+        { source: "/api/expressive/scalar/preview", destination: "/api/main" },
+      );
+    }
+    if (blockPlanAssetOrigin) {
+      // Shadow the local route so manifest and nested-index asset URLs resolve
+      // to the bucket without changing their public paths.
+      beforeFiles.push({
+        source: "/api/district-plans/:sha([a-f0-9]{64})/:name",
+        destination: `${blockPlanAssetOrigin}/:sha/:name`,
+      });
+    }
+    return { beforeFiles, afterFiles: [], fallback: [] };
   },
   async redirects() {
     // /districts used to hold both explorers behind ?tab=; apportionment is

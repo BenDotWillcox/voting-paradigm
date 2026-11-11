@@ -1,4 +1,4 @@
-# Nebula Civitas
+# Future Democratic Systems Lab
 
 A portfolio of demos exploring potential improvements to democratic voting.
 
@@ -17,9 +17,19 @@ the author cares about.
 | 1 | **Voting methods comparison** — same ballots, multiple resolution methods, side-by-side winners | `/methods` | Voting package complete; UI in progress | Voting theory rigor, electoral criteria, reproducibility |
 | 2 | **Agent voting via preference models** — LLM-elicited preference posterior; agent casts a ballot under uncertainty | `/preferences` | In progress | Bayesian inference, embeddings, active learning, LLM orchestration |
 | 3 | **Algorithmic districting** — fair, transparent district maps under explicit constraints | `/districts` | Apportionment slice live; district polygons planned | Optimization, graph algorithms, geo data, fairness metrics |
-| 4 | **Liquid democracy** — delegation graphs, transitive trust, topic-conditional delegates | `/delegation` | Planned | Network analysis, simulation, dynamics on graphs |
+| 4 | **Apportionment** — how many seats each state gets, and how House size drives interstate district inequality | `/apportionment` (story), `/apportionment/explore` | Live; methods comparison deferred | Apportionment math, data storytelling, reproducibility |
+| 5 | **Liquid democracy** — delegation graphs, transitive trust, topic-conditional delegates | `/liquid` | Planned | Network analysis, simulation, dynamics on graphs |
+| 6 | **Expressive ballots** — question-specific interfaces for directly declared utility | `/expressive` | In progress; tax ballot and same-electorate results walkthrough | Preference elicitation, constrained interaction, explicit aggregation assumptions |
 
 Demos share infrastructure (one repo, one Next.js shell, one FastAPI service, one DB) but are conceptually independent — each is a self-contained answer to one objection against electoral reform.
+
+### Expressive-ballot scope
+
+The in-progress tax walkthrough compares the historical yes/no question with a
+preference curve, explores one fixed electorate of 100 voters, and ends after
+its mean-score aggregation and takeaway. It adds no database tables or
+persistence. Budget, spending-package and schedule examples are paused; a
+companion theory blog is separate future work, with no placeholder in the demo.
 
 ### Preference-model evidence
 
@@ -46,7 +56,7 @@ Next.js 15 (App Router)  ◄── HTTP ──►  FastAPI (Python 3.11)
 
 Python never writes the DB — Server Actions own persistence; Python receives state and returns updated state. This keeps the transactional story simple and makes Python endpoints trivially reproducible given an input state.
 
-Domain packages (`voting/`, `preferences/`, future `districting/`, `delegation/`) are import-isolated from each other; `voting/` is the one foundational primitive other demos may depend on.
+Domain packages (`voting/`, `preferences/`, `expressive/`, future `districting/`, `delegation/`) are import-isolated from each other; `voting/` is the one foundational primitive other demos may depend on.
 
 ## Stack
 
@@ -255,7 +265,9 @@ voting/             Python: pure voting methods + ballot types       [demo 1]
 preferences/        Python: preference modeling                      [demo 2]
 eval/               Python: synthetic + prequential human-measure evaluation
 districting/        Python: redistricting algorithms       (planned) [demo 3]
-delegation/         Python: liquid-democracy delegation    (planned) [demo 4]
+apportionment/      Python: House apportionment + essay analyses         [demo 4]
+delegation/         Python: liquid-democracy delegation    (planned) [demo 5]
+expressive/         Python: scalar ballots + synthetic electorate       [demo 6]
 api/                Python: FastAPI app, one router per demo
 .claude/skills/     Project-specific review/guardrail skills
 ```

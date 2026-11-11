@@ -14,7 +14,7 @@ import { StoryRoot } from "@/components/story/story-layout";
 import { loadEssayData } from "@/lib/apportionment/essay-data";
 
 export const metadata: Metadata = {
-  title: "The Representation Gap · Nebula Civitas",
+  title: "The Representation Gap",
   description:
     "For more than a century, the House of Representatives grew with the country. Then Congress froze it at 435 seats. What did that decision cost, and what would it take to undo it?",
 };
