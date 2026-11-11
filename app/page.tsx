@@ -128,16 +128,16 @@ const demos: Demo[] = [
   {
     number: 5,
     title: "Liquid democracy",
-    tagline: "Delegate per topic to whomever you trust — transitively.",
+    tagline: "Hand categories of decisions, in your own words, to people you trust.",
     description:
-      "Simulate delegation graphs with topic-conditional edges, study how outcomes diverge from direct democracy, and surface pathologies like super-delegate concentration.",
+      "Write your own categories and delegate each to someone in a simulated city. A decision model routes every ballot question for every voter, loops are refused or resolved, and the delegated result sits beside direct voting.",
     showcase: [
-      "Network analysis",
+      "Decision-model routing",
+      "Graph algorithms",
       "Simulation",
-      "Graph dynamics",
     ],
     href: "/liquid",
-    status: "planned",
+    status: "in-progress",
     readiness: 3,
     impressiveness: 5,
     Icon: Network,

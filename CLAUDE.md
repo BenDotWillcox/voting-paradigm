@@ -27,7 +27,7 @@ Each demo is a top-level route in the web app and a domain package on the Python
 | 2 | **Agent voting via preference models** — LLM-elicited preference posterior; agent casts a ballot under uncertainty | `/preferences` | In progress | Bayesian inference, embeddings, active learning, LLM orchestration |
 | 3 | **Algorithmic districting** — fair, transparent district maps under explicit constraints | `/districts` | One page: the nine-chapter Michigan algorithm walkthrough (`prompts/demo-3-explainer.md`), ending in enacted-map and gerrymander comparisons, followed by the 50-state block-plan explorer | Optimization, graph algorithms, geo data, fairness metrics |
 | 4 | **Apportionment** — how many seats each state gets, and how House size drives interstate district inequality | `/apportionment` (story), `/apportionment/explore` | Live; methods comparison deferred | Apportionment math, data storytelling, reproducibility |
-| 5 | **Liquid democracy** — voters hand self-written categories of decisions to people they trust; each ballot question is routed per voter | `/liquid` (placeholder) | Core package, Jev router evaluation, nested-category rule, synthetic network and API built; the `/liquid` page is not | Decision-model routing, graph algorithms, simulation |
+| 5 | **Liquid democracy** — voters hand self-written categories of decisions to people they trust; each ballot question is routed per voter | `/liquid` | First version built: core package, Jev router evaluation, nested-category rule, synthetic network, API and page | Decision-model routing, graph algorithms, simulation |
 | 6 | **Expressive ballots** — question-specific interfaces for directly declared utility | `/expressive` | In progress; tax ballot and same-electorate results walkthrough | Preference elicitation, constrained interaction, explicit aggregation assumptions |
 
 Apportionment was split out of districting (2026-09-29): it answers a
@@ -68,7 +68,7 @@ Two processes. One web app, one Python service.
 │ Routes: /methods,   │        │  /api/voting/...             │
 │ /preferences,       │        │  /api/preferences/...        │
 │ /districts (future),│        │  /api/districting/... (future)│
-│ /liquid (future)    │        │  /api/delegation/...          │
+│ /liquid             │        │  /api/delegation/...          │
 │ Server Actions →    │        │  /api/personas/...    (future)│
 │ Python API client   │        │  /api/agents/...      (future)│
 └──────────┬──────────┘        └────────────┬─────────────────┘
@@ -675,14 +675,15 @@ companion explorer at `/apportionment/explore`
 
 ### Demo 5: Liquid democracy
 
-**Status:** Build steps 1 to 3 of four are done. Design doc at [`prompts/demo-5-liquid-democracy.md`](prompts/demo-5-liquid-democracy.md). `/liquid` is still the placeholder page.
+**Status:** All four build steps are done; `/liquid` is the first version of the page. Design doc at [`prompts/demo-5-liquid-democracy.md`](prompts/demo-5-liquid-democracy.md).
 
 **Done:**
 - `delegation/` core (PR #77): voter-written categories, the per-voter routing rule, creation-time loop checks, per-question resolution in which everyone on a loop keeps the decision, vote copying through `voting/`, and concentration metrics. It reads judgments as plain probabilities and makes no network calls. Tests cover the nine resolution invariants over 300 seeded random networks; `mypy --strict` is clean on the package.
 - Jev judgments: `delegation/judgments.py` records the first response per question and category and replays it, failing closed when a judgment is missing; `delegation/nesting.py` does the same for which categories sit inside which; `delegation/jev.py` is the adapter, pinned to `jev-1.14.0` over plain HTTP, and is the one module that uses the network. The key is read from `TYPESAFE_API_KEY` in the environment or `.env.local`.
 - Router evaluation: `eval/delegation_router.py` and `python -m eval.run_delegation_router_eval` (`plan`, `smoke`, `collect`, `report`; the paid commands need `--live`), with recorded answers, summary and README in `eval/benchmarks/delegation_router_v1/`. The report rebuilds byte for byte from the recorded answers with no network use.
 - Network and API: `delegation/simulate.py` builds the seeded population and its sincere ballots; `delegation/data/scenario_v1.json` holds the category pool, a city-wide and a single-district ballot paper, and their recorded judgments and nesting, built from the evaluation's recorded answers by `scripts/build_delegation_scenario.py`. Routes under `/api/delegation`: `GET /scenario`, `POST /delegations/validate`, `POST /judgments`, `POST /resolve`. Requests carry only the viewer's delegations and votes; resolution reads recorded judgments only. The server asks Jev about a viewer-written category only when it has the API key and `DELEGATION_LIVE_JUDGMENTS` is switched on, and records the answers under `.cache/delegation/`.
+- The page: `/liquid` (`app/liquid/page.tsx`, `components/liquid/`) loads the scenario on the server and keeps the viewer's delegations and votes in the browser. Section 01 hands a category (a pool one or the viewer's own words) to a person and shows a refused loop with its chain or a warning with the questions that would come back; section 02 resolves either ballot paper and shows, per question, the receipt (scores against the threshold, the chain, the resolver, the ballot cast), the votes the viewer answers for, and the delegated tally beside the direct one with concentration measures. A threshold slider re-resolves the paper. Typed client `lib/delegation-api.ts`, Zod schemas `lib/validations/delegation-schemas.ts`, read-only Server Actions `actions/delegation-actions.ts`. The page needs the Python service; without it, it says so. The free-text "try a question" panel from the design doc is not built.
 
 **Next, in order:**
-1. The `/liquid` page.
+1. Decide the nesting threshold, and whether to add the free-text question panel.
 2. *(Deferred)* Delegate recommendations driven by demo 2's preference posterior, saved networks, ranked backup delegates.

@@ -18,7 +18,7 @@ the author cares about.
 | 2 | **Agent voting via preference models** — LLM-elicited preference posterior; agent casts a ballot under uncertainty | `/preferences` | In progress | Bayesian inference, embeddings, active learning, LLM orchestration |
 | 3 | **Algorithmic districting** — fair, transparent district maps under explicit constraints | `/districts` | Apportionment slice live; district polygons planned | Optimization, graph algorithms, geo data, fairness metrics |
 | 4 | **Apportionment** — how many seats each state gets, and how House size drives interstate district inequality | `/apportionment` (story), `/apportionment/explore` | Live; methods comparison deferred | Apportionment math, data storytelling, reproducibility |
-| 5 | **Liquid democracy** — delegation graphs, transitive trust, topic-conditional delegates | `/liquid` | Planned | Network analysis, simulation, dynamics on graphs |
+| 5 | **Liquid democracy** — voters hand self-written categories of decisions to people they trust; each ballot question is routed per voter | `/liquid` | First version built | Decision-model routing, graph algorithms, simulation |
 | 6 | **Expressive ballots** — question-specific interfaces for directly declared utility | `/expressive` | In progress; tax ballot and same-electorate results walkthrough | Preference elicitation, constrained interaction, explicit aggregation assumptions |
 
 Demos share infrastructure (one repo, one Next.js shell, one FastAPI service, one DB) but are conceptually independent — each is a self-contained answer to one objection against electoral reform.
@@ -266,7 +266,7 @@ preferences/        Python: preference modeling                      [demo 2]
 eval/               Python: synthetic + prequential human-measure evaluation
 districting/        Python: redistricting algorithms       (planned) [demo 3]
 apportionment/      Python: House apportionment + essay analyses         [demo 4]
-delegation/         Python: liquid-democracy delegation    (planned) [demo 5]
+delegation/         Python: liquid-democracy delegation              [demo 5]
 expressive/         Python: scalar ballots + synthetic electorate       [demo 6]
 api/                Python: FastAPI app, one router per demo
 .claude/skills/     Project-specific review/guardrail skills

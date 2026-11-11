@@ -569,7 +569,11 @@ Built in `delegation/simulate.py`; the scenario's settings are in
 3. **Network and API.** Synthetic network, curated ballots with recorded
    judgments, the four endpoints. *Done.* No network calls were made: the
    scenario file is built from answers already recorded in step 2.
-4. **UI.** The `/liquid` page.
+4. **UI.** The `/liquid` page. *Done*, except item 6 of the UI plan (a
+   free-text question judged live), which needs an endpoint that does not
+   exist yet. The page loads the scenario on the server, keeps the viewer's
+   delegations and votes in the browser, and re-resolves the ballot paper
+   through read-only Server Actions on every change.
 
 ## Reproducibility
 
