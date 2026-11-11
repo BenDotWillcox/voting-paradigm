@@ -3,3 +3,7 @@
 # artifacts in public/data/district-plans. Without this, Vercel bundles them
 # into the Python function and exceeds the 500 MB function limit.
 /data/districting/
+
+# API tests import `app`, so Vercel detects them as extra Python functions.
+# Exclude tests from deployment discovery; runtime modules stay included.
+/api/tests/

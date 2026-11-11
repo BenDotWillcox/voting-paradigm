@@ -16,7 +16,7 @@ import { ARTICLE_ONE_MAX_SEATS, WYOMING_RULE_SEATS } from "@/lib/districting-cap
 import { houseSizeSnapshot } from "@/lib/story/representation-gap";
 
 export const metadata: Metadata = {
-  title: "Story kit · Nebula Civitas",
+  title: "Story kit",
   robots: { index: false, follow: false },
 };
 

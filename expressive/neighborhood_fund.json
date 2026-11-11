@@ -1,0 +1,86 @@
+{
+  "id": "chicago-neighborhood-fund-v1",
+  "total_dollars": 1000000,
+  "source_url": "https://www.49thward.org/participatory-budgeting-1",
+  "results_url": "https://www.49thward.org/pb49-cycle15",
+  "categories": [
+    {
+      "id": "roads",
+      "label": "Road resurfacing",
+      "short_label": "Roads",
+      "color": "#b77845",
+      "kind": "scalable",
+      "cost_dollars": null,
+      "proposal": "Repair more neighborhood streets and alleys",
+      "description": "A rolling repair program. Additional funding expands the amount of resurfacing work; this demo treats the program as scalable.",
+      "default_share": 25,
+      "decrease_width": 6,
+      "increase_width": 12
+    },
+    {
+      "id": "sidewalks",
+      "label": "Sidewalk accessibility",
+      "short_label": "Sidewalks",
+      "color": "#43877c",
+      "kind": "scalable",
+      "cost_dollars": null,
+      "proposal": "Repair sidewalks and improve accessible routes",
+      "description": "A program of sidewalk repairs and accessibility improvements. Additional funding supports more work across the neighborhood.",
+      "default_share": 20,
+      "decrease_width": 5,
+      "increase_width": 12
+    },
+    {
+      "id": "crossings",
+      "label": "Safer crossings",
+      "short_label": "Crossings",
+      "color": "#8176b5",
+      "kind": "fixed",
+      "cost_dollars": 150000,
+      "proposal": "Build a complete school-crossing improvement",
+      "description": "One coordinated crossing project with curb extensions, accessible ramps and markings. It needs its full budget to proceed.",
+      "default_share": 15,
+      "decrease_width": 8,
+      "increase_width": 8
+    },
+    {
+      "id": "trees",
+      "label": "Trees and shade",
+      "short_label": "Trees",
+      "color": "#66875b",
+      "kind": "scalable",
+      "cost_dollars": null,
+      "proposal": "Expand street-tree planting and establishment care",
+      "description": "A neighborhood planting and care program. Additional funding supports more trees and their establishment; amounts are modeled as scalable.",
+      "default_share": 15,
+      "decrease_width": 6,
+      "increase_width": 16
+    },
+    {
+      "id": "parks",
+      "label": "Parks and play spaces",
+      "short_label": "Parks",
+      "color": "#b47a92",
+      "kind": "fixed",
+      "cost_dollars": 150000,
+      "proposal": "Complete an accessible neighborhood play area",
+      "description": "A single play-area renovation including accessible surfacing and equipment. Partial funding cannot deliver the proposed project.",
+      "default_share": 15,
+      "decrease_width": 12,
+      "increase_width": 12
+    },
+    {
+      "id": "facilities",
+      "label": "Community facilities",
+      "short_label": "Facilities",
+      "color": "#637e9b",
+      "kind": "fixed",
+      "cost_dollars": 100000,
+      "proposal": "Upgrade a community center’s accessible entrance",
+      "description": "One complete entrance upgrade with door, access and entryway work. The full cost is required, and extra funding does not expand this proposal.",
+      "default_share": 10,
+      "decrease_width": 8,
+      "increase_width": 8
+    }
+  ]
+}

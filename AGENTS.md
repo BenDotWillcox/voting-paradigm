@@ -4,7 +4,7 @@ Guidance for Codex working in this repository. This is a living document — edi
 
 ## What this project is
 
-**Nebula Civitas is a portfolio of demos exploring potential improvements to democratic voting.** Each demo isolates a specific friction that has blocked better voting practice from being adopted at scale, and shows how modern technology — AI agents, statistical preference modeling, optimization, network analysis — could plausibly dissolve it. The demos share infrastructure (one repo, one Next.js shell, one FastAPI service, one DB) but are conceptually independent: each is a self-contained answer to one objection against electoral reform.
+**Future Democratic Systems Lab is a portfolio of demos exploring potential improvements to democratic voting.** Each demo isolates a specific friction that has blocked better voting practice from being adopted at scale, and shows how modern technology — AI agents, statistical preference modeling, optimization, network analysis — could plausibly dissolve it. The demos share infrastructure (one repo, one Next.js shell, one FastAPI service, one DB) but are conceptually independent: each is a self-contained answer to one objection against electoral reform.
 
 The umbrella thesis: the gap between *what voting theory recommends* and *what real polities use* is technological as much as political. Better methods, better districts, better delegation, better preference articulation — none have spread because the practical machinery wasn't there. This project builds parts of that machinery as proofs of concept.
 
@@ -27,7 +27,8 @@ Each demo is a top-level route in the web app and a domain package on the Python
 | 2 | **Agent voting via preference models** — LLM-elicited preference posterior; agent casts a ballot under uncertainty | `/preferences` | In progress | Bayesian inference, embeddings, active learning, LLM orchestration |
 | 3 | **Algorithmic districting** — fair, transparent district maps under explicit constraints | `/districts` | One page: the nine-chapter Michigan algorithm walkthrough, then the four-anchor block-plan explorer | Optimization, graph algorithms, geo data, fairness metrics |
 | 4 | **Apportionment** — how many seats each state gets, and how House size drives interstate district inequality | `/apportionment` (story), `/apportionment/explore` | Live; methods comparison deferred | Apportionment math, data storytelling, reproducibility |
-| 5 | **Liquid democracy** — voters hand self-written categories of decisions to people they trust; each ballot question is routed per voter | `/liquid` (placeholder) | Core package, Jev router evaluation and nested-category rule built; network, API and UI not built | Decision-model routing, graph algorithms, simulation |
+| 5 | **Liquid democracy** — delegation graphs, transitive trust, topic-conditional delegates | `/liquid` | Planned | Network analysis, simulation, dynamics on graphs |
+| 6 | **Expressive ballots** — question-specific interfaces for directly declared utility | `/expressive` | In progress; tax ballot and same-electorate results walkthrough | Preference elicitation, constrained interaction, explicit aggregation assumptions |
 
 The list is open — additional demos can be added as peer packages without disturbing existing ones. New demos must justify themselves by isolating a *distinct* friction with a *distinct* technical showcase; otherwise they're noise.
 
@@ -59,7 +60,7 @@ Two processes. One web app, one Python service.
 │ Routes: /methods,   │        │  /api/voting/...             │
 │ /preferences,       │        │  /api/preferences/...        │
 │ /districts (future),│        │  /api/districting/... (future)│
-│ /liquid (future)    │        │  /api/delegation/...  (future)│
+│ /liquid (planned)  │        │  /api/delegation/...  (future)│
 │ Server Actions →    │        │  /api/personas/...    (future)│
 │ Python API client   │        │  /api/agents/...      (future)│
 └──────────┬──────────┘        └────────────┬─────────────────┘
@@ -101,8 +102,9 @@ preferences/                Python: preference modeling                       [d
 personas/                   Python: simulated voter generation               (future) [demo 2]
 agents/                     Python: agent voting policies                    (future) [demo 2]
 districting/                Python: redistricting algorithms                 (future) [demo 3]
-apportionment/              Python: House apportionment + essay analyses     [demo 4]
-delegation/                 Python: liquid democracy routing, loop rule, vote copying [demo 5]
+apportionment/              Python: House apportionment + essay analyses              [demo 4]
+delegation/                 Python: liquid democracy delegation graphs       (future) [demo 5]
+expressive/                 Python: scalar ballots + synthetic electorate             [demo 6]
 eval/                       Python: synthetic + human-measure evaluation       [cross-demo]
 api/                        Python: FastAPI app, one router per demo
 prompts/                    Project scope + documentation
@@ -153,8 +155,8 @@ The first version keeps the viewer's delegations in browser session state and ad
 
 Each demo has its own AI/ML/systems story. The depth lives here. Demo 1 (voting
 methods) is mostly about correctness and rigor; its conventions are enforced in
-the voting package tests and module documentation. Demos 2, 3 and 5 are
-detailed below.
+the voting package tests and module documentation. Demos 2, 3, 5 and 6 are detailed
+below.
 
 ## Demo 2: Agent voting via preference models
 
@@ -313,6 +315,31 @@ All LLM calls live in Python. One framework for prompts, Pydantic output schemas
 **Open:** the nesting threshold. It is 0.7, set before the data was seen; a value near 0.6 would detect 13 of the 14 with no extra pairs, but 14 pairs is a small sample to tune on.
 
 **Deferred:** a delegate-recommendation agent that, given a user's stated preferences (from demo 2's posterior) and observed delegate voting records, suggests delegates per category. This remains the only natural cross-demo composition between demos 2 and 5.
+- **Graph data model.** Directed delegation edges with `(delegator, delegate, topic, weight)`. Topic taxonomy reuses `domain`/`program`. Cycles must be detected and broken (standard rule: voter's own vote takes precedence; cycles fall back to abstain or to a default delegate).
+- **Vote-flow algorithm.** Given a delegation graph and a measure on a given topic, compute effective vote weights. This is a topic-conditional reachability + weight propagation problem.
+- **Resolution.** Effective weights feed into `voting/` — every existing resolution method works on weighted ballots with minor adapter code. This is the natural cross-demo composition: liquid democracy is "demo 1 with a delegation layer in front."
+- **Simulation surface.** Generate synthetic populations with varying delegation strategies (apathetic, expert-trusting, partisan, etc.) and show how outcomes differ from direct voting. Investigate pathologies: super-delegates, partisan cascades, participation cliffs.
+- **AI angle.** A delegate-recommendation agent that, given a user's stated preferences (from demo 2's posterior!) and observed delegate voting records, suggests delegates per topic. This is the only natural cross-demo composition between demos 2 and 5 — and the most interesting portfolio synthesis.
+
+**Open scoping questions:** Topic granularity — fixed taxonomy or learned topic embeddings? How realistic should the simulated populations be (synthetic strategies vs. data-grounded)? Is the demo focused on showing *outcomes differ* from direct democracy, or on *characterizing* the dynamics of the graph? Defer answering until demo 5 reaches the top of the build queue.
+
+## Demo 6: Expressive ballots (in progress)
+
+`/expressive` compares Colorado's 2022 Proposition 121 yes/no ballot with a
+scalar preference curve. The submitted pair joins 99 fixed synthetic voters;
+the walkthrough explores all 100 curves and their binary answers, then applies
+an equal-weight mean-score rule to the same electorate, first over the original
+two rates and then over the full 0–100% range. Declared scores are not measured
+wellbeing; treating normalized 0–1 scales as comparable is an explicit modeling
+choice, and approval bounds zero scores rather than vetoing outcomes.
+
+The current demo ends after the tax results and takeaway. Budget-allocation,
+spending-package and schedule examples are paused; do not append them or add
+placeholder sections. A companion blog on the theory and trade-offs is separate
+future authoring work. `expressive/` owns the numerical rules and synthetic
+electorate; the UI owns interactive presentation. This demo has no database
+tables or persistence: ballot state stays in the browser and API calls are
+stateless.
 
 ## Cross-demo: Evaluation harness (`eval/`)
 
@@ -407,7 +434,7 @@ Demos progress on independent tracks. Cross-cutting infra (shared schema, FastAP
 
 **Next:**
 - Seed-plumb all stochastic operations for the reproducibility invariant
-- Extend `eval/` with one baseline metric for demos 1/3/5 as they mature
+- Extend `eval/` with one baseline metric for demos 1/3/4 as they mature
 - Add a top-level navigation surfacing the demo set (`/methods`, `/preferences`, future `/districts`, `/liquid`)
 
 ### Demo 1: Voting methods comparison

@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import type { SpecimenRole } from "@/types/methods";
 
 export const metadata: Metadata = {
-  title: "Voting methods · Nebula Civitas",
+  title: "Voting methods",
   description:
     "Explore seven voting methods in Python, see why their outcomes differ, examine simulation evidence, and build your own electorate.",
 };

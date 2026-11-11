@@ -179,10 +179,7 @@ export function DistrictingCard({ demo, data }: { demo: ShowcaseDemo; data: Dist
     >
       <CardCircuit />
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="dd-kicker">Demo {demo.number}</p>
-          <h2 className="mt-0.5 text-2xl leading-tight font-semibold tracking-tight">{demo.title}</h2>
-        </div>
+        <h2 className="text-2xl leading-tight font-semibold tracking-tight">{demo.title}</h2>
         <span className="dd-home-chip">
           <span className="dd-led" data-state={demo.status === "live" ? "on" : demo.status === "in-progress" ? "busy" : undefined} />
           {statusLabel[demo.status]}
@@ -190,7 +187,8 @@ export function DistrictingCard({ demo, data }: { demo: ShowcaseDemo; data: Dist
       </div>
       <p className="mt-2 text-lg leading-snug text-muted-foreground">{demo.tagline}</p>
 
-      <figure className="mt-4 grid gap-4 @sm:grid-cols-[11rem_minmax(0,1fr)]">
+      {/* Map and stages sit side by side from 20rem, with a slightly smaller map until there is room for the full one. */}
+      <figure className="mt-4 grid gap-4 @xs:grid-cols-[9.5rem_minmax(0,1fr)] @xs:gap-x-3.5 @sm:grid-cols-[11rem_minmax(0,1fr)] @sm:gap-x-4">
         <div>
           <div className="dd-home-plate aspect-square w-full max-w-[11rem]">
             <svg
@@ -243,7 +241,7 @@ export function DistrictingCard({ demo, data }: { demo: ShowcaseDemo; data: Dist
               return (
                 <li key={row.stage} className="dd-home-stage" data-active={active || undefined}>
                   <span className="dd-led" data-state={active ? "on" : undefined} />
-                  <span className="truncate text-sm">{row.label}</span>
+                  <span className="truncate text-[13px] @sm:text-sm">{row.label}</span>
                   <b>{gap(row.gap)}</b>
                   <small>{row.detail}</small>
                 </li>
@@ -253,7 +251,7 @@ export function DistrictingCard({ demo, data }: { demo: ShowcaseDemo; data: Dist
         </figcaption>
       </figure>
 
-      <p className="mt-4 text-sm leading-6 text-muted-foreground">{demo.description}</p>
+      <p className="home-card-description mt-4 text-sm leading-6 text-muted-foreground">{demo.description}</p>
       <ul className="mt-4 flex flex-wrap gap-1.5">
         {demo.showcase.map((tag) => (
           <li key={tag} className="dd-home-tag">

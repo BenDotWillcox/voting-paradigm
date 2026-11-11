@@ -70,10 +70,7 @@ export function MethodsCard({ demo, atlas }: { demo: ShowcaseDemo; atlas: HomeCa
       <div className="@container flex h-full flex-col overflow-hidden rounded-xl border border-mi-rule bg-mi-surface text-mi-ink transition-shadow hover:shadow-md">
         <div className="mi-island px-6 pb-5 pt-6">
           <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="font-mi-mono text-xs text-mi-tone-1">Demo {String(demo.number).padStart(2, "0")}</p>
-              <h2 className="mt-0.5 text-2xl leading-tight font-semibold tracking-[-0.02em]">{demo.title}</h2>
-            </div>
+            <h2 className="text-2xl leading-tight font-semibold tracking-[-0.02em]">{demo.title}</h2>
             <span className="rounded-[3px] border border-mi-rule px-2 py-0.5 font-mi-mono text-xs text-mi-ink-2">
               {statusLabel[demo.status]}
             </span>
@@ -138,7 +135,7 @@ export function MethodsCard({ demo, atlas }: { demo: ShowcaseDemo; atlas: HomeCa
             </figcaption>
           </figure>
 
-          <p className="mt-4 text-sm leading-6 text-mi-ink-2">{demo.description}</p>
+          <p className="home-card-description mt-4 text-sm leading-6 text-mi-ink-2">{demo.description}</p>
           <ul className="mt-4 flex flex-wrap gap-1.5">
             {demo.showcase.map((tag) => (
               <li key={tag} className="rounded-[3px] border border-mi-rule px-2 py-0.5 text-xs text-mi-ink-2">

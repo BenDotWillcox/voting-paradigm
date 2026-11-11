@@ -10,7 +10,7 @@ import { districtsMono } from "@/lib/districting-fonts";
 import { loadBlockPlanManifest } from "@/lib/load-block-plans";
 
 export const metadata: Metadata = {
-  title: "Districting · Nebula Civitas",
+  title: "Districting",
   description:
     "Congressional lines are drawn by hand. Explore census-block district plans an algorithm computed for all 50 states at four House sizes, with population and connectivity checks.",
 };

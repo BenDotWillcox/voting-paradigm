@@ -1,0 +1,91 @@
+.ballot {
+  --ink:#192d32; --quiet:#647277; --line:#dce4e3; --canvas:#f8faf8;
+  --paper:#fff; --teal:#0c766d; --teal-soft:#eaf4f0; --probe:#a9690e;
+  --taper:#496984;
+  color:var(--ink); border:1px solid var(--line); border-radius:16px;
+  background:var(--paper); overflow:hidden;
+}
+:global(.dark) .ballot { --ink:#e6eeed; --quiet:#9eafae; --line:#314442; --canvas:#172622; --paper:#1b2a26; --teal:#6ad9c0; --teal-soft:#223f36; --probe:#e8b668; --taper:#9fbdd9; }
+.visualColumn { min-width:0; background:var(--canvas); padding:29px 27px 22px; }
+.questionHeader { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; }
+.questionHeader > div { max-width:780px; }
+.eyebrow { display:block; color:var(--teal); font-size:10px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; margin-bottom:11px; }
+.questionHeader h2 { font-size:26px; line-height:1.25; letter-spacing:-.04em; margin:0 0 10px; font-weight:600; }
+.questionHeader p { margin:0; font-size:13px; color:var(--quiet); line-height:1.65; }
+.resetButton { display:flex; align-items:center; gap:6px; flex-shrink:0; padding:6px 3px; border:0; background:none; color:var(--quiet); font-size:11px; cursor:pointer; }
+.chartHost { min-width:0; }
+.zoomBar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin:10px 0 8px; }
+.zoomBar p { margin:0; color:var(--quiet); font-size:11px; }
+.zoomBar strong { font-weight:500; color:var(--ink); }
+.zoomControls { display:flex; align-items:center; flex-wrap:wrap; gap:7px; color:var(--quiet); font-size:11px; }
+.zoomControls > span { font-variant-numeric:tabular-nums; min-width:70px; }
+.zoomControls button { display:flex; align-items:center; gap:5px; padding:7px 9px; border:1px solid var(--line); border-radius:5px; background:var(--paper); color:var(--ink); cursor:pointer; }
+.zoomControls button[aria-pressed="true"] { color:var(--teal); border-color:var(--teal); }
+.chart { display:block; overflow:visible; user-select:none; touch-action:none; }
+.plotFrame { fill:none; stroke:var(--line); stroke-width:1; }
+.approvalBand { fill:color-mix(in srgb,var(--teal) 5%,transparent); }
+.gridLine { stroke:var(--line); stroke-width:1; }
+.tickLabel { fill:var(--quiet); font-size:11px; font-variant-numeric:tabular-nums; }
+.axisLabel { fill:var(--quiet); font-size:11px; }
+.unclippedCurve { fill:none; stroke:var(--quiet); stroke-width:1.5; stroke-dasharray:4 4; opacity:.65; }
+.curveFill { fill:color-mix(in srgb,var(--teal) 10%,transparent); }
+.clippedCurve { fill:none; stroke:var(--teal); stroke-width:2.5; stroke-linejoin:round; }
+.boundLine { stroke:var(--teal); opacity:.4; stroke-width:1; stroke-dasharray:3 4; }
+.idealGuide { stroke:var(--teal); opacity:.22; stroke-width:1; }
+.probeLine { stroke:var(--probe); stroke-width:1.3; stroke-dasharray:3 4; opacity:.7; }
+.handle { cursor:ew-resize; outline:none; }
+.ideal,.bound { --handle-color:var(--teal); }
+.taper { --handle-color:var(--taper); cursor:grab; }
+.onRail { cursor:ns-resize; }
+.taperRail { fill:none; stroke:var(--taper); stroke-width:1.5; opacity:.28; pointer-events:none; }
+.probe { --handle-color:var(--probe); }
+.hitTarget { stroke:none; }
+.handleDot { fill:var(--handle-color); stroke:var(--paper); stroke-width:2; }
+.boundMarker,.taperMarker { fill:var(--paper); stroke:var(--handle-color); stroke-width:2; stroke-linejoin:round; }
+.annotationLeader { fill:none; stroke:var(--handle-color); stroke-width:1; opacity:.45; pointer-events:none; }
+.labelBackground { fill:var(--canvas); fill-opacity:.96; stroke:transparent; stroke-width:1; }
+.annotationTitle,.annotationDetail { font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace; font-size:11px; pointer-events:none; }
+.annotationTitle { fill:var(--handle-color); font-weight:500; }
+.annotationDetail { fill:var(--quiet); }
+.probeMuted { opacity:.55; }
+.annotationLeader.probeMuted { opacity:.15; }
+.handle:hover .labelBackground { stroke:color-mix(in srgb,var(--handle-color) 30%,transparent); }
+.handle:focus-visible .hitTarget { stroke:var(--handle-color); stroke-width:1.5; stroke-dasharray:3 3; }
+.handle:focus-visible .labelBackground { stroke:var(--handle-color); stroke-width:1.5; }
+.legend { display:flex; flex-wrap:wrap; justify-content:center; gap:20px; color:var(--quiet); font-size:10px; }
+.legend span { display:flex; align-items:center; gap:6px; }
+.legend i { display:inline-block; width:18px; }
+.solidKey { border-top:2px solid var(--teal); }
+.dashedKey { border-top:1.5px dashed var(--quiet); }
+.goldKey { width:7px !important; height:7px; border-radius:50%; background:var(--probe); }
+.fineControls,.methodDetails { border-top:1px solid var(--line); padding:17px 26px; color:var(--quiet); font-size:12px; }
+.fineControls > summary,.methodDetails > summary { display:flex; align-items:center; gap:8px; cursor:pointer; list-style:none; color:var(--ink); font-weight:500; }
+.fineControls > summary::-webkit-details-marker,.methodDetails > summary::-webkit-details-marker { display:none; }
+.fineControls > summary small { font-size:10px; font-weight:400; color:var(--quiet); margin-left:auto; }
+.fineControls > summary::after,.methodDetails > summary::after { content:"+"; font-size:15px; color:var(--quiet); font-weight:400; }
+.methodDetails > summary::after { margin-left:auto; }
+.fineControls[open] > summary::after,.methodDetails[open] > summary::after { content:"−"; }
+.fineGrid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:24px; margin-top:25px; }
+.controlSection { min-width:0; }
+.controlSection h3 { font-size:12px; font-weight:600; color:var(--ink); margin:0 0 15px; }
+.controlSection p { margin:10px 0 0; font-size:10px; line-height:1.6; }
+.controlRow { margin-top:15px; }
+.controlTop { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:9px; }
+.controlTop label { font-size:10px; line-height:1.5; }
+.numberInput { display:flex; align-items:center; gap:4px; color:var(--quiet); font-size:10px; flex-shrink:0; }
+.numberInput input { width:58px; min-width:0; padding:5px 3px; text-align:right; font-size:12px; font-variant-numeric:tabular-nums; color:var(--ink); background:var(--paper); border:1px solid var(--line); border-radius:5px; }
+.range { display:block; width:100%; accent-color:var(--teal); height:18px; margin:0; cursor:pointer; }
+.methodDetails[open] summary { margin-bottom:15px; }
+.methodDetails > div { display:grid; gap:10px; max-width:900px; line-height:1.75; }
+.methodDetails p { margin:0; }
+.methodDetails code { color:var(--ink); font-size:11px; }
+.ballot input:focus-visible,.ballot button:focus-visible,.fineControls summary:focus-visible,.methodDetails summary:focus-visible { outline:2px solid var(--teal); outline-offset:3px; }
+.submissionFooter { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:21px 26px; border-top:1px solid var(--line); background:var(--canvas); }
+.submissionFooter p { color:var(--quiet); font-size:12px; line-height:1.6; margin:0; max-width:560px; }
+.submissionFooter button { display:flex; justify-content:center; align-items:center; gap:24px; white-space:nowrap; border:1px solid var(--teal); border-radius:7px; padding:12px 17px; font-size:13px; font-weight:500; color:var(--paper); background:var(--teal); cursor:pointer; }
+.submissionFooter button:disabled { cursor:default; opacity:.5; }
+@media(max-width:560px) { .submissionFooter { align-items:stretch; flex-direction:column; padding:18px; gap:13px; } }
+@media(min-width:1100px) { .visualColumn { padding:31px 32px 23px; } }
+@media(max-width:1000px) { .fineGrid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:560px) { .visualColumn { padding:22px 10px 19px; } .questionHeader { padding:0 7px; gap:10px; } .questionHeader h2 { font-size:22px; } .questionHeader p { font-size:12px; } .eyebrow { font-size:9px; line-height:1.5; } .resetButton { font-size:0; padding:4px; } .resetButton svg { width:16px; height:16px; } .fineControls,.methodDetails { padding:16px 18px; } .fineControls > summary small { display:none; } .fineControls > summary::after { margin-left:auto; } .fineGrid { grid-template-columns:minmax(0,1fr); gap:23px; } .legend { gap:13px; font-size:9px; } }
+@media(prefers-reduced-motion:reduce) { .ballot *, .ballot *::before,.ballot *::after { animation:none !important; transition:none !important; } }

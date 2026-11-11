@@ -15,7 +15,7 @@ import {
 } from "@/lib/apportionment/house-sizes";
 
 export const metadata: Metadata = {
-  title: "Apportionment explorer · Nebula Civitas",
+  title: "Apportionment explorer",
   description:
     "Try any House size from 435 to 11,036 seats: how the seats divide among the states, both representation gaps, and the cost, from the 2020 census.",
 };
