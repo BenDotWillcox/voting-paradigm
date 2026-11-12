@@ -55,7 +55,10 @@ class TestScenarioFile:
         assert len(SCENARIO.nesting) == 11
 
     def test_lookups(self) -> None:
-        assert SCENARIO.paper("city-general-3").title == "City general ballot"
+        assert SCENARIO.paper("city-general-3").title == "Port Alder general ballot"
+        assert SCENARIO.measure("q03").label == "Measure B"
+        with pytest.raises(KeyError):
+            SCENARIO.measure("q99")
         assert SCENARIO.category(SCENARIO.categories[0].id) == SCENARIO.categories[0]
         assert SCENARIO.category("cat_missing") is None
         with pytest.raises(KeyError):
@@ -144,6 +147,106 @@ class TestScenarioFile:
         raw["ballot_papers"][0]["closes_in_days"] = 0
         with pytest.raises(InvalidScenarioError):
             load_scenario(self.broken(tmp_path, ballot_papers=raw["ballot_papers"]))
+
+    def test_a_paper_must_open_before_it_closes(self, tmp_path: Path) -> None:
+        raw = json.loads(SCENARIO_PATH.read_text(encoding="utf-8"))
+        raw["ballot_papers"][0]["opens_in_days"] = raw["ballot_papers"][0]["closes_in_days"]
+        with pytest.raises(InvalidScenarioError):
+            load_scenario(self.broken(tmp_path, ballot_papers=raw["ballot_papers"]))
+
+    def test_an_open_paper_has_already_opened(self) -> None:
+        for entry in SCENARIO.open_papers:
+            assert entry.opens_in_days <= 0 < entry.closes_in_days
+
+
+class TestMeasures:
+    def test_every_measure_has_what_a_ballot_paper_prints(self) -> None:
+        for entry in SCENARIO.papers:
+            labels = [measure.label for measure in entry.measures]
+            assert labels == sorted(labels) and len(set(labels)) == len(labels)
+            for measure in entry.measures:
+                assert measure.wording.endswith((".", "?"))
+                assert measure.kind and measure.fiscal and measure.placed_by
+                if measure.ballot_type == "single_choice":
+                    assert [o.id for o in measure.question.options] == ["yes", "no"]
+                    assert measure.argument_for and measure.argument_against
+                else:
+                    assert len(measure.question.options) >= 3
+                    assert set(measure.option_notes) == {
+                        o.id for o in measure.question.options
+                    }
+
+    def test_some_measures_are_ranked_and_some_take_approvals(self) -> None:
+        types = {
+            measure.question.id: measure.ballot_type
+            for entry in SCENARIO.papers
+            for measure in entry.measures
+            if measure.ballot_type != "single_choice"
+        }
+        assert types == {
+            "q41": "ranked",
+            "q66": "ranked",
+            "q60": "approval",
+            "q67": "approval",
+        }
+        # One of each has closed and one of each is open.
+        closed = {q.id for entry in SCENARIO.closed_papers for q in entry.paper.questions}
+        assert {"q41", "q67"} <= closed and not {"q66", "q60"} & closed
+
+    def test_a_sited_measure_knows_its_place(self) -> None:
+        assert SCENARIO.measure("q34").site == (0.3, 0.3)
+        assert SCENARIO.measure("q03").site is None
+        # A choice among sites has no single place.
+        assert SCENARIO.measure("q60").site is None
+
+    def test_provisional_questions_are_the_reworded_ones(self) -> None:
+        assert SCENARIO.provisional <= {q.id for q in SCENARIO.questions}
+
+    def test_an_unknown_ballot_type_is_rejected(self, tmp_path: Path) -> None:
+        raw = json.loads(SCENARIO_PATH.read_text(encoding="utf-8"))
+        raw["ballot_papers"][0]["measures"][0]["ballot_type"] = "score"
+        path = tmp_path / "scenario.json"
+        path.write_text(json.dumps(raw), encoding="utf-8")
+        with pytest.raises(InvalidScenarioError):
+            load_scenario(path)
+
+
+class TestViewerPast:
+    def test_changes_lead_to_the_starting_delegations(self) -> None:
+        viewer = SCENARIO.viewer
+        assert viewer.delegations_on(0) == viewer.delegations
+        assert viewer.delegations_on(-400) == ()
+        # The account opened with four categories, two of them since moved.
+        opened = dict(viewer.delegations_on(-340))
+        assert set(opened) == {
+            "public schools and education",
+            "all things taxes",
+            "the environment and conservation",
+            "housing and land use",
+        }
+        today = dict(viewer.delegations)
+        assert opened["housing and land use"] != today["housing and land use"]
+        assert dict(viewer.delegations_on(-300))["housing and land use"] == today[
+            "housing and land use"
+        ]
+
+    def test_every_past_delegate_is_a_person(self) -> None:
+        for change in SCENARIO.viewer_changes(VIEWER):
+            assert change.delegator == VIEWER and change.day < 0
+            for person in (change.before, change.after):
+                assert person is None or person in SIMULATION.network.persons
+
+    def test_a_change_that_does_not_lead_to_today_is_rejected(
+        self, tmp_path: Path
+    ) -> None:
+        raw = json.loads(SCENARIO_PATH.read_text(encoding="utf-8"))
+        raw["viewer"]["changes"].append(
+            {"day": -5, "category": "all things taxes", "before": None, "after": "d1-001"}
+        )
+        path = tmp_path / "scenario.json"
+        path.write_text(json.dumps(raw), encoding="utf-8")
+        with pytest.raises(InvalidScenarioError):
+            load_scenario(path)
 
 
 class TestScenarioPopulation:

@@ -55,10 +55,13 @@ export default async function LiquidAboutPage() {
           people outside the city who can still be delegates, and you. Names are invented. A
           third of people keep every decision; the rest hand three to seven categories to a
           well-known person or a neighbour. Those behaviours and their shares are assumptions
-          chosen to make delegation visible, and everyone&apos;s yes or no comes from a toy
-          one-dimensional model. Your account starts with eight delegations and a year of
-          history so there is something to look at. None of it says how real voters would
-          behave.
+          chosen to make delegation visible. The measures are invented too. How each person
+          votes comes from a toy model: a position on three issues, a lean for each district
+          and a pull from living near a measure&apos;s site. Not everyone votes on everything;
+          each person has a seeded chance of filling in a question, so a vote that ends with
+          someone who did not vote is an abstention. Your account starts with eight
+          delegations and a year of history so there is something to look at. None of it says
+          how real voters would behave.
         </p>
       </section>
 

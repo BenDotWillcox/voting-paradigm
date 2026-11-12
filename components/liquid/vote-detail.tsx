@@ -7,8 +7,9 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { QuestionResult } from "@/types/delegation";
 import { useAccount } from "./account-provider";
+import { BALLOT_TEXT, METHOD_TEXT, optionName as nameOf } from "./ballots";
 import { closing, personName, profileHref } from "./people";
-import { Concentration, Receipt, TallyBar, VoteButtons } from "./vote-parts";
+import { Concentration, Receipt, TallyBar, VoteInput } from "./vote-parts";
 
 /**
  * One vote in full: what is proposed, who it was issued to, how the viewer's
@@ -51,8 +52,12 @@ export function VoteDetail({ questionId }: { questionId: string }) {
 
   const open = openVotes?.find((entry) => entry.question.id === questionId);
   const result = closed ? past : open?.result;
-  const optionName = (id: string | null) =>
-    id === null ? "Abstain" : (question.options.find((option) => option.id === id)?.name ?? id);
+  const optionName = (id: string) => nameOf(question, id);
+  const yesNo = question.ballot_type === "single_choice";
+  const district = (directory.jurisdictions.get(paper.jurisdiction) ?? paper.jurisdiction).replace(
+    /^The /,
+    "the "
+  );
   const decides =
     result &&
     (result.receipt
@@ -70,27 +75,71 @@ export function VoteDetail({ questionId }: { questionId: string }) {
         <p className="liquid-label">
           {paper.title} · {closing(paper.closes_in_days)}
         </p>
+        <p className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="rounded-full border border-primary/60 px-2 py-0.5 font-mono font-medium text-primary">
+            {question.label}
+          </span>
+          <span className="rounded-full border px-2 py-0.5 text-muted-foreground">
+            {question.kind}
+          </span>
+          {!yesNo && (
+            <span className="rounded-full border px-2 py-0.5 text-muted-foreground">
+              {BALLOT_TEXT[question.ballot_type]}
+            </span>
+          )}
+        </p>
         <h2 className="text-2xl font-semibold tracking-tight">{question.title}</h2>
-        <p className="text-base leading-relaxed">{question.summary}</p>
-        <dl className="grid gap-x-8 gap-y-2 pt-2 text-sm sm:grid-cols-2">
+        <blockquote className="border-l-2 border-primary/60 pl-4 text-base leading-relaxed">
+          {question.wording}
+        </blockquote>
+        <p className="text-sm leading-relaxed text-muted-foreground">{question.summary}</p>
+        <dl className="grid gap-x-8 gap-y-3 pt-2 text-sm sm:grid-cols-2">
+          <div>
+            <dt className="text-xs text-muted-foreground">Fiscal impact</dt>
+            <dd>{question.fiscal}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted-foreground">Placed on the ballot by</dt>
+            <dd>{question.placed_by}</dd>
+          </div>
           <div>
             <dt className="text-xs text-muted-foreground">Issued to</dt>
             <dd>
-              {paper.eligible_voters} residents of{" "}
-              {(directory.jurisdictions.get(paper.jurisdiction) ?? paper.jurisdiction).replace(
-                /^The /,
-                "the "
-              )}
+              {paper.eligible_voters} residents of {district}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-muted-foreground">Decided by</dt>
+            <dt className="text-xs text-muted-foreground">Decided</dt>
             <dd>
-              {question.options.map((option) => option.name).join(" or ")}, by simple majority of
-              the ballots cast
+              {yesNo ? "Yes or no, " : ""}
+              {METHOD_TEXT[question.method]}
             </dd>
           </div>
         </dl>
+        {yesNo ? (
+          <div className="grid gap-3 pt-2 text-sm sm:grid-cols-2">
+            <div className="liquid-panel p-3">
+              <p className="liquid-label">Argument for</p>
+              <p className="mt-1 leading-relaxed">{question.argument_for}</p>
+            </div>
+            <div className="liquid-panel p-3">
+              <p className="liquid-label">Argument against</p>
+              <p className="mt-1 leading-relaxed">{question.argument_against}</p>
+            </div>
+          </div>
+        ) : (
+          // The vote input lists the options itself, where the viewer has one.
+          (closed || !result || !(result.receipt || decides)) && (
+            <ul className="grid gap-3 pt-2 text-sm sm:grid-cols-2">
+              {question.options.map((option) => (
+                <li key={option.id} className="liquid-panel p-3">
+                  <p className="font-medium">{option.name}</p>
+                  {option.note && <p className="mt-1 text-muted-foreground">{option.note}</p>}
+                </li>
+              ))}
+            </ul>
+          )
+        )}
       </header>
 
       {result === undefined && (
@@ -107,10 +156,10 @@ export function VoteDetail({ questionId }: { questionId: string }) {
               <h3 className="text-sm font-semibold">
                 {decides ? "Your vote" : "Vote yourself instead"}
               </h3>
-              <VoteButtons
+              <VoteInput
                 question={question}
                 vote={votes[question.id]}
-                onVote={(option) => vote(question.id, option)}
+                onVote={(choice) => vote(question.id, choice)}
               />
               <p className="text-sm text-muted-foreground">
                 {decides
@@ -130,7 +179,7 @@ export function VoteDetail({ questionId }: { questionId: string }) {
               <Receipt
                 directory={directory}
                 receipt={result.receipt}
-                optionName={optionName}
+                question={question}
                 closed={closed}
               />
             ) : (
@@ -184,7 +233,7 @@ export function VoteDetail({ questionId }: { questionId: string }) {
                 <div className="space-y-3">
                   <TallyBar label="With delegation" tally={result.delegated} question={question} />
                   <TallyBar
-                    label="If everyone had voted directly"
+                    label="Without delegation, from the people who voted themselves"
                     tally={result.direct}
                     question={question}
                   />
@@ -193,13 +242,13 @@ export function VoteDetail({ questionId }: { questionId: string }) {
                   {result.winner_changed ? (
                     <span className="font-medium text-amber-700 dark:text-amber-400">
                       Delegation changed the result:{" "}
-                      {result.delegated.winners.map(optionName).join(" / ")} passed, where direct
+                      {result.delegated.winners.map(optionName).join(" / ")} won, where direct
                       voting would have given {result.direct.winners.map(optionName).join(" / ")}.
                     </span>
                   ) : (
                     <span className="text-muted-foreground">
                       {result.delegated.winners.map(optionName).join(" / ")} won, as it would have
-                      with everyone voting directly.
+                      without delegation.
                     </span>
                   )}
                   {(result.delegated.tiebreak_applied || result.direct.tiebreak_applied) && (
@@ -214,8 +263,8 @@ export function VoteDetail({ questionId }: { questionId: string }) {
             ) : (
               <>
                 <p className="text-sm text-muted-foreground">
-                  The count is published when the ballot closes. This is where the votes stand
-                  now.
+                  The count is published when the ballot closes. {result.cast_so_far} people have
+                  filled in this question so far; this is where the votes stand now.
                 </p>
                 <Concentration directory={directory} result={result} />
               </>

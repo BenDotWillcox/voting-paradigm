@@ -448,17 +448,26 @@ delegation/
                  that uses the network, not imported by the package  [built]
   nesting.py     which categories sit inside which: asking, recording,
                  deriving                                            [built]
-  simulate.py    seeded synthetic network and sincere ballots        [built]
+  simulate.py    seeded synthetic network, its dated changes, homes,
+                 turnout and sincere ballots                         [built]
+  ballots.py     ballot types (single choice, ranked, approval) and
+                 the voting/ method that counts each                 [built]
   scenario.py    loads the curated scenario                          [built]
-  data/scenario_v2.json  the pool, twelve ballot papers, the viewer's
-                 starting account, recorded judgments and nesting    [built]
+  data/measures_v3.json  hand-written: the city, every measure with
+                 its wording, fiscal note and arguments, the support
+                 numbers, the viewer's account and its past          [built]
+  data/recorded_v3/      judgments for measures reworded since the
+                 evaluation                                          [built]
+  data/scenario_v3.json  built from the two above plus the pool,
+                 the nesting and the evaluation's judgments          [built]
 api/
   routers/delegation.py     HTTP only                                [built]
   schemas/delegation.py     Pydantic request and response models     [built]
   services/delegation.py    orchestration                            [built]
 scripts/
-  build_delegation_scenario.py  builds scenario_v2.json from the
-                 evaluation's recorded answers; no network           [built]
+  build_delegation_scenario.py  builds scenario_v3.json; `plan` and
+                 `build` use no network, `collect --live` asks Jev
+                 about reworded measures                             [built]
 eval/
   delegation_router.py              router evaluation (pure)        [built]
   run_delegation_router_eval.py     plan, smoke, collect, report    [built]
@@ -633,7 +642,7 @@ an account name other than "You / @you".
 - **Recorded judgments.** Each (model id, state, question) is hashed and its
   first response stored, append-only. The question includes the category
   text. Judgments for the curated ballots against the curated category pool
-  are committed in `delegation/data/scenario_v2.json`, so that part of the
+  are committed in `delegation/data/scenario_v3.json`, so that part of the
   public demo replays without a key. A category the viewer writes is judged
   live, which needs the key and the `DELEGATION_LIVE_JUDGMENTS` switch.
 - **Resolution reads only recorded judgments.** A run is deterministic given

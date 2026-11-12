@@ -1,36 +1,42 @@
 #!/usr/bin/env python3
 """Build the curated scenario for the liquid democracy demo.
 
-Writes delegation/data/scenario_v2.json from the router evaluation's
-recorded answers (eval/benchmarks/delegation_router_v1/):
+Writes delegation/data/scenario_v3.json from two sources:
 
-- the category pool, with each category's id and text
-- which pool categories sit inside which, derived from the recorded
-  containment judgments at the evaluation's nesting threshold
-- a timeline of ballot papers that uses every labelled question once:
-  eight papers that have closed, which give everyone a voting history, and
-  four that are still open
-- the account the viewer starts with: eight delegations from broad to
-  narrow, and which closed questions they missed or voted on themself
-- the recorded yes/no judgment for every question against every pool
-  category
+- delegation/data/measures_v3.json, hand-written: the city, the ballot
+  papers, every measure with its official wording, fiscal note and
+  arguments, the support numbers for the toy population, and the viewer's
+  account and its past
+- recorded judgments: the category pool and its nesting from the router
+  evaluation (eval/benchmarks/delegation_router_v1/), and one yes/no
+  judgment for every measure against every pool category
 
-Nothing is judged here and no network is used: every number is copied from
-an answer that is already recorded. The evaluation's labels (which
-categories a question is "about") are deliberately left out, because the
-demo routes on judgments alone.
+A judgment belongs to the exact title, summary and option names the decision
+model was shown. A measure whose wording is unchanged since the evaluation
+reuses the evaluation's recorded answers. A measure that was reworded needs
+new ones, recorded in delegation/data/recorded_v3/judgments.jsonl by the
+`collect` command. Until they are collected, `build` uses the answers
+recorded for the question's earlier wording and lists the question under
+"provisional" in the scenario file; `build --strict` refuses to do that.
 
-Deterministic: the same recorded answers give a byte-identical file.
+`build` and `plan` use no network and are deterministic: the same sources
+give a byte-identical file. `collect` calls hosted Jev, which costs money,
+and so needs --live.
 
 Usage:
-    python scripts/build_delegation_scenario.py
+    python scripts/build_delegation_scenario.py            # build
+    python scripts/build_delegation_scenario.py plan       # what collect would ask
+    python scripts/build_delegation_scenario.py collect --live
+    python scripts/build_delegation_scenario.py build --strict
 """
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -39,197 +45,91 @@ sys.path.insert(0, str(ROOT))
 
 from delegation import (  # noqa: E402
     DEFAULT_THRESHOLD,
+    Category,
     JudgmentStore,
     NestingStore,
+    Question,
     gather_judgments,
     gather_nesting,
 )
 from delegation.jev import JEV_MODEL  # noqa: E402
-from delegation.scenario import SCENARIO_PATH, SCENARIO_SCHEMA  # noqa: E402
-from delegation.simulate import CITY, district_id  # noqa: E402
+from delegation.scenario import (  # noqa: E402
+    DATA,
+    DEFAULT_OPEN_DAYS,
+    MEASURES_PATH,
+    MEASURES_SCHEMA,
+    SCENARIO_PATH,
+    SCENARIO_SCHEMA,
+    Measure,
+    label_for,
+    read_measure,
+)
 from eval.delegation_router import (  # noqa: E402
     RouterEvalConfig,
+    RouterFixture,
     load_fixture,
     ordered_pairs,
 )
 
 BENCHMARK = ROOT / "eval" / "benchmarks" / "delegation_router_v1"
-
-# The papers, oldest first. closes_in_days counts from today: negative is a
-# closed paper, positive an open one. Questions are named by their id in the
-# evaluation fixture, and each is used once.
-BALLOT_PAPERS: tuple[dict[str, Any], ...] = (
-    {
-        "id": "city-general-1",
-        "title": "City general ballot",
-        "jurisdiction": CITY,
-        "closes_in_days": -330,
-        "questions": (
-            "q05",
-            "q07",
-            "q14",
-            "q23",
-            "q30",
-            "q37",
-            "q43",
-            "q46",
-            "q54",
-            "q59",
-        ),
-    },
-    {
-        "id": "district-1-special-1",
-        "title": "District 1 special ballot",
-        "jurisdiction": district_id(1),
-        "closes_in_days": -290,
-        "questions": ("q29", "q36", "q61"),
-    },
-    {
-        "id": "district-3-special-1",
-        "title": "District 3 special ballot",
-        "jurisdiction": district_id(3),
-        "closes_in_days": -250,
-        "questions": ("q18", "q22", "q65"),
-    },
-    {
-        "id": "city-budget",
-        "title": "City budget and revenue ballot",
-        "jurisdiction": CITY,
-        "closes_in_days": -200,
-        "questions": ("q02", "q04", "q06", "q08", "q09", "q25", "q56"),
-    },
-    {
-        "id": "district-2-special-1",
-        "title": "District 2 special ballot",
-        "jurisdiction": district_id(2),
-        "closes_in_days": -160,
-        "questions": ("q28", "q41", "q42", "q64"),
-    },
-    {
-        "id": "city-general-2",
-        "title": "City general ballot",
-        "jurisdiction": CITY,
-        "closes_in_days": -110,
-        "questions": (
-            "q11",
-            "q15",
-            "q17",
-            "q20",
-            "q24",
-            "q27",
-            "q31",
-            "q35",
-            "q40",
-            "q44",
-            "q47",
-            "q50",
-            "q55",
-        ),
-    },
-    {
-        "id": "district-1-special-2",
-        "title": "District 1 special ballot",
-        "jurisdiction": district_id(1),
-        "closes_in_days": -60,
-        "questions": ("q13", "q38"),
-    },
-    {
-        "id": "city-advisory-1",
-        "title": "City advisory ballot",
-        "jurisdiction": CITY,
-        "closes_in_days": -25,
-        "questions": ("q49", "q51", "q53", "q63", "q67"),
-    },
-    {
-        "id": "district-2-special-2",
-        "title": "District 2 special ballot",
-        "jurisdiction": district_id(2),
-        "closes_in_days": 3,
-        "questions": ("q34", "q57", "q60"),
-    },
-    {
-        "id": "city-general-3",
-        "title": "City general ballot",
-        "jurisdiction": CITY,
-        "closes_in_days": 6,
-        "questions": (
-            "q01",
-            "q03",
-            "q10",
-            "q12",
-            "q16",
-            "q19",
-            "q21",
-            "q26",
-            "q32",
-            "q33",
-            "q39",
-            "q45",
-            "q48",
-            "q52",
-        ),
-    },
-    {
-        "id": "district-1-special-3",
-        "title": "District 1 special ballot",
-        "jurisdiction": district_id(1),
-        "closes_in_days": 9,
-        "questions": ("q58", "q62"),
-    },
-    {
-        "id": "city-advisory-2",
-        "title": "City advisory ballot",
-        "jurisdiction": CITY,
-        "closes_in_days": 16,
-        "questions": ("q66", "q68"),
-    },
-)
-
-# The account the viewer starts with. Four broad categories and four narrow
-# ones, two of which sit inside a broad one the viewer also holds. Each
-# delegate is a person in the seeded network: mostly someone well known for
-# the category, one neighbour, and one person who lives outside the city.
-VIEWER: dict[str, Any] = {
-    "delegations": (
-        ("public schools and education", "d1-078"),
-        ("all things taxes", "out-16"),
-        ("sales tax rates", "d2-007"),
-        ("the environment and conservation", "d3-011"),
-        ("the well-being of tree frogs in the Amazon", "d2-054"),
-        ("housing and land use", "d2-016"),
-        ("bike lanes and cycling safety", "d1-006"),
-        ("ranked choice voting", "d2-057"),
-    ),
-    # Where the viewer sits in the spatial model, for their past votes only
-    "position": 0.15,
-    # Closed questions the viewer held and let lapse, and ones they voted on
-    # themself although a delegation covered them
-    "missed": ("q59", "q67"),
-    "voted_directly": ("q25", "q30"),
-}
+# Judgments for measures reworded since the evaluation
+RECORDED = DATA / "recorded_v3" / "judgments.jsonl"
+ENV_FILE = ROOT / ".env.local"
 
 
-def build() -> dict[str, Any]:
-    """The scenario, from the evaluation's fixture and recorded answers."""
+def _source() -> dict[str, Any]:
+    raw: dict[str, Any] = json.loads(MEASURES_PATH.read_text(encoding="utf-8"))
+    if raw.get("schema") != MEASURES_SCHEMA:
+        raise SystemExit(f"{MEASURES_PATH.name}: expected schema {MEASURES_SCHEMA!r}")
+    return raw
+
+
+def _measures(raw: dict[str, Any]) -> list[Measure]:
+    return [
+        read_measure(measure, index)
+        for paper in raw["ballot_papers"]
+        for index, measure in enumerate(paper["measures"])
+    ]
+
+
+def _judged(
+    questions: Sequence[Question], categories: Sequence[Category]
+) -> tuple[dict[tuple[str, str], float], list[Question]]:
+    """
+    Every recorded judgment for the questions as now worded, and the
+    questions that are missing at least one.
+    """
+    judgments: dict[tuple[str, str], float] = {}
+    for path in (BENCHMARK / "judgments.jsonl", RECORDED):
+        report = gather_judgments(
+            questions, categories, JudgmentStore(path), model=JEV_MODEL
+        )
+        judgments.update(report.judgments)
+    missing = [
+        question
+        for question in questions
+        if any((question.id, category.id) not in judgments for category in categories)
+    ]
+    return judgments, missing
+
+
+def build(strict: bool = False) -> dict[str, Any]:
+    """The scenario, from the written measures and the recorded answers."""
+    raw = _source()
     fixture = load_fixture()
     config = RouterEvalConfig()
     categories = [entry.category for entry in fixture.categories]
+    measures = _measures(raw)
+    questions = [measure.question for measure in measures]
 
-    chosen = [
-        fixture.labelled(question_id).question
-        for paper in BALLOT_PAPERS
-        for question_id in paper["questions"]
-    ]
-    judged = gather_judgments(
-        chosen,
-        categories,
-        JudgmentStore(BENCHMARK / "judgments.jsonl"),
-        model=JEV_MODEL,
-    )
-    if judged.missing:
+    judgments, missing = _judged(questions, categories)
+    if missing and strict:
         raise SystemExit(
-            f"{len(judged.missing)} judgments are not recorded; run collect"
+            f"{len(missing)} measures are not judged as now worded; run collect"
         )
+    provisional = _stand_ins(fixture, missing, categories)
+    judgments.update(provisional)
+
     nested = gather_nesting(
         ordered_pairs(fixture),
         NestingStore(BENCHMARK / "nesting.jsonl"),
@@ -247,67 +147,152 @@ def build() -> dict[str, Any]:
         "threshold": DEFAULT_THRESHOLD,
         "nesting_threshold": config.nesting_threshold,
         "source": {
+            "measures_sha256": _sha256(MEASURES_PATH),
             "benchmark": BENCHMARK.relative_to(ROOT).as_posix(),
-            "judgments_sha256": _sha256(BENCHMARK / "judgments.jsonl"),
+            "benchmark_judgments_sha256": _sha256(BENCHMARK / "judgments.jsonl"),
             "nesting_sha256": _sha256(BENCHMARK / "nesting.jsonl"),
+            "recorded_judgments_sha256": (
+                _sha256(RECORDED) if RECORDED.exists() else None
+            ),
         },
+        "provisional": sorted(question.id for question in missing),
+        "city": raw["city"],
         "categories": [
             {"id": category.id, "text": category.text} for category in categories
         ],
         "nesting": sorted([narrow, broad] for narrow, broad in nested.nesting),
-        "viewer": {
-            "delegations": [
-                {"category": category, "delegate": delegate}
-                for category, delegate in VIEWER["delegations"]
-            ],
-            "position": VIEWER["position"],
-            "missed": sorted(VIEWER["missed"]),
-            "voted_directly": sorted(VIEWER["voted_directly"]),
-        },
+        "viewer": raw["viewer"],
         "ballot_papers": [
             {
                 "id": paper["id"],
                 "title": paper["title"],
                 "jurisdiction": paper["jurisdiction"],
                 "closes_in_days": paper["closes_in_days"],
-                "questions": [
-                    {
-                        "id": question.id,
-                        "title": question.title,
-                        "summary": question.summary,
-                    }
-                    for question in (
-                        fixture.labelled(question_id).question
-                        for question_id in paper["questions"]
-                    )
+                "opens_in_days": paper.get(
+                    "opens_in_days", paper["closes_in_days"] - DEFAULT_OPEN_DAYS
+                ),
+                "measures": [
+                    {"label": label_for(index), **measure}
+                    for index, measure in enumerate(paper["measures"])
                 ],
             }
-            for paper in BALLOT_PAPERS
+            for paper in raw["ballot_papers"]
         ],
         "judgments": {
             question.id: {
-                category.id: judged.judgments[(question.id, category.id)]
+                category.id: judgments[(question.id, category.id)]
                 for category in categories
             }
-            for question in chosen
+            for question in questions
         },
     }
 
 
-def scenario_bytes() -> bytes:
-    return (json.dumps(build(), indent=2, allow_nan=False) + "\n").encode("utf-8")
+def _stand_ins(
+    fixture: RouterFixture, missing: Sequence[Question], categories: Sequence[Category]
+) -> dict[tuple[str, str], float]:
+    """The answers recorded for the earlier wording of each unjudged question."""
+    if not missing:
+        return {}
+    earlier = [fixture.labelled(question.id).question for question in missing]
+    report = gather_judgments(
+        earlier,
+        categories,
+        JudgmentStore(BENCHMARK / "judgments.jsonl"),
+        model=JEV_MODEL,
+    )
+    if report.missing:
+        raise SystemExit(
+            f"{len(report.missing)} judgments have no recorded stand-in; run collect"
+        )
+    return report.judgments
+
+
+def scenario_bytes(strict: bool = False) -> bytes:
+    return (json.dumps(build(strict), indent=2, allow_nan=False) + "\n").encode("utf-8")
 
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
-def main() -> int:
-    body = scenario_bytes()
+def _unjudged() -> tuple[list[Question], list[Category]]:
+    categories = [entry.category for entry in load_fixture().categories]
+    _, missing = _judged(
+        [measure.question for measure in _measures(_source())], categories
+    )
+    return missing, categories
+
+
+def plan() -> int:
+    missing, categories = _unjudged()
+    print(f"Measures not judged as now worded: {len(missing)}")
+    for question in missing:
+        print(f"  {question.id}  {question.title}")
+    print(
+        f"collect would send {len(missing)} requests "
+        f"for {len(missing) * len(categories)} judgments to {JEV_MODEL}."
+    )
+    return 0
+
+
+def collect() -> int:
+    from delegation.jev import JevSource, read_api_key
+
+    missing, categories = _unjudged()
+    if not missing:
+        print("Nothing to collect.")
+        return 0
+    key = read_api_key(ENV_FILE)
+    if not key:
+        raise SystemExit("No API key: set TYPESAFE_API_KEY or add it to .env.local")
+    source = JevSource(key)
+    try:
+        report = gather_judgments(
+            missing, categories, JudgmentStore(RECORDED), model=JEV_MODEL, source=source
+        )
+    finally:
+        source.close()
+    print(
+        f"Recorded {report.fetched} judgments in {source.requests} requests; "
+        f"{len(report.missing)} still missing."
+    )
+    for failure in report.failures:
+        print(f"  failed: {failure}")
+    return 1 if report.missing else 0
+
+
+def write(strict: bool) -> int:
+    body = scenario_bytes(strict)
     SCENARIO_PATH.parent.mkdir(parents=True, exist_ok=True)
     SCENARIO_PATH.write_bytes(body)
+    provisional = json.loads(body)["provisional"]
     print(f"{SCENARIO_PATH.relative_to(ROOT).as_posix()}: {len(body) / 1024:.1f} KB")
+    if provisional:
+        print(
+            f"{len(provisional)} measures use judgments recorded for their "
+            f"earlier wording: {', '.join(provisional)}"
+        )
     return 0
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    commands = parser.add_subparsers(dest="command")
+    built = commands.add_parser("build")
+    built.add_argument("--strict", action="store_true")
+    commands.add_parser("plan")
+    paid = commands.add_parser("collect")
+    paid.add_argument("--live", action="store_true")
+    args = parser.parse_args(argv)
+
+    if args.command == "plan":
+        return plan()
+    if args.command == "collect":
+        if not args.live:
+            raise SystemExit("'collect' calls hosted Jev and costs money; pass --live")
+        return collect()
+    return write(bool(getattr(args, "strict", False)))
 
 
 if __name__ == "__main__":

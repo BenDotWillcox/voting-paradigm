@@ -276,7 +276,8 @@ class TestResolve:
         assert receipt["chain"] == [VIEWER, KEEPER]
         assert receipt["resolver"] == KEEPER
         assert receipt["kept_because"] == "no_delegations"
-        assert receipt["choice"] in {"yes", "no"}
+        # The delegate has voted, or is still due to.
+        assert receipt["choice"] in (["yes"], ["no"], None)
         assert receipt["scores"][0]["probability"] >= receipt["threshold"]
 
     def test_a_question_about_nothing_the_viewer_delegated_stays(
@@ -328,12 +329,12 @@ class TestResolve:
         result = resolve(
             client,
             viewer_delegations=delegations((TAXES, KEEPER)),
-            viewer_votes={"q01": "yes"},
+            viewer_votes={"q01": ["yes"]},
         )
         item = question(result, "q01")
         assert item["receipt"]["outcome"] == "direct_vote"
         assert item["receipt"]["resolver"] == VIEWER
-        assert item["receipt"]["choice"] == "yes"
+        assert item["receipt"]["choice"] == ["yes"]
         assert item["inbox"]["answered"] is True
 
     def test_raising_the_threshold_to_one_stops_all_delegation(
@@ -380,13 +381,17 @@ class TestAnsweringForOthers:
     ) -> None:
         waiting = question(resolve(client, SPECIAL), "q34")
         held = waiting["inbox"]["votes_for_others"]
-        assert waiting["delegated"]["abstentions"] == held
+        assert held >= 1
 
         answered = question(
-            resolve(client, SPECIAL, viewer_votes={"q34": "yes"}), "q34"
+            resolve(client, SPECIAL, viewer_votes={"q34": ["yes"]}), "q34"
         )
         assert answered["inbox"]["answered"] is True
-        assert answered["delegated"]["abstentions"] == 0
+        # The rest are people who have not voted, or whose resolver has not.
+        assert (
+            answered["delegated"]["abstentions"]
+            == waiting["delegated"]["abstentions"] - held
+        )
         assert (
             answered["delegated"]["counts"]["yes"]
             == waiting["delegated"]["counts"]["yes"] + held
@@ -763,7 +768,7 @@ class TestClosedPapers:
             client,
             CLOSED_GENERAL,
             viewer_delegations=delegations((TRANSPORT, KEEPER)),
-            viewer_votes={"q11": "yes"},
+            viewer_votes={"q11": ["yes"]},
             threshold=0.95,
         )
         assert plain == changed
@@ -787,7 +792,7 @@ class TestClosedPapers:
     ) -> None:
         receipt = question(resolve(client, CLOSED_BUDGET), "q25")["receipt"]
         assert receipt["outcome"] == "direct_vote"
-        assert receipt["choice"] in {"yes", "no"}
+        assert receipt["choice"] in (["yes"], ["no"])
 
     def test_an_open_paper_reports_its_deadline(self, client: TestClient) -> None:
         result = resolve(client, SPECIAL)
@@ -835,10 +840,7 @@ class TestProfile:
             assert entry["chain"][-1] == entry["resolver"] != "d2-022"
         for entry in history:
             if entry["how"] == "voted":
-                assert entry["resolver"] == "d2-022" and entry["choice"] in {
-                    "yes",
-                    "no",
-                }
+                assert entry["resolver"] == "d2-022" and entry["choice"]
 
     def test_the_viewers_profile_is_their_starting_account(
         self, client: TestClient
@@ -912,3 +914,197 @@ class TestDailyAllowance:
         again = client.post(JUDGMENTS_URL, json={"category": WRITTEN}).json()
         assert again["limited"] is False
         assert again["judgments"]["recorded"] == OPEN_QUESTIONS
+
+
+class TestMeasures:
+    def scenario(self, client: TestClient) -> dict[str, Any]:
+        body: dict[str, Any] = client.get(SCENARIO_URL).json()
+        return body
+
+    def measures(self, client: TestClient) -> dict[str, dict[str, Any]]:
+        return {
+            item["id"]: item
+            for paper in self.scenario(client)["ballot_papers"]
+            for item in paper["questions"]
+        }
+
+    def test_the_city_and_its_districts_are_named(self, client: TestClient) -> None:
+        body = self.scenario(client)
+        names = {item["id"]: item["name"] for item in body["jurisdictions"]}
+        assert body["city"] == names["city"] == "Port Alder"
+        assert names["district-2"] == "Harbor"
+
+    def test_a_measure_carries_what_the_ballot_paper_prints(
+        self, client: TestClient
+    ) -> None:
+        bond = self.measures(client)["q21"]  # School construction bond
+        assert bond["label"].startswith("Measure ") and bond["kind"] == "Bond"
+        assert bond["ballot_type"] == "single_choice"
+        assert bond["method"] == "plurality"
+        assert bond["wording"].startswith("Shall ")
+        assert bond["fiscal"] and bond["placed_by"]
+        assert bond["argument_for"] and bond["argument_against"]
+        assert bond["site"] is None
+
+    def test_some_measures_are_ranked_or_take_approvals(
+        self, client: TestClient
+    ) -> None:
+        measures = self.measures(client)
+        flag, library = measures["q66"], measures["q60"]
+        assert (flag["ballot_type"], flag["method"]) == ("ranked", "irv")
+        assert (library["ballot_type"], library["method"]) == ("approval", "approval")
+        assert len(flag["options"]) == 4
+        assert all(option["note"] for option in library["options"])
+        assert measures["q34"]["site"] == [0.3, 0.3]  # Bike lane on Main Street
+
+    def test_residents_have_a_location_and_outsiders_do_not(
+        self, client: TestClient
+    ) -> None:
+        persons = {p["id"]: p for p in self.scenario(client)["persons"]}
+        x, y = persons[VIEWER]["location"]
+        assert 0 <= x <= 1 and 0.5 <= y <= 1  # Northside is the north half
+        assert persons["out-00"]["location"] is None
+
+    def test_papers_say_when_they_opened(self, client: TestClient) -> None:
+        for paper in self.scenario(client)["ballot_papers"]:
+            assert paper["opens_in_days"] < paper["closes_in_days"]
+            if paper["status"] == "open":
+                assert paper["opens_in_days"] <= 0
+
+    def test_the_viewers_past_changes_are_listed_newest_first(
+        self, client: TestClient
+    ) -> None:
+        changes = self.scenario(client)["viewer_changes"]
+        days = [change["day"] for change in changes]
+        assert days == sorted(days, reverse=True) and days[0] < 0
+        moved = [c for c in changes if c["before"] and c["after"]]
+        assert {c["category"] for c in moved} == {
+            "housing and land use",
+            "the environment and conservation",
+        }
+
+
+class TestBallotTypes:
+    FLAG = ["leaf", "waves", "lighthouse", "current"]
+
+    def test_a_ranked_vote_is_counted_by_instant_runoff(
+        self, client: TestClient
+    ) -> None:
+        result = resolve(client, ADVISORY, viewer_votes={"q66": self.FLAG})
+        item = question(result, "q66")
+        assert item["ballot_type"] == "ranked"
+        assert item["receipt"]["choice"] == self.FLAG
+        tally = item["delegated"]
+        assert tally["method"] == "irv" and tally["rounds"]
+        assert tally["rounds"][0]["counts"] == tally["counts"]
+        assert tally["winners"][0] in self.FLAG
+        # The yes/no question on the same paper is still counted by plurality.
+        other = question(result, "q68")["delegated"]
+        assert other["method"] == "plurality" and other["rounds"] == []
+
+    def test_a_ranking_must_name_every_option(self, client: TestClient) -> None:
+        for choice in (self.FLAG[:2], self.FLAG + ["leaf"], ["yes"], []):
+            response = client.post(
+                RESOLVE_URL,
+                json={"ballot_paper": ADVISORY, "viewer_votes": {"q66": choice}},
+            )
+            assert response.status_code == 422, choice
+
+    def test_an_approval_vote_counts_for_the_votes_the_viewer_holds(
+        self, client: TestClient
+    ) -> None:
+        waiting = question(resolve(client, SPECIAL), "q60")  # the library's site
+        held = waiting["inbox"]["votes_for_others"]
+        assert held >= 1 and waiting["ballot_type"] == "approval"
+
+        answered = question(
+            resolve(client, SPECIAL, viewer_votes={"q60": ["civic", "depot"]}), "q60"
+        )
+        before, after = waiting["delegated"]["counts"], answered["delegated"]["counts"]
+        assert answered["delegated"]["method"] == "approval"
+        assert after["civic"] == before["civic"] + held
+        assert after["depot"] == before["depot"] + held
+        assert after["pier"] == before["pier"]
+
+    def test_a_yes_no_question_takes_exactly_one_option(
+        self, client: TestClient
+    ) -> None:
+        for choice in (["yes", "no"], [], ["maybe"]):
+            response = client.post(
+                RESOLVE_URL,
+                json={"ballot_paper": GENERAL, "viewer_votes": {"q01": choice}},
+            )
+            assert response.status_code == 422, choice
+
+    def test_closed_ranked_and_approval_questions_have_results(
+        self, client: TestClient
+    ) -> None:
+        station = question(resolve(client, "district-2-special-1"), "q41")
+        assert station["delegated"]["method"] == "irv"
+        assert station["delegated"]["winners"][0] in {"front", "cannery", "marsh"}
+        song = question(resolve(client, "city-advisory-1"), "q67")
+        assert song["delegated"]["method"] == "approval"
+        # Approvals can add up to more than the ballots cast.
+        cast = song["delegated"]["total_ballots"] - song["delegated"]["abstentions"]
+        assert sum(song["delegated"]["counts"].values()) > cast
+
+
+class TestTurnout:
+    def test_not_everyone_votes_on_a_closed_question(self, client: TestClient) -> None:
+        for item in resolve(client, CLOSED_GENERAL)["questions"]:
+            direct = item["direct"]
+            turnout = 1 - direct["abstentions"] / direct["total_ballots"]
+            assert 0.3 < turnout < 0.9
+            assert 0 < item["cast_so_far"] < 261
+
+    def test_an_open_paper_counts_only_the_ballots_cast_so_far(
+        self, client: TestClient
+    ) -> None:
+        late = question(resolve(client, ADVISORY), "q68")  # 16 days left
+        soon = question(resolve(client, SPECIAL), "q34")  # 3 days left
+        assert late["cast_so_far"] / 261 < soon["cast_so_far"] / 261
+
+    def test_a_delegate_who_has_not_voted_yet_is_reported_with_their_day(
+        self, client: TestClient
+    ) -> None:
+        starting = client.get(SCENARIO_URL).json()["viewer_delegations"]
+        waiting = [
+            item["receipt"]
+            for paper in (GENERAL, "district-1-special-3")
+            for item in resolve(client, paper, viewer_delegations=starting)["questions"]
+            if item["receipt"]["resolver_votes_in_days"] is not None
+        ]
+        assert waiting
+        for receipt in waiting:
+            assert receipt["resolver"] != VIEWER and receipt["choice"] is None
+            assert receipt["resolver_votes_in_days"] > 0
+
+    def test_the_viewer_is_never_reported_as_due(self, client: TestClient) -> None:
+        for item in resolve(client)["questions"]:
+            assert item["receipt"]["resolver_votes_in_days"] is None
+
+
+class TestDatedHistory:
+    def test_a_closed_paper_uses_the_delegate_of_its_day(
+        self, client: TestClient
+    ) -> None:
+        starting = {
+            d["category"]: d["delegate"]
+            for d in client.get(SCENARIO_URL).json()["viewer_delegations"]
+        }
+        # The plastic bag ban closed before the viewer moved the environment
+        # to their present delegate; the protected tree ordinance closed after.
+        early = question(resolve(client, "city-general-1"), "q14")["receipt"]
+        late = question(resolve(client, "district-1-special-2"), "q13")["receipt"]
+        assert early["category"] == late["category"] == ENVIRONMENT
+        assert early["chain"][1] != starting[ENVIRONMENT]
+        assert late["chain"][1] == starting[ENVIRONMENT]
+
+    def test_a_category_made_later_did_not_route_earlier_votes(
+        self, client: TestClient
+    ) -> None:
+        # Sales tax rates was handed over after the first general ballot.
+        receipt = question(resolve(client, "city-general-1"), "q05")["receipt"]
+        assert "sales tax rates" not in {score["text"] for score in receipt["scores"]}
+        later = question(resolve(client, CLOSED_BUDGET), "q04")["receipt"]
+        assert later["category"] == "sales tax rates"

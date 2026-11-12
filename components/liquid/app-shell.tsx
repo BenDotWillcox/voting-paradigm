@@ -32,6 +32,7 @@ import {
   searchPeople,
 } from "./people";
 import { PersonAvatar, PersonLine } from "./person-bits";
+import { choiceShort, findQuestion, outcomeLabel } from "./ballots";
 import { needsViewer } from "./votes";
 
 /** Close a dropdown when the pointer goes down outside it or Escape is pressed. */
@@ -384,7 +385,7 @@ function PeopleSearch({ className }: { className?: string }) {
 
 /** Votes that close soon and wait on the viewer, and what delegates recently decided for them. */
 function Notifications() {
-  const { directory, openVotes, votes } = useAccount();
+  const { scenario, directory, openVotes, votes } = useAccount();
   const [open, setOpen] = useState(false);
   const ref = useDismiss(open, () => setOpen(false));
   const [recent, setRecent] = useState<HistoryEntry[] | null>(null);
@@ -484,18 +485,20 @@ function Notifications() {
                         {personName(directory, entry.resolver)}
                       </span>{" "}
                       voted{" "}
-                      {entry.choice === "yes"
-                        ? "Yes"
-                        : entry.choice === "no"
-                          ? "No"
-                          : "nothing"}{" "}
+                      {entry.choice === null
+                        ? "nothing"
+                        : choiceShort(
+                            findQuestion(scenario, entry.question_id),
+                            entry.choice,
+                          )}{" "}
                       for you
                     </span>
                     <span className="block text-xs text-muted-foreground">
                       {entry.title} ·{" "}
-                      {entry.winners.includes("yes")
-                        ? "passed"
-                        : "did not pass"}{" "}
+                      {outcomeLabel(
+                        findQuestion(scenario, entry.question_id),
+                        entry.winners,
+                      )}{" "}
                       · {ago(entry.closed_days_ago)}
                     </span>
                   </Link>
