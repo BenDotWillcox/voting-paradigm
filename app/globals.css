@@ -1508,8 +1508,9 @@
 @keyframes sk-streak { to { stroke-dashoffset: -1.15; } }
 
 /* The home page's demo grid (components/home/demo-grid.tsx). Descriptions
-   show three lines, the last fading out, until the card is pointed at or
-   focused; then the text opens and the card grows down over the row below.
+   reserve three lines; districting and apportionment use any remaining
+   space above their tags and only fade when clipped. Pointing at or focusing
+   a card opens the rest and grows it down over the row below.
    The cell's bottom margin is pulled in by the same amount on the same
    curve (set from script), so the grid itself never moves. Touch screens,
    which cannot point, show the whole text. */
@@ -1527,8 +1528,20 @@
   transition: max-height var(--open-ms) cubic-bezier(0.4, 0, 0.2, 1);
 }
 .home-grid-cell[data-open] .home-card-description { -webkit-mask-image: none; mask-image: none; }
+/* Reserve only the preview floor when sizing the row, then fill its spare
+   height without letting the full description increase the collapsed row. */
+.home-grid .home-card-description-fill {
+  contain: size;
+  flex: 1 0 3lh;
+  min-height: 3lh;
+  max-height: none;
+  /* The cell's margin transition already animates the available height. */
+  transition: none;
+}
+.home-card-description-fill:not([data-truncated]) { -webkit-mask-image: none; mask-image: none; }
 @media (hover: none) {
   .home-grid .home-card-description { max-height: none; -webkit-mask-image: none; mask-image: none; }
+  .home-grid .home-card-description-fill { contain: none; flex: initial; min-height: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   .home-grid-cell, .home-grid .home-card-description { transition: none; }
