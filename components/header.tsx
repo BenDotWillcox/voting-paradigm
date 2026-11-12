@@ -29,8 +29,18 @@ export default function Header() {
   const navRef = React.useRef<HTMLElement>(null);
 
   // On narrow screens the pills scroll sideways; keep the current one in view.
+  // Only the pill row is scrolled. scrollIntoView would also scroll the page
+  // back up to the header whenever it is off screen, which threw the reader
+  // to the top on every move between the pages of one demo.
   React.useEffect(() => {
-    navRef.current?.querySelector('[aria-current="page"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    const nav = navRef.current;
+    const current = nav?.querySelector('[aria-current="page"]');
+    if (!nav || !current) return;
+    const row = nav.getBoundingClientRect();
+    const pill = current.getBoundingClientRect();
+    const inset = 16; // the row's side padding
+    if (pill.left < row.left + inset) nav.scrollLeft -= row.left + inset - pill.left;
+    else if (pill.right > row.right - inset) nav.scrollLeft += pill.right - (row.right - inset);
   }, [pathname]);
 
   if (pathname === "/") return null;

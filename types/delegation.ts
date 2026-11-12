@@ -3,6 +3,7 @@ import type {
   categoryJudgmentsRequestSchema,
   categoryJudgmentsResponseSchema,
   categorySchema,
+  profileResponseSchema,
   resolveBallotPaperRequestSchema,
   resolveBallotPaperResponseSchema,
   scenarioResponseSchema,
@@ -32,3 +33,6 @@ export type ResolveBallotPaperResponse = z.infer<typeof resolveBallotPaperRespon
 export type QuestionResult = ResolveBallotPaperResponse["questions"][number];
 export type QuestionTally = QuestionResult["delegated"];
 export type VoteReceipt = NonNullable<QuestionResult["receipt"]>;
+
+export type PersonProfile = z.infer<typeof profileResponseSchema>;
+export type HistoryEntry = PersonProfile["history"][number];

@@ -18,7 +18,7 @@ the author cares about.
 | 2 | **Agent voting via preference models** — LLM-elicited preference posterior; agent casts a ballot under uncertainty | `/preferences` | In progress | Bayesian inference, embeddings, active learning, LLM orchestration |
 | 3 | **Algorithmic districting** — fair, transparent district maps under explicit constraints | `/districts` | Apportionment slice live; district polygons planned | Optimization, graph algorithms, geo data, fairness metrics |
 | 4 | **Apportionment** — how many seats each state gets, and how House size drives interstate district inequality | `/apportionment` (story), `/apportionment/explore` | Live; methods comparison deferred | Apportionment math, data storytelling, reproducibility |
-| 5 | **Liquid democracy** — voters hand self-written categories of decisions to people they trust; each ballot question is routed per voter | `/liquid` | First version built | Decision-model routing, graph algorithms, simulation |
+| 5 | **Liquid democracy** — voters hand self-written categories of decisions to people they trust; each ballot question is routed per voter | `/liquid` | Built as an account: delegation graph, votes, profiles | Decision-model routing, graph algorithms, simulation |
 | 6 | **Expressive ballots** — question-specific interfaces for directly declared utility | `/expressive` | In progress; tax ballot and same-electorate results walkthrough | Preference elicitation, constrained interaction, explicit aggregation assumptions |
 
 Demos share infrastructure (one repo, one Next.js shell, one FastAPI service, one DB) but are conceptually independent — each is a self-contained answer to one objection against electoral reform.

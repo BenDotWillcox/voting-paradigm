@@ -1,7 +1,9 @@
 import "server-only";
 import type { z } from "zod";
+import { cache } from "react";
 import {
   categoryJudgmentsResponseSchema,
+  profileResponseSchema,
   resolveBallotPaperResponseSchema,
   scenarioResponseSchema,
   validateDelegationResponseSchema,
@@ -10,6 +12,7 @@ import type {
   CategoryJudgmentsRequest,
   CategoryJudgmentsResponse,
   DelegationScenario,
+  PersonProfile,
   ResolveBallotPaperRequest,
   ResolveBallotPaperResponse,
   ValidateDelegationRequest,
@@ -85,9 +88,18 @@ async function call<Schema extends z.ZodTypeAny>(
   }
 }
 
-/** The synthetic network, the category pool and the curated ballot papers. */
-export function getDelegationScenario(): Promise<DelegationScenario> {
+/**
+ * The synthetic network, the category pool, the ballot papers and the
+ * viewer's starting account. Fetched once per page render however many
+ * server components ask for it.
+ */
+export const getDelegationScenario = cache((): Promise<DelegationScenario> => {
   return call("/scenario", scenarioResponseSchema);
+});
+
+/** One person's profile, read from the closed ballot papers. */
+export function getPersonProfile(personId: string): Promise<PersonProfile> {
+  return call(`/people/${encodeURIComponent(personId)}`, profileResponseSchema);
 }
 
 /** Run the creation checks on one proposed delegation. */

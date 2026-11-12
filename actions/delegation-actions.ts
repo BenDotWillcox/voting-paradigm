@@ -5,16 +5,19 @@ import { ActionResult } from "@/types/actions/action-types";
 import {
   DelegationApiError,
   getCategoryJudgments,
+  getPersonProfile,
   resolveBallotPaper,
   validateDelegation,
 } from "@/lib/delegation-api";
 import {
   categoryJudgmentsRequestSchema,
+  personIdSchema,
   resolveBallotPaperRequestSchema,
   validateDelegationRequestSchema,
 } from "@/lib/validations/delegation-schemas";
 import type {
   CategoryJudgmentsResponse,
+  PersonProfile,
   ResolveBallotPaperResponse,
   ValidateDelegationResponse,
 } from "@/types/delegation";
@@ -95,4 +98,11 @@ export async function resolveBallotPaperAction(
       votes: Object.keys(request.viewer_votes).length,
     })
   );
+}
+
+/** One person's profile and voting history. */
+export async function getPersonProfileAction(
+  input: unknown
+): Promise<ActionResult<PersonProfile>> {
+  return run("Profile loaded", personIdSchema, input, getPersonProfile, () => ({}));
 }
