@@ -28,16 +28,18 @@ export function Channels({
   resolution,
   selected,
   onSelect,
+  pending = false,
 }: {
   resolution: ProfileResolveResponse;
   selected: VotingMethod;
   onSelect: (method: VotingMethod) => void;
+  pending?: boolean;
 }) {
   const byMethod = new Map(resolution.results.map((result) => [result.method, result]));
   return (
     // Columns follow the table's own width: on a slide it shares the row with
     // the count's trace, so the viewport says little about the room it has
-    <div className="@container">
+    <div className="@container" aria-busy={pending}>
       <div
         className="hidden grid-cols-[minmax(0,11rem)_minmax(0,1fr)_4.5rem_8.5rem] gap-4 px-3 pb-2 text-xs text-mi-muted @2xl:grid"
         aria-hidden
@@ -67,6 +69,7 @@ export function Channels({
                     resolution={resolution}
                     selected={selected === result.method}
                     onSelect={() => onSelect(result.method)}
+                    pending={pending}
                   />
                 </li>
               ))}
@@ -74,7 +77,7 @@ export function Channels({
           </section>
         );
       })}
-      <CriteriaKey criteria={resolution.criteria} />
+      <CriteriaKey criteria={resolution.criteria} pending={pending} />
     </div>
   );
 }
@@ -83,7 +86,7 @@ export function Channels({
  * What the three criteria columns mean, and, once rather than in every row,
  * which of them this electorate gives nothing to check.
  */
-function CriteriaKey({ criteria }: { criteria: ProfileResolveResponse["criteria"] }) {
+function CriteriaKey({ criteria, pending }: { criteria: ProfileResolveResponse["criteria"]; pending: boolean }) {
   const missing = [
     criteria.majority_winner === null ? "majority winner" : null,
     criteria.condorcet_winner === null ? "Condorcet winner" : null,
@@ -97,7 +100,7 @@ function CriteriaKey({ criteria }: { criteria: ProfileResolveResponse["criteria"
       than half the voters rank first. <span className="text-mi-ink-2">Cond.</span> elects the Condorcet winner,
       who beats every rival head to head. <span className="text-mi-ink-2">Loser</span> avoids the
       Condorcet loser, who loses to every rival.
-      {missing.length > 0 ? ` This electorate has no ${listed}, so a dash marks nothing to check.` : null}
+      {missing.length > 0 ? <span className={pending ? "invisible" : undefined} aria-hidden={pending || undefined}>{` This electorate has no ${listed}, so a dash marks nothing to check.`}</span> : null}
     </p>
   );
 }
@@ -107,21 +110,24 @@ function ChannelRow({
   resolution,
   selected,
   onSelect,
+  pending,
 }: {
   result: ProfileMethodResult;
   resolution: ProfileResolveResponse;
   selected: boolean;
   onSelect: () => void;
+  pending: boolean;
 }) {
   return (
     <button
       type="button"
       aria-pressed={selected}
+      disabled={pending}
       onClick={onSelect}
       className={cn(
         "grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-3 py-2.5 text-left",
         "@2xl:grid-cols-[minmax(0,11rem)_minmax(0,1fr)_4.5rem_8.5rem]",
-        "hover:bg-mi-wash focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-mi-ink",
+        "enabled:hover:bg-mi-wash focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-mi-ink",
         selected && "bg-mi-wash"
       )}
     >
@@ -130,15 +136,26 @@ function ChannelRow({
         <span className="block text-xs text-mi-muted">{METHOD_META[result.method].rule}</span>
       </span>
       <span className="col-span-2 row-start-2 @2xl:col-span-1 @2xl:row-start-auto">
-        <ChannelCount result={result} candidates={resolution.rankings.candidates} />
+        <PendingValue pending={pending} shape="h-3 w-4/5">
+          <ChannelCount result={result} candidates={resolution.rankings.candidates} />
+        </PendingValue>
       </span>
       <span className="col-start-2 row-start-1 flex items-center justify-end gap-1.5 @2xl:col-start-auto @2xl:row-start-auto @2xl:justify-start">
-        <CandidateGlyph id={result.winner} size={20} />
-        <span className="font-mi-mono text-lg font-semibold">{result.winner}</span>
+        <PendingValue pending={pending} shape="h-6 w-full">
+          <span className="inline-flex items-center gap-1.5"><CandidateGlyph id={result.winner} size={20} /><span className="font-mi-mono text-lg font-semibold">{result.winner}</span></span>
+        </PendingValue>
       </span>
-      <CriteriaCells result={result} criteria={resolution.criteria} />
+      <CriteriaCells result={result} criteria={resolution.criteria} pending={pending} />
     </button>
   );
+}
+
+/** Keep the previous count's dimensions, but never present it as a new result. */
+function PendingValue({ pending, shape, children }: { pending: boolean; shape: string; children: React.ReactNode }) {
+  return <span className="relative block">
+    <span className={pending ? "invisible" : undefined} aria-hidden={pending || undefined}>{children}</span>
+    {pending && <span aria-hidden className="pointer-events-none absolute inset-0 flex items-center"><span className={cn("block rounded-[3px] bg-mi-rule motion-safe:animate-pulse", shape)} /></span>}
+  </span>;
 }
 
 function ChannelCount({
@@ -223,16 +240,18 @@ function TieNote() {
 function CriteriaCells({
   result,
   criteria,
+  pending,
 }: {
   result: ProfileMethodResult;
   criteria: ProfileResolveResponse["criteria"];
+  pending: boolean;
 }) {
   const checks = criteriaChecks(result, criteria);
   return (
     <span className="col-span-2 flex justify-between gap-3 text-xs @2xl:col-span-1">
-      <CriterionCell name="Majority winner elected" short="Maj." check={checks.majority} />
-      <CriterionCell name="Condorcet winner elected" short="Cond." check={checks.condorcetWinner} />
-      <CriterionCell name="Condorcet loser avoided" short="Loser" check={checks.condorcetLoser} />
+      <CriterionCell name="Majority winner elected" short="Maj." check={checks.majority} pending={pending} />
+      <CriterionCell name="Condorcet winner elected" short="Cond." check={checks.condorcetWinner} pending={pending} />
+      <CriterionCell name="Condorcet loser avoided" short="Loser" check={checks.condorcetLoser} pending={pending} />
     </span>
   );
 }
@@ -241,18 +260,21 @@ function CriterionCell({
   name,
   short,
   check,
+  pending,
 }: {
   name: string;
   short: string;
   check: CriterionCheck;
+  pending: boolean;
 }) {
   const label =
     check === "none"
       ? `${name}: does not apply`
       : `${name}: ${check === "pass" ? "yes" : "no"}`;
   return (
-    <span className="inline-flex items-center gap-1" title={label}>
+    <span className="inline-flex items-center gap-1" title={pending ? undefined : label} aria-hidden={pending || undefined}>
       <span className="text-mi-muted @2xl:hidden">{short}</span>
+      <PendingValue pending={pending} shape="size-5">
       <span
         className={cn(
           "grid size-5 place-items-center rounded-[3px]",
@@ -270,6 +292,7 @@ function CriterionCell({
         )}
         <span className="sr-only">{label}</span>
       </span>
+      </PendingValue>
     </span>
   );
 }

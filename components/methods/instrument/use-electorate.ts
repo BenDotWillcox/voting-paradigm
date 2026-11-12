@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { resolveProfileAction } from "@/actions/methods-actions";
+import { requestProfile } from "@/lib/methods-client";
 import { encodeProfile, totalVoters } from "@/lib/methods/profile";
+import { RequestTimeoutError, withRequestDeadline } from "@/lib/request-deadline";
 import type { ProfileResolveResponse, UtilityProfile } from "@/types/methods";
 
 export type ElectorateStatus =
@@ -14,6 +15,7 @@ export type ElectorateStatus =
 
 // Wait this long after the last edit before asking the API to count
 const DEBOUNCE_MS = 250;
+const COUNT_TIMEOUT_MS = 15_000;
 // Every gallery specimen, resolved at build time (scripts/build_methods_artifacts.py)
 const SPECIMEN_RESOLUTIONS = "/data/methods/specimen-resolutions.json";
 
@@ -28,6 +30,8 @@ export interface Electorate {
   key: string;
   /** Show a profile, with its count when the caller already has it. */
   load: (profile: UtilityProfile, resolution?: ProfileResolveResponse) => void;
+  /** Retry the current edits without replacing them with a preset. */
+  retry: () => void;
 }
 
 /**
@@ -56,7 +60,9 @@ export function useElectorate({
   );
   const [status, setStatus] = useState<ElectorateStatus>({ kind: "ready" });
   const [staticVersion, setStaticVersion] = useState(0);
+  const [retryVersion, setRetryVersion] = useState(0);
   const latest = useRef(0);
+  const activeRequest = useRef<AbortController | null>(null);
 
   const key = useMemo(() => encodeProfile(profile), [profile]);
   const resolvedKey =
@@ -93,19 +99,42 @@ export function useElectorate({
       return;
     }
     setStatus({ kind: "counting" });
+    const active = new AbortController();
+    activeRequest.current = active;
     const timer = window.setTimeout(async () => {
-      const result = await resolveProfileAction({ profile });
-      if (request !== latest.current) return;
-      if (result.isSuccess && result.data) {
-        cache.current.set(key, result.data);
-        setResolution(result.data);
-        setStatus({ kind: "ready" });
-      } else {
-        setStatus({ kind: "offline", message: result.message });
+      try {
+        // Direct HTTP can be cancelled without leaving retries queued behind
+        // a stalled Server Action transport.
+        const result = await withRequestDeadline((signal) => requestProfile({ profile }, signal), {
+          timeoutMs: COUNT_TIMEOUT_MS,
+          signal: active.signal,
+        });
+        if (active.signal.aborted || request !== latest.current) return;
+        if (result.isSuccess && result.data) {
+          cache.current.set(key, result.data);
+          setResolution(result.data);
+          setStatus({ kind: "ready" });
+        } else {
+          setStatus({ kind: "offline", message: result.message });
+        }
+      } catch (error) {
+        if (active.signal.aborted || request !== latest.current) return;
+        setStatus({
+          kind: "offline",
+          message: error instanceof RequestTimeoutError
+            ? "Counting took too long. Your edits are preserved; try again."
+            : "Live counting is unavailable right now. Your edits are preserved; try again.",
+        });
+      } finally {
+        if (activeRequest.current === active) activeRequest.current = null;
       }
     }, DEBOUNCE_MS);
-    return () => window.clearTimeout(timer);
-  }, [profile, key, staticVersion]);
+    return () => {
+      window.clearTimeout(timer);
+      active.abort();
+      if (activeRequest.current === active) activeRequest.current = null;
+    };
+  }, [profile, key, staticVersion, retryVersion]);
 
   return {
     profile,
@@ -114,8 +143,18 @@ export function useElectorate({
     showing: resolvedKey === key,
     key,
     load: (next, counted) => {
+      latest.current++;
+      activeRequest.current?.abort();
       if (counted) cache.current.set(encodeProfile(next), counted);
       setProfile(next);
+      // A caller may supply this same object with a fresh count, or ask to
+      // reload it while a request is pending; React otherwise skips the effect.
+      if (next === profile) setRetryVersion((version) => version + 1);
+    },
+    retry: () => {
+      latest.current++;
+      activeRequest.current?.abort();
+      setRetryVersion((version) => version + 1);
     },
   };
 }

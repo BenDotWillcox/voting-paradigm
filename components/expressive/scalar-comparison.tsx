@@ -5,12 +5,16 @@ import { ScalarBallot } from "./scalar-ballot";
 import { IncomeTaxBallot } from "./income-tax-ballot";
 import { ElectorateResults } from "./electorate-results";
 import { scalarComparisonResponseSchema } from "@/lib/validations/expressive-comparison";
+import { RequestTimeoutError, withRequestDeadline } from "@/lib/request-deadline";
 import { TAX_MEASURE } from "@/lib/expressive-tax-measure";
 import type { BinaryVote, ScalarComparisonRequest, ScalarComparisonResponse } from "@/types/expressive-comparison";
 import type { ScalarBallotState } from "@/types/expressive-scalar";
 import styles from "./scalar-comparison.module.css";
 
 const rateText = (value: number) => `${value.toFixed(2)}%`;
+const COMPARISON_TIMEOUT_MS = 15_000;
+const UNAVAILABLE_MESSAGE = "The comparison is unavailable. Your answers are still here; please try again.";
+class ComparisonResponseError extends Error {}
 type Submission = { request: ScalarComparisonRequest; data: ScalarComparisonResponse };
 
 export function ScalarComparison() {
@@ -23,7 +27,10 @@ export function ScalarComparison() {
   const resultRef = useRef<HTMLDivElement>(null);
   const ballotId = useId();
 
-  useEffect(() => () => controller.current?.abort(), []);
+  useEffect(() => () => {
+    controller.current?.abort();
+    controller.current = null;
+  }, []);
 
   async function compare(request: ScalarComparisonRequest) {
     controller.current?.abort();
@@ -33,27 +40,47 @@ export function ScalarComparison() {
     setBusy(true);
     setError(null);
     try {
-      const response = await fetch("/api/expressive/scalar/compare", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(request),
-        signal: active.signal,
-      });
-      const body: unknown = await response.json();
-      if (!response.ok) {
-        const message = typeof body === "object" && body !== null && "message" in body && typeof body.message === "string"
-          ? body.message : "The comparison is unavailable. Your answers are still here.";
-        throw new Error(message);
-      }
-      const parsed = scalarComparisonResponseSchema.safeParse(body);
-      if (!parsed.success) throw new Error("The comparison could not be read. Please try again.");
-      if (active.signal.aborted) return;
-      setSubmission({ request, data: parsed.data });
+      // Bound the browser's entire wait, including body parsing. Production
+      // routes directly to Python, so the Next proxy's deadline does not apply.
+      const data = await withRequestDeadline(async (signal) => {
+        const response = await fetch("/api/expressive/scalar/compare", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(request),
+          signal,
+        });
+        let body: unknown;
+        try {
+          body = await response.json();
+        } catch {
+          throw new ComparisonResponseError(response.ok
+            ? "The comparison could not be read. Your answers are still here; please try again."
+            : UNAVAILABLE_MESSAGE);
+        }
+        if (!response.ok) {
+          const message = typeof body === "object" && body !== null && "message" in body && typeof body.message === "string"
+            ? body.message : UNAVAILABLE_MESSAGE;
+          throw new ComparisonResponseError(message);
+        }
+        const parsed = scalarComparisonResponseSchema.safeParse(body);
+        if (!parsed.success) throw new ComparisonResponseError("The comparison could not be read. Your answers are still here; please try again.");
+        return parsed.data;
+      }, { timeoutMs: COMPARISON_TIMEOUT_MS, signal: active.signal });
+      if (controller.current !== active || active.signal.aborted) return;
+      setSubmission({ request, data });
       resultRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" });
     } catch (caught) {
-      if (!active.signal.aborted) setError(caught instanceof Error ? caught.message : "The comparison is unavailable. Please try again.");
+      if (controller.current !== active || active.signal.aborted) return;
+      setError(caught instanceof RequestTimeoutError
+        ? "The comparison took too long. Your answers are still here; please try again."
+        : caught instanceof ComparisonResponseError ? caught.message : UNAVAILABLE_MESSAGE);
     } finally {
-      if (!active.signal.aborted) setBusy(false);
+      // A deadline must release the submit button; an older request must not
+      // clear the busy state of the submission that replaced it.
+      if (controller.current === active && !active.signal.aborted) {
+        controller.current = null;
+        setBusy(false);
+      }
     }
   }
 
@@ -99,6 +126,7 @@ export function ScalarComparison() {
             <p>Your two answers join 99 synthetic voters. Explore their different preferences and the yes/no answers they produce, then combine those same 100 ballots into a tax rate. These are illustrative outcomes, not the actual 2022 election results.</p>
           </div>
           {error && <div className={styles.error} role="alert"><p>{error}</p><button type="button" disabled={busy} onClick={() => lastRequest && void compare(lastRequest)}>Retry submitted ballot</button></div>}
+          {submission && (busy || error) && <p role="status">{busy ? "Comparing your submitted answers. The results below still show your previous submission." : "The results below still show your previous submission."}</p>}
           {submission ? <ElectorateResults key={JSON.stringify(submission.request)} data={submission.data} ballot={submission.request.ballot} /> : <div className={styles.emptyState} role="status">{busy ? "Comparing your submitted ballot with the prepared electorate…" : "Submit your two answers above to reveal the comparison."}</div>}
         </section>
       </div>

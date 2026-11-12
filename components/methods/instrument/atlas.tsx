@@ -1,9 +1,9 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import { resolveAtlasAction, resolveAtlasPointAction } from "@/actions/methods-actions";
+import { requestAtlas, requestAtlasPoint } from "@/lib/methods-client";
 import {
   ATLAS_METHOD_VIEWS,
   ATLAS_REFERENCES,
@@ -22,6 +22,7 @@ import {
   type AtlasView,
 } from "@/lib/methods/atlas";
 import { cn } from "@/lib/utils";
+import { RequestTimeoutError, withRequestDeadline } from "@/lib/request-deadline";
 import type { AtlasCandidate, AtlasResponse, ProfileResolveResponse } from "@/types/methods";
 
 import { CandidateGlyph, CandidateMark } from "./glyph";
@@ -33,6 +34,9 @@ const ATLAS_DATA = "/data/methods/atlas.json";
 const KEY_COMMIT_MS = 450;
 // A press that moves less than this many pixels is a click, not a drag
 const CLICK_SLOP_PX = 4;
+const POINT_TIMEOUT_MS = 15_000;
+// Recounting all 4,096 electorates needs more time than one profile.
+const ATLAS_TIMEOUT_MS = 65_000;
 
 export interface AtlasPoint {
   layout: string;
@@ -43,6 +47,7 @@ export interface AtlasPoint {
 }
 
 type Status = { kind: "ready" } | { kind: "counting" } | { kind: "offline"; message: string };
+type Retry = { kind: "maps" } | { kind: "layout"; candidates: AtlasCandidate[] } | { kind: "point"; cell: number };
 
 /**
  * Yee's spatial diagrams for the seven methods. Each cell is the same cloud
@@ -63,15 +68,53 @@ export function Atlas({
   const [view, setView] = useState<AtlasView>("plurality");
   const [cell, setCell] = useState<number | null>(null);
   const [loadingPoint, setLoadingPoint] = useState(false);
+  const [retry, setRetry] = useState<Retry | null>(null);
+  const [mapsVersion, setMapsVersion] = useState(0);
   const cache = useRef(new Map<string, AtlasResponse>());
   const latest = useRef(0);
+  const latestPoint = useRef(0);
+  const atlasRequest = useRef<AbortController | null>(null);
+  const pointRequest = useRef<AbortController | null>(null);
+
+  const cancelPoint = useCallback(() => {
+    latestPoint.current++;
+    pointRequest.current?.abort();
+    pointRequest.current = null;
+    setLoadingPoint(false);
+  }, []);
+
+  const show = useCallback((next: AtlasResponse, id: string | null) => {
+    latest.current++;
+    atlasRequest.current?.abort();
+    atlasRequest.current = null;
+    cancelPoint();
+    setAtlas(next);
+    setPositions(next.candidates);
+    setLayoutId(id);
+    setCell(null);
+    setStatus({ kind: "ready" });
+    setRetry(null);
+  }, [cancelPoint]);
+
+  useEffect(() => () => {
+    latest.current++;
+    latestPoint.current++;
+    atlasRequest.current?.abort();
+    pointRequest.current?.abort();
+  }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    fetch(ATLAS_DATA)
-      .then((response) => (response.ok ? response.json() : null))
+    const active = new AbortController();
+    setStatus({ kind: "ready" });
+    setRetry(null);
+    withRequestDeadline(async (signal) => {
+      const response = await fetch(ATLAS_DATA, { signal });
+      if (!response.ok) throw new Error("Atlas maps unavailable");
+      return response.json();
+    }, { timeoutMs: POINT_TIMEOUT_MS, signal: active.signal })
       .then((data: { layouts?: { id: string; atlas: AtlasResponse }[] } | null) => {
-        if (cancelled || !data?.layouts?.length) return;
+        if (active.signal.aborted) return;
+        if (!data?.layouts?.length) throw new Error("Atlas maps unavailable");
         const loaded = data.layouts.map((layout) => ({
           id: layout.id,
           label: LAYOUT_COPY[layout.id]?.label ?? layout.id,
@@ -83,68 +126,124 @@ export function Atlas({
         setLayouts(loaded);
         show(loaded[0].atlas, loaded[0].id);
       })
-      .catch(() => setStatus({ kind: "offline", message: "The atlas maps could not be loaded." }));
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+      .catch(() => {
+        if (active.signal.aborted) return;
+        setStatus({ kind: "offline", message: "The atlas maps could not be loaded. Please try again." });
+        setRetry({ kind: "maps" });
+      });
+    return () => active.abort();
+  }, [mapsVersion, show]);
 
-  function show(next: AtlasResponse, id: string | null) {
+  function moveCandidates(next: AtlasCandidate[]) {
+    // Supersede requests at the first movement, not only when the drag ends:
+    // an earlier count must not reset candidates under the user's pointer.
     latest.current++;
-    setAtlas(next);
-    setPositions(next.candidates);
-    setLayoutId(id);
+    atlasRequest.current?.abort();
+    atlasRequest.current = null;
+    cancelPoint();
+    setPositions(next);
     setCell(null);
     setStatus({ kind: "ready" });
+    setRetry(null);
   }
 
   async function recount(candidates: AtlasCandidate[]) {
     if (!atlas) return;
     const request = candidates.map((c) => ({ id: c.id, x: round(c.x), y: round(c.y) }));
     const key = layoutKey(request);
-    if (key === layoutKey(atlas.candidates)) return setPositions(atlas.candidates);
+    if (key === layoutKey(atlas.candidates)) return show(atlas, layoutId);
     const curated = layouts?.find((layout) => layoutKey(layout.atlas.candidates) === key);
     const cached = cache.current.get(key);
     if (cached) return show(cached, curated?.id ?? null);
 
     const id = ++latest.current;
+    atlasRequest.current?.abort();
+    const active = new AbortController();
+    atlasRequest.current = active;
+    cancelPoint();
     setStatus({ kind: "counting" });
+    setPositions(request);
+    setRetry(null);
     setCell(null);
-    const result = await resolveAtlasAction({ candidates: request });
-    if (id !== latest.current) return;
-    if (result.isSuccess && result.data) {
-      cache.current.set(key, result.data);
-      show(result.data, null);
-    } else {
-      // Put the candidates back where the maps were counted
-      setPositions(atlas.candidates);
-      setStatus({ kind: "offline", message: result.message });
+    const failed = (message: string) => {
+      // The old map stays dimmed until the preserved candidate edits are counted.
+      setStatus({ kind: "offline", message });
+      setRetry({ kind: "layout", candidates: request });
+    };
+    try {
+      const result = await withRequestDeadline((signal) => requestAtlas({ candidates: request }, signal), {
+        timeoutMs: ATLAS_TIMEOUT_MS,
+        signal: active.signal,
+      });
+      if (active.signal.aborted || id !== latest.current) return;
+      if (result.isSuccess && result.data) {
+        cache.current.set(key, result.data);
+        show(result.data, null);
+      } else {
+        failed(result.message);
+      }
+    } catch (error) {
+      if (active.signal.aborted || id !== latest.current) return;
+      failed(error instanceof RequestTimeoutError
+        ? "Mapping took too long. You can retry your layout or choose a saved example."
+        : "Live mapping is unavailable right now. You can retry your layout or choose a saved example.");
+    } finally {
+      if (atlasRequest.current === active) atlasRequest.current = null;
     }
   }
 
   async function loadPoint(target: number) {
-    if (!atlas) return;
+    if (!atlas || status.kind === "counting" || layoutKey(positions) !== layoutKey(atlas.candidates)) return;
+    pointRequest.current?.abort();
+    const active = new AbortController();
+    pointRequest.current = active;
+    const id = ++latestPoint.current;
+    const layout = latest.current;
     setCell(target);
     setLoadingPoint(true);
-    const result = await resolveAtlasPointAction({ candidates: atlas.candidates, cell: target });
-    setLoadingPoint(false);
-    if (result.isSuccess && result.data) {
-      const [x, y] = cellCenter(target, atlas.size);
-      const label = layouts?.find((l) => l.id === layoutId)?.label ?? "Your layout";
-      onLoadPoint(result.data, { layout: label, cell: target, size: atlas.size, x, y }, view);
-    } else {
-      setStatus({
-        kind: "offline",
-        message: `${result.message} Loading a point needs the live counter.`,
+    setStatus({ kind: "ready" });
+    setRetry(null);
+    const current = () => !active.signal.aborted && id === latestPoint.current && layout === latest.current;
+    const failed = (message: string) => {
+      setStatus({ kind: "offline", message });
+      setRetry({ kind: "point", cell: target });
+    };
+    try {
+      const result = await withRequestDeadline((signal) => requestAtlasPoint({ candidates: atlas.candidates, cell: target }, signal), {
+        timeoutMs: POINT_TIMEOUT_MS,
+        signal: active.signal,
       });
+      if (!current()) return;
+      if (result.isSuccess && result.data) {
+        const [x, y] = cellCenter(target, atlas.size);
+        const label = layouts?.find((l) => l.id === layoutId)?.label ?? "Your layout";
+        onLoadPoint(result.data, { layout: label, cell: target, size: atlas.size, x, y }, view);
+      } else {
+        failed(`${result.message} Loading a point needs the live counter.`);
+      }
+    } catch (error) {
+      if (!current()) return;
+      failed(error instanceof RequestTimeoutError
+        ? "Loading that electorate took too long. Please try again."
+        : "That electorate could not be loaded. Please try again.");
+    } finally {
+      if (current()) setLoadingPoint(false);
+      if (pointRequest.current === active) pointRequest.current = null;
     }
   }
 
+  function retryRequest() {
+    if (retry?.kind === "maps") setMapsVersion((version) => version + 1);
+    else if (retry?.kind === "layout") void recount(retry.candidates);
+    else if (retry?.kind === "point") void loadPoint(retry.cell);
+  }
+  const retryButton = retry && <button type="button" onClick={retryRequest} className="min-h-11 rounded-[3px] border border-mi-rule px-3 py-2 text-sm font-medium text-mi-ink hover:border-mi-ink">{retry.kind === "point" ? "Retry electorate" : retry.kind === "layout" ? "Retry layout" : "Retry atlas"}</button>;
+
   if (!atlas) {
     return (
-      <p className="text-sm text-mi-muted">
+      <div className="space-y-2"><p role="status" className="text-sm text-mi-muted">
         {status.kind === "offline" ? status.message : "Loading the atlas…"}
-      </p>
+      </p>{retryButton}</div>
     );
   }
 
@@ -162,7 +261,7 @@ export function Atlas({
           positions={positions}
           cell={cell}
           stale={dragging || status.kind === "counting"}
-          onMove={setPositions}
+          onMove={moveCandidates}
           onCommit={recount}
           onPick={loadPoint}
         />
@@ -175,6 +274,7 @@ export function Atlas({
                 ? "Loading that electorate…"
                 : "Drag a candidate, or click a point to open it in the playground."}
         </p>
+        {retryButton}
       </div>
 
       <div className="min-w-0 space-y-3">
