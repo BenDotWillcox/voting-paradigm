@@ -1,0 +1,154 @@
+{
+  "source": "expressive.comparison.prepared_voters",
+  "seed": 20221108,
+  "status_quo": 4.55,
+  "proposal": 4.4,
+  "electorate_size": 99,
+  "binary_tally": {
+    "yes": 26,
+    "no": 48,
+    "abstain": 25
+  },
+  "voters": [
+    {
+      "id": "voter-073",
+      "label": "Voter 73",
+      "ideal": 0.753,
+      "lower_half_width": 1.73,
+      "upper_half_width": 0.971,
+      "approval_min": 0,
+      "approval_max": 5.585,
+      "binary_vote": "yes"
+    },
+    {
+      "id": "voter-029",
+      "label": "Voter 29",
+      "ideal": 2.206,
+      "lower_half_width": 2.843,
+      "upper_half_width": 3.127,
+      "approval_min": 0,
+      "approval_max": 5.121,
+      "binary_vote": "yes"
+    },
+    {
+      "id": "voter-034",
+      "label": "Voter 34",
+      "ideal": 3.231,
+      "lower_half_width": 0.786,
+      "upper_half_width": 1.777,
+      "approval_min": 0.049,
+      "approval_max": 8.34,
+      "binary_vote": "yes"
+    },
+    {
+      "id": "voter-009",
+      "label": "Voter 09",
+      "ideal": 3.84,
+      "lower_half_width": 1.159,
+      "upper_half_width": 2.97,
+      "approval_min": 0,
+      "approval_max": 5.741,
+      "binary_vote": "yes"
+    },
+    {
+      "id": "voter-010",
+      "label": "Voter 10",
+      "ideal": 4.208,
+      "lower_half_width": 1.157,
+      "upper_half_width": 0.764,
+      "approval_min": 1.161,
+      "approval_max": 7.613,
+      "binary_vote": "yes"
+    },
+    {
+      "id": "voter-074",
+      "label": "Voter 74",
+      "ideal": 4.545,
+      "lower_half_width": 1.171,
+      "upper_half_width": 3.226,
+      "approval_min": 2.615,
+      "approval_max": 10.237,
+      "binary_vote": "no"
+    },
+    {
+      "id": "voter-069",
+      "label": "Voter 69",
+      "ideal": 4.917,
+      "lower_half_width": 2.637,
+      "upper_half_width": 1.106,
+      "approval_min": 3.759,
+      "approval_max": 8.804,
+      "binary_vote": "no"
+    },
+    {
+      "id": "voter-024",
+      "label": "Voter 24",
+      "ideal": 5.456,
+      "lower_half_width": 1.799,
+      "upper_half_width": 1.367,
+      "approval_min": 4.006,
+      "approval_max": 9.844,
+      "binary_vote": "no"
+    },
+    {
+      "id": "voter-018",
+      "label": "Voter 18",
+      "ideal": 6.015,
+      "lower_half_width": 1.27,
+      "upper_half_width": 3.434,
+      "approval_min": 4.091,
+      "approval_max": 10.427,
+      "binary_vote": "no"
+    },
+    {
+      "id": "voter-025",
+      "label": "Voter 25",
+      "ideal": 6.479,
+      "lower_half_width": 1.354,
+      "upper_half_width": 1.627,
+      "approval_min": 1.844,
+      "approval_max": 8.684,
+      "binary_vote": "no"
+    },
+    {
+      "id": "voter-027",
+      "label": "Voter 27",
+      "ideal": 7.026,
+      "lower_half_width": 1.2,
+      "upper_half_width": 2.973,
+      "approval_min": 5.254,
+      "approval_max": 10.829,
+      "binary_vote": "abstain"
+    },
+    {
+      "id": "voter-028",
+      "label": "Voter 28",
+      "ideal": 7.549,
+      "lower_half_width": 1.143,
+      "upper_half_width": 1.171,
+      "approval_min": 5.195,
+      "approval_max": 9.412,
+      "binary_vote": "abstain"
+    },
+    {
+      "id": "voter-042",
+      "label": "Voter 42",
+      "ideal": 8.211,
+      "lower_half_width": 2.798,
+      "upper_half_width": 2.547,
+      "approval_min": 3.65,
+      "approval_max": 14.173,
+      "binary_vote": "no"
+    },
+    {
+      "id": "voter-007",
+      "label": "Voter 07",
+      "ideal": 8.973,
+      "lower_half_width": 1.986,
+      "upper_half_width": 0.735,
+      "approval_min": 4.753,
+      "approval_max": 11.357,
+      "binary_vote": "abstain"
+    }
+  ]
+}
