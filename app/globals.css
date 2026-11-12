@@ -579,7 +579,7 @@
 
   /* Chapter 04: the rules take the stage. */
   .dd-rules-hero { padding: 1.75rem 1.5rem 1.4rem; border-bottom: 1px solid var(--dd-steel); background: linear-gradient(180deg, var(--dd-board-soft), transparent); }
-  .dd-rules-headline { margin-top: 0.5rem; max-width: 54rem; font-size: clamp(1.25rem, 1.05rem + 0.9vw, 1.75rem); line-height: 1.3; font-weight: 600; letter-spacing: -0.01em; color: var(--dd-ink); }
+  .dd-rules-headline { margin-top: 0.5rem; font-size: clamp(1.25rem, 1.05rem + 0.9vw, 1.75rem); line-height: 1.3; font-weight: 600; letter-spacing: -0.01em; color: var(--dd-ink); }
   .dd-rules-body { display: grid; }
   .dd-rules-inputs { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--dd-steel); background: var(--dd-board-soft); }
   .dd-rule-list { margin: 0; padding: 0; list-style: none; }
