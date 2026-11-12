@@ -64,29 +64,44 @@ export function ScalarComparison() {
   const voteChanged = submission && vote !== submission.request.binary_vote;
 
   return <div className={styles.walkthrough}>
-    <section id="rate-ballot" className="scroll-mt-6" aria-labelledby={`${ballotId}-heading`}>
-      <p className={styles.step}>01 · Two ways to answer</p>
-      <div className={styles.sectionHeading}>
-        <h2 id={`${ballotId}-heading`}>One policy question. How much can your answer say?</h2>
-        <p>In 2022, Colorado voters were asked whether to reduce the statutory income tax rate from {rateText(TAX_MEASURE.statusQuo)} to {rateText(TAX_MEASURE.proposal)}. Answer that ballot question, then explore a richer way to express your preferences.</p>
+    {/* Part one: the ballot as it exists. Answer-sheet monochrome. */}
+    <div className={styles.scantronZone}>
+      <div className={styles.inner}>
+        <section aria-labelledby={`${ballotId}-heading`}>
+          <p className={styles.step}><span>01</span>The 2022 ballot</p>
+          <div className={styles.sectionHeading}>
+            <h2 id={`${ballotId}-heading`}>One policy question. How much can your answer say?</h2>
+            <p>In 2022, Colorado voters were asked whether to reduce the statutory income tax rate from {rateText(TAX_MEASURE.statusQuo)} to {rateText(TAX_MEASURE.proposal)}. Answer that ballot question first, exactly as it was printed.</p>
+          </div>
+          <IncomeTaxBallot vote={vote} onVoteChange={setVote} />
+        </section>
       </div>
-      <IncomeTaxBallot vote={vote} onVoteChange={setVote} />
-      <div className={styles.richerIntro}>
-        <h3>A possible richer ballot</h3>
-        <p>The 2022 ballot was binary. This experimental curve starts at the then-current statutory rate of {rateText(TAX_MEASURE.statusQuo)}.</p>
-      </div>
-      <ScalarBallot onSubmitBallot={submitBallot} canSubmit={vote !== null} isSubmitting={busy} submittedBallot={submission?.request.ballot}
-        submissionHint={!vote ? "Choose Yes or No above, then shape your curve and compare." : voteChanged ? "Yes/no answer edited. The comparison still uses your submitted answers." : undefined} />
-    </section>
+    </div>
 
-    <section id="ballot-comparison" ref={resultRef} className={styles.comparison} aria-labelledby={`${ballotId}-results`}>
-      <p className={styles.step}>02 · Compare the results</p>
-      <div className={styles.sectionHeading}>
-        <h2 id={`${ballotId}-results`}>What becomes visible when a ballot says more?</h2>
-        <p>Your two answers join 99 synthetic voters. Explore their different preferences and the yes/no answers they produce, then combine those same 100 ballots into a tax rate. These are illustrative outcomes, not the actual 2022 election results.</p>
+    {/* Part two: the ballot as it could be. Colour arrives with information. */}
+    <div className={styles.richZone}>
+      <div className={styles.spectrum} aria-hidden="true" />
+      <div className={styles.inner}>
+        <section aria-labelledby={`${ballotId}-richer`}>
+          <p className={styles.step}><span>02</span>A richer ballot</p>
+          <div className={styles.sectionHeading}>
+            <h2 id={`${ballotId}-richer`}>Same question. Room to say how much.</h2>
+          </div>
+          <ScalarBallot onSubmitBallot={submitBallot} canSubmit={vote !== null} isSubmitting={busy} submittedBallot={submission?.request.ballot}
+            context={<p>The 2022 ballot was binary. This experimental curve starts at the then-current statutory rate of {rateText(TAX_MEASURE.statusQuo)}. Shape it to show your ideal rate, what you would accept, and how quickly your support falls away.</p>}
+            submissionHint={!vote ? "Choose Yes or No above, then shape your curve and compare." : voteChanged ? "Yes/no answer edited. The comparison still uses your submitted answers." : undefined} />
+        </section>
+
+        <section ref={resultRef} className={styles.comparison} aria-labelledby={`${ballotId}-results`}>
+          <p className={styles.step}><span>03</span>Compare the results</p>
+          <div className={styles.sectionHeading}>
+            <h2 id={`${ballotId}-results`}>What becomes visible when a ballot says more?</h2>
+            <p>Your two answers join 99 synthetic voters. Explore their different preferences and the yes/no answers they produce, then combine those same 100 ballots into a tax rate. These are illustrative outcomes, not the actual 2022 election results.</p>
+          </div>
+          {error && <div className={styles.error} role="alert"><p>{error}</p><button type="button" disabled={busy} onClick={() => lastRequest && void compare(lastRequest)}>Retry submitted ballot</button></div>}
+          {submission ? <ElectorateResults key={JSON.stringify(submission.request)} data={submission.data} ballot={submission.request.ballot} /> : <div className={styles.emptyState} role="status">{busy ? "Comparing your submitted ballot with the prepared electorate…" : "Submit your two answers above to reveal the comparison."}</div>}
+        </section>
       </div>
-      {error && <div className={styles.error} role="alert"><p>{error}</p><button type="button" disabled={busy} onClick={() => lastRequest && void compare(lastRequest)}>Retry submitted ballot</button></div>}
-      {submission ? <ElectorateResults key={JSON.stringify(submission.request)} data={submission.data} ballot={submission.request.ballot} /> : <div className={styles.emptyState} role="status">{busy ? "Comparing your submitted ballot with the prepared electorate…" : "Submit your two answers above to reveal the comparison."}</div>}
-    </section>
+    </div>
   </div>;
 }
