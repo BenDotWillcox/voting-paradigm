@@ -379,6 +379,7 @@ The API is visible in the portfolio; treat it as product surface.
 ## Web app patterns
 
 - **Server Actions** — all mutations. Return `ActionResult<T>` = `{ isSuccess, message, data? }`. Mutations call `revalidatePath`. Queries import from `db/queries/`; never call queries from client components.
+- **Methods read-only calculations** — browser requests use abortable `fetch` through `lib/methods-client.ts` to `/api/methods/profile`, `/api/methods/atlas`, and `/api/methods/atlas/point`. These thin Next routes call the existing validated actions and return their `ActionResult<T>` envelope; Python remains the numerical authority at `/api/voting/...`. Keep this transport separate from Next's serialized client Server Action queue so a stalled request cannot block a retry. Bound both response headers and JSON bodies, cancel superseded requests, and preserve the user's edits and the static examples on failure.
 - **"Not found" is not an error** — return `{ isSuccess: true, data: null }`, not `{ isSuccess: false }`. The action result envelope is for infra failures, not expected empty states.
 - **Forms** — React Hook Form + Zod. Validate at form boundary AND at server action boundary (defense in depth).
 - **JSONB columns** — always Zod-validate on read. Drizzle types JSONB as `unknown`; don't cast away with `as unknown as T`.

@@ -47,6 +47,7 @@ export function MethodsInstrument({ presets, stories, irvSource, countSources, s
   const electorate = useElectorate({ presets, initialProfile, initialResolution });
   const { profile, resolution, status, showing, key } = electorate;
   const ready = showing && status.kind === "ready";
+  const counting = !ready && status.kind !== "offline" && status.kind !== "empty";
   const [inspectorMethod, setInspectorMethod] = useState(initialInspectorMethod);
   const [inspectorInput, setInspectorInput] = useState(initialInspectorInput);
   const [rankedPairsCycle, setRankedPairsCycle] = useState(initialRankedPairsCycle);
@@ -64,8 +65,8 @@ export function MethodsInstrument({ presets, stories, irvSource, countSources, s
   const selectedType = Math.max(0, Math.min(voterType, profile.rows.length - 1));
   const selectedResult = resolution.results.find((result) => result.method === method) ?? resolution.results[0];
   const pendingMessage = status.kind === "empty" ? "Add at least one voter to count this electorate."
-    : status.kind === "offline" ? "This electorate could not be counted. Try editing it or choosing a starting point."
-    : "Counting your edited electorate in Python…";
+    : status.kind === "offline" ? status.message
+    : "Updating all seven methods…";
 
   const jumpTo = useCallback((anchor: DemoAnchor, focus = true) => {
     const destination = document.getElementById(anchor);
@@ -188,12 +189,12 @@ export function MethodsInstrument({ presets, stories, irvSource, countSources, s
           <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)] xl:items-start">
             <div className="min-w-0 space-y-4">
               <Panel title="Your voters"><p className="mb-4 text-sm leading-relaxed text-mi-ink-2">Each row is a group of voters. Move candidates along its preference scale, then change how many voters share it.</p><ProfileEditor profile={profile} selected={selectedType} onSelect={setVoterType} onChange={edit} /></Panel>
-              <details className="min-w-0 rounded-[4px] border border-mi-rule bg-mi-surface p-4"><summary className="min-h-11 cursor-pointer text-base font-medium text-mi-ink">Inspect the ballots this creates</summary><div className="min-w-0 pt-3"><BallotsPanel profile={profile} ballots={ready ? resolution.voter_ballots : null} selected={selectedType} onSelect={setVoterType} /></div></details>
+              <details className="min-w-0 rounded-[4px] border border-mi-rule bg-mi-surface p-4"><summary className="min-h-11 cursor-pointer text-base font-medium text-mi-ink">Inspect the ballots this creates</summary><div className="min-w-0 pt-3">{status.kind === "offline" || status.kind === "empty" ? <p role="status" className="text-sm text-mi-muted">{pendingMessage}</p> : <BallotsPanel profile={profile} ballots={ready ? resolution.voter_ballots : null} selected={selectedType} onSelect={setVoterType} />}</div></details>
             </div>
-            <div className="min-w-0 space-y-4" aria-busy={status.kind === "counting"}>
+            <div className="min-w-0 space-y-4">
               <Panel title="Compare the methods">
-                <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><p role="status" className="text-sm leading-relaxed text-mi-ink-2">{ready ? `${resolution.total_voters} voters · ${new Set(resolution.results.map((result) => result.winner)).size} different winners · seed ${resolution.tiebreak_seed}` : pendingMessage}</p><button type="button" onClick={tracePlayground} disabled={!ready} className={cn(action, "disabled:opacity-40")}><Code2 size={16} aria-hidden />Trace this count <ArrowUpRight size={16} aria-hidden /></button></div>
-                {ready ? <Channels resolution={resolution} selected={method} onSelect={setMethod} /> : <div className="min-h-40 rounded-[4px] bg-mi-wash p-5 text-sm leading-relaxed text-mi-ink-2">{status.kind === "empty" ? "The comparison will appear here when the electorate has voters." : status.kind === "offline" ? "Your edits are preserved. Preset examples remain available." : "Updating all seven methods from the current preferences."}</div>}
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><p role="status" className="text-sm leading-relaxed text-mi-ink-2">{ready ? `${resolution.total_voters} voters · ${new Set(resolution.results.map((result) => result.winner)).size} different winners · seed ${resolution.tiebreak_seed}` : pendingMessage}</p>{status.kind === "offline" && <button type="button" onClick={electorate.retry} className={action}>Retry count</button>}<button type="button" onClick={tracePlayground} disabled={!ready} className={cn(action, "disabled:opacity-40")}><Code2 size={16} aria-hidden />Trace this count <ArrowUpRight size={16} aria-hidden /></button></div>
+                {ready || counting ? <Channels resolution={resolution} selected={method} onSelect={setMethod} pending={counting} /> : <div className="min-h-40 rounded-[4px] bg-mi-wash p-5 text-sm leading-relaxed text-mi-ink-2">{status.kind === "empty" ? "The comparison will appear here when the electorate has voters." : "Your edits are preserved. Preset examples remain available."}</div>}
               </Panel>
             </div>
           </div>
