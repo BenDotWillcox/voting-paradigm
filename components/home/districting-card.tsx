@@ -251,7 +251,7 @@ export function DistrictingCard({ demo, data }: { demo: ShowcaseDemo; data: Dist
         </figcaption>
       </figure>
 
-      <p className="home-card-description mt-4 text-sm leading-6 text-muted-foreground">{demo.description}</p>
+      <p className="home-card-description home-card-description-fill mt-4 text-sm leading-6 text-muted-foreground">{demo.description}</p>
       <ul className="mt-4 flex flex-wrap gap-1.5">
         {demo.showcase.map((tag) => (
           <li key={tag} className="dd-home-tag">
@@ -259,7 +259,7 @@ export function DistrictingCard({ demo, data }: { demo: ShowcaseDemo; data: Dist
           </li>
         ))}
       </ul>
-      <div className="mt-auto flex items-center gap-1 pt-4 text-sm font-medium text-[var(--dd-olive-deep)]">
+      <div className="home-card-action mt-auto flex items-center gap-1 pt-4 text-sm font-medium text-[var(--dd-olive-deep)]">
         Follow the algorithm
         <ArrowRight className="h-4 w-4" />
       </div>

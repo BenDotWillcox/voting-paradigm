@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import type { DemoStatus, Readiness } from "./demo-types";
 
 /**
- * The home page's demo grid. Cards show the first lines of their
+ * The home page's demo grid. Cards show the first lines (or as much as fits) of their
  * description; pointing at one (or tabbing into it) opens the rest, and the
  * card grows down over the row below rather than pushing it: as the text
  * opens, the cell pulls its bottom margin in by the same amount, in step,
@@ -53,16 +53,36 @@ function GridCell({ item, register }: { item: GridItem; register: (id: number, e
   const ref = React.useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = React.useState(false);
 
+  React.useLayoutEffect(() => {
+    const text = ref.current?.querySelector<HTMLElement>(".home-card-description-fill");
+    if (!text) return;
+    let active = true;
+    const updateOverflow = () => {
+      if (active) text.toggleAttribute("data-truncated", text.scrollHeight > text.clientHeight + 1);
+    };
+    const observer = new ResizeObserver(updateOverflow);
+    observer.observe(text);
+    updateOverflow();
+    void document.fonts.ready.then(updateOverflow);
+    document.fonts.addEventListener("loadingdone", updateOverflow);
+    return () => {
+      active = false;
+      observer.disconnect();
+      document.fonts.removeEventListener("loadingdone", updateOverflow);
+    };
+  }, []);
+
   const setOpenState = React.useCallback((next: boolean) => {
     const cell = ref.current;
     const text = cell?.querySelector<HTMLElement>(".home-card-description");
     if (!cell || !text) return;
     if (next) {
-      // Open to the full text, and pull the cell's bottom in by as much as it grows
-      // past its three closed lines (measured from the line height, so a card
-      // caught mid-close still opens by the right amount).
-      const grow = text.scrollHeight - 3 * parseFloat(getComputedStyle(text).lineHeight);
-      if (grow <= 0) return;
+      // Fill the space above the action before growing beyond the grid row.
+      // Include the current extension so reopening mid-transition stays stable.
+      const action = cell.querySelector<HTMLElement>(".home-card-action");
+      const available = action ? parseFloat(getComputedStyle(action).marginTop) : 0;
+      const extension = -parseFloat(getComputedStyle(cell).marginBottom);
+      const grow = Math.max(0, extension + text.scrollHeight - text.getBoundingClientRect().height - available);
       text.style.maxHeight = `${text.scrollHeight}px`;
       cell.style.marginBottom = `${-grow}px`;
     } else {
