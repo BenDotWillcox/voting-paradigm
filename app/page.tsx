@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ApportionmentCard } from "@/components/home/apportionment-card";
 import { DistrictingCard } from "@/components/home/districting-card";
+import { ExpressiveCard } from "@/components/home/expressive-card";
 import { MethodsCard } from "@/components/home/methods-card";
 import { DemoGrid } from "@/components/home/demo-grid";
 import { SketchBackdrop } from "@/components/home/sketch/sketch-backdrop";
@@ -39,6 +40,7 @@ function showcaseCards(
     1: (demo) => <MethodsCard demo={demo} atlas={methodsAtlas} />,
     3: (demo) => <DistrictingCard demo={demo} data={districting} />,
     4: (demo) => <ApportionmentCard demo={demo} />,
+    6: (demo) => <ExpressiveCard demo={demo} />,
   };
 }
 
