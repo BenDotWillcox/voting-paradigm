@@ -10,6 +10,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException
 
 from ..schemas.delegation import (
+    CityResponse,
     ErrorResponse,
     JudgmentsRequest,
     JudgmentsResponse,
@@ -24,6 +25,7 @@ from ..services.delegation import (
     DelegationRequestError,
     LiveSource,
     RuntimeStores,
+    city_response,
     default_source,
     default_stores,
     judgments_response,
@@ -158,3 +160,20 @@ def profile(person_id: str) -> ProfileResponse:
         return profile_response(person_id)
     except DelegationRequestError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+@router.get(
+    "/city",
+    response_model=CityResponse,
+    summary="Every closed question across the city",
+    description=(
+        "For each closed question: how many ballots counted with delegation "
+        "and how many people voted themselves, the share of votes decided by "
+        "someone else, the largest share held by one person, and whether "
+        "delegation changed the result. Also the same per ballot paper, the "
+        "totals, and the people who decided the most votes for others. Read "
+        "from the closed ballot papers only, so it never changes."
+    ),
+)
+def city() -> CityResponse:
+    return city_response()

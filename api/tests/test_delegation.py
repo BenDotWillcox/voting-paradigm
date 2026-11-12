@@ -36,6 +36,7 @@ VALIDATE_URL = "/api/delegation/delegations/validate"
 JUDGMENTS_URL = "/api/delegation/judgments"
 RESOLVE_URL = "/api/delegation/resolve"
 PEOPLE_URL = "/api/delegation/people"
+CITY_URL = "/api/delegation/city"
 
 VIEWER = "you"
 # Open ballot papers, and two that have closed
@@ -754,6 +755,7 @@ def test_routes_are_documented() -> None:
         JUDGMENTS_URL,
         RESOLVE_URL,
         PEOPLE_URL + "/{person_id}",
+        CITY_URL,
     }
     for path in paths:
         for operation in schema["paths"][path].values():
@@ -1108,3 +1110,94 @@ class TestDatedHistory:
         assert "sales tax rates" not in {score["text"] for score in receipt["scores"]}
         later = question(resolve(client, CLOSED_BUDGET), "q04")["receipt"]
         assert later["category"] == "sales tax rates"
+
+
+class TestCity:
+    def city(self, client: TestClient) -> dict[str, Any]:
+        response = client.get(CITY_URL)
+        assert response.status_code == 200, response.text
+        body: dict[str, Any] = response.json()
+        return body
+
+    def test_every_closed_question_is_listed_newest_paper_first(
+        self, client: TestClient
+    ) -> None:
+        body = self.city(client)
+        scenario = client.get(SCENARIO_URL).json()
+        closed = [p for p in scenario["ballot_papers"] if p["status"] == "closed"]
+        assert [paper["id"] for paper in body["papers"]] == [p["id"] for p in closed]
+        assert len(body["questions"]) == sum(len(p["questions"]) for p in closed)
+        assert body["totals"]["questions"] == len(body["questions"])
+        days = [row["closed_days_ago"] for row in body["questions"]]
+        assert days == sorted(days)
+
+    def test_a_row_matches_the_resolved_paper(self, client: TestClient) -> None:
+        row = next(
+            r for r in self.city(client)["questions"] if r["question_id"] == "q11"
+        )
+        item = question(resolve(client, CLOSED_GENERAL), "q11")
+        tally = item["delegated"]
+        assert row["cast_delegated"] == tally["total_ballots"] - tally["abstentions"]
+        assert row["cast_direct"] == (
+            item["direct"]["total_ballots"] - item["direct"]["abstentions"]
+        )
+        assert row["winners"] == tally["winners"]
+        assert row["winner_changed"] == item["winner_changed"]
+        assert row["delegated_share"] == item["metrics"]["delegated_share"]
+        assert row["support"] == round(tally["counts"]["yes"] / row["cast_delegated"], 4)
+
+    def test_only_yes_no_questions_have_a_yes_share(self, client: TestClient) -> None:
+        for row in self.city(client)["questions"]:
+            assert (row["support"] is None) == (row["ballot_type"] != "single_choice")
+
+    def test_totals_and_papers_add_up(self, client: TestClient) -> None:
+        body = self.city(client)
+        rows, totals = body["questions"], body["totals"]
+        assert totals["changed"] == sum(row["winner_changed"] for row in rows)
+        assert totals["changed"] == sum(paper["changed"] for paper in body["papers"])
+        issued = sum(row["voters"] for row in rows)
+        assert totals["turnout_direct"] == round(
+            sum(row["cast_direct"] for row in rows) / issued, 4
+        )
+        assert 0 < totals["turnout_direct"] < 1
+        assert totals["largest_share"] == max(row["largest_share"] for row in rows)
+
+    def test_deciders_are_ranked_and_agree_with_their_profiles(
+        self, client: TestClient
+    ) -> None:
+        deciders = self.city(client)["deciders"]
+        counts = [entry["votes_decided"] for entry in deciders]
+        assert counts == sorted(counts, reverse=True) and counts[-1] > 0
+        top = deciders[0]
+        stats = client.get(f"{PEOPLE_URL}/{top['person']}").json()["stats"]
+        assert stats["votes_decided_for_others"] == top["votes_decided"]
+        assert stats["largest_share"] == top["largest_share"]
+
+
+class TestProfileChanges:
+    def changes(self, client: TestClient, person: str) -> list[dict[str, Any]]:
+        body: dict[str, Any] = client.get(f"{PEOPLE_URL}/{person}").json()
+        found: list[dict[str, Any]] = body["changes"]
+        return found
+
+    def test_the_viewers_changes_include_their_own_and_those_made_to_them(
+        self, client: TestClient
+    ) -> None:
+        changes = self.changes(client, VIEWER)
+        days = [change["day"] for change in changes]
+        assert days == sorted(days, reverse=True) and days[0] < 0
+        own = [change for change in changes if change["delegator"] == VIEWER]
+        scenario = client.get(SCENARIO_URL).json()
+        assert len(own) == len(scenario["viewer_changes"])
+        for change in changes:
+            assert VIEWER in (change["delegator"], change["before"], change["after"])
+
+    def test_a_delegate_sees_who_came_and_went(self, client: TestClient) -> None:
+        # The viewer moved housing away from this person and the environment
+        # to them on different days.
+        moved_from = [
+            change
+            for change in self.changes(client, "d2-007")
+            if change["delegator"] == VIEWER and change["before"] == "d2-007"
+        ]
+        assert [change["category"] for change in moved_from] == ["housing and land use"]

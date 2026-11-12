@@ -2,6 +2,7 @@ import "server-only";
 import type { z } from "zod";
 import { cache } from "react";
 import {
+  cityResponseSchema,
   categoryJudgmentsResponseSchema,
   profileResponseSchema,
   resolveBallotPaperResponseSchema,
@@ -9,6 +10,7 @@ import {
   validateDelegationResponseSchema,
 } from "@/lib/validations/delegation-schemas";
 import type {
+  CityResults,
   CategoryJudgmentsRequest,
   CategoryJudgmentsResponse,
   DelegationScenario,
@@ -124,4 +126,9 @@ export function resolveBallotPaper(
   request: ResolveBallotPaperRequest
 ): Promise<ResolveBallotPaperResponse> {
   return call("/resolve", resolveBallotPaperResponseSchema, request);
+}
+
+/** Every closed question across the city: turnout, delegation and results. */
+export function getCityResults(): Promise<CityResults> {
+  return call("/city", cityResponseSchema);
 }
