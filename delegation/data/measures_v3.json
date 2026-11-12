@@ -1,0 +1,853 @@
+{
+  "schema": "delegation_measures.v3",
+  "note": "Hand-written. An invented city and invented measures; any resemblance to a real place, person or ballot is a coincidence. Only each measure's title, summary and option names are shown to the decision model. Support numbers are assumptions for the toy population: appeal is an option's pull on everyone, lean its pull along three issue dimensions (public spending, growth and building, reform and regulation), and local its pull on people who live near its site.",
+  "city": {
+    "name": "Port Alder",
+    "districts": {
+      "district-1": "Northside",
+      "district-2": "Harbor",
+      "district-3": "Eastgate"
+    }
+  },
+  "viewer": {
+    "position": [0.2, 0.25, 0.3],
+    "delegations": [
+      {"category": "public schools and education", "delegate": "d1-078"},
+      {"category": "all things taxes", "delegate": "out-16"},
+      {"category": "sales tax rates", "delegate": "d2-007"},
+      {"category": "the environment and conservation", "delegate": "d3-011"},
+      {"category": "the well-being of tree frogs in the Amazon", "delegate": "d2-054"},
+      {"category": "housing and land use", "delegate": "d2-016"},
+      {"category": "bike lanes and cycling safety", "delegate": "d1-006"},
+      {"category": "ranked choice voting", "delegate": "d2-057"}
+    ],
+    "changes": [
+      {"day": -340, "category": "public schools and education", "before": null, "after": "d1-078"},
+      {"day": -340, "category": "all things taxes", "before": null, "after": "out-16"},
+      {"day": -340, "category": "the environment and conservation", "before": null, "after": "d2-057"},
+      {"day": -340, "category": "housing and land use", "before": null, "after": "d2-007"},
+      {"day": -310, "category": "housing and land use", "before": "d2-007", "after": "d2-016"},
+      {"day": -230, "category": "sales tax rates", "before": null, "after": "d2-007"},
+      {"day": -180, "category": "bike lanes and cycling safety", "before": null, "after": "d1-006"},
+      {"day": -130, "category": "the well-being of tree frogs in the Amazon", "before": null, "after": "d2-054"},
+      {"day": -90, "category": "the environment and conservation", "before": "d2-057", "after": "d3-011"},
+      {"day": -45, "category": "ranked choice voting", "before": null, "after": "d2-057"}
+    ],
+    "missed": ["q59", "q67"],
+    "voted_directly": ["q25", "q30"]
+  },
+  "ballot_papers": [
+    {
+      "id": "city-general-1",
+      "title": "Port Alder general ballot",
+      "jurisdiction": "city",
+      "closes_in_days": -330,
+      "measures": [
+        {
+          "id": "q05", "title": "Hotel room tax", "kind": "Tax measure",
+          "summary": "Adds a 3 percent tax on hotel and short-term rental stays.",
+          "wording": "Shall the City of Port Alder levy a tax of 3 percent on the price of hotel rooms and short-term rentals, with the proceeds going to the general fund?",
+          "fiscal": "About $4.1 million a year in new revenue, paid mostly by visitors.",
+          "placed_by": "City Council, 6 to 1",
+          "for": "Visitors use the streets, the piers and the police. This asks them to help pay for them.",
+          "against": "Neighbouring towns charge less. Conferences and weekend trade will go there.",
+          "support": {"appeal": 0.35, "lean": [0.3, 0.0, 0.1]}
+        },
+        {
+          "id": "q07", "title": "Rainy day fund requirement", "kind": "Charter amendment",
+          "summary": "Requires the city to keep reserves equal to 10 percent of annual spending.",
+          "wording": "Shall the City Charter be amended to require a reserve fund of no less than 10 percent of the prior year's general fund spending, to be drawn on only in a declared fiscal emergency?",
+          "fiscal": "No new revenue. About $9 million would be set aside over three years.",
+          "placed_by": "City Auditor",
+          "for": "The last downturn closed two branch libraries inside a year. A reserve buys time.",
+          "against": "Money parked in a reserve is money not spent on services people need now.",
+          "support": {"appeal": 0.3, "lean": [-0.4, 0.0, 0.1]}
+        },
+        {
+          "id": "q14", "title": "Single-use plastic bag ban", "kind": "Ordinance",
+          "summary": "Bans single-use plastic bags at retail stores.",
+          "wording": "Shall retail stores in Port Alder be prohibited from providing single-use plastic carryout bags, and be required to charge 10 cents for a paper bag?",
+          "fiscal": "No cost to the city. Stores keep the paper bag charge.",
+          "placed_by": "Citizen initiative, 6,200 signatures",
+          "for": "Bags are the most common litter pulled from the harbor each spring.",
+          "against": "A bag charge is a small tax on every grocery trip, and it falls hardest on people with the least.",
+          "support": {"appeal": 0.1, "lean": [0.1, -0.1, 0.6]}
+        },
+        {
+          "id": "q23", "title": "Later high school start times", "kind": "Advisory vote",
+          "summary": "Moves the high school start time from 7:30 to 8:45 a.m.",
+          "wording": "Should the Port Alder School Board move the start of the high school day from 7:30 a.m. to 8:45 a.m. beginning next autumn?",
+          "fiscal": "About $600,000 a year for a second round of bus runs.",
+          "placed_by": "School Board",
+          "for": "Teenagers who sleep longer miss fewer days and crash fewer cars.",
+          "against": "After-school jobs, sports and child care all move an hour later with it.",
+          "support": {"appeal": 0.05, "lean": [0.0, 0.1, 0.4]}
+        },
+        {
+          "id": "q30", "title": "Affordable housing bond", "kind": "Bond",
+          "summary": "Borrows $50 million to build 600 income-restricted apartments.",
+          "wording": "Shall the City of Port Alder issue up to $50 million in general obligation bonds to build about 600 apartments reserved for households earning less than 60 percent of the area median income?",
+          "fiscal": "Repaid over 25 years from property tax; about $38 a year for a typical home.",
+          "placed_by": "City Council, 5 to 2",
+          "for": "Rents have risen by a third in five years and nothing at this price is being built.",
+          "against": "At more than $80,000 an apartment before land, the city would do better subsidising rent directly.",
+          "support": {"appeal": 0.1, "lean": [0.5, 0.4, 0.1]}
+        },
+        {
+          "id": "q37", "title": "Street repaving bond", "kind": "Bond",
+          "summary": "Borrows $40 million to repave 120 miles of streets and fill potholes.",
+          "wording": "Shall the City of Port Alder issue up to $40 million in general obligation bonds to repave about 120 miles of city streets?",
+          "fiscal": "Repaid over 20 years from property tax; about $31 a year for a typical home.",
+          "placed_by": "City Council, unanimous",
+          "for": "A third of the city's streets are rated poor, and waiting only raises the bill.",
+          "against": "Borrowing for routine upkeep means paying interest on potholes.",
+          "support": {"appeal": 0.4, "lean": [0.3, 0.1, -0.2]}
+        },
+        {
+          "id": "q43", "title": "Hire more police officers", "kind": "Budget measure",
+          "summary": "Funds 60 additional patrol officers.",
+          "wording": "Shall the City of Port Alder fund 60 additional patrol officers over three years from the general fund?",
+          "fiscal": "About $7.8 million a year once all 60 are hired.",
+          "placed_by": "Mayor",
+          "for": "Response times in Eastgate have doubled since the last hiring freeze.",
+          "against": "The department has 40 funded positions it has not filled. The trouble is not the number.",
+          "support": {"appeal": 0.05, "lean": [0.2, 0.0, -0.6]}
+        },
+        {
+          "id": "q46", "title": "Public health clinic funding", "kind": "Budget measure",
+          "summary": "Funds two neighborhood clinics offering vaccinations and primary care.",
+          "wording": "Shall the City of Port Alder fund two neighborhood health clinics, one in Eastgate and one in Harbor, offering vaccinations and primary care on a sliding fee?",
+          "fiscal": "About $3.2 million a year, partly offset by state reimbursement.",
+          "placed_by": "City Council, 5 to 2",
+          "for": "The nearest clinic to Eastgate is two bus rides away.",
+          "against": "The county already runs clinics. The city would be paying twice.",
+          "support": {"appeal": 0.3, "lean": [0.6, 0.0, 0.1]}
+        },
+        {
+          "id": "q54", "title": "Move city elections to even years", "kind": "Charter amendment",
+          "summary": "Holds city elections in November of even-numbered years.",
+          "wording": "Shall the City Charter be amended to hold elections for mayor and council in November of even-numbered years, alongside state and federal elections?",
+          "fiscal": "Saves about $350,000 per election cycle.",
+          "placed_by": "City Clerk",
+          "for": "Turnout in odd-year city elections is under a third of the roll.",
+          "against": "City races would be buried at the bottom of a long ballot.",
+          "support": {"appeal": 0.2, "lean": [0.0, 0.0, 0.4]}
+        },
+        {
+          "id": "q59", "title": "Library hours expansion", "kind": "Budget measure",
+          "summary": "Opens every branch library seven days a week.",
+          "wording": "Shall the City of Port Alder fund every branch of the public library to open seven days a week?",
+          "fiscal": "About $1.9 million a year in staff costs.",
+          "placed_by": "Library Board",
+          "for": "Four of seven branches are shut on the days working families can use them.",
+          "against": "Sunday visits at the branches that already open are low.",
+          "support": {"appeal": 0.3, "lean": [0.5, 0.0, 0.0]}
+        }
+      ]
+    },
+    {
+      "id": "district-1-special-1",
+      "title": "Northside special ballot",
+      "jurisdiction": "district-1",
+      "closes_in_days": -290,
+      "measures": [
+        {
+          "id": "q29", "title": "Height limit near the lakeshore", "kind": "Zoning ordinance",
+          "summary": "Limits new buildings within 500 feet of the Alder Lake shore to 40 feet in height.",
+          "wording": "Shall new buildings within 500 feet of the Alder Lake shoreline in Northside be limited to 40 feet in height?",
+          "fiscal": "No direct cost. Planners estimate about 300 fewer homes over ten years.",
+          "placed_by": "Citizen initiative, 1,900 signatures",
+          "for": "The shore is the one stretch of open sky Northside has left.",
+          "against": "It protects the view of people who already live there and prices everyone else out.",
+          "support": {"appeal": 0.25, "lean": [0.0, -0.7, 0.1], "site": [0.5, 0.95], "local": 0.3}
+        },
+        {
+          "id": "q36", "title": "Free bus fares for youth", "kind": "Budget measure",
+          "summary": "Makes city buses free for riders aged 18 and under.",
+          "wording": "Shall riders aged 18 and under travel free on Port Alder Transit buses serving Northside?",
+          "fiscal": "About $450,000 a year in lost fares.",
+          "placed_by": "District council member",
+          "for": "A fare is the difference between a student getting to practice and not.",
+          "against": "Free rides for some mean fuller buses and the same budget.",
+          "support": {"appeal": 0.2, "lean": [0.5, 0.1, 0.2]}
+        },
+        {
+          "id": "q61", "title": "No-kill animal shelter", "kind": "Ordinance",
+          "summary": "Requires the city animal shelter to stop euthanizing adoptable animals.",
+          "wording": "Shall the Northside animal shelter be prohibited from euthanizing any animal a veterinarian has judged adoptable?",
+          "fiscal": "About $280,000 a year for longer stays and foster placement.",
+          "placed_by": "Citizen initiative, 1,400 signatures",
+          "for": "Shelters that made this change found homes for nine in ten animals.",
+          "against": "Without more kennels the shelter will have to turn animals away at the door.",
+          "support": {"appeal": 0.35, "lean": [0.1, 0.0, 0.3]}
+        }
+      ]
+    },
+    {
+      "id": "district-3-special-1",
+      "title": "Eastgate special ballot",
+      "jurisdiction": "district-3",
+      "closes_in_days": -250,
+      "measures": [
+        {
+          "id": "q18", "title": "Sewer rate increase", "kind": "Rate measure",
+          "summary": "Raises sewer rates by 6 percent a year for five years to rebuild the treatment plant.",
+          "wording": "Shall sewer rates rise by 6 percent a year for five years to pay for rebuilding the Eastgate treatment plant?",
+          "fiscal": "About $9 a month more for a typical household by the fifth year.",
+          "placed_by": "Water and Sewer Board",
+          "for": "The plant is 58 years old and overflowed into the canal twice last winter.",
+          "against": "Eastgate pays the higher rate while the whole city uses the plant.",
+          "support": {"appeal": -0.15, "lean": [0.5, 0.0, 0.1]}
+        },
+        {
+          "id": "q22", "title": "Air conditioning for classrooms", "kind": "Capital measure",
+          "summary": "Installs air conditioning in every public school building over four years.",
+          "wording": "Shall air conditioning be installed in every public school building in Eastgate over four years?",
+          "fiscal": "About $11 million, from the school capital fund.",
+          "placed_by": "School Board",
+          "for": "Eastgate schools sent children home on nine hot days last year.",
+          "against": "The same money would repair roofs that leak all year round.",
+          "support": {"appeal": 0.3, "lean": [0.5, 0.0, 0.0]}
+        },
+        {
+          "id": "q65", "title": "Extended bar hours on Foundry Row", "kind": "Ordinance",
+          "summary": "Lets bars in the Foundry Row entertainment district stay open until 4 a.m.",
+          "wording": "Shall bars and music venues on Foundry Row be allowed to serve until 4 a.m. on Fridays and Saturdays?",
+          "fiscal": "About $200,000 a year in added licence fees, and a similar sum in policing.",
+          "placed_by": "Foundry Row Business Association",
+          "for": "Staggered closing empties the street slowly, not all at once at two.",
+          "against": "People live above those bars.",
+          "support": {"appeal": -0.05, "lean": [0.0, 0.5, 0.2], "site": [0.75, 0.3], "local": -0.5}
+        }
+      ]
+    },
+    {
+      "id": "city-budget",
+      "title": "Port Alder budget and revenue ballot",
+      "jurisdiction": "city",
+      "closes_in_days": -200,
+      "measures": [
+        {
+          "id": "q02", "title": "Property tax deferral for older homeowners", "kind": "Tax measure",
+          "summary": "Lets homeowners aged 70 and over defer their property tax payments until the home is sold.",
+          "wording": "Shall homeowners aged 70 and over be allowed to defer city property tax, with interest, until the home is sold or inherited?",
+          "fiscal": "Delays about $1.4 million a year in collections; the city is repaid with interest.",
+          "placed_by": "City Council, unanimous",
+          "for": "Nobody should have to sell the house they raised a family in to pay the tax on it.",
+          "against": "Deferred tax becomes a debt that heirs find out about at the worst time.",
+          "support": {"appeal": 0.35, "lean": [0.1, 0.0, 0.0]}
+        },
+        {
+          "id": "q04", "title": "Sales tax exemption for groceries", "kind": "Tax measure",
+          "summary": "Removes the city sales tax on unprepared food.",
+          "wording": "Shall food bought for preparation at home be exempt from the Port Alder sales tax?",
+          "fiscal": "About $6.5 million a year in lost revenue.",
+          "placed_by": "Citizen initiative, 7,100 signatures",
+          "for": "A tax on bread and milk takes the largest share from the smallest incomes.",
+          "against": "The gap has to be filled, and nobody proposing this has said how.",
+          "support": {"appeal": 0.4, "lean": [-0.3, 0.0, 0.1]}
+        },
+        {
+          "id": "q06", "title": "Business license tax restructuring", "kind": "Tax measure",
+          "summary": "Replaces the flat business license fee with a tax based on gross receipts.",
+          "wording": "Shall the flat $400 business licence fee be replaced by a tax of 0.15 percent of gross receipts above $250,000?",
+          "fiscal": "About $5 million a year more; nine in ten businesses would pay less than now.",
+          "placed_by": "City Council, 4 to 3",
+          "for": "A corner shop and a distribution centre currently pay the same $400.",
+          "against": "A tax on receipts, not profit, hits low-margin businesses such as grocers hardest.",
+          "support": {"appeal": -0.05, "lean": [0.3, -0.1, 0.4]}
+        },
+        {
+          "id": "q08", "title": "Participatory budgeting pilot", "kind": "Budget measure",
+          "summary": "Sets aside $2 million of the city budget each year for projects chosen directly by residents.",
+          "wording": "Shall $2 million of each year's capital budget be spent on projects proposed and chosen by residents in a public vote?",
+          "fiscal": "No new spending; redirects $2 million a year.",
+          "placed_by": "Citizen initiative, 5,300 signatures",
+          "for": "People know which crossing needs a light better than a budget office does.",
+          "against": "Turnout in these votes is tiny, and organised groups win them.",
+          "support": {"appeal": 0.05, "lean": [0.2, 0.0, 0.5]}
+        },
+        {
+          "id": "q09", "title": "Spending cap tied to tax revenue", "kind": "Charter amendment",
+          "summary": "Limits annual growth in city spending to the growth in tax revenue.",
+          "wording": "Shall the City Charter be amended so that general fund spending may not grow faster in any year than tax revenue grew the year before?",
+          "fiscal": "Depends on the year; would have cut about $12 million from last year's budget.",
+          "placed_by": "Citizen initiative, 6,800 signatures",
+          "for": "A household cannot spend more than it earns, and neither should a city.",
+          "against": "It locks every bad year in permanently, because the next budget starts from the lower base.",
+          "support": {"appeal": -0.05, "lean": [-0.7, 0.0, -0.1]}
+        },
+        {
+          "id": "q25", "title": "School operating levy", "kind": "Levy",
+          "summary": "Adds a property tax levy of $1.20 per $1,000 of assessed value to pay teacher salaries.",
+          "wording": "Shall the Port Alder School District levy $1.20 per $1,000 of assessed value for five years to pay for teacher and classroom staff salaries?",
+          "fiscal": "About $420 a year for a typical home; raises $23 million a year.",
+          "placed_by": "School Board",
+          "for": "The district loses one new teacher in four to better-paying districts within three years.",
+          "against": "Enrolment has fallen for six years while the budget has grown.",
+          "support": {"appeal": 0.0, "lean": [0.7, 0.0, 0.1]}
+        },
+        {
+          "id": "q56", "title": "Parks levy renewal", "kind": "Levy",
+          "summary": "Renews a property tax levy that funds park maintenance and community centers.",
+          "wording": "Shall the existing parks levy of 35 cents per $1,000 of assessed value be renewed for six years?",
+          "fiscal": "No increase; continues about $120 a year for a typical home.",
+          "placed_by": "Parks Board",
+          "for": "It pays for the lifeguards, the mowing and every community centre's opening hours.",
+          "against": "A levy that is always renewed should be in the regular budget, where it competes with everything else.",
+          "support": {"appeal": 0.3, "lean": [0.5, 0.0, 0.0]}
+        }
+      ]
+    },
+    {
+      "id": "district-2-special-1",
+      "title": "Harbor special ballot",
+      "jurisdiction": "district-2",
+      "closes_in_days": -160,
+      "measures": [
+        {
+          "id": "q28", "title": "Downtown height limit increase", "kind": "Zoning ordinance",
+          "summary": "Raises the maximum building height downtown from 6 to 12 stories.",
+          "wording": "Shall the maximum height of new buildings in the downtown core be raised from 6 stories to 12?",
+          "fiscal": "No direct cost. Planners estimate 2,400 more homes over ten years.",
+          "placed_by": "Planning Commission",
+          "for": "Downtown has the transit and the jobs. It is where homes should go.",
+          "against": "Twelve stories puts Main Street in shadow from October to March.",
+          "support": {"appeal": 0.0, "lean": [0.0, 0.8, 0.1], "site": [0.3, 0.3], "local": -0.2}
+        },
+        {
+          "id": "q41", "title": "Site for the Harbor fire station", "kind": "Advisory vote",
+          "ballot_type": "ranked",
+          "summary": "Chooses where the fire department builds and staffs its new Harbor district fire station, by ranked choice among three sites.",
+          "wording": "Where should the new Harbor fire station be built? Rank the three sites.",
+          "fiscal": "Between $14 million and $19 million depending on the site; staffing is the same at each.",
+          "placed_by": "Fire Chief",
+          "for": "",
+          "against": "",
+          "options": [
+            {"id": "front", "name": "Front Street lot", "note": "City-owned; closest to the piers. $19 million.",
+             "support": {"appeal": 0.1, "site": [0.15, 0.35], "local": 0.5}},
+            {"id": "cannery", "name": "Cannery Yard", "note": "A cleared industrial site in the south end. $16 million.",
+             "support": {"appeal": 0.0, "site": [0.4, 0.12], "local": 0.5}},
+            {"id": "marsh", "name": "Marsh Road depot", "note": "Converts a bus depot; cheapest, farthest from the water. $14 million.",
+             "support": {"appeal": 0.05, "lean": [-0.2, 0.0, 0.0], "site": [0.47, 0.42], "local": 0.5}}
+          ]
+        },
+        {
+          "id": "q42", "title": "Ambulance response time standard", "kind": "Ordinance",
+          "summary": "Requires the fire department to staff enough ambulances to reach 90 percent of calls within eight minutes.",
+          "wording": "Shall the fire department be required to staff enough ambulances in Harbor to reach 90 percent of emergency calls within eight minutes?",
+          "fiscal": "About $2.3 million a year for two more crews.",
+          "placed_by": "Citizen initiative, 2,200 signatures",
+          "for": "The current figure is 71 percent, and minutes decide whether a heart restarts.",
+          "against": "A standard written into law takes the choice of where to put crews away from the people who run them.",
+          "support": {"appeal": 0.35, "lean": [0.4, 0.0, 0.0]}
+        },
+        {
+          "id": "q64", "title": "Late-night noise limits", "kind": "Ordinance",
+          "summary": "Lowers the allowed noise level for bars and music venues after 11 p.m.",
+          "wording": "Shall the permitted noise level at the property line of bars and music venues in Harbor be lowered from 65 to 55 decibels after 11 p.m.?",
+          "fiscal": "About $90,000 a year for enforcement.",
+          "placed_by": "Canal Quarter Residents' Association",
+          "for": "Fifty-five decibels is a conversation. Sixty-five is a vacuum cleaner outside a bedroom.",
+          "against": "No live venue can meet 55 with its doors open. This closes them by another name.",
+          "support": {"appeal": 0.0, "lean": [0.0, -0.5, -0.2], "site": [0.35, 0.15], "local": 0.4}
+        }
+      ]
+    },
+    {
+      "id": "city-general-2",
+      "title": "Port Alder general ballot",
+      "jurisdiction": "city",
+      "closes_in_days": -110,
+      "measures": [
+        {
+          "id": "q11", "title": "Zoo conservation fund for Amazon tree frogs", "kind": "Budget measure",
+          "summary": "Directs the city zoo to spend 1 percent of ticket revenue on tree frog conservation projects in the Amazon.",
+          "wording": "Shall the Port Alder Zoo be directed to spend 1 percent of its ticket revenue on tree frog conservation projects in the Amazon basin?",
+          "fiscal": "About $85,000 a year from zoo revenue.",
+          "placed_by": "Citizen initiative, 5,100 signatures",
+          "for": "The zoo's own frog house draws a quarter of its visitors. It should protect what it shows.",
+          "against": "Zoo revenue should fix the zoo.",
+          "support": {"appeal": -0.1, "lean": [0.1, 0.0, 0.4]}
+        },
+        {
+          "id": "q15", "title": "City climate action plan", "kind": "Ordinance",
+          "summary": "Commits the city to net-zero emissions from its own buildings and vehicles by 2040.",
+          "wording": "Shall the City of Port Alder commit to net-zero greenhouse gas emissions from city buildings and vehicles by 2040, with progress reported yearly?",
+          "fiscal": "About $3 million a year in capital spending, partly recovered in fuel and energy savings.",
+          "placed_by": "City Council, 5 to 2",
+          "for": "The city runs 400 vehicles and 90 buildings. It can start with its own.",
+          "against": "A target without a costed plan is a promise the next council pays for.",
+          "support": {"appeal": 0.1, "lean": [0.3, 0.0, 0.6]}
+        },
+        {
+          "id": "q17", "title": "Lead water pipe replacement bond", "kind": "Bond",
+          "summary": "Borrows $30 million to replace lead drinking water pipes.",
+          "wording": "Shall the City of Port Alder issue up to $30 million in bonds to replace the remaining 4,800 lead service lines carrying drinking water?",
+          "fiscal": "Repaid over 20 years from water rates; about $3 a month for a typical household.",
+          "placed_by": "Water and Sewer Board",
+          "for": "There is no safe level of lead in a child's water.",
+          "against": "Most of the lines are on private property. Owners, not ratepayers, should replace them.",
+          "support": {"appeal": 0.5, "lean": [0.4, 0.0, 0.1]}
+        },
+        {
+          "id": "q20", "title": "Local produce in school cafeterias", "kind": "Ordinance",
+          "summary": "Requires school cafeterias to buy 20 percent of the food for school lunches from local farms.",
+          "wording": "Shall school cafeterias be required to buy at least 20 percent of the food for school lunches from farms within 150 miles?",
+          "fiscal": "About $700,000 a year in higher food costs.",
+          "placed_by": "Citizen initiative, 4,900 signatures",
+          "for": "The money stays in the county and the food is fresher.",
+          "against": "The lunch budget is $1.90 a plate. Something else comes off the tray.",
+          "support": {"appeal": 0.2, "lean": [0.1, 0.0, 0.3]}
+        },
+        {
+          "id": "q24", "title": "Class size limit", "kind": "Ordinance",
+          "summary": "Caps kindergarten through third grade classes at 20 students.",
+          "wording": "Shall classes from kindergarten through third grade in Port Alder public schools be limited to 20 students?",
+          "fiscal": "About $8.5 million a year for 70 more teachers and classrooms.",
+          "placed_by": "Port Alder Teachers' Association",
+          "for": "Some first-grade classes have 29 children and one adult.",
+          "against": "There are not 70 spare classrooms, and the measure does not pay to build them.",
+          "support": {"appeal": 0.25, "lean": [0.5, 0.0, 0.1]}
+        },
+        {
+          "id": "q27", "title": "Just-cause eviction rule", "kind": "Ordinance",
+          "summary": "Requires landlords to state one of nine approved reasons before ending a tenancy.",
+          "wording": "Shall a landlord be required to state one of nine listed reasons, such as unpaid rent or sale of the property, before ending a tenancy?",
+          "fiscal": "About $350,000 a year for a tenancy office.",
+          "placed_by": "Citizen initiative, 6,400 signatures",
+          "for": "A tenant who pays on time and keeps the rules should not lose a home without a reason.",
+          "against": "Small landlords will sell up, and the buyers will not be renting to anyone.",
+          "support": {"appeal": 0.0, "lean": [0.1, -0.1, 0.7]}
+        },
+        {
+          "id": "q31", "title": "Legalizing backyard cottages", "kind": "Zoning ordinance",
+          "summary": "Allows one accessory dwelling unit on every residential lot.",
+          "wording": "Shall one accessory dwelling, such as a backyard cottage or a basement flat, be allowed on every residential lot in Port Alder?",
+          "fiscal": "No direct cost. Permit fees would cover review.",
+          "placed_by": "Planning Commission",
+          "for": "It adds homes one garden at a time, without a single tower.",
+          "against": "Street parking and sewers in older neighbourhoods were not sized for double the households.",
+          "support": {"appeal": 0.05, "lean": [0.0, 0.7, 0.1]}
+        },
+        {
+          "id": "q35", "title": "More frequent bus service", "kind": "Budget measure",
+          "summary": "Funds buses every 10 minutes on the eight busiest routes.",
+          "wording": "Shall Port Alder Transit be funded to run a bus every 10 minutes, from 6 a.m. to 9 p.m., on its eight busiest routes?",
+          "fiscal": "About $9.4 million a year.",
+          "placed_by": "Transit Board",
+          "for": "A bus you do not need a timetable for is a bus people use.",
+          "against": "Half-empty buses every ten minutes are still half empty.",
+          "support": {"appeal": 0.15, "lean": [0.5, 0.2, 0.1]}
+        },
+        {
+          "id": "q40", "title": "Police inspector general", "kind": "Charter amendment",
+          "summary": "Creates an independent inspector general to audit police department policies and use of force.",
+          "wording": "Shall the City Charter be amended to create an inspector general, appointed for a six-year term, to audit police policies and every use of force?",
+          "fiscal": "About $1.1 million a year for an office of six.",
+          "placed_by": "City Council, 4 to 3",
+          "for": "The department currently reviews its own conduct.",
+          "against": "Another office writing reports does not put an officer on a street.",
+          "support": {"appeal": 0.1, "lean": [0.0, 0.0, 0.7]}
+        },
+        {
+          "id": "q44", "title": "Gunshot detection system", "kind": "Budget measure",
+          "summary": "Installs acoustic gunshot sensors in four neighborhoods.",
+          "wording": "Shall the city lease an acoustic gunshot detection system covering four neighborhoods for three years?",
+          "fiscal": "About $1.6 million over three years.",
+          "placed_by": "Police Chief",
+          "for": "Four in five gunshots are never reported by a caller.",
+          "against": "Cities that bought it found few arrests and many false alerts, all in the same four neighbourhoods.",
+          "support": {"appeal": -0.05, "lean": [0.1, 0.0, -0.6]}
+        },
+        {
+          "id": "q47", "title": "Flavored tobacco ban", "kind": "Ordinance",
+          "summary": "Bans the sale of flavored tobacco and vaping products.",
+          "wording": "Shall the sale of flavored tobacco and flavored vaping products be prohibited in Port Alder?",
+          "fiscal": "About $400,000 a year in lost tobacco licence and sales tax revenue.",
+          "placed_by": "Board of Health",
+          "for": "Nobody starts at fifteen on a product that tastes of tobacco.",
+          "against": "Adults will drive ten minutes to the next town, and the corner shops lose the sale.",
+          "support": {"appeal": 0.05, "lean": [0.0, 0.0, 0.5]}
+        },
+        {
+          "id": "q50", "title": "Predictable scheduling", "kind": "Ordinance",
+          "summary": "Requires large retailers to post work schedules two weeks in advance.",
+          "wording": "Shall retailers with more than 250 employees be required to post work schedules 14 days ahead and pay for shifts cancelled at short notice?",
+          "fiscal": "About $250,000 a year for enforcement.",
+          "placed_by": "Citizen initiative, 5,600 signatures",
+          "for": "You cannot arrange child care around a shift you learn about the night before.",
+          "against": "Retail staffing follows the weather and the week. Penalties for adjusting mean fewer shifts offered.",
+          "support": {"appeal": 0.1, "lean": [0.0, -0.1, 0.6]}
+        },
+        {
+          "id": "q55", "title": "Public campaign financing", "kind": "Charter amendment",
+          "summary": "Gives each voter four $25 vouchers to donate to candidates for city office.",
+          "wording": "Shall each registered voter receive four $25 vouchers each election to give to candidates for city office who accept spending limits?",
+          "fiscal": "About $2.5 million per election cycle.",
+          "placed_by": "Citizen initiative, 7,400 signatures",
+          "for": "Candidates would spend their evenings with voters and not with donors.",
+          "against": "Public money for political leaflets, in a year the city closed a pool.",
+          "support": {"appeal": -0.1, "lean": [0.3, 0.0, 0.6]}
+        }
+      ]
+    },
+    {
+      "id": "district-1-special-2",
+      "title": "Northside special ballot",
+      "jurisdiction": "district-1",
+      "closes_in_days": -60,
+      "measures": [
+        {
+          "id": "q13", "title": "Protected tree ordinance", "kind": "Ordinance",
+          "summary": "Requires a permit to remove any street tree or any large tree on private land.",
+          "wording": "Shall a permit be required in Northside to remove any street tree, or any tree on private land with a trunk wider than 24 inches?",
+          "fiscal": "About $120,000 a year for an arborist; permit fees cover part.",
+          "placed_by": "Northside Neighbourhood Council",
+          "for": "A sixty-year-old oak cannot be replanted.",
+          "against": "It is your tree until it drops a limb on your roof, and then it is your permit application.",
+          "support": {"appeal": 0.1, "lean": [0.0, -0.6, 0.3]}
+        },
+        {
+          "id": "q38", "title": "Lower residential speed limit", "kind": "Ordinance",
+          "summary": "Lowers the speed limit on residential streets from 25 to 20 miles per hour.",
+          "wording": "Shall the speed limit on residential streets in Northside be lowered from 25 to 20 miles per hour?",
+          "fiscal": "About $180,000 once, for new signs.",
+          "placed_by": "District council member",
+          "for": "A person hit at 20 usually walks away. At 25 the odds are a good deal worse.",
+          "against": "Nobody drives the posted limit now. New signs change nothing without enforcement.",
+          "support": {"appeal": 0.15, "lean": [0.0, -0.2, 0.4]}
+        }
+      ]
+    },
+    {
+      "id": "city-advisory-1",
+      "title": "Port Alder advisory ballot",
+      "jurisdiction": "city",
+      "closes_in_days": -25,
+      "measures": [
+        {
+          "id": "q49", "title": "Minimum wage for tipped workers", "kind": "Advisory vote",
+          "summary": "Ends the lower minimum wage for tipped workers over three years.",
+          "wording": "Should the City Council phase out the lower minimum wage for tipped workers over three years?",
+          "fiscal": "No cost to the city.",
+          "placed_by": "City Council",
+          "for": "A wage should not depend on the mood of table nine.",
+          "against": "Servers earn more with tips than they would on a flat wage, and many have said so.",
+          "support": {"appeal": 0.0, "lean": [0.2, 0.0, 0.6]}
+        },
+        {
+          "id": "q51", "title": "Heat protections for outdoor workers", "kind": "Advisory vote",
+          "summary": "Requires shade, water and rest breaks for outdoor workers when it is hotter than 90 degrees.",
+          "wording": "Should the City Council require shade, water and a paid ten-minute rest every two hours for outdoor workers when it is hotter than 90 degrees?",
+          "fiscal": "About $150,000 a year for inspection.",
+          "placed_by": "City Council",
+          "for": "Two roofers were taken to hospital in last August's heat.",
+          "against": "State rules already cover this. A second rulebook helps nobody.",
+          "support": {"appeal": 0.3, "lean": [0.1, 0.0, 0.5]}
+        },
+        {
+          "id": "q53", "title": "Repeal ranked choice voting", "kind": "Advisory vote",
+          "summary": "Ends ranked choice voting and returns city elections to a primary and a top-two runoff.",
+          "wording": "Should the city end ranked choice voting and return to a primary election followed by a runoff between the top two?",
+          "fiscal": "A separate primary costs about $300,000 per cycle.",
+          "placed_by": "Citizen initiative, 6,900 signatures",
+          "for": "One in twelve ballots last time was filled in wrongly and thrown out.",
+          "against": "The primary this would bring back had a turnout of 14 percent.",
+          "support": {"appeal": -0.15, "lean": [0.0, 0.0, -0.7]}
+        },
+        {
+          "id": "q63", "title": "Municipal broadband utility", "kind": "Advisory vote",
+          "summary": "Creates a city-owned internet utility offering service to every household.",
+          "wording": "Should the city create a publicly owned internet utility offering a fibre connection to every household?",
+          "fiscal": "An estimated $140 million to build, repaid from subscriptions over 30 years.",
+          "placed_by": "City Council",
+          "for": "Half of Eastgate has one provider and no choice.",
+          "against": "If subscriptions fall short, the taxpayer covers a $140 million network.",
+          "support": {"appeal": 0.05, "lean": [0.6, 0.1, 0.2]}
+        },
+        {
+          "id": "q67", "title": "Official city song", "kind": "Advisory vote",
+          "ballot_type": "approval",
+          "summary": "Chooses an official city song from four finalists; voters may approve any number of them.",
+          "wording": "Which of these should be the official song of Port Alder? Approve as many as you like.",
+          "fiscal": "None.",
+          "placed_by": "Arts Commission",
+          "for": "",
+          "against": "",
+          "options": [
+            {"id": "harbor-lights", "name": "Harbor Lights", "note": "A 1950s dance-band standard.",
+             "support": {"appeal": 0.3}},
+            {"id": "alder-and-tide", "name": "Alder and Tide", "note": "A folk song, author unknown.",
+             "support": {"appeal": 0.1, "lean": [0.0, -0.3, 0.0]}},
+            {"id": "ferry-home", "name": "The Ferry Home", "note": "A recent hit by a local band.",
+             "support": {"appeal": 0.0, "lean": [0.0, 0.3, 0.0]}},
+            {"id": "morning", "name": "Port Alder Morning", "note": "Written for the contest by a school choir.",
+             "support": {"appeal": -0.1, "lean": [0.0, 0.0, 0.2]}}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "district-2-special-2",
+      "title": "Harbor special ballot",
+      "jurisdiction": "district-2",
+      "closes_in_days": 3,
+      "measures": [
+        {
+          "id": "q34", "title": "Bike lane on Main Street", "kind": "Capital measure",
+          "summary": "Removes one car lane on Main Street to add a two-way protected bike lane.",
+          "wording": "Shall one car lane on Main Street between Front Street and Civic Square be replaced by a two-way protected bike lane?",
+          "fiscal": "About $2.8 million, from the street fund.",
+          "placed_by": "Transportation Department",
+          "for": "Eleven cyclists were hit on that stretch in three years.",
+          "against": "Main Street shops take deliveries from that lane every morning.",
+          "support": {"appeal": 0.0, "lean": [0.0, 0.3, 0.5], "site": [0.3, 0.3], "local": -0.3}
+        },
+        {
+          "id": "q57", "title": "Tidewater Pier park", "kind": "Capital measure",
+          "summary": "Converts the former Tidewater shipping pier into a 9-acre public park.",
+          "wording": "Shall the former Tidewater shipping pier be converted into a 9-acre public park?",
+          "fiscal": "About $17 million to build and $600,000 a year to maintain.",
+          "placed_by": "Parks Board",
+          "for": "Harbor has less park per resident than any other district.",
+          "against": "The pier is the last deep-water berth the port has. Once it is lawn it stays lawn.",
+          "support": {"appeal": 0.3, "lean": [0.4, -0.2, 0.0], "site": [0.08, 0.2], "local": 0.3}
+        },
+        {
+          "id": "q60", "title": "Site for the new central library", "kind": "Advisory vote",
+          "ballot_type": "approval",
+          "summary": "Chooses where the new central library will be built from three sites; voters may approve any number of them.",
+          "wording": "Where should the new central library be built? Approve every site you could accept.",
+          "fiscal": "The $60 million library bond is already approved; the sites differ by up to $8 million.",
+          "placed_by": "Library Board",
+          "for": "",
+          "against": "",
+          "options": [
+            {"id": "civic", "name": "Civic Square, on the current site", "note": "Rebuild where the library stands; it closes for three years.",
+             "support": {"appeal": 0.2, "site": [0.3, 0.36], "local": 0.3}},
+            {"id": "depot", "name": "The old rail depot", "note": "Keeps the old library open during building; next to the bus exchange.",
+             "support": {"appeal": 0.1, "lean": [0.0, 0.3, 0.0], "site": [0.44, 0.2], "local": 0.3}},
+            {"id": "pier", "name": "Tidewater Pier head", "note": "A landmark on the water; farthest from transit and the most expensive.",
+             "support": {"appeal": -0.1, "lean": [0.2, 0.2, 0.0], "site": [0.1, 0.2], "local": 0.3}}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "city-general-3",
+      "title": "Port Alder general ballot",
+      "jurisdiction": "city",
+      "closes_in_days": 6,
+      "measures": [
+        {
+          "id": "q01", "title": "Senior property tax freeze", "kind": "Tax measure",
+          "summary": "Freezes the assessed home value used for property tax for homeowners aged 65 and over with household income under $60,000.",
+          "wording": "Shall the assessed value used for city property tax be frozen for homeowners aged 65 and over whose household income is under $60,000?",
+          "fiscal": "About $2.2 million a year in lost revenue, growing as values rise.",
+          "placed_by": "Citizen initiative, 8,000 signatures",
+          "for": "A pension does not rise when the house next door sells for a record.",
+          "against": "The tax others pay rises to cover it, including young families with less.",
+          "support": {"appeal": 0.3, "lean": [-0.1, -0.2, 0.0]}
+        },
+        {
+          "id": "q03", "title": "Half-cent sales tax increase", "kind": "Tax measure",
+          "summary": "Raises the city sales tax rate from 8.0 to 8.5 percent.",
+          "wording": "Shall the Port Alder sales tax rise from 8.0 to 8.5 percent, with the proceeds going to the general fund?",
+          "fiscal": "About $11 million a year.",
+          "placed_by": "City Council, 4 to 3",
+          "for": "It closes the gap left by the grocery exemption without touching property tax.",
+          "against": "Voters took the tax off groceries last year. This puts it on everything else.",
+          "support": {"appeal": -0.2, "lean": [0.6, 0.0, 0.0]}
+        },
+        {
+          "id": "q10", "title": "Sister-city grant for Amazon amphibian habitat", "kind": "Budget measure",
+          "summary": "Gives $150,000 to a partner city in Brazil to protect tree frog breeding habitat in the Amazon basin.",
+          "wording": "Shall the city grant $150,000 to its sister city in Brazil to protect tree frog breeding habitat in the Amazon basin?",
+          "fiscal": "$150,000 once, from the general fund.",
+          "placed_by": "Citizen initiative, 5,000 signatures",
+          "for": "The zoo fund showed what a small sum does there. This is the same idea, direct.",
+          "against": "It is a kind thought and it is not a city's job.",
+          "support": {"appeal": -0.25, "lean": [0.2, 0.0, 0.4]}
+        },
+        {
+          "id": "q12", "title": "Street tree planting bond", "kind": "Bond",
+          "summary": "Borrows $12 million to plant and maintain 20,000 street trees.",
+          "wording": "Shall the City of Port Alder issue up to $12 million in bonds to plant and maintain 20,000 street trees over ten years?",
+          "fiscal": "Repaid over 15 years; about $9 a year for a typical home.",
+          "placed_by": "Parks Board",
+          "for": "Eastgate has a third of the tree cover of Northside and is six degrees hotter in July.",
+          "against": "Trees planted on a bond die on a maintenance budget.",
+          "support": {"appeal": 0.2, "lean": [0.4, -0.1, 0.2]}
+        },
+        {
+          "id": "q16", "title": "Wetland restoration for stormwater", "kind": "Capital measure",
+          "summary": "Restores 40 acres of wetland to absorb stormwater and reduce flooding.",
+          "wording": "Shall the city restore 40 acres of wetland along the Eastgate canal to absorb stormwater?",
+          "fiscal": "About $8 million, against an estimated $21 million for the equivalent pipes.",
+          "placed_by": "Water and Sewer Board",
+          "for": "It does the work of a storm drain for a third of the price, and herons like it.",
+          "against": "Forty acres by the canal is land that could hold jobs.",
+          "support": {"appeal": 0.3, "lean": [0.3, -0.2, 0.3]}
+        },
+        {
+          "id": "q19", "title": "Free school breakfast and lunch", "kind": "Budget measure",
+          "summary": "Provides free breakfast and lunch to every student in the public schools.",
+          "wording": "Shall every student in Port Alder public schools be offered breakfast and lunch at no charge?",
+          "fiscal": "About $5.6 million a year after federal reimbursement.",
+          "placed_by": "School Board",
+          "for": "It ends the lunch-debt letters and the separate queue.",
+          "against": "It pays for the lunches of families who can well afford them.",
+          "support": {"appeal": 0.3, "lean": [0.6, 0.0, 0.1]}
+        },
+        {
+          "id": "q21", "title": "School construction bond", "kind": "Bond",
+          "summary": "Borrows $85 million to rebuild two elementary schools and repair school roofs across the district.",
+          "wording": "Shall the Port Alder School District issue up to $85 million in bonds to rebuild Marsh Road and Lakeview elementary schools and repair roofs at eleven others?",
+          "fiscal": "Repaid over 25 years; about $64 a year for a typical home.",
+          "placed_by": "School Board",
+          "for": "Marsh Road Elementary was built for 300 children and holds 480, some of them in portable huts.",
+          "against": "The district asked for a levy last year and a bond this year. There should be one plan.",
+          "support": {"appeal": 0.2, "lean": [0.6, 0.1, 0.0]}
+        },
+        {
+          "id": "q26", "title": "Annual rent increase cap", "kind": "Ordinance",
+          "summary": "Limits rent increases to 5 percent a year in buildings more than 15 years old.",
+          "wording": "Shall rent increases be limited to 5 percent a year in residential buildings more than 15 years old?",
+          "fiscal": "About $500,000 a year to administer.",
+          "placed_by": "Citizen initiative, 9,200 signatures",
+          "for": "A 20 percent rise is an eviction with extra steps.",
+          "against": "Every city that capped rents got fewer rentals and worse ones.",
+          "support": {"appeal": 0.05, "lean": [0.1, -0.3, 0.7]}
+        },
+        {
+          "id": "q32", "title": "Transit-oriented development fund", "kind": "Budget measure",
+          "summary": "Uses transit agency land next to stations for new housing and pays for better access to the stations.",
+          "wording": "Shall land owned by Port Alder Transit next to its stations be leased for housing, with the proceeds paying for better access to those stations?",
+          "fiscal": "Self-funding; an estimated $4 million a year in lease income.",
+          "placed_by": "Transit Board",
+          "for": "The agency owns eleven acres of car park beside its busiest stops.",
+          "against": "Commuters who drive to the station lose the car park and gain a building site.",
+          "support": {"appeal": 0.1, "lean": [0.3, 0.6, 0.1]}
+        },
+        {
+          "id": "q33", "title": "Protected bike lane network", "kind": "Capital measure",
+          "summary": "Builds 25 miles of protected bike lanes on major streets.",
+          "wording": "Shall the city build 25 miles of protected bike lanes on major streets over six years?",
+          "fiscal": "About $31 million, from the street fund and state grants.",
+          "placed_by": "Transportation Department",
+          "for": "A lane that stops at every junction is not a network. This joins them up.",
+          "against": "That is a quarter of the street fund for three percent of trips.",
+          "support": {"appeal": 0.0, "lean": [0.3, 0.3, 0.4]}
+        },
+        {
+          "id": "q39", "title": "Civilian police review board", "kind": "Charter amendment",
+          "summary": "Creates an elected civilian board with the power to investigate complaints against police officers.",
+          "wording": "Shall the City Charter be amended to create an elected board of seven civilians with power to investigate complaints against police officers and recommend discipline?",
+          "fiscal": "About $1.4 million a year.",
+          "placed_by": "Citizen initiative, 8,800 signatures",
+          "for": "The inspector general audits policy. Nobody outside the department hears a complaint.",
+          "against": "Elected investigators campaign on the cases they are meant to judge.",
+          "support": {"appeal": 0.05, "lean": [0.0, 0.0, 0.8]}
+        },
+        {
+          "id": "q45", "title": "Paid sick leave", "kind": "Ordinance",
+          "summary": "Requires employers to provide one hour of paid sick leave for every 30 hours worked.",
+          "wording": "Shall employers in Port Alder be required to provide one hour of paid sick leave for every 30 hours worked, up to 56 hours a year?",
+          "fiscal": "About $300,000 a year for enforcement.",
+          "placed_by": "Citizen initiative, 7,700 signatures",
+          "for": "The person making your sandwich should be able to stay home with the flu.",
+          "against": "For a shop with four staff, one paid absence is a day without a counter.",
+          "support": {"appeal": 0.25, "lean": [0.1, 0.0, 0.6]}
+        },
+        {
+          "id": "q48", "title": "Raise the minimum wage", "kind": "Ordinance",
+          "summary": "Raises the city minimum wage to $19 an hour, then ties it to inflation.",
+          "wording": "Shall the minimum wage in Port Alder rise to $19 an hour over two years and then follow inflation?",
+          "fiscal": "About $2 million a year in higher city payroll and contracts.",
+          "placed_by": "Citizen initiative, 9,600 signatures",
+          "for": "A full-time worker on the current minimum cannot rent a one-bedroom flat here.",
+          "against": "The towns on either side pay $15. Jobs can move four miles.",
+          "support": {"appeal": 0.1, "lean": [0.2, 0.0, 0.7]}
+        },
+        {
+          "id": "q52", "title": "Ranked choice voting for city offices", "kind": "Charter amendment",
+          "summary": "Uses ranked choice voting to elect the mayor and city council starting next year.",
+          "wording": "Shall the City Charter be amended to elect the mayor and city council by ranked choice voting from next year, following last month's advisory vote?",
+          "fiscal": "About $400,000 once for equipment and voter education; no primary to pay for.",
+          "placed_by": "City Council, 5 to 2",
+          "for": "The advisory vote was clear. This writes it into the charter so a council cannot quietly drop it.",
+          "against": "The error rate on ranked ballots has not been fixed, only voted on.",
+          "support": {"appeal": 0.0, "lean": [0.0, 0.1, 0.7]}
+        }
+      ]
+    },
+    {
+      "id": "district-1-special-3",
+      "title": "Northside special ballot",
+      "jurisdiction": "district-1",
+      "closes_in_days": 9,
+      "measures": [
+        {
+          "id": "q58", "title": "Kestrel Ridge preserve and trails", "kind": "Capital measure",
+          "summary": "Buys 200 acres of woodland on Kestrel Ridge for a nature preserve with public trails.",
+          "wording": "Shall the city buy 200 acres of woodland on Kestrel Ridge for a nature preserve with public trails?",
+          "fiscal": "About $6.5 million; a land trust has pledged $2 million of it.",
+          "placed_by": "Parks Board",
+          "for": "The owner has a second offer, from a developer, that expires in the spring.",
+          "against": "Two hundred acres zoned for homes, in a city short of them.",
+          "support": {"appeal": 0.3, "lean": [0.4, -0.4, 0.1], "site": [0.8, 0.9], "local": 0.3}
+        },
+        {
+          "id": "q62", "title": "Pet license fee increase", "kind": "Fee measure",
+          "summary": "Raises the annual dog license fee from $20 to $35 to fund the animal shelter.",
+          "wording": "Shall the annual dog licence fee in Northside rise from $20 to $35 to pay for the animal shelter's no-kill policy?",
+          "fiscal": "About $190,000 a year.",
+          "placed_by": "District council member",
+          "for": "Voters asked the shelter to keep every adoptable animal. This is the bill.",
+          "against": "Fewer than half of owners license their dogs now. A higher fee means fewer still.",
+          "support": {"appeal": -0.1, "lean": [0.4, 0.0, 0.0]}
+        }
+      ]
+    },
+    {
+      "id": "city-advisory-2",
+      "title": "Port Alder advisory ballot",
+      "jurisdiction": "city",
+      "closes_in_days": 16,
+      "measures": [
+        {
+          "id": "q66", "title": "New city flag", "kind": "Advisory vote",
+          "ballot_type": "ranked",
+          "summary": "Chooses the official city flag by ranked choice among four designs, one of them the current flag.",
+          "wording": "Which should be the flag of Port Alder? Rank the four designs.",
+          "fiscal": "About $60,000 to replace flags if a new design wins.",
+          "placed_by": "Arts Commission",
+          "for": "",
+          "against": "",
+          "options": [
+            {"id": "current", "name": "The current flag", "note": "The city seal on a blue field, flown since 1911.",
+             "support": {"appeal": 0.15, "lean": [0.0, -0.4, -0.3]}},
+            {"id": "leaf", "name": "Blue Alder Leaf", "note": "One white alder leaf on deep blue.",
+             "support": {"appeal": 0.2, "lean": [0.0, 0.1, 0.2]}},
+            {"id": "waves", "name": "Three Waves", "note": "Three white waves under a green band.",
+             "support": {"appeal": 0.05, "lean": [0.0, 0.2, 0.1]}},
+            {"id": "lighthouse", "name": "Lighthouse and Star", "note": "The harbor light in gold with a single star.",
+             "support": {"appeal": 0.0}}
+          ]
+        },
+        {
+          "id": "q68", "title": "Permanent standard time advisory vote", "kind": "Advisory vote",
+          "summary": "Advises the state legislature to adopt permanent standard time and end daylight saving time.",
+          "wording": "Should the City of Port Alder advise the state legislature to adopt permanent standard time and end the twice-yearly clock change?",
+          "fiscal": "None.",
+          "placed_by": "City Council",
+          "for": "Nobody has ever enjoyed the Monday after the clocks go forward.",
+          "against": "Permanent standard time means a 4:15 a.m. sunrise in June.",
+          "support": {"appeal": 0.1, "lean": [0.0, 0.0, 0.2]}
+        }
+      ]
+    }
+  ]
+}

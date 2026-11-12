@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { ArrowRight, Check, Clock, CornerUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAccount, type OpenVote } from "./account-provider";
+import { choiceShort } from "./ballots";
 import { closing, personName, profileHref, type Directory } from "./people";
 import { needsViewer } from "./votes";
 
@@ -87,7 +88,7 @@ function Row({
           </Link>
           <p className="text-sm leading-relaxed text-muted-foreground">{entry.question.summary}</p>
           <p className="liquid-label">
-            {entry.paper.title} ·{" "}
+            {entry.question.label} · {entry.question.kind} · {entry.paper.title} ·{" "}
             {directory.jurisdictions.get(entry.paper.jurisdiction) ?? entry.paper.jurisdiction}
           </p>
         </div>
@@ -187,7 +188,7 @@ export function VotesList() {
                   {cast ? (
                     <span className="inline-flex items-center gap-1 text-xs text-emerald-300">
                       <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                      Voted {entry.question.options.find((option) => option.id === cast)?.name}
+                      Voted {choiceShort(entry.question, cast)}
                     </span>
                   ) : (
                     <span className="text-xs text-amber-300">Not voted</span>
@@ -220,6 +221,16 @@ export function VotesList() {
                           {personName(directory, receipt.resolver)}
                         </Link>
                         decides, under “{receipt.category}”
+                        <span
+                          className={cn(
+                            "rounded-full border px-2 py-0.5 text-xs",
+                            receipt.choice
+                              ? "border-emerald-400/50 text-emerald-300"
+                              : "border-amber-400/50 text-amber-300"
+                          )}
+                        >
+                          {receipt.choice ? "has voted" : "has not voted yet"}
+                        </span>
                       </span>
                     )}
                     <Open id={entry.question.id} label="Read the proposal" />

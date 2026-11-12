@@ -14,24 +14,32 @@ count. This module makes them up, reproducibly:
     of people who delegate to the viewer, including from another district.
   - A made-up name and a unique username for everyone, so the demo can show
     people the way an account would.
-  - A sincere yes/no ballot for everyone but the viewer, from a
-    one-dimensional spatial model: each person has a position, each question
-    a direction and a cutpoint, and a little noise decides close calls.
+  - A home inside their district for every resident, as a point in the
+    unit square, so a measure with a site can matter more to people nearby.
+  - A past: some delegations were made, or moved to someone else, on a day
+    before today. network_on gives the network as it stood on any day.
+  - A sincere ballot for everyone but the viewer, from a small spatial
+    model: each person has a position on a few issue dimensions, each option
+    an appeal and a lean along them, and a little noise decides close calls.
+    The same utilities give a single choice, a ranking or a set of approvals.
+  - Turnout. Not everyone votes on everything: each person has a chance of
+    casting their own ballot, high for people others delegate to.
 
 Every delegation goes through graph.add_delegation, so the network has no
-loop within an identical category. Loops that depend on the question can
-still occur and are left for resolution.
+loop within an identical category, today or on any earlier day. Loops that
+depend on the question can still occur and are left for resolution.
 
-Limits: this is a toy population. The behaviours, their shares and the
-spatial model are assumptions chosen to exercise the machinery, and say
-nothing about how real voters would delegate or vote.
+Limits: this is a toy population. The behaviours, their shares, the spatial
+model and the turnout are assumptions chosen to exercise the machinery, and
+say nothing about how real voters would delegate or vote.
 """
 
 from __future__ import annotations
 
+import math
 import random
-from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from collections.abc import Callable, Iterable, Mapping, Sequence
+from dataclasses import dataclass, field
 
 from voting.ballots.single_choice import SingleChoiceBallot, create_single_choice_ballot
 from voting.types import CandidateId
@@ -41,6 +49,7 @@ from .nesting import NestingPair, with_nesting
 from .types import (
     Category,
     CategoryId,
+    Delegation,
     InvalidNetworkError,
     JurisdictionId,
     Network,
@@ -193,6 +202,72 @@ class SimulationConfig:
     viewer_inbound: tuple[tuple[int, str], ...] = ()
     # Standard deviation of the noise in a sincere vote
     vote_noise: float = 0.35
+    # Issue dimensions a person's position has
+    dimensions: int = 3
+    # Where each district's residents sit on those dimensions on average, by
+    # district number from 1; a missing district, and everyone outside the
+    # city, averages zero
+    district_leans: tuple[tuple[float, ...], ...] = ()
+    # Standard deviation of a person's position around their district's
+    position_spread: float = 0.5
+    # Each district's part of the unit square, as (x0, y0, x1, y1), by
+    # district number from 1. Left empty, the districts are equal strips.
+    district_areas: tuple[tuple[float, float, float, float], ...] = ()
+    # How far a site's pull reaches: it falls to about a third at this distance
+    site_reach: float = 0.25
+    # The chance that an ordinary person casts their own ballot on a question
+    # of ordinary salience, drawn per person from this range
+    min_turnout: float = 0.25
+    max_turnout: float = 0.75
+    # The same chance for well-known people and for anyone at least
+    # trusted_by other people delegate to
+    delegate_turnout: float = 0.96
+    trusted_by: int = 3
+    # The share of delegations that were made or moved after the earliest
+    # day, and the range of days, counted from today, on which they were
+    share_changed: float = 0.18
+    earliest_change: int = -335
+    latest_change: int = -8
+
+
+@dataclass(frozen=True)
+class DelegationChange:
+    """
+    One dated change to who a person hands a category to.
+
+    Days count from today, so a change in the past has a negative day. A
+    delegation made on that day has no `before`; one that moved has both; one
+    that was withdrawn has no `after`.
+    """
+
+    day: int
+    delegator: PersonId
+    category: CategoryId
+    before: PersonId | None
+    after: PersonId | None
+
+
+@dataclass(frozen=True)
+class OptionSupport:
+    """What draws people to one option of a measure."""
+
+    # Its pull on everyone alike
+    appeal: float = 0.0
+    # Its pull along each issue dimension; missing dimensions count as zero
+    lean: tuple[float, ...] = ()
+    # Where it would be built, if anywhere, and its pull on people living
+    # next to it (negative when neighbours tend to object)
+    site: tuple[float, float] | None = None
+    local: float = 0.0
+
+
+@dataclass(frozen=True)
+class Support:
+    """How a measure divides people: one entry per option, by option id."""
+
+    options: Mapping[CandidateId, OptionSupport] = field(default_factory=dict)
+    # Scales everyone's chance of voting on it themself
+    salience: float = 1.0
 
 
 @dataclass(frozen=True)
@@ -201,8 +276,14 @@ class Simulation:
 
     config: SimulationConfig
     network: Network
-    # Each person's position on the one dimension votes depend on
-    positions: Mapping[PersonId, float]
+    # Each person's position on the issue dimensions votes depend on
+    positions: Mapping[PersonId, tuple[float, ...]]
+    # Each resident's home in the unit square, the viewer's included
+    homes: Mapping[PersonId, tuple[float, float]]
+    # Each person's chance of casting their own ballot
+    turnout: Mapping[PersonId, float]
+    # Dated changes that led to today's network, most recent first
+    changes: tuple[DelegationChange, ...]
     behaviours: Mapping[PersonId, str]
     # The well-known people for each category
     experts: Mapping[CategoryId, tuple[PersonId, ...]]
@@ -269,7 +350,23 @@ def simulate_network(
     }
 
     rng = _stream(config, "positions")
-    positions = {person: rng.uniform(-1.0, 1.0) for person in everyone}
+    positions = {
+        person: tuple(
+            max(-1.0, min(1.0, rng.gauss(mean, config.position_spread)))
+            for mean in _district_lean(config, home.get(person))
+        )
+        for person in everyone
+    }
+
+    rng = _stream(config, "homes")
+    homes: dict[PersonId, tuple[float, float]] = {}
+    for district, members in residents.items():
+        x0, y0, x1, y1 = _district_area(config, district)
+        for member in members:
+            homes[member] = (
+                round(rng.uniform(x0, x1), 4),
+                round(rng.uniform(y0, y1), 4),
+            )
 
     rng = _stream(config, "experts")
     well_known = rng.sample(everyone, min(config.experts, len(everyone)))
@@ -344,15 +441,188 @@ def simulate_network(
 
     names, usernames = _personas(config, everyone)
 
+    delegators: dict[PersonId, set[PersonId]] = {}
+    for delegation in network.delegations:
+        delegators.setdefault(delegation.delegate, set()).add(delegation.delegator)
+    trusted = {
+        person
+        for person, others in delegators.items()
+        if len(others) >= config.trusted_by
+    }
+    rng = _stream(config, "turnout")
+    turnout = {
+        person: (
+            config.delegate_turnout
+            if person in trusted or person in well_known
+            else rng.uniform(config.min_turnout, config.max_turnout)
+        )
+        for person in everyone
+    }
+
+    def alternatives(delegation: Delegation) -> list[PersonId]:
+        """Who else this person might have handed the category to before."""
+        person = delegation.delegator
+        if behaviours[person] == TRUSTS_EXPERTS:
+            pool = list(experts[delegation.category])
+        else:
+            pool = residents[home[person]] if person in home else outsiders
+        return [
+            other
+            for other in pool
+            if other not in (person, VIEWER, delegation.delegate)
+        ]
+
+    network = with_nesting(network, nesting)
     return Simulation(
         config=config,
-        network=with_nesting(network, nesting),
+        network=network,
         positions=positions,
+        homes=homes,
+        turnout=turnout,
+        changes=_changes(config, network, alternatives),
         behaviours=behaviours,
         experts=experts,
         names=names,
         usernames=usernames,
     )
+
+
+def _district_lean(
+    config: SimulationConfig, district: JurisdictionId | None
+) -> tuple[float, ...]:
+    """The average position of a district's residents, zero where none is given."""
+    lean: tuple[float, ...] = ()
+    if district is not None:
+        number = int(district.rsplit("-", 1)[1])
+        if number <= len(config.district_leans):
+            lean = config.district_leans[number - 1]
+    return tuple(
+        lean[index] if index < len(lean) else 0.0 for index in range(config.dimensions)
+    )
+
+
+def _district_area(
+    config: SimulationConfig, district: JurisdictionId
+) -> tuple[float, float, float, float]:
+    """A district's part of the unit square: as configured, or an equal strip."""
+    number = int(district.rsplit("-", 1)[1])
+    if number <= len(config.district_areas):
+        return config.district_areas[number - 1]
+    width = 1.0 / config.districts
+    return ((number - 1) * width, 0.0, number * width, 1.0)
+
+
+def _replaced(
+    network: Network,
+    delegator: PersonId,
+    category: CategoryId,
+    delegate: PersonId | None,
+) -> Network:
+    """
+    The network with one person's category handed to someone else, or to
+    nobody, keeping its place in their category list.
+
+    Raises:
+        DelegationLoopError: If the other delegate would close a loop
+    """
+    kept = tuple(
+        d
+        for d in network.delegations
+        if (d.delegator, d.category) != (delegator, category)
+    )
+    without = create_network(
+        network.persons.values(), network.categories.values(), kept, network.nesting
+    )
+    if delegate is None:
+        return without
+    # The loop check only; the delegation then goes back where it was.
+    add_delegation(without, delegator, network.categories[category], delegate)
+    placed = tuple(
+        (
+            Delegation(delegator, category, delegate)
+            if (d.delegator, d.category) == (delegator, category)
+            else d
+        )
+        for d in network.delegations
+    )
+    if len(placed) == len(kept):
+        placed = kept + (Delegation(delegator, category, delegate),)
+    return create_network(
+        network.persons.values(), network.categories.values(), placed, network.nesting
+    )
+
+
+def _latest_first(changes: Iterable[DelegationChange]) -> list[DelegationChange]:
+    return sorted(
+        changes, key=lambda change: (-change.day, change.delegator, change.category)
+    )
+
+
+def _changes(
+    config: SimulationConfig,
+    network: Network,
+    alternatives: Callable[[Delegation], list[PersonId]],
+) -> tuple[DelegationChange, ...]:
+    """
+    The dated changes behind today's network, most recent first.
+
+    Some delegations were made after the earliest day, and some were moved
+    from another person. A move is kept only if the network before it had no
+    loop within the category, so every day's network obeys the creation rule.
+    """
+    rng = _stream(config, "changes")
+    drafted: list[DelegationChange] = []
+    for delegation in network.delegations:
+        if rng.random() >= config.share_changed:
+            continue
+        day = rng.randint(config.earliest_change, config.latest_change)
+        options = alternatives(delegation)
+        before = rng.choice(options) if options and rng.random() < 0.45 else None
+        drafted.append(
+            DelegationChange(
+                day,
+                delegation.delegator,
+                delegation.category,
+                before,
+                delegation.delegate,
+            )
+        )
+
+    kept: list[DelegationChange] = []
+    earlier = network
+    for change in _latest_first(drafted):
+        try:
+            earlier = _replaced(
+                earlier, change.delegator, change.category, change.before
+            )
+        except DelegationLoopError:
+            continue  # that earlier delegate would have closed a loop
+        kept.append(change)
+    return tuple(kept)
+
+
+def network_on(
+    network: Network, changes: Iterable[DelegationChange], day: int
+) -> Network:
+    """
+    The network as it stood at the end of a day.
+
+    Args:
+        network: Today's network
+        changes: The dated changes that led to it
+        day: Days from today; changes made after this day are undone
+
+    Raises:
+        DelegationLoopError: If undoing a change closes a loop within a
+            category, which a set of changes built by this module never does
+    """
+    earlier = network
+    for change in _latest_first(changes):
+        if change.day > day:
+            earlier = _replaced(
+                earlier, change.delegator, change.category, change.before
+            )
+    return earlier
 
 
 def _personas(
@@ -409,56 +679,132 @@ def _pick_categories(
     return picked
 
 
-def _lean(config: SimulationConfig, question: Question) -> tuple[int, float]:
-    """Which side of the dimension a question's first option sits on, and where it divides."""
-    rng = _stream(config, f"question:{question.id}")
-    return rng.choice((-1, 1)), rng.uniform(-0.4, 0.4)
-
-
-def sincere_choice(
-    simulation: Simulation, person: PersonId, question: Question
-) -> CandidateId:
+def default_support(config: SimulationConfig, question: Question) -> Support:
     """
-    The option a person would choose themself on a two-option question.
+    A seeded stand-in for a question nobody authored support for.
+
+    The first option leans one way along the first dimension, from a seeded
+    starting point; the others are neutral.
+    """
+    rng = _stream(config, f"question:{question.id}")
+    direction, cutpoint = rng.choice((-1, 1)), rng.uniform(-0.4, 0.4)
+    first = OptionSupport(appeal=-direction * cutpoint, lean=(float(direction),))
+    return Support({question.options[0].id: first})
+
+
+def option_utilities(
+    config: SimulationConfig,
+    position: Sequence[float],
+    home: tuple[float, float] | None,
+    person: PersonId,
+    question: Question,
+    support: Support | None = None,
+) -> dict[CandidateId, float]:
+    """
+    How much someone at this position and home wants each option.
+
+    An option's utility is its appeal, plus its lean along the person's
+    position, plus its pull on people who live near its site, plus noise
+    drawn once per person, question and option.
+    """
+    support = support if support is not None else default_support(config, question)
+    utilities: dict[CandidateId, float] = {}
+    for option in question.options:
+        drawn = support.options.get(option.id, OptionSupport())
+        value = drawn.appeal + sum(
+            weight * coordinate for weight, coordinate in zip(drawn.lean, position)
+        )
+        if drawn.site is not None and home is not None and drawn.local:
+            distance = math.dist(home, drawn.site)
+            value += drawn.local * math.exp(-distance / config.site_reach)
+        noise = _stream(config, f"vote:{person}:{question.id}:{option.id}").gauss(
+            0.0, config.vote_noise
+        )
+        utilities[option.id] = value + noise
+    return utilities
+
+
+def person_utilities(
+    simulation: Simulation,
+    person: PersonId,
+    question: Question,
+    support: Support | None = None,
+) -> dict[CandidateId, float]:
+    """
+    How much a simulated person wants each option.
 
     Raises:
-        ValueError: If the question does not have exactly two options, or
-            the person has no position (the viewer does not)
+        ValueError: If the person has no position (the viewer does not)
     """
     if person not in simulation.positions:
         raise ValueError(f"{person!r} has no simulated position")
-    return choice_at(simulation.config, simulation.positions[person], person, question)
+    return option_utilities(
+        simulation.config,
+        simulation.positions[person],
+        simulation.homes.get(person),
+        person,
+        question,
+        support,
+    )
 
 
-def choice_at(
-    config: SimulationConfig, position: float, person: PersonId, question: Question
+def favourite(
+    utilities: Mapping[CandidateId, float], question: Question
+) -> CandidateId:
+    """The option with the highest utility; the earlier option wins a tie."""
+    return max(question.options, key=lambda option: utilities[option.id]).id
+
+
+def sincere_choice(
+    simulation: Simulation,
+    person: PersonId,
+    question: Question,
+    support: Support | None = None,
 ) -> CandidateId:
     """
-    The option someone at this position would choose on a two-option question.
-
-    The viewer has no simulated position; a scenario that needs past votes
-    for the viewer supplies one here.
+    The option a person would choose themself.
 
     Raises:
-        ValueError: If the question does not have exactly two options
+        ValueError: If the person has no position (the viewer does not)
     """
-    if len(question.options) != 2:
-        raise ValueError("Sincere ballots are defined for two-option questions")
-    direction, cutpoint = _lean(config, question)
-    noise = _stream(config, f"vote:{person}:{question.id}").gauss(
-        0.0, config.vote_noise
-    )
-    favours_first = direction * (position - cutpoint) + noise > 0
-    return question.options[0 if favours_first else 1].id
+    return favourite(person_utilities(simulation, person, question, support), question)
 
 
 def sincere_ballots(
-    simulation: Simulation, question: Question
+    simulation: Simulation, question: Question, support: Support | None = None
 ) -> dict[PersonId, SingleChoiceBallot]:
-    """Everyone's own ballot on a question, except the viewer, who has none."""
+    """Everyone's own single-choice ballot, except the viewer, who has none."""
     return {
         person: create_single_choice_ballot(
-            person, sincere_choice(simulation, person, question)
+            person, sincere_choice(simulation, person, question, support)
         )
         for person in simulation.positions
     }
+
+
+def casts(
+    simulation: Simulation, person: PersonId, question: Question, salience: float = 1.0
+) -> bool:
+    """
+    Whether a person casts their own ballot on a question.
+
+    One seeded draw per person and question, against the person's turnout
+    scaled by how salient the question is. The viewer has no turnout and
+    never casts here; their votes are supplied from outside.
+    """
+    chance = simulation.turnout.get(person)
+    if chance is None:
+        return False
+    draw = _stream(simulation.config, f"turnout:{person}:{question.id}").random()
+    return draw < min(1.0, chance * salience)
+
+
+def cast_day(
+    simulation: Simulation, person: PersonId, paper_id: str, opens: int, closes: int
+) -> int:
+    """
+    The day a person fills in a ballot paper, between its opening and closing
+    days, both counted from today. People fill in a whole paper at once.
+    """
+    rng = _stream(simulation.config, f"cast-day:{person}:{paper_id}")
+    return rng.randint(min(opens, closes), closes)

@@ -22,6 +22,7 @@ import type {
   ResolveBallotPaperResponse,
   ValidateDelegationResponse,
 } from "@/types/delegation";
+import type { Choice } from "./ballots";
 import { buildDirectory, categoryKey, type Directory } from "./people";
 
 /** A delegation the service has accepted, with what it said about it. */
@@ -56,7 +57,7 @@ type Account = {
   /** False until the browser's saved account has been read. */
   ready: boolean;
   delegations: HeldDelegation[];
-  votes: Record<string, string>;
+  votes: Record<string, Choice>;
   /** Every question on an open paper, soonest to close first; null while loading. */
   openVotes: OpenVote[] | null;
   resolving: boolean;
@@ -66,7 +67,8 @@ type Account = {
   add: (held: HeldDelegation) => void;
   replace: (index: number, held: HeldDelegation) => void;
   remove: (index: number) => void;
-  vote: (questionId: string, optionId: string | null) => void;
+  /** Cast, change or (with null) withdraw the viewer's own vote on a question. */
+  vote: (questionId: string, choice: Choice | null) => void;
   /** Go back to the account the scenario starts with. */
   reset: () => void;
   /** A closed ballot paper as it was resolved; fetched once. */
@@ -81,7 +83,7 @@ export function useAccount(): Account {
   return account;
 }
 
-type Saved = { delegations: HeldDelegation[]; votes: Record<string, string> };
+type Saved = { delegations: HeldDelegation[]; votes: Record<string, Choice> };
 
 function startingDelegations(scenario: DelegationScenario): HeldDelegation[] {
   const pool = new Map(scenario.categories.map((entry) => [categoryKey(entry.text), entry]));
@@ -100,7 +102,11 @@ function readSaved(key: string): Saved | null {
     if (!raw) return null;
     const saved = JSON.parse(raw) as Partial<Saved>;
     if (!Array.isArray(saved.delegations) || typeof saved.votes !== "object") return null;
-    return { delegations: saved.delegations, votes: saved.votes ?? {} };
+    // A vote is a list of option ids; anything else was saved by an older version.
+    const votes = Object.fromEntries(
+      Object.entries(saved.votes ?? {}).filter(([, choice]) => Array.isArray(choice))
+    );
+    return { delegations: saved.delegations, votes };
   } catch {
     return null; // storage blocked or the entry is damaged: start from the scenario
   }
@@ -122,7 +128,7 @@ export function AccountProvider({
   const storageKey = `liquid-account:${scenario.scenario}:${scenario.seed}`;
   const [ready, setReady] = useState(false);
   const [delegations, setDelegations] = useState(() => startingDelegations(scenario));
-  const [votes, setVotes] = useState<Record<string, string>>({});
+  const [votes, setVotes] = useState<Record<string, Choice>>({});
 
   useEffect(() => {
     const saved = readSaved(storageKey);
@@ -292,11 +298,11 @@ export function AccountProvider({
         ),
       remove: (index) =>
         setDelegations((current) => current.filter((_, position) => position !== index)),
-      vote: (questionId, optionId) =>
+      vote: (questionId, choice) =>
         setVotes((current) => {
           const next = { ...current };
-          if (optionId === null) delete next[questionId];
-          else next[questionId] = optionId;
+          if (choice === null) delete next[questionId];
+          else next[questionId] = choice;
           return next;
         }),
       reset: () => {

@@ -87,6 +87,10 @@ class PersonSchema(BaseModel):
     well_known_for: list[str] = Field(
         description="Ids of categories this person is well known for."
     )
+    location: list[float] | None = Field(
+        description="Where the person lives, as x and y in the unit square; "
+        "null outside the city."
+    )
 
 
 class CategorySchema(BaseModel):
@@ -107,15 +111,39 @@ class DelegationSchema(BaseModel):
     delegate: str
 
 
+BallotTypeLiteral = Literal["single_choice", "ranked", "approval"]
+MethodLiteral = Literal["plurality", "irv", "approval"]
+
+# One vote: a single option, every option in order, or the approved options
+Choice = Annotated[list[Annotated[str, StringConstraints(max_length=80)]], Field(max_length=12)]
+
+
 class OptionSchema(BaseModel):
     id: str
     name: str
+    note: str | None = Field(
+        default=None, description="A line about the option, where the measure has one."
+    )
 
 
 class QuestionSchema(BaseModel):
     id: str
+    label: str = Field(description="Its name on the ballot paper, such as Measure C.")
+    kind: str = Field(description="What sort of measure it is, such as Bond.")
     title: str
-    summary: str
+    summary: str = Field(
+        description="With the title and option names, what the decision model is shown."
+    )
+    ballot_type: BallotTypeLiteral
+    method: MethodLiteral = Field(description="How the ballots are counted.")
+    wording: str = Field(description="The official wording put to voters.")
+    fiscal: str
+    placed_by: str
+    argument_for: str = Field(description="Empty for a choice among several options.")
+    argument_against: str
+    site: list[float] | None = Field(
+        description="Where it would be built, when it has one place."
+    )
     options: list[OptionSchema]
 
 
@@ -129,13 +157,28 @@ class BallotPaperSchema(BaseModel):
     closes_in_days: int = Field(
         description="Days from today until the paper closes; negative once it has."
     )
+    opens_in_days: int = Field(
+        description="Days from today until the paper opened; negative once it has."
+    )
     status: StatusLiteral
     eligible_voters: int
     questions: list[QuestionSchema]
 
 
+class ViewerChangeSchema(BaseModel):
+    day: int = Field(description="Days from today; negative, as it is in the past.")
+    category: str = Field(description="Category text.")
+    before: str | None = Field(description="Who held it before; null when newly made.")
+    after: str | None = Field(description="Who holds it after; null when withdrawn.")
+
+
 class ScenarioResponse(BaseModel):
     scenario: str
+    city: str = Field(description="The invented city's name.")
+    provisional: list[str] = Field(
+        description="Ids of questions routed on judgments recorded for earlier wording, "
+        "until their own are collected."
+    )
     model: str = Field(
         description="The pinned decision model the recorded judgments came from."
     )
@@ -154,6 +197,10 @@ class ScenarioResponse(BaseModel):
     viewer_delegations: list[ViewerDelegationSchema] = Field(
         description="The delegations the viewer's account starts with, in list order. "
         "Closed ballot papers were resolved with these."
+    )
+    viewer_changes: list[ViewerChangeSchema] = Field(
+        description="The dated changes that led to the viewer's starting delegations, "
+        "most recent first."
     )
     ballot_papers: list[BallotPaperSchema] = Field(description="Oldest first.")
 
@@ -280,10 +327,12 @@ class JudgmentsResponse(BaseModel):
 class ResolveRequest(BaseModel):
     ballot_paper: str = Field(description="Id of a curated ballot paper.")
     viewer_delegations: ViewerDelegations
-    viewer_votes: dict[str, str] = Field(
+    viewer_votes: dict[str, Choice] = Field(
         default_factory=dict,
-        description="Question id to option id. A vote the viewer casts themself overrides "
-        "their delegations for that question, and is the ballot used for anyone they answer for.",
+        description="Question id to the viewer's choice: one option id, every option in "
+        "order for a ranked question, or the approved options. A vote the viewer casts "
+        "themself overrides their delegations for that question, and is the ballot used "
+        "for anyone they answer for.",
     )
     threshold: float = Field(default=DEFAULT_THRESHOLD, ge=0, le=1)
     tiebreak_seed: int = Field(default=DEFAULT_TIEBREAK_SEED, ge=0, le=2**31 - 1)
@@ -292,9 +341,9 @@ class ResolveRequest(BaseModel):
         "json_schema_extra": {
             "examples": [
                 {
-                    "ballot_paper": "city-general",
+                    "ballot_paper": "city-advisory-2",
                     "viewer_delegations": _EXAMPLE_DELEGATIONS,
-                    "viewer_votes": {"q66": "yes"},
+                    "viewer_votes": {"q68": ["yes"]},
                     "threshold": 0.7,
                     "tiebreak_seed": 0,
                 }
@@ -303,9 +352,23 @@ class ResolveRequest(BaseModel):
     }
 
 
-class TallySchema(BaseModel):
-    winners: list[str]
+class RoundSchema(BaseModel):
+    round: int
     counts: dict[str, int]
+    eliminated: list[str]
+    exhausted: int
+
+
+class TallySchema(BaseModel):
+    method: MethodLiteral
+    winners: list[str]
+    counts: dict[str, int] = Field(
+        description="Votes per option: first choices under instant-runoff voting, "
+        "approvals under approval voting."
+    )
+    rounds: list[RoundSchema] = Field(
+        description="Each round of an instant-runoff count; empty for other methods."
+    )
     abstentions: int
     total_ballots: int
     tiebreak_applied: bool
@@ -358,8 +421,12 @@ class ReceiptSchema(BaseModel):
         description="Why the resolver holds the decision."
     )
     loop: list[str] | None
-    choice: str | None = Field(
-        description="The option cast for the viewer; null is an abstention."
+    choice: list[str] | None = Field(
+        description="The choice cast for the viewer; null when nothing has been cast."
+    )
+    resolver_votes_in_days: int | None = Field(
+        description="On an open paper, when someone else holds the decision and has not "
+        "voted yet: days from today until they are due to. Null otherwise."
     )
 
 
@@ -381,6 +448,11 @@ class InboxSchema(BaseModel):
 class QuestionResultSchema(BaseModel):
     question_id: str
     title: str
+    ballot_type: BallotTypeLiteral
+    cast_so_far: int = Field(
+        description="People who have cast their own ballot on the question, in or out "
+        "of the jurisdiction."
+    )
     delegated: TallySchema
     direct: TallySchema = Field(
         description="The same question with everyone voting for themself."
@@ -460,8 +532,10 @@ class HistoryEntrySchema(BaseModel):
     jurisdiction: str
     closed_days_ago: int
     question_id: str
+    label: str
     title: str
     summary: str
+    ballot_type: BallotTypeLiteral
     issued: bool = Field(
         description="Whether this person was issued the question. When false they appear "
         "only because other people's votes reached them."
@@ -475,8 +549,8 @@ class HistoryEntrySchema(BaseModel):
     )
     chain: list[str] = Field(description="From this person to whoever decided.")
     resolver: str
-    choice: str | None = Field(
-        description="The option on this person's ballot; null is an abstention."
+    choice: list[str] | None = Field(
+        description="The choice on this person's ballot; null is an abstention."
     )
     votes_for_others: int = Field(
         description="Other people's votes this person decided on the question."

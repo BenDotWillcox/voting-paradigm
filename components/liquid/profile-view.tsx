@@ -8,6 +8,9 @@ import { cn } from "@/lib/utils";
 import type { HistoryEntry, PersonProfile } from "@/types/delegation";
 import { useAccount } from "./account-provider";
 import { WindowOverlay } from "./app-window";
+import { choiceLabel, findQuestion, outcomeLabel } from "./ballots";
+
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 import { HubGraph } from "./hub-graph";
 import {
   ago,
@@ -458,7 +461,7 @@ function HistoryTab({
   profile: PersonProfile;
   isViewer: boolean;
 }) {
-  const { directory } = useAccount();
+  const { scenario, directory } = useAccount();
   const [filter, setFilter] = useState<Filter>("all");
   const [newestFirst, setNewestFirst] = useState(true);
   const name = isViewer ? "You" : profile.person.name.split(" ")[0];
@@ -532,9 +535,10 @@ function HistoryTab({
             const choice =
               entry.choice === null
                 ? null
-                : entry.choice === "yes"
-                  ? "Yes"
-                  : "No";
+                : choiceLabel(
+                    findQuestion(scenario, entry.question_id),
+                    entry.choice,
+                  );
             return (
               <li key={entry.question_id}>
                 <Link
@@ -552,6 +556,9 @@ function HistoryTab({
                         {how.tag}
                       </span>
                       <span className="font-medium">{entry.title}</span>
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {entry.label}
+                      </span>
                     </p>
                     <span className="font-mono text-xs text-muted-foreground">
                       {ago(entry.closed_days_ago)}
@@ -602,7 +609,12 @@ function HistoryTab({
                     {!entry.issued &&
                       " · not issued to them; other people's votes reached them"}
                     {" · "}
-                    {entry.winners.includes("yes") ? "Passed" : "Did not pass"}
+                    {capitalize(
+                      outcomeLabel(
+                        findQuestion(scenario, entry.question_id),
+                        entry.winners,
+                      ),
+                    )}
                   </p>
                 </Link>
               </li>
