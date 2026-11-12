@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import type { ComponentProps, KeyboardEvent, PointerEvent } from "react";
+import type { ComponentProps, KeyboardEvent, PointerEvent, ReactNode } from "react";
 import { CircleHelp, RotateCcw, SlidersHorizontal, ZoomIn, ZoomOut } from "lucide-react";
 import { SCALAR_DOMAIN, scalarFocusRange, scalarTransitionTicks, scalarPresentationPreview, scalarPresentationScore, taperRailPoint, taperRailWidth } from "@/lib/expressive-scalar-graph";
 import type { TaperRailBounds } from "@/lib/expressive-scalar-graph";
@@ -52,9 +52,11 @@ interface ScalarBallotProps {
   canSubmit?: boolean;
   isSubmitting?: boolean;
   submissionHint?: string;
+  /** Introductory copy shown at the top of the details column. */
+  context?: ReactNode;
 }
 
-export function ScalarBallot({ onSubmitBallot, submittedBallot, canSubmit = true, isSubmitting = false, submissionHint }: ScalarBallotProps = {}) {
+export function ScalarBallot({ onSubmitBallot, submittedBallot, canSubmit = true, isSubmitting = false, submissionHint, context }: ScalarBallotProps = {}) {
   const [ballot, setBallot] = useState<ScalarBallotState>({ ...INITIAL });
   const { view, from, target, progress, setView } = useScalarViewport(scalarFocusRange(INITIAL.ideal));
   const hostRef = useRef<HTMLDivElement>(null);
@@ -252,7 +254,13 @@ export function ScalarBallot({ onSubmitBallot, submittedBallot, canSubmit = true
     setView(scalarFocusRange(INITIAL.ideal), { immediate: true });
   };
 
-  return <section className={styles.ballot} aria-label="Scalar income-tax ballot">
+  const historical = ([
+    { key: "yes", label: "YES/FOR", rate: TAX_MEASURE.proposal },
+    { key: "no", label: "NO/AGAINST", rate: TAX_MEASURE.statusQuo },
+  ] as const).map((option) => ({ ...option, ...scalarPresentationScore(ballot, option.rate) }));
+
+  return <div className={styles.layout}>
+  <section className={styles.ballot} aria-label="Scalar income-tax ballot">
     <div className={styles.visualColumn}>
       <div className={styles.questionHeader}><div><span className={styles.eyebrow}>Beyond the 2022 question · an experimental ballot</span><h2>What should the state income tax rate be?</h2></div><button type="button" className={styles.resetButton} onClick={reset} aria-label="Reset rate ballot"><RotateCcw size={14} /> Reset</button></div>
       <div className={styles.zoomBar}>
@@ -297,17 +305,50 @@ export function ScalarBallot({ onSubmitBallot, submittedBallot, canSubmit = true
         <div className={styles.controlSection}><h3>Rate probe</h3><div className={styles.controlTop}><label htmlFor={`${id}-probe`}>Inspect a proposed rate</label><div className={styles.numberInput}><NumberField id={`${id}-probe`} min={0} max={100} step={0.05} value={ballot.probe} onValueChange={(value) => update("probe",value)} aria-label="Proposed rate to inspect" /><span>%</span></div></div><input className={styles.range} type="range" min={0} max={100} step={0.05} value={ballot.probe} onChange={(event) => update("probe",Number(event.currentTarget.value))} aria-label="Adjust proposed rate" /><p>Probe edits inspect the current curve without changing your ballot.</p></div>
       </div>
     </details>
-    <details className={styles.methodDetails}><summary><CircleHelp size={16} /> Guide to this ballot</summary><div>
-      <p>Drag the peak to set your ideal rate, the triangles to set inclusive approval bounds, and the gold probe to inspect a rate. Their labels are draggable too. Arrow keys adjust focused controls; Fine controls provide numerical inputs.</p>
-      <p>The full range is 0–100%. Zoom in to five percentage points either side of your ideal, rounded outward to whole percentages and clipped at 0% and 100%. The view stays fixed while dragging; press Ideal ±5 pp to recenter. Zoom never changes your ballot. An arrow beside a label means that value is outside the visible range: zoom out to see it, or drag its edge handle inward to bring it into view.</p>
-      <p>Move a taper diamond away from the ideal to broaden that side of the curve. It follows the half-value line to the plot edge, then moves up the edge rail as the half-value point extends beyond the displayed rate range. Rail height controls taper width; it is not a score.</p>
-      <div className={styles.legend}><span><i className={styles.solidKey} /> Ballot value</span><span><i className={styles.dashedKey} /> Unclipped taper</span><span><i className={styles.goldKey} /> Rate probe</span></div>
-      <p>The curve expresses declared value, not probability. Its peak is 1. Within the approval bounds, value is <code>2^−(distance from ideal / half-value distance)²</code>; outside them, value is zero and the probe dims. Clipping never rescales the surviving curve.</p>
-      <p>This experimental extension of the 2022 question has no tax-revenue or household-impact model. Assigning zero does not give an individual a veto. The comparison below uses a separately stated collective rule.</p>
-    </div></details>
     {onSubmitBallot && <div className={styles.submissionFooter}>
       <p>{submissionHint || (curveChanged ? "Curve edited. The comparison still uses your submitted curve." : submittedBallot ? "The comparison uses your submitted curve. Submit again after making changes." : "Your curve joins 99 prepared ballots. The graph remains editable.")}</p>
       <button type="button" disabled={!canSubmit || isSubmitting} onClick={() => onSubmitBallot({ ...ballot })}>{isSubmitting ? "Comparing ballots…" : submittedBallot ? "Compare again" : "Compare ballots"}<span aria-hidden="true">→</span></button>
     </div>}
-  </section>;
+  </section>
+
+  <aside className={styles.aside} aria-label="Your richer ballot, read back">
+    {context && <div className={styles.asideContext}>{context}</div>}
+    <div className={styles.asideBlock}>
+      <p className={styles.asideLabel}>Your ballot, read back</p>
+      <dl className={styles.readout}>
+        <div className={styles.readIdeal}><dt>Ideal rate</dt><dd>{rateText(ballot.ideal)}%</dd></div>
+        <div className={styles.readBound}><dt>Approved range</dt><dd>{rateText(ballot.approval_min)}–{rateText(ballot.approval_max)}%</dd></div>
+        <div className={styles.readTaper}><dt>Half-value distance</dt><dd>−{fieldText(ballot.lower_half_width)} / +{fieldText(ballot.upper_half_width)} pp</dd></div>
+        <div className={`${styles.readProbe} ${!approved ? styles.probeMuted : ""}`}><dt>Probe at {rateText(ballot.probe)}%</dt><dd>{approved ? probeScore.toFixed(3) : "0 · outside"}</dd></div>
+      </dl>
+    </div>
+    <div className={styles.asideBlock}>
+      <p className={styles.asideLabel}>The 2022 options on your curve</p>
+      <ul className={styles.historical}>
+        {historical.map(({ key, label, rate, score, approved: inside }) => <li key={key} className={styles[key]}>
+          <div><span>{label} · {rateText(rate)}%</span><strong>{inside ? score.toFixed(3) : "0 · outside"}</strong></div>
+          <i aria-hidden="true"><b style={{ width: `${(inside ? score : 0)*100}%` }} /></i>
+        </li>)}
+      </ul>
+      <p className={styles.asideNote}>A yes/no ballot records only which of these two you picked. Your curve records how much each is worth to you, and every rate in between.</p>
+    </div>
+    <div className={styles.asideBlock}>
+      <p className={styles.asideLabel}>Reading the graph</p>
+      <ul className={styles.legend}>
+        <li><i className={styles.idealKey} /> Peak · your ideal rate</li>
+        <li><i className={styles.boundKey} /> Triangles · approval bounds</li>
+        <li><i className={styles.taperKey} /> Diamonds · how fast value falls</li>
+        <li><i className={styles.goldKey} /> Gold dot · rate probe</li>
+        <li><i className={styles.dashedKey} /> Dashed · unclipped taper</li>
+      </ul>
+    </div>
+    <details className={styles.methodDetails}><summary><CircleHelp size={15} /> Guide to this ballot</summary><div>
+      <p>Drag the peak to set your ideal rate, the triangles to set inclusive approval bounds, and the gold probe to inspect a rate. Their labels are draggable too. Arrow keys adjust focused controls; Fine controls provide numerical inputs.</p>
+      <p>The full range is 0–100%. Zoom in to five percentage points either side of your ideal, rounded outward to whole percentages and clipped at 0% and 100%. The view stays fixed while dragging; press Ideal ±5 pp to recenter. Zoom never changes your ballot. An arrow beside a label means that value is outside the visible range: zoom out to see it, or drag its edge handle inward to bring it into view.</p>
+      <p>Move a taper diamond away from the ideal to broaden that side of the curve. It follows the half-value line to the plot edge, then moves up the edge rail as the half-value point extends beyond the displayed rate range. Rail height controls taper width; it is not a score.</p>
+      <p>The curve expresses declared value, not probability. Its peak is 1. Within the approval bounds, value is <code>2^−(distance from ideal / half-value distance)²</code>; outside them, value is zero and the probe dims. Clipping never rescales the surviving curve.</p>
+      <p>This experimental extension of the 2022 question has no tax-revenue or household-impact model. Assigning zero does not give an individual a veto. The comparison below uses a separately stated collective rule.</p>
+    </div></details>
+  </aside>
+  </div>;
 }
