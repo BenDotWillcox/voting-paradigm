@@ -561,6 +561,14 @@ class HistoryEntrySchema(BaseModel):
     winners: list[str] = Field(description="The result with delegation.")
 
 
+class DelegationChangeSchema(BaseModel):
+    day: int = Field(description="Days from today; negative, as it is in the past.")
+    delegator: str
+    category: str = Field(description="Category text.")
+    before: str | None = Field(description="Who held it before; null when newly made.")
+    after: str | None = Field(description="Who holds it after; null when withdrawn.")
+
+
 class ProfileResponse(BaseModel):
     person: PersonSchema
     stats: ProfileStatsSchema
@@ -570,3 +578,92 @@ class ProfileResponse(BaseModel):
     )
     received: list[ProfileReceivedSchema]
     history: list[HistoryEntrySchema] = Field(description="Most recent first.")
+    changes: list[DelegationChangeSchema] = Field(
+        description="Dated changes to delegations this person made, and to delegations "
+        "made to or taken from them, most recent first."
+    )
+
+
+# ---------------------------------------------------------------------------
+# GET /city
+# ---------------------------------------------------------------------------
+
+
+class CityQuestionSchema(BaseModel):
+    ballot_paper: str
+    paper_title: str
+    jurisdiction: str
+    closed_days_ago: int
+    question_id: str
+    label: str
+    kind: str
+    title: str
+    ballot_type: BallotTypeLiteral
+    voters: int = Field(description="People the question was issued to.")
+    cast_delegated: int = Field(
+        description="Ballots that counted with delegation: voters whose resolver voted."
+    )
+    cast_direct: int = Field(description="Voters who cast their own ballot.")
+    delegated_share: float = Field(
+        description="Share of votes resolved by someone other than the voter."
+    )
+    largest_share: float
+    largest_resolver: str | None
+    gini: float
+    winners: list[str] = Field(description="The result with delegation.")
+    direct_winners: list[str] = Field(description="The result without it.")
+    winner_changed: bool
+    support: float | None = Field(
+        description="For a yes/no question, the yes share of the ballots that counted "
+        "with delegation; null otherwise or when none counted."
+    )
+
+
+class CityPaperSchema(BaseModel):
+    id: str
+    title: str
+    jurisdiction: str
+    closed_days_ago: int
+    questions: int
+    turnout_delegated: float = Field(
+        description="Ballots that counted with delegation over ballots issued, across the paper."
+    )
+    turnout_direct: float = Field(
+        description="Ballots people cast themselves over ballots issued, across the paper."
+    )
+    delegated_share: float
+    largest_share: float = Field(description="The largest on any of its questions.")
+    changed: int = Field(description="Questions whose result delegation changed.")
+
+
+class CityDeciderSchema(BaseModel):
+    person: str
+    votes_decided: int = Field(
+        description="Other people's votes this person decided, over every closed question."
+    )
+    questions: int = Field(description="Closed questions on which they held someone's vote.")
+    largest_share: float = Field(
+        description="The largest share of one question's votes they decided, their own included."
+    )
+
+
+class CityTotalsSchema(BaseModel):
+    questions: int
+    changed: int
+    turnout_delegated: float
+    turnout_direct: float
+    delegated_share: float
+    largest_share: float
+    largest_resolver: str | None
+
+
+class CityResponse(BaseModel):
+    scenario: str
+    totals: CityTotalsSchema
+    papers: list[CityPaperSchema] = Field(description="Closed papers, oldest first.")
+    questions: list[CityQuestionSchema] = Field(
+        description="Closed questions, most recent paper first."
+    )
+    deciders: list[CityDeciderSchema] = Field(
+        description="The people who decided the most votes for others, most first."
+    )

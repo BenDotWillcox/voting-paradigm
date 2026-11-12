@@ -6,8 +6,10 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Bell,
   ChevronDown,
+  History,
   Inbox,
   Info,
+  Landmark,
   Maximize,
   Menu,
   Minimize,
@@ -33,7 +35,7 @@ import {
 } from "./people";
 import { PersonAvatar, PersonLine } from "./person-bits";
 import { choiceShort, findQuestion, outcomeLabel } from "./ballots";
-import { needsViewer } from "./votes";
+import { delegateIsLate, needsViewer } from "./votes";
 
 /** Close a dropdown when the pointer goes down outside it or Escape is pressed. */
 function useDismiss(open: boolean, onClose: () => void) {
@@ -226,6 +228,18 @@ function SideMenu({ open }: { open: boolean }) {
       badge: waiting,
     },
     {
+      href: "/liquid/city",
+      label: "City Results",
+      Icon: Landmark,
+      active: pathname.startsWith("/liquid/city"),
+    },
+    {
+      href: "/liquid/activity",
+      label: "Activity",
+      Icon: History,
+      active: pathname.startsWith("/liquid/activity"),
+    },
+    {
       href: profileHref(directory, directory.viewer),
       label: "Profile",
       Icon: UserRound,
@@ -400,6 +414,12 @@ function Notifications() {
       ),
     [openVotes, votes, directory.viewer],
   );
+  // Votes a delegate holds and has not cast, with a week or less to go.
+  const unanswered = useMemo(
+    () => (openVotes ?? []).filter((entry) => delegateIsLate(entry, directory.viewer)),
+    [openVotes, directory.viewer],
+  );
+  const alerts = closingSoon.length + unanswered.length;
 
   useEffect(() => {
     if (!open || recent !== null) return;
@@ -422,14 +442,14 @@ function Notifications() {
       <button
         type="button"
         className="relative rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-foreground"
-        aria-label={`Notifications, ${closingSoon.length} need you soon`}
+        aria-label={`Notifications, ${closingSoon.length} need you soon, ${unanswered.length} with a delegate who has not voted`}
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
       >
         <Bell className="h-5 w-5" aria-hidden="true" />
-        {closingSoon.length > 0 && (
+        {alerts > 0 && (
           <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 font-mono text-[0.6rem] font-semibold leading-none text-primary-foreground">
-            {closingSoon.length}
+            {alerts}
           </span>
         )}
       </button>
@@ -461,6 +481,34 @@ function Notifications() {
                 </li>
               ))}
             </ul>
+          )}
+          {unanswered.length > 0 && (
+            <>
+              <p className="liquid-label mt-1 border-t px-2 pb-1 pt-3">
+                Your delegate has not voted
+              </p>
+              <ul>
+                {unanswered.map((entry) => (
+                  <li key={entry.question.id}>
+                    <Link
+                      href={`/liquid/votes/${entry.question.id}`}
+                      className="block rounded-lg p-2 text-sm hover:bg-accent"
+                      onClick={() => setOpen(false)}
+                    >
+                      <span className="block">
+                        <span className="font-medium">
+                          {personName(directory, entry.result.receipt?.chain[1] ?? "")}
+                        </span>{" "}
+                        has yet to decide
+                      </span>
+                      <span className="block text-xs text-muted-foreground">
+                        {entry.question.title} · {closing(entry.paper.closes_in_days).toLowerCase()}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </>
           )}
           <p className="liquid-label mt-1 border-t px-2 pb-1 pt-3">
             Decided for you

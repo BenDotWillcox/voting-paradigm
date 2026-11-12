@@ -1,5 +1,6 @@
 import type { z } from "zod";
 import type {
+  cityResponseSchema,
   categoryJudgmentsRequestSchema,
   categoryJudgmentsResponseSchema,
   categorySchema,
@@ -36,3 +37,7 @@ export type VoteReceipt = NonNullable<QuestionResult["receipt"]>;
 
 export type PersonProfile = z.infer<typeof profileResponseSchema>;
 export type HistoryEntry = PersonProfile["history"][number];
+export type DelegationChange = PersonProfile["changes"][number];
+
+export type CityResults = z.infer<typeof cityResponseSchema>;
+export type CityQuestion = CityResults["questions"][number];

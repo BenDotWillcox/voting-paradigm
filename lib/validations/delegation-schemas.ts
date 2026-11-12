@@ -319,4 +319,76 @@ export const profileResponseSchema = z.object({
       winners: z.array(z.string()),
     })
   ),
+  changes: z.array(
+    z.object({
+      day: z.number(),
+      delegator: z.string(),
+      category: z.string(),
+      before: z.string().nullable(),
+      after: z.string().nullable(),
+    })
+  ),
+});
+
+// ---------------------------------------------------------------------------
+// GET /city
+// ---------------------------------------------------------------------------
+
+export const cityResponseSchema = z.object({
+  scenario: z.string(),
+  totals: z.object({
+    questions: z.number(),
+    changed: z.number(),
+    turnout_delegated: z.number(),
+    turnout_direct: z.number(),
+    delegated_share: z.number(),
+    largest_share: z.number(),
+    largest_resolver: z.string().nullable(),
+  }),
+  papers: z.array(
+    z.object({
+      id: z.string(),
+      title: z.string(),
+      jurisdiction: z.string(),
+      closed_days_ago: z.number(),
+      questions: z.number(),
+      turnout_delegated: z.number(),
+      turnout_direct: z.number(),
+      delegated_share: z.number(),
+      largest_share: z.number(),
+      changed: z.number(),
+    })
+  ),
+  questions: z.array(
+    z.object({
+      ballot_paper: z.string(),
+      paper_title: z.string(),
+      jurisdiction: z.string(),
+      closed_days_ago: z.number(),
+      question_id: z.string(),
+      label: z.string(),
+      kind: z.string(),
+      title: z.string(),
+      ballot_type: ballotTypeSchema,
+      voters: z.number(),
+      cast_delegated: z.number(),
+      cast_direct: z.number(),
+      delegated_share: z.number(),
+      largest_share: z.number(),
+      largest_resolver: z.string().nullable(),
+      gini: z.number(),
+      winners: z.array(z.string()),
+      direct_winners: z.array(z.string()),
+      winner_changed: z.boolean(),
+      support: z.number().nullable(),
+    })
+  ),
+  deciders: z.array(
+    z.object({
+      person: z.string(),
+      votes_decided: z.number(),
+      questions: z.number(),
+      largest_share: z.number(),
+    })
+  ),
 });

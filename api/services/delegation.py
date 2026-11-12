@@ -106,6 +106,12 @@ from ..schemas.delegation import (
     CategorySchema,
     CategoryScoreSchema,
     ChainLengthSchema,
+    CityDeciderSchema,
+    CityPaperSchema,
+    CityQuestionSchema,
+    CityResponse,
+    CityTotalsSchema,
+    DelegationChangeSchema,
     DelegationSchema,
     HeldVoteSchema,
     HistoryEntrySchema,
@@ -1137,4 +1143,149 @@ def profile_response(person: str) -> ProfileResponse:
             for d in received
         ],
         history=entries,
+        changes=_changes_for(person),
+    )
+
+
+def _changes_for(person: str) -> list[DelegationChangeSchema]:
+    """
+    The dated delegation changes a person made or was party to, most recent
+    first: their own, and those that handed them a category or took one away.
+    """
+    scenario = _scenario()
+    simulation = _simulation()
+    categories = _network_on(0).categories
+    everything = [*simulation.changes, *scenario.viewer_changes(VIEWER)]
+    involved = [
+        change
+        for change in everything
+        if person in (change.delegator, change.before, change.after)
+    ]
+    involved.sort(key=lambda change: (-change.day, change.delegator, change.category))
+    return [
+        DelegationChangeSchema(
+            day=change.day,
+            delegator=change.delegator,
+            category=categories[change.category].text,
+            before=change.before,
+            after=change.after,
+        )
+        for change in involved
+    ]
+
+
+# ---------------------------------------------------------------------------
+# GET /city
+# ---------------------------------------------------------------------------
+
+CITY_DECIDERS = 12
+
+
+@lru_cache(maxsize=1)
+def city_response() -> CityResponse:
+    """
+    Every closed question at a glance: turnout with and without delegation,
+    how much of the vote was delegated and to how few, and whether the
+    result changed. Read from the closed ballot papers only, so it never
+    changes.
+    """
+    scenario = _scenario()
+    questions: list[CityQuestionSchema] = []
+    papers: list[CityPaperSchema] = []
+    decided: dict[str, int] = {}
+    held_on: dict[str, int] = {}
+    share_of: dict[str, float] = {}
+
+    for paper in scenario.closed_papers:
+        rows: list[CityQuestionSchema] = []
+        for resolved in _history()[paper.id]:
+            resolution = resolved.resolution
+            voters = len(resolved.voters)
+            delegated, direct = resolved.delegated, resolved.direct
+            cast = delegated.total_ballots - delegated.abstentions
+            weights = resolution.weights()
+            for person, weight in weights.items():
+                others = weight - (1 if person in resolved.voters else 0)
+                if others > 0:
+                    decided[person] = decided.get(person, 0) + others
+                    held_on[person] = held_on.get(person, 0) + 1
+                    share_of[person] = max(share_of.get(person, 0.0), weight / voters)
+            metrics = _metrics(resolution)
+            yes = (
+                delegated.vote_counts.get("yes", 0) / cast
+                if resolved.measure.ballot_type == "single_choice" and cast
+                else None
+            )
+            rows.append(
+                CityQuestionSchema(
+                    ballot_paper=paper.id,
+                    paper_title=paper.title,
+                    jurisdiction=paper.paper.jurisdiction,
+                    closed_days_ago=-paper.closes_in_days,
+                    question_id=resolved.question.id,
+                    label=resolved.measure.label,
+                    kind=resolved.measure.kind,
+                    title=resolved.question.title,
+                    ballot_type=resolved.measure.ballot_type,
+                    voters=voters,
+                    cast_delegated=cast,
+                    cast_direct=direct.total_ballots - direct.abstentions,
+                    delegated_share=metrics.delegated_share,
+                    largest_share=metrics.largest_share,
+                    largest_resolver=metrics.largest_resolver,
+                    gini=metrics.gini,
+                    winners=delegated.winners,
+                    direct_winners=direct.winners,
+                    winner_changed=winners_differ(direct, delegated),
+                    support=round(yes, 4) if yes is not None else None,
+                )
+            )
+        issued = sum(row.voters for row in rows)
+        papers.append(
+            CityPaperSchema(
+                id=paper.id,
+                title=paper.title,
+                jurisdiction=paper.paper.jurisdiction,
+                closed_days_ago=-paper.closes_in_days,
+                questions=len(rows),
+                turnout_delegated=round(sum(r.cast_delegated for r in rows) / issued, 4),
+                turnout_direct=round(sum(r.cast_direct for r in rows) / issued, 4),
+                delegated_share=round(
+                    sum(r.delegated_share * r.voters for r in rows) / issued, 4
+                ),
+                largest_share=max(row.largest_share for row in rows),
+                changed=sum(row.winner_changed for row in rows),
+            )
+        )
+        questions = rows + questions  # most recent paper first
+
+    issued = sum(row.voters for row in questions)
+    heaviest = max(questions, key=lambda row: (row.largest_share, row.question_id))
+    ranked = sorted(decided, key=lambda person: (-decided[person], person))
+    return CityResponse(
+        scenario=SCENARIO_SCHEMA,
+        totals=CityTotalsSchema(
+            questions=len(questions),
+            changed=sum(row.winner_changed for row in questions),
+            turnout_delegated=round(
+                sum(row.cast_delegated for row in questions) / issued, 4
+            ),
+            turnout_direct=round(sum(row.cast_direct for row in questions) / issued, 4),
+            delegated_share=round(
+                sum(row.delegated_share * row.voters for row in questions) / issued, 4
+            ),
+            largest_share=heaviest.largest_share,
+            largest_resolver=heaviest.largest_resolver,
+        ),
+        papers=papers,
+        questions=questions,
+        deciders=[
+            CityDeciderSchema(
+                person=person,
+                votes_decided=decided[person],
+                questions=held_on[person],
+                largest_share=round(share_of[person], 4),
+            )
+            for person in ranked[:CITY_DECIDERS]
+        ],
     )

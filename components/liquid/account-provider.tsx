@@ -67,6 +67,8 @@ type Account = {
   add: (held: HeldDelegation) => void;
   replace: (index: number, held: HeldDelegation) => void;
   remove: (index: number) => void;
+  /** What the viewer has done in this browser, most recent first. */
+  log: LocalEvent[];
   /** Cast, change or (with null) withdraw the viewer's own vote on a question. */
   vote: (questionId: string, choice: Choice | null) => void;
   /** Go back to the account the scenario starts with. */
@@ -83,7 +85,28 @@ export function useAccount(): Account {
   return account;
 }
 
-type Saved = { delegations: HeldDelegation[]; votes: Record<string, Choice> };
+/** One thing the viewer did in this browser. */
+export type LocalEvent = {
+  /** When, as an ISO timestamp. */
+  at: string;
+  kind: "added" | "moved" | "renamed" | "removed" | "voted" | "withdrew";
+  category?: string;
+  /** The delegate after the change, and before it when it moved. */
+  delegate?: string;
+  before?: string;
+  /** The category's earlier wording, when it was renamed. */
+  was?: string;
+  question?: string;
+  choice?: Choice;
+};
+
+const MAX_LOG = 100;
+
+type Saved = {
+  delegations: HeldDelegation[];
+  votes: Record<string, Choice>;
+  log: LocalEvent[];
+};
 
 function startingDelegations(scenario: DelegationScenario): HeldDelegation[] {
   const pool = new Map(scenario.categories.map((entry) => [categoryKey(entry.text), entry]));
@@ -106,7 +129,7 @@ function readSaved(key: string): Saved | null {
     const votes = Object.fromEntries(
       Object.entries(saved.votes ?? {}).filter(([, choice]) => Array.isArray(choice))
     );
-    return { delegations: saved.delegations, votes };
+    return { delegations: saved.delegations, votes, log: Array.isArray(saved.log) ? saved.log : [] };
   } catch {
     return null; // storage blocked or the entry is damaged: start from the scenario
   }
@@ -129,12 +152,14 @@ export function AccountProvider({
   const [ready, setReady] = useState(false);
   const [delegations, setDelegations] = useState(() => startingDelegations(scenario));
   const [votes, setVotes] = useState<Record<string, Choice>>({});
+  const [log, setLog] = useState<LocalEvent[]>([]);
 
   useEffect(() => {
     const saved = readSaved(storageKey);
     if (saved) {
       setDelegations(saved.delegations);
       setVotes(saved.votes);
+      setLog(saved.log);
     }
     setReady(true);
   }, [storageKey]);
@@ -142,11 +167,11 @@ export function AccountProvider({
   useEffect(() => {
     if (!ready) return;
     try {
-      window.localStorage.setItem(storageKey, JSON.stringify({ delegations, votes }));
+      window.localStorage.setItem(storageKey, JSON.stringify({ delegations, votes, log }));
     } catch {
       // Not saved; the account still works for this visit.
     }
-  }, [ready, storageKey, delegations, votes]);
+  }, [ready, storageKey, delegations, votes, log]);
 
   const openPapers = useMemo(
     () =>
@@ -212,6 +237,12 @@ export function AccountProvider({
       });
     });
   }, [resolved, openPapers]);
+
+  const record = useCallback((event: Omit<LocalEvent, "at">) => {
+    setLog((current) =>
+      [{ ...event, at: new Date().toISOString() }, ...current].slice(0, MAX_LOG)
+    );
+  }, []);
 
   const check = useCallback<Account["check"]>(
     async (category, delegate, replacing) => {
@@ -291,27 +322,59 @@ export function AccountProvider({
       resolving: ready && resolved?.key !== requestKey && error === null,
       error,
       check,
-      add: (held) => setDelegations((current) => [...current, held]),
-      replace: (index, held) =>
+      log,
+      add: (held) => {
+        record({ kind: "added", category: held.category, delegate: held.delegate });
+        setDelegations((current) => [...current, held]);
+      },
+      replace: (index, held) => {
+        const was = delegations[index];
+        if (was && was.delegate !== held.delegate) {
+          record({
+            kind: "moved",
+            category: held.category,
+            delegate: held.delegate,
+            before: was.delegate,
+          });
+        }
+        if (was && categoryKey(was.category) !== categoryKey(held.category)) {
+          record({
+            kind: "renamed",
+            category: held.category,
+            was: was.category,
+            delegate: held.delegate,
+          });
+        }
         setDelegations((current) =>
           current.map((entry, position) => (position === index ? held : entry))
-        ),
-      remove: (index) =>
-        setDelegations((current) => current.filter((_, position) => position !== index)),
-      vote: (questionId, choice) =>
+        );
+      },
+      remove: (index) => {
+        const was = delegations[index];
+        if (was) record({ kind: "removed", category: was.category, before: was.delegate });
+        setDelegations((current) => current.filter((_, position) => position !== index));
+      },
+      vote: (questionId, choice) => {
+        record(
+          choice === null
+            ? { kind: "withdrew", question: questionId }
+            : { kind: "voted", question: questionId, choice }
+        );
         setVotes((current) => {
           const next = { ...current };
           if (choice === null) delete next[questionId];
           else next[questionId] = choice;
           return next;
-        }),
+        });
+      },
       reset: () => {
         setDelegations(startingDelegations(scenario));
         setVotes({});
+        setLog([]);
       },
       closedPaper,
     }),
-    [scenario, directory, ready, delegations, votes, openVotes, resolved, requestKey, error, check, closedPaper]
+    [scenario, directory, ready, delegations, votes, log, record, openVotes, resolved, requestKey, error, check, closedPaper]
   );
 
   return <AccountContext.Provider value={account}>{children}</AccountContext.Provider>;
