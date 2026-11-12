@@ -1533,3 +1533,102 @@
 @media (prefers-reduced-motion: reduce) {
   .home-grid-cell, .home-grid .home-card-description { transition: none; }
 }
+
+/* ---------------------------------------------------------------------------
+   Liquid democracy: the account app.
+   A dark control surface, scoped to .liquid-app so the rest of the site keeps
+   its own theme. The shell also carries the `dark` class, so `dark:` variants
+   apply inside it whatever the site theme is. Portalled dialogs and sheets
+   repeat both classes, because they render outside the shell.
+   --------------------------------------------------------------------------- */
+.liquid-app {
+  --lq-violet: #8b7bff;
+  --lq-violet-soft: rgb(139 123 255 / 0.16);
+  --lq-blue: #5aa2ff;
+  --lq-blue-soft: rgb(90 162 255 / 0.14);
+  --lq-gold: #f2c14e;
+  --lq-line: rgb(151 137 255 / 0.18);
+
+  --radius: 0.625rem;
+  --background: #0b0a18;
+  --foreground: #ecebfa;
+  --card: #121126;
+  --card-foreground: #ecebfa;
+  --popover: #15142c;
+  --popover-foreground: #ecebfa;
+  --primary: #8b7bff;
+  --primary-foreground: #0b0a18;
+  --secondary: #1c1a38;
+  --secondary-foreground: #ecebfa;
+  --muted: #1a1933;
+  --muted-foreground: #a6a3c7;
+  --accent: #221f45;
+  --accent-foreground: #f4f3ff;
+  --destructive: #ff6b81;
+  --border: var(--lq-line);
+  --input: rgb(151 137 255 / 0.28);
+  --ring: #8b7bff;
+
+  color: var(--foreground);
+  color-scheme: dark;
+}
+
+/* The surfaces below sit in the components layer so that Tailwind utilities
+   on the same element (a coloured edge, a different padding) still win. */
+@layer components {
+/* The app frame: a violet glow from the top over a near-black field. */
+.liquid-shell {
+  background:
+    radial-gradient(ellipse 70% 42% at 50% -6%, rgb(124 92 255 / 0.26), transparent 72%),
+    radial-gradient(ellipse 40% 30% at 100% 0%, rgb(90 162 255 / 0.1), transparent 70%),
+    var(--background);
+}
+
+/* Faint ruled grid, for the top bar and the menu. */
+.liquid-grid {
+  background-image:
+    linear-gradient(rgb(151 137 255 / 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(151 137 255 / 0.05) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Dot grid, for the graph canvas. */
+.liquid-dots {
+  background-image: radial-gradient(circle, rgb(151 137 255 / 0.24) 1px, transparent 1.5px);
+  background-size: 22px 22px;
+}
+
+/* A glass panel: the standard surface for anything that sits on the field. */
+.liquid-panel {
+  border: 1px solid var(--lq-line);
+  border-radius: calc(var(--radius) + 2px);
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.05), rgb(255 255 255 / 0.015));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
+}
+
+/* Small mono caption, for readout labels. */
+.liquid-label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.liquid-glow {
+  box-shadow:
+    0 0 0 1px rgb(139 123 255 / 0.55),
+    0 0 28px -6px rgb(139 123 255 / 0.7);
+}
+
+@keyframes liquid-flow {
+  to { stroke-dashoffset: -24; }
+}
+.liquid-flow {
+  stroke-dasharray: 4 8;
+  animation: liquid-flow 1.6s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .liquid-flow { animation: none; }
+}
+}

@@ -32,12 +32,20 @@ SIMULATION = simulate_network(
 class TestScenarioFile:
     def test_pool_papers_and_judgments(self) -> None:
         assert len(SCENARIO.categories) == 30
-        assert [(entry.id, entry.paper.jurisdiction) for entry in SCENARIO.papers] == [
-            ("city-general", CITY),
-            ("district-2-special", district_id(2)),
+        assert len(SCENARIO.papers) == 12
+        assert [
+            (entry.id, entry.paper.jurisdiction) for entry in SCENARIO.open_papers
+        ] == [
+            ("district-2-special-2", district_id(2)),
+            ("city-general-3", CITY),
+            ("district-1-special-3", district_id(1)),
+            ("city-advisory-2", CITY),
         ]
-        assert [len(entry.paper.questions) for entry in SCENARIO.papers] == [15, 5]
-        assert len(SCENARIO.judgments) == 20 * 30
+        assert len(SCENARIO.closed_papers) == 8
+        assert all(entry.closes_in_days < 0 for entry in SCENARIO.closed_papers)
+        # Every labelled question is used once.
+        assert len(SCENARIO.questions) == 68
+        assert len(SCENARIO.judgments) == 68 * 30
         assert SCENARIO.model == "jev-1.14.0"
 
     def test_nesting_is_between_pool_categories_and_includes_tree_frogs(self) -> None:
@@ -47,7 +55,7 @@ class TestScenarioFile:
         assert len(SCENARIO.nesting) == 11
 
     def test_lookups(self) -> None:
-        assert SCENARIO.paper("city-general").title == "City general ballot"
+        assert SCENARIO.paper("city-general-3").title == "City general ballot"
         assert SCENARIO.category(SCENARIO.categories[0].id) == SCENARIO.categories[0]
         assert SCENARIO.category("cat_missing") is None
         with pytest.raises(KeyError):
@@ -97,6 +105,46 @@ class TestScenarioFile:
         with pytest.raises(InvalidScenarioError):
             load_scenario(self.broken(tmp_path, nesting=[["cat_a", "cat_b"]]))
 
+    def viewer(self, **changes: object) -> dict[str, object]:
+        raw = json.loads(SCENARIO_PATH.read_text(encoding="utf-8"))["viewer"]
+        raw.update(changes)
+        return dict(raw)
+
+    def test_the_viewer_starts_with_eight_pool_delegations(self) -> None:
+        viewer = SCENARIO.viewer
+        pool = {category.text for category in SCENARIO.categories}
+        assert len(viewer.delegations) == 8
+        assert {text for text, _ in viewer.delegations} <= pool
+        assert all(
+            delegate in SIMULATION.network.persons for _, delegate in viewer.delegations
+        )
+        closed = {
+            question.id
+            for entry in SCENARIO.closed_papers
+            for question in entry.paper.questions
+        }
+        assert viewer.missed and viewer.voted_directly
+        assert viewer.missed | viewer.voted_directly <= closed
+
+    def test_a_viewer_category_outside_the_pool_is_rejected(
+        self, tmp_path: Path
+    ) -> None:
+        delegations = [{"category": "something nobody judged", "delegate": "d1-003"}]
+        with pytest.raises(InvalidScenarioError):
+            load_scenario(
+                self.broken(tmp_path, viewer=self.viewer(delegations=delegations))
+            )
+
+    def test_a_missed_question_must_have_closed(self, tmp_path: Path) -> None:
+        with pytest.raises(InvalidScenarioError):
+            load_scenario(self.broken(tmp_path, viewer=self.viewer(missed=["q01"])))
+
+    def test_a_paper_cannot_close_today(self, tmp_path: Path) -> None:
+        raw = json.loads(SCENARIO_PATH.read_text(encoding="utf-8"))
+        raw["ballot_papers"][0]["closes_in_days"] = 0
+        with pytest.raises(InvalidScenarioError):
+            load_scenario(self.broken(tmp_path, ballot_papers=raw["ballot_papers"]))
+
 
 class TestScenarioPopulation:
     def test_every_question_resolves_for_every_eligible_voter(self) -> None:
@@ -110,7 +158,7 @@ class TestScenarioPopulation:
                 assert sum(resolution.weights().values()) == len(voters)
 
     def test_only_district_two_is_issued_the_special_ballot(self) -> None:
-        special = SCENARIO.paper("district-2-special").paper
+        special = SCENARIO.paper("district-2-special-2").paper
         voters = eligible_voters(SIMULATION.network, special.jurisdiction)
         assert len(voters) == SCENARIO_SIMULATION.residents_per_district
         assert VIEWER not in voters
@@ -119,7 +167,7 @@ class TestScenarioPopulation:
     def test_the_viewer_answers_for_voters_in_a_district_they_do_not_live_in(
         self,
     ) -> None:
-        special = SCENARIO.paper("district-2-special").paper
+        special = SCENARIO.paper("district-2-special-2").paper
         resolutions = resolve_ballot_paper(
             SIMULATION.network, special, SCENARIO.judgments
         )
@@ -130,7 +178,7 @@ class TestScenarioPopulation:
         assert max(held.values()) >= 1
 
     def test_delegation_matters_on_the_general_ballot(self) -> None:
-        general = SCENARIO.paper("city-general").paper
+        general = SCENARIO.paper("city-general-3").paper
         resolutions = resolve_ballot_paper(
             SIMULATION.network, general, SCENARIO.judgments
         )
@@ -138,12 +186,18 @@ class TestScenarioPopulation:
             sum(trace.delegated for trace in resolution.traces.values())
             for resolution in resolutions.values()
         ]
-        # The city flag belongs to no category, so nobody delegates it.
-        assert delegated[-1] == 0
         assert sum(count > 20 for count in delegated) >= 10
 
+    def test_nobody_delegates_a_question_about_no_category(self) -> None:
+        advisory = SCENARIO.paper("city-advisory-2").paper
+        resolutions = resolve_ballot_paper(
+            SIMULATION.network, advisory, SCENARIO.judgments
+        )
+        flag = resolutions["q66"]  # New city flag
+        assert sum(trace.delegated for trace in flag.traces.values()) == 0
+
     def test_a_narrower_category_overrules_a_broader_one_somewhere(self) -> None:
-        general = SCENARIO.paper("city-general").paper
+        general = SCENARIO.paper("city-general-3").paper
         resolutions = resolve_ballot_paper(
             SIMULATION.network, general, SCENARIO.judgments
         )

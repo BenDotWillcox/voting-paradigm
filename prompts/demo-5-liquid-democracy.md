@@ -450,28 +450,29 @@ delegation/
                  deriving                                            [built]
   simulate.py    seeded synthetic network and sincere ballots        [built]
   scenario.py    loads the curated scenario                          [built]
-  data/scenario_v1.json  the pool, two ballot papers and their
-                 recorded judgments and nesting                      [built]
+  data/scenario_v2.json  the pool, twelve ballot papers, the viewer's
+                 starting account, recorded judgments and nesting    [built]
 api/
   routers/delegation.py     HTTP only                                [built]
   schemas/delegation.py     Pydantic request and response models     [built]
   services/delegation.py    orchestration                            [built]
 scripts/
-  build_delegation_scenario.py  builds scenario_v1.json from the
+  build_delegation_scenario.py  builds scenario_v2.json from the
                  evaluation's recorded answers; no network           [built]
 eval/
   delegation_router.py              router evaluation (pure)        [built]
   run_delegation_router_eval.py     plan, smoke, collect, report    [built]
   fixtures/delegation_router_v1.json  30 categories, 68 questions   [built]
   benchmarks/delegation_router_v1/  recorded answers and summary    [built]
-app/liquid/                 the demo page (route already exists)
+app/liquid/                 the account: delegations, votes, profiles [built]
+components/liquid/          its client components and shared state    [built]
 ```
 
 - `delegation/` imports `voting/` and nothing else from the other demos.
 - The pure core takes judgments as input. Tests use a scripted
   `JudgmentSource`; nothing in the core needs a network.
-- The API is stateless. v1 keeps the viewer's delegations in browser session
-  state and adds no tables.
+- The API is stateless. v1 keeps the viewer's delegations and votes in the
+  browser's local storage and adds no tables.
 
 ### Endpoints
 
@@ -479,21 +480,26 @@ The server rebuilds the network and ballot papers from the scenario file and
 a seed, so a request carries only what the viewer changed: their delegations,
 in list order, and any votes they cast themself.
 
-- `GET /api/delegation/scenario` — the seeded network and the curated ballot
-  papers.
+- `GET /api/delegation/scenario` — the seeded network, the ballot papers with
+  their closing offsets, and the delegations the viewer's account starts with.
+- `GET /api/delegation/people/{person_id}` — one person's profile: counts,
+  what they hand over and are handed, and every closed question issued to
+  them or decided by them, with how it went.
 - `POST /api/delegation/delegations/validate` — the creation checks on one
-  proposed delegation: a rejection with the chain, or the curated questions
+  proposed delegation: a rejection with the chain, or the open questions
   on which it would come back to the viewer.
-- `POST /api/delegation/judgments` — a category's judgments for every curated
+- `POST /api/delegation/judgments` — a category's judgments for every open
   question, and its nesting against the viewer's other categories. Recorded
   answers first; the rest are asked of Jev only when live judgments are
   switched on, and otherwise reported as missing.
 - `POST /api/delegation/resolve` — a ballot paper, the viewer's delegations
   and votes, threshold and tiebreak seed in; per question, the delegated and
   direct tallies, concentration measures, the viewer's receipt and the votes
-  the viewer answers for. Reads recorded judgments only.
+  the viewer answers for. Reads recorded judgments only. A closed paper is
+  returned as it was resolved, with the viewer's starting account, whatever
+  the request carries.
 
-Three behaviours worth knowing:
+Behaviours worth knowing:
 
 - **Live judgments are opt-in twice.** The server asks Jev about a
   viewer-written category only when it has `TYPESAFE_API_KEY` and
@@ -507,6 +513,13 @@ Three behaviours worth knowing:
   question overrides their delegations for it and is the ballot used for
   anyone they answer for. Until they vote, the votes they hold count as
   abstentions.
+- **History is fixed.** Closed papers are resolved once, with the account
+  the viewer started with, and profiles are read from them. Editing a
+  delegation changes open votes only.
+- **New categories are rationed.** The server counts the new categories it
+  has asked Jev about each day (UTC) and stops at
+  `DELEGATION_LIVE_DAILY_CATEGORIES`, 200 by default. A written category is
+  judged against the open questions only.
 
 ## Synthetic network (scope cut)
 
@@ -527,28 +540,66 @@ Built in `delegation/simulate.py`; the scenario's settings are in
   drawn), trust one of eight well-known people for the category (42%), trust
   someone in your own district (28%). Every delegation goes through the
   creation check.
-- The viewer is a District 1 resident with no delegations of their own. Six
-  residents, two per district, each hand the viewer one authored category, so
-  the viewer answers for others on both ballot papers.
-- Two ballot papers drawn from the evaluation's questions: a 15-question city
-  general ballot and a 5-question special ballot for District 2, which the
-  viewer is not issued.
-- On the general ballot, 12% to 32% of votes are resolved by someone else,
-  the heaviest resolver holds up to 19%, and chains run up to four hops.
-  These shares come from the assumed behaviours above, not from data.
+- Everyone has a made-up name and a unique username.
+- The viewer is a District 1 resident. The simulated network holds no
+  delegations of theirs; the scenario gives their account eight to start
+  with, four broad and four narrow. Nine residents across the three districts
+  each hand the viewer one authored category, in categories the viewer does
+  not hand on, so the viewer answers for others, including on ballot papers
+  issued to districts they do not live in.
+- Twelve ballot papers use each of the evaluation's 68 questions once. Each
+  has a day offset from today: eight have closed, over about eleven months,
+  and four are open, closing in 3, 6, 9 and 16 days. City papers go to 241
+  voters and district papers to 80 or 81.
+- The viewer's past: a sincere choice from an authored position on every
+  closed question, except two they let lapse and two they voted on themself
+  despite a delegation. Of 40 closed questions issued to them, 16 were
+  decided by a delegate.
+- These shares come from the assumed behaviours above, not from data.
 
-## UI plan (`/liquid`)
+## UI (`/liquid`)
 
-1. **Your delegations.** Pick a person, then pick a category from the pool or
-   write your own. A rejected loop shows the chain that would have closed; a
-   warning shows the reference questions that would come back to you.
-2. **Run a ballot.** Choose a curated ballot for a district.
-3. **Your receipt.** Per question: scores, threshold, sent or kept, chain,
-   resolver, choice.
-4. **Your inbox.** Questions you answer for others, including from districts
-   you do not live in.
-5. **Outcome.** Delegated tally next to the direct tally, with concentration.
-6. **Try a question.** Free-text question judged live; disabled without a key.
+The demo is an account app in the simulated city. The first version was a
+single page (2026-11-10); it was rebuilt as an account with separate screens
+(2026-11-11) and then given an app frame and its own look.
+
+**Frame.** The demo header stays above. Everything under it is the app: a
+top bar with people search, a notifications bell and the signed-in account
+(top right), and a side menu with Hub, Incoming Votes, Profile, About this
+demo and Reset demo. The look is a dark control surface, scoped by
+`.liquid-app`: near-black with violet and blue, glass panels, mono readout
+labels, a dot-grid canvas for the graph.
+
+1. **Hub** (`/liquid`). Four readouts (waiting on you, with your delegates,
+   votes reaching you, delegations in and out) and a node graph read left to
+   right: who hands the viewer a category, the viewer, who the viewer hands
+   categories to. An outgoing node opens a side sheet for that delegation:
+   change the delegate or the category, each with a confirmation step,
+   remove it, or view the delegate's profile. An incoming node opens that
+   person and the open votes of theirs that currently reach the viewer. An
+   extra node, and a button, add a delegate: search by name or `@username`,
+   then write the category. A refused loop shows its chain; an allowed one
+   lists the open questions that would come back.
+2. **Incoming Votes** (`/liquid/votes`). Open votes, soonest to close first,
+   in two boxes. "Needs you" holds the viewer's own votes that fit no
+   category and other people's votes that reached them; a vote not cast when
+   the ballot closes is an abstention. "With your delegates" holds the votes
+   routed out, which the viewer can still vote on themself.
+3. **A vote** (`/liquid/votes/[questionId]`). The question in full, who it was
+   issued to, the viewer's receipt (scores, threshold, chain, resolver,
+   ballot), the votes that reached them, and for a closed vote the delegated
+   result beside the direct one with concentration.
+4. **Profile** (`/liquid/people/[username]`). Name, username and district,
+   then three tabs, each openable full screen: stats (delegation rate, who
+   delegates to them, votes decided for others), their node graph in both
+   directions, and their voting history, newest first, tagged voted,
+   delegated or did not vote.
+5. **Notifications.** Votes that close within a week and still wait on the
+   viewer, and the last few votes a delegate decided for them.
+6. **About** (`/liquid/about`). Method and limits.
+
+Not built: a free-text question judged live, a browsable people page, and
+an account name other than "You / @you".
 
 ## Build sequence
 
@@ -569,7 +620,11 @@ Built in `delegation/simulate.py`; the scenario's settings are in
 3. **Network and API.** Synthetic network, curated ballots with recorded
    judgments, the four endpoints. *Done.* No network calls were made: the
    scenario file is built from answers already recorded in step 2.
-4. **UI.** The `/liquid` page.
+4. **UI.** *Done*, first as a single page and then rebuilt as an account
+   (see UI above). The scenario gained names, a timeline of papers and the
+   viewer's starting account; the API gained profiles and a daily limit on
+   newly judged categories. The history is generated from the spatial model
+   and still to be authored.
 
 ## Reproducibility
 
@@ -578,7 +633,7 @@ Built in `delegation/simulate.py`; the scenario's settings are in
 - **Recorded judgments.** Each (model id, state, question) is hashed and its
   first response stored, append-only. The question includes the category
   text. Judgments for the curated ballots against the curated category pool
-  are committed in `delegation/data/scenario_v1.json`, so that part of the
+  are committed in `delegation/data/scenario_v2.json`, so that part of the
   public demo replays without a key. A category the viewer writes is judged
   live, which needs the key and the `DELEGATION_LIVE_JUDGMENTS` switch.
 - **Resolution reads only recorded judgments.** A run is deterministic given

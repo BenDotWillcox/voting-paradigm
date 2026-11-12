@@ -35,10 +35,16 @@ SCENARIO_URL = "/api/delegation/scenario"
 VALIDATE_URL = "/api/delegation/delegations/validate"
 JUDGMENTS_URL = "/api/delegation/judgments"
 RESOLVE_URL = "/api/delegation/resolve"
+PEOPLE_URL = "/api/delegation/people"
 
 VIEWER = "you"
-GENERAL = "city-general"
-SPECIAL = "district-2-special"
+# Open ballot papers, and two that have closed
+GENERAL = "city-general-3"
+SPECIAL = "district-2-special-2"
+ADVISORY = "city-advisory-2"
+CLOSED_GENERAL = "city-general-2"
+CLOSED_BUDGET = "city-budget"
+OPEN_QUESTIONS = 21
 # People in the seeded scenario population (see delegation.scenario).
 KEEPER = "d1-003"  # keeps every decision
 OTHER_KEEPER = "d1-006"
@@ -145,23 +151,48 @@ class TestScenario:
             "district-2",
             "district-3",
         ]
+        papers = body["ballot_papers"]
+        assert len(papers) == 12
+        assert sum(len(p["questions"]) for p in papers) == 68
+        assert [p["closes_in_days"] for p in papers] == sorted(
+            p["closes_in_days"] for p in papers
+        )
         assert [
             (p["id"], p["eligible_voters"], len(p["questions"]))
-            for p in body["ballot_papers"]
+            for p in papers
+            if p["status"] == "open"
         ] == [
-            (GENERAL, 241, 15),
-            (SPECIAL, 80, 5),
+            (SPECIAL, 80, 3),
+            (GENERAL, 241, 14),
+            ("district-1-special-3", 81, 2),
+            (ADVISORY, 241, 2),
         ]
+        assert all((p["status"] == "open") == (p["closes_in_days"] > 0) for p in papers)
         assert len(body["categories"]) == 30
         assert all(category["in_pool"] for category in body["categories"])
 
-    def test_viewer_is_a_resident_with_no_delegations(self, client: TestClient) -> None:
+    def test_viewer_is_a_resident_whose_account_starts_with_delegations(
+        self, client: TestClient
+    ) -> None:
         body = client.get(SCENARIO_URL).json()
         viewer = next(p for p in body["persons"] if p["id"] == VIEWER)
-        assert viewer["label"] == "You"
+        assert (viewer["name"], viewer["username"]) == ("You", "you")
+        assert viewer["home"] == "district-1"
         assert viewer["residences"] == ["city", "district-1"]
         assert viewer["behaviour"] is None
+        # The simulated network holds none; the account's starting ones are separate.
         assert not [d for d in body["delegations"] if d["delegator"] == VIEWER]
+        starting = body["viewer_delegations"]
+        assert len(starting) == 8
+        assert len({d["category"] for d in starting}) == 8
+        people = {p["id"] for p in body["persons"]}
+        assert all(d["delegate"] in people for d in starting)
+
+    def test_the_starting_account_passes_the_creation_checks(
+        self, client: TestClient
+    ) -> None:
+        starting = client.get(SCENARIO_URL).json()["viewer_delegations"]
+        resolve(client, viewer_delegations=starting)
 
     def test_people_in_every_district_delegate_to_the_viewer(
         self, client: TestClient
@@ -180,11 +211,18 @@ class TestScenario:
         assert by_text[FROGS]["inside"] == [by_text[ENVIRONMENT]["id"]]
         assert by_text[ENVIRONMENT]["inside"] == []
 
-    def test_labels_and_well_known_people(self, client: TestClient) -> None:
+    def test_names_usernames_and_well_known_people(self, client: TestClient) -> None:
         body = client.get(SCENARIO_URL).json()
         by_id = {person["id"]: person for person in body["persons"]}
-        assert by_id["d2-022"]["label"] == "District 2 resident 22"
-        assert by_id["out-03"]["label"] == "Outside resident 3"
+        usernames = [person["username"] for person in body["persons"]]
+        assert len(set(usernames)) == len(usernames)
+        assert all(
+            " " in person["name"]
+            for person in body["persons"]
+            if person["id"] != VIEWER
+        )
+        assert by_id["d2-022"]["home"] == "district-2"
+        assert by_id["out-03"]["home"] is None
         assert by_id["out-03"]["residences"] == []
         assert sum(bool(person["well_known_for"]) for person in body["persons"]) == 8
 
@@ -206,7 +244,7 @@ class TestResolve:
 
         assert result["viewer_eligible"] is True
         assert result["jurisdiction"] == "city"
-        assert len(result["questions"]) == 15
+        assert len(result["questions"]) == 14
         for item in result["questions"]:
             assert item["delegated"]["total_ballots"] == 241
             assert item["direct"]["total_ballots"] == 241
@@ -245,7 +283,7 @@ class TestResolve:
         self, client: TestClient
     ) -> None:
         result = resolve(client, viewer_delegations=delegations((TAXES, KEEPER)))
-        receipt = question(result, "q66")["receipt"]  # New city flag
+        receipt = question(result, "q39")["receipt"]  # Civilian police review board
         assert receipt["outcome"] == "none_available"
         assert receipt["resolver"] == VIEWER
 
@@ -264,7 +302,7 @@ class TestResolve:
         }
         assert resolvers["q01"] == KEEPER  # a tax question
         assert resolvers["q12"] == OTHER_KEEPER  # street tree planting
-        assert resolvers["q66"] == VIEWER  # the city flag
+        assert resolvers["q39"] == VIEWER  # the police review board
 
     def test_a_narrower_category_overrules_the_broader_one(
         self, client: TestClient
@@ -313,7 +351,7 @@ class TestResolve:
         result = resolve(client)
         shares = [item["metrics"]["largest_share"] for item in result["questions"]]
         assert max(shares) > 0.1
-        flag = question(result, "q66")["metrics"]
+        flag = question(resolve(client, ADVISORY), "q66")["metrics"]  # New city flag
         assert flag["delegated_share"] == 0 and flag["gini"] == 0
 
 
@@ -386,7 +424,11 @@ class TestWrittenCategories:
     def test_once_judged_a_written_category_routes(self, client: TestClient) -> None:
         use_source(ScriptedSource({"q12": 0.95}))  # Street tree planting bond
         judged = client.post(JUDGMENTS_URL, json={"category": WRITTEN}).json()
-        assert judged["judgments"] == {"recorded": 0, "fetched": 20, "missing": 0}
+        assert judged["judgments"] == {
+            "recorded": 0,
+            "fetched": OPEN_QUESTIONS,
+            "missing": 0,
+        }
 
         use_source(None)  # resolution reads what was recorded
         result = resolve(client, viewer_delegations=delegations((WRITTEN, KEEPER)))
@@ -426,9 +468,13 @@ class TestJudgments:
 
         assert body["category"]["in_pool"] is True
         assert body["live"] is False
-        assert body["judgments"] == {"recorded": 20, "fetched": 0, "missing": 0}
+        assert body["judgments"] == {
+            "recorded": OPEN_QUESTIONS,
+            "fetched": 0,
+            "missing": 0,
+        }
         assert body["inside"] == [ENVIRONMENT]
-        assert len(body["scores"]) == 20
+        assert len(body["scores"]) == OPEN_QUESTIONS
         assert all(score["probability"] is not None for score in body["scores"])
         best = max(body["scores"], key=lambda score: score["probability"])
         assert best["question_id"] == "q10"
@@ -439,7 +485,11 @@ class TestJudgments:
         body = client.post(JUDGMENTS_URL, json={"category": WRITTEN}).json()
         assert body["category"]["in_pool"] is False
         assert body["live"] is False
-        assert body["judgments"] == {"recorded": 0, "fetched": 0, "missing": 20}
+        assert body["judgments"] == {
+            "recorded": 0,
+            "fetched": 0,
+            "missing": OPEN_QUESTIONS,
+        }
         assert all(score["probability"] is None for score in body["scores"])
 
     def test_answers_are_recorded_and_never_asked_twice(
@@ -453,9 +503,15 @@ class TestJudgments:
         ).json()
 
         assert first["live"] is True
-        assert first["judgments"]["fetched"] == 20
-        assert second["judgments"] == {"recorded": 20, "fetched": 0, "missing": 0}
-        assert source.judge_calls == 20  # one request per curated question, once
+        assert first["judgments"]["fetched"] == OPEN_QUESTIONS
+        assert second["judgments"] == {
+            "recorded": OPEN_QUESTIONS,
+            "fetched": 0,
+            "missing": 0,
+        }
+        assert (
+            source.judge_calls == OPEN_QUESTIONS
+        )  # one request per open question, once
         assert second["scores"] == first["scores"]
 
     def test_a_failing_model_is_reported_and_nothing_is_recorded(
@@ -463,8 +519,8 @@ class TestJudgments:
     ) -> None:
         use_source(ScriptedSource({}, fail=True))
         body = client.post(JUDGMENTS_URL, json={"category": WRITTEN}).json()
-        assert body["judgments"]["missing"] == 20
-        assert len(body["failures"]) == 20
+        assert body["judgments"]["missing"] == OPEN_QUESTIONS
+        assert len(body["failures"]) == OPEN_QUESTIONS
         assert len(stores.judgments) == 0
 
     def test_pool_pairs_are_not_asked_about_nesting(self, client: TestClient) -> None:
@@ -521,8 +577,8 @@ class TestValidate:
 
         assert body["accepted"] is True
         assert [(w["ballot_paper"], w["question_id"]) for w in body["warnings"]] == [
-            (GENERAL, "q33"),
             (SPECIAL, "q34"),
+            (GENERAL, "q33"),
         ]
 
     def test_on_a_warned_question_everyone_on_the_loop_keeps_it(
@@ -687,8 +743,172 @@ def test_schema_literals_match_the_domain() -> None:
 def test_routes_are_documented() -> None:
     schema = TestClient(app).get("/openapi.json").json()
     paths = {path for path in schema["paths"] if path.startswith("/api/delegation")}
-    assert paths == {SCENARIO_URL, VALIDATE_URL, JUDGMENTS_URL, RESOLVE_URL}
+    assert paths == {
+        SCENARIO_URL,
+        VALIDATE_URL,
+        JUDGMENTS_URL,
+        RESOLVE_URL,
+        PEOPLE_URL + "/{person_id}",
+    }
     for path in paths:
         for operation in schema["paths"][path].values():
             assert operation["tags"] == ["delegation"]
             assert operation["summary"] and operation["description"]
+
+
+class TestClosedPapers:
+    def test_a_closed_paper_ignores_the_request(self, client: TestClient) -> None:
+        plain = resolve(client, CLOSED_GENERAL)
+        changed = resolve(
+            client,
+            CLOSED_GENERAL,
+            viewer_delegations=delegations((TRANSPORT, KEEPER)),
+            viewer_votes={"q11": "yes"},
+            threshold=0.95,
+        )
+        assert plain == changed
+        assert plain["status"] == "closed"
+        assert plain["closes_in_days"] < 0
+        assert plain["threshold"] == 0.7
+
+    def test_history_uses_the_starting_account(self, client: TestClient) -> None:
+        starting = {
+            d["category"]: d["delegate"]
+            for d in client.get(SCENARIO_URL).json()["viewer_delegations"]
+        }
+        receipt = question(resolve(client, CLOSED_GENERAL), "q11")["receipt"]
+        # Zoo conservation fund for Amazon tree frogs: the narrow category wins.
+        assert receipt["outcome"] == "delegated"
+        assert receipt["category"] == FROGS
+        assert receipt["chain"][:2] == [VIEWER, starting[FROGS]]
+
+    def test_the_viewer_voted_on_some_past_questions_despite_a_delegation(
+        self, client: TestClient
+    ) -> None:
+        receipt = question(resolve(client, CLOSED_BUDGET), "q25")["receipt"]
+        assert receipt["outcome"] == "direct_vote"
+        assert receipt["choice"] in {"yes", "no"}
+
+    def test_an_open_paper_reports_its_deadline(self, client: TestClient) -> None:
+        result = resolve(client, SPECIAL)
+        assert (result["status"], result["closes_in_days"]) == ("open", 3)
+
+
+class TestProfile:
+    def profile(self, client: TestClient, person: str) -> dict[str, Any]:
+        response = client.get(f"{PEOPLE_URL}/{person}")
+        assert response.status_code == 200, response.text
+        body: dict[str, Any] = response.json()
+        return body
+
+    def test_counts_add_up_and_history_is_newest_first(
+        self, client: TestClient
+    ) -> None:
+        body = self.profile(client, "d2-022")
+        stats, history = body["stats"], body["history"]
+        issued = [entry for entry in history if entry["issued"]]
+
+        assert body["person"]["username"]
+        # A District 2 resident is issued the city papers and their district's.
+        assert stats["votes_issued"] == len(issued) == 35 + 4
+        assert (
+            stats["voted_personally"] + stats["delegated"] + stats["abstained"]
+            == stats["votes_issued"]
+        )
+        assert stats["delegation_rate"] == round(
+            stats["delegated"] / stats["votes_issued"], 4
+        )
+        assert [entry["closed_days_ago"] for entry in history] == sorted(
+            entry["closed_days_ago"] for entry in history
+        )
+        assert stats["categories_handed_over"] == len(body["delegations"])
+
+    def test_a_delegated_vote_names_its_category_chain_and_resolver(
+        self, client: TestClient
+    ) -> None:
+        history = self.profile(client, "d2-022")["history"]
+        delegated = [entry for entry in history if entry["how"] == "delegated"]
+        assert delegated
+        for entry in delegated:
+            assert entry["category"]
+            assert entry["chain"][0] == "d2-022"
+            assert entry["chain"][-1] == entry["resolver"] != "d2-022"
+        for entry in history:
+            if entry["how"] == "voted":
+                assert entry["resolver"] == "d2-022" and entry["choice"] in {
+                    "yes",
+                    "no",
+                }
+
+    def test_the_viewers_profile_is_their_starting_account(
+        self, client: TestClient
+    ) -> None:
+        body = self.profile(client, VIEWER)
+        starting = client.get(SCENARIO_URL).json()["viewer_delegations"]
+        assert body["delegations"] == starting
+        assert body["stats"]["delegators"] == len(body["received"]) == 9
+        hows = {entry["how"] for entry in body["history"]}
+        assert hows == {"voted", "delegated", "abstained"}
+        # The viewer also decides for people in districts they do not live in.
+        assert any(
+            not entry["issued"] and entry["votes_for_others"] > 0
+            for entry in body["history"]
+        )
+
+    def test_an_outsider_has_no_votes_of_their_own_but_decides_for_others(
+        self, client: TestClient
+    ) -> None:
+        body = self.profile(client, "out-16")
+        assert body["person"]["home"] is None
+        assert body["stats"]["votes_issued"] == 0
+        assert body["stats"]["delegation_rate"] is None
+        assert body["stats"]["votes_decided_for_others"] > 0
+        assert body["stats"]["largest_share"] > 0
+        assert all(not entry["issued"] for entry in body["history"])
+
+    def test_profiles_never_change(self, client: TestClient) -> None:
+        assert self.profile(client, "d1-078") == self.profile(client, "d1-078")
+
+    def test_an_unknown_person_is_rejected(self, client: TestClient) -> None:
+        assert client.get(f"{PEOPLE_URL}/nobody").status_code == 422
+
+
+class TestDailyAllowance:
+    def test_new_categories_stop_at_the_days_allowance(
+        self, client: TestClient, stores: service.RuntimeStores, tmp_path: Path
+    ) -> None:
+        capped = service.RuntimeStores(
+            judgments=stores.judgments,
+            nesting=stores.nesting,
+            usage=tmp_path / "usage.json",
+            daily_cap=1,
+        )
+        app.dependency_overrides[service.default_stores] = lambda: capped
+        source = ScriptedSource({})
+        use_source(source)
+
+        first = client.post(JUDGMENTS_URL, json={"category": WRITTEN}).json()
+        second = client.post(JUDGMENTS_URL, json={"category": "street murals"}).json()
+
+        assert first["limited"] is False
+        assert first["judgments"]["fetched"] == OPEN_QUESTIONS
+        assert second["limited"] is True
+        assert second["judgments"]["missing"] == OPEN_QUESTIONS
+        assert source.judge_calls == OPEN_QUESTIONS
+
+    def test_a_category_already_on_record_does_not_use_the_allowance(
+        self, client: TestClient, stores: service.RuntimeStores, tmp_path: Path
+    ) -> None:
+        capped = service.RuntimeStores(
+            judgments=stores.judgments,
+            nesting=stores.nesting,
+            usage=tmp_path / "usage.json",
+            daily_cap=1,
+        )
+        app.dependency_overrides[service.default_stores] = lambda: capped
+        use_source(ScriptedSource({}))
+
+        client.post(JUDGMENTS_URL, json={"category": WRITTEN})
+        again = client.post(JUDGMENTS_URL, json={"category": WRITTEN}).json()
+        assert again["limited"] is False
+        assert again["judgments"]["recorded"] == OPEN_QUESTIONS

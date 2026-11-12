@@ -12,6 +12,8 @@ count. This module makes them up, reproducibly:
     own district.
   - One viewer, a resident with no delegations of their own, and a handful
     of people who delegate to the viewer, including from another district.
+  - A made-up name and a unique username for everyone, so the demo can show
+    people the way an account would.
   - A sincere yes/no ballot for everyone but the viewer, from a
     one-dimensional spatial model: each person has a position, each question
     a direction and a cutpoint, and a little noise decides close calls.
@@ -57,6 +59,111 @@ TRUSTS_EXPERTS = "trusts well-known people"
 TRUSTS_NEIGHBOURS = "trusts neighbours"
 BEHAVIOURS = (DIRECT, TRUSTS_EXPERTS, TRUSTS_NEIGHBOURS)
 
+VIEWER_NAME = "You"
+VIEWER_USERNAME = "you"
+
+# Invented names. Any resemblance to a real person is a coincidence.
+FIRST_NAMES = (
+    "Amara",
+    "Ben",
+    "Carmen",
+    "Dmitri",
+    "Elena",
+    "Farid",
+    "Grace",
+    "Hiro",
+    "Imani",
+    "Jonas",
+    "Keiko",
+    "Luis",
+    "Maya",
+    "Nikhil",
+    "Olga",
+    "Pablo",
+    "Quinn",
+    "Rosa",
+    "Samir",
+    "Tessa",
+    "Uma",
+    "Viktor",
+    "Wanjiru",
+    "Xavier",
+    "Yara",
+    "Zane",
+    "Aiden",
+    "Bianca",
+    "Chidi",
+    "Daria",
+    "Emeka",
+    "Fiona",
+    "Gustavo",
+    "Hana",
+    "Ivan",
+    "Jia",
+    "Kofi",
+    "Leila",
+    "Marco",
+    "Nadia",
+    "Omar",
+    "Priya",
+    "Rafael",
+    "Sofia",
+    "Tariq",
+    "Ula",
+    "Vera",
+    "Wei",
+)
+LAST_NAMES = (
+    "Abara",
+    "Bergstrom",
+    "Castillo",
+    "Dang",
+    "Eze",
+    "Fontaine",
+    "Guerrero",
+    "Haddad",
+    "Ito",
+    "Jovanovic",
+    "Kowalski",
+    "Lindqvist",
+    "Mbeki",
+    "Nakamura",
+    "Okafor",
+    "Petrov",
+    "Quispe",
+    "Rahman",
+    "Santos",
+    "Tanaka",
+    "Uribe",
+    "Vasquez",
+    "Whitfield",
+    "Xu",
+    "Yilmaz",
+    "Zielinski",
+    "Alvarez",
+    "Banerjee",
+    "Cohen",
+    "Diallo",
+    "Eriksen",
+    "Farouk",
+    "Greene",
+    "Hosseini",
+    "Iyer",
+    "Jensen",
+    "Kimura",
+    "Laurent",
+    "Moreau",
+    "Novak",
+    "Osei",
+    "Park",
+    "Romero",
+    "Silva",
+    "Thackeray",
+    "Underhill",
+    "Volkov",
+    "Wright",
+)
+
 
 @dataclass(frozen=True)
 class SimulationConfig:
@@ -99,6 +206,9 @@ class Simulation:
     behaviours: Mapping[PersonId, str]
     # The well-known people for each category
     experts: Mapping[CategoryId, tuple[PersonId, ...]]
+    # Everyone's display name and unique username, the viewer's included
+    names: Mapping[PersonId, str]
+    usernames: Mapping[PersonId, str]
 
 
 def district_id(number: int) -> JurisdictionId:
@@ -232,13 +342,43 @@ def simulate_network(
                 if unheld:
                     delegate(person, rng.choice(unheld), VIEWER)
 
+    names, usernames = _personas(config, everyone)
+
     return Simulation(
         config=config,
         network=with_nesting(network, nesting),
         positions=positions,
         behaviours=behaviours,
         experts=experts,
+        names=names,
+        usernames=usernames,
     )
+
+
+def _personas(
+    config: SimulationConfig, everyone: Sequence[PersonId]
+) -> tuple[dict[PersonId, str], dict[PersonId, str]]:
+    """
+    A name and a unique username for each person, and the viewer's.
+
+    Names may repeat, as they do among real people; usernames may not. A
+    username is the name in lower case, with a number added when taken.
+    """
+    rng = _stream(config, "personas")
+    names: dict[PersonId, str] = {VIEWER: VIEWER_NAME}
+    usernames: dict[PersonId, str] = {VIEWER: VIEWER_USERNAME}
+    taken = {VIEWER_USERNAME}
+    for person in everyone:
+        first, last = rng.choice(FIRST_NAMES), rng.choice(LAST_NAMES)
+        names[person] = f"{first} {last}"
+        base = f"{first}.{last}".lower()
+        username, number = base, 1
+        while username in taken:
+            number += 1
+            username = f"{base}{number}"
+        taken.add(username)
+        usernames[person] = username
+    return names, usernames
 
 
 def _pick_categories(
@@ -285,16 +425,30 @@ def sincere_choice(
         ValueError: If the question does not have exactly two options, or
             the person has no position (the viewer does not)
     """
-    if len(question.options) != 2:
-        raise ValueError("Sincere ballots are defined for two-option questions")
     if person not in simulation.positions:
         raise ValueError(f"{person!r} has no simulated position")
-    config = simulation.config
+    return choice_at(simulation.config, simulation.positions[person], person, question)
+
+
+def choice_at(
+    config: SimulationConfig, position: float, person: PersonId, question: Question
+) -> CandidateId:
+    """
+    The option someone at this position would choose on a two-option question.
+
+    The viewer has no simulated position; a scenario that needs past votes
+    for the viewer supplies one here.
+
+    Raises:
+        ValueError: If the question does not have exactly two options
+    """
+    if len(question.options) != 2:
+        raise ValueError("Sincere ballots are defined for two-option questions")
     direction, cutpoint = _lean(config, question)
     noise = _stream(config, f"vote:{person}:{question.id}").gauss(
         0.0, config.vote_noise
     )
-    favours_first = direction * (simulation.positions[person] - cutpoint) + noise > 0
+    favours_first = direction * (position - cutpoint) + noise > 0
     return question.options[0 if favours_first else 1].id
 
 

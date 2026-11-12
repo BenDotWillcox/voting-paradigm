@@ -9,19 +9,29 @@ papers are rebuilt from the scenario file and a seed, the viewer's changes
 arrive with each request, and resolution reads only recorded judgments. The
 same request therefore gives the same response.
 
-There is one exception, and it is opt-in. A category the viewer writes has
-no recorded judgments. POST /judgments will ask hosted Jev about it and
-record the answers, but only when the server has an API key and
-DELEGATION_LIVE_JUDGMENTS is switched on. Otherwise nothing is asked, the
-category stays unjudged, and the routing rule keeps the viewer's votes.
+Closed ballot papers are history. They were resolved with the account the
+viewer started with, so they do not change when the viewer edits their
+delegations, and everyone's profile is read from them. Open ballot papers
+are resolved with whatever the request carries.
+
+There is one exception to "recorded only", and it is opt-in. A category the
+viewer writes has no recorded judgments. POST /judgments will ask hosted Jev
+about it, for the questions that are still open, and record the answers, but
+only when the server has an API key and DELEGATION_LIVE_JUDGMENTS is
+switched on, and only until the day's allowance of new categories is used
+up. Otherwise nothing is asked, the category stays unjudged, and the routing
+rule keeps the viewer's votes.
 """
 
 from __future__ import annotations
 
+import json
+from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
-from typing import Protocol
+from typing import Literal, Protocol
 
 from delegation import (
     Category,
@@ -57,17 +67,20 @@ from delegation.scenario import (
     SCENARIO_SCHEMA,
     SCENARIO_SIMULATION,
     Scenario,
+    ScenarioPaper,
     load_scenario,
 )
 from delegation.simulate import (
     CITY,
     VIEWER,
     Simulation,
+    choice_at,
     jurisdictions,
     simulate_network,
     sincere_ballots,
 )
 from voting import (
+    DEFAULT_TIEBREAK_SEED,
     ElectionResult,
     SingleChoiceBallot,
     create_single_choice_ballot,
@@ -82,6 +95,7 @@ from ..schemas.delegation import (
     ChainLengthSchema,
     DelegationSchema,
     HeldVoteSchema,
+    HistoryEntrySchema,
     InboxSchema,
     JudgmentCountsSchema,
     JudgmentsRequest,
@@ -91,6 +105,10 @@ from ..schemas.delegation import (
     MetricsSchema,
     OptionSchema,
     PersonSchema,
+    ProfileDelegationSchema,
+    ProfileReceivedSchema,
+    ProfileResponse,
+    ProfileStatsSchema,
     QuestionResultSchema,
     QuestionSchema,
     QuestionScoreSchema,
@@ -108,6 +126,9 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 ENV_FILE = REPO_ROOT / ".env.local"
 CACHE_DIR_VARIABLE = "DELEGATION_CACHE_DIR"
 LIVE_VARIABLE = "DELEGATION_LIVE_JUDGMENTS"
+DAILY_CAP_VARIABLE = "DELEGATION_LIVE_DAILY_CATEGORIES"
+# New categories the decision model may be asked about in one day (UTC)
+DEFAULT_DAILY_CAP = 200
 
 
 class DelegationRequestError(ValueError):
@@ -124,6 +145,10 @@ class RuntimeStores:
 
     judgments: JudgmentStore
     nesting: NestingStore
+    # Where the day's count of newly judged categories is kept; None keeps
+    # no count and applies no limit
+    usage: Path | None = None
+    daily_cap: int = DEFAULT_DAILY_CAP
 
 
 # ---------------------------------------------------------------------------
@@ -149,9 +174,12 @@ def default_stores() -> RuntimeStores:
 
     configured = read_setting(CACHE_DIR_VARIABLE, ENV_FILE)
     directory = Path(configured) if configured else REPO_ROOT / ".cache" / "delegation"
+    cap = read_setting(DAILY_CAP_VARIABLE, ENV_FILE)
     return RuntimeStores(
         judgments=JudgmentStore(directory / "judgments.jsonl"),
         nesting=NestingStore(directory / "nesting.jsonl"),
+        usage=directory / "usage.json",
+        daily_cap=int(cap) if cap and cap.isdigit() else DEFAULT_DAILY_CAP,
     )
 
 
@@ -290,19 +318,97 @@ def _category_schema(
     )
 
 
-def _label(person: str) -> str:
-    if person == VIEWER:
-        return "You"
-    prefix, _, number = person.partition("-")
-    if prefix == "out":
-        return f"Outside resident {int(number)}"
-    return f"District {prefix[1:]} resident {int(number)}"
-
-
 def _home(network: Network, person: str) -> str | None:
     """The district a person lives in, if they live in the city."""
     return next(
         (r for r in sorted(network.persons[person].residences) if r != CITY), None
+    )
+
+
+@lru_cache(maxsize=1)
+def _well_known() -> dict[str, list[str]]:
+    """The categories each well-known person is known for."""
+    known: dict[str, list[str]] = {}
+    for category_id, people in _simulation().experts.items():
+        for person in people:
+            known.setdefault(person, []).append(category_id)
+    return known
+
+
+def _person_schema(person: str) -> PersonSchema:
+    simulation = _simulation()
+    network = simulation.network
+    return PersonSchema(
+        id=person,
+        name=simulation.names[person],
+        username=simulation.usernames[person],
+        home=_home(network, person),
+        residences=sorted(network.persons[person].residences),
+        behaviour=simulation.behaviours.get(person),
+        well_known_for=sorted(_well_known().get(person, [])),
+    )
+
+
+def _open_questions(scenario: Scenario) -> list[Question]:
+    """The questions still open: the only ones a new delegation can affect."""
+    return [
+        question for entry in scenario.open_papers for question in entry.paper.questions
+    ]
+
+
+def _paper_schema(entry: ScenarioPaper, network: Network) -> BallotPaperSchema:
+    return BallotPaperSchema(
+        id=entry.id,
+        title=entry.title,
+        jurisdiction=entry.paper.jurisdiction,
+        closes_in_days=entry.closes_in_days,
+        status="open" if entry.is_open else "closed",
+        eligible_voters=len(eligible_voters(network, entry.paper.jurisdiction)),
+        questions=[
+            QuestionSchema(
+                id=question.id,
+                title=question.title,
+                summary=question.summary,
+                options=[OptionSchema(id=o.id, name=o.name) for o in question.options],
+            )
+            for question in entry.paper.questions
+        ],
+    )
+
+
+# ---------------------------------------------------------------------------
+# The day's allowance of newly judged categories
+# ---------------------------------------------------------------------------
+
+
+def _today() -> str:
+    return datetime.now(timezone.utc).date().isoformat()
+
+
+def _used_today(stores: RuntimeStores) -> int:
+    if stores.usage is None or not stores.usage.exists():
+        return 0
+    try:
+        record = json.loads(stores.usage.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return 0
+    if not isinstance(record, dict) or record.get("day") != _today():
+        return 0
+    used = record.get("categories", 0)
+    return used if isinstance(used, int) else 0
+
+
+def _allowance_left(stores: RuntimeStores) -> bool:
+    return stores.usage is None or _used_today(stores) < stores.daily_cap
+
+
+def _count_new_category(stores: RuntimeStores) -> None:
+    if stores.usage is None:
+        return
+    stores.usage.parent.mkdir(parents=True, exist_ok=True)
+    stores.usage.write_text(
+        json.dumps({"day": _today(), "categories": _used_today(stores) + 1}),
+        encoding="utf-8",
     )
 
 
@@ -312,15 +418,10 @@ def _home(network: Network, person: str) -> str | None:
 
 
 def scenario_response(live: bool) -> ScenarioResponse:
-    """The simulated network and the curated ballot papers."""
+    """The simulated network, the ballot papers, and the viewer's starting account."""
     scenario = _scenario()
     simulation = _simulation()
     network = simulation.network
-
-    well_known: dict[str, list[str]] = {}
-    for category_id, people in simulation.experts.items():
-        for person in people:
-            well_known.setdefault(person, []).append(category_id)
 
     return ScenarioResponse(
         scenario=SCENARIO_SCHEMA,
@@ -340,16 +441,7 @@ def scenario_response(live: bool) -> ScenarioResponse:
             )
             for jurisdiction in jurisdictions(simulation.config)
         ],
-        persons=[
-            PersonSchema(
-                id=person.id,
-                label=_label(person.id),
-                residences=sorted(person.residences),
-                behaviour=simulation.behaviours.get(person.id),
-                well_known_for=sorted(well_known.get(person.id, [])),
-            )
-            for person in network.persons.values()
-        ],
+        persons=[_person_schema(person) for person in network.persons],
         categories=[_category_schema(category) for category in scenario.categories],
         delegations=[
             DelegationSchema(
@@ -357,26 +449,11 @@ def scenario_response(live: bool) -> ScenarioResponse:
             )
             for d in network.delegations
         ],
-        ballot_papers=[
-            BallotPaperSchema(
-                id=entry.id,
-                title=entry.title,
-                jurisdiction=entry.paper.jurisdiction,
-                eligible_voters=len(eligible_voters(network, entry.paper.jurisdiction)),
-                questions=[
-                    QuestionSchema(
-                        id=question.id,
-                        title=question.title,
-                        summary=question.summary,
-                        options=[
-                            OptionSchema(id=o.id, name=o.name) for o in question.options
-                        ],
-                    )
-                    for question in entry.paper.questions
-                ],
-            )
-            for entry in scenario.papers
+        viewer_delegations=[
+            ViewerDelegationSchema(category=category, delegate=delegate)
+            for category, delegate in scenario.viewer.delegations
         ],
+        ballot_papers=[_paper_schema(entry, network) for entry in scenario.papers],
     )
 
 
@@ -420,7 +497,7 @@ def validate_response(
         return rejected(str(error))
 
     proposed = _with_recorded_nesting(proposed, stores)
-    questions = list(scenario.questions)
+    questions = _open_questions(scenario)
     judgments, unjudged = _judgments(proposed, questions, stores)
     warned = set(
         loop_warnings(
@@ -442,7 +519,7 @@ def validate_response(
             LoopWarningSchema(
                 ballot_paper=entry.id, question_id=question.id, title=question.title
             )
-            for entry in scenario.papers
+            for entry in scenario.open_papers
             for question in entry.paper.questions
             if question.id in warned
         ],
@@ -458,12 +535,14 @@ def judgments_response(
     request: JudgmentsRequest, stores: RuntimeStores, source: LiveSource | None
 ) -> JudgmentsResponse:
     """
-    Make sure a category has judgments for every curated question.
+    Make sure a category has judgments for every open question.
 
     A pool category already has them. For a category the viewer wrote,
     recorded judgments are used first and the rest are asked of the decision
-    model when one is available. Nesting against the viewer's other
-    categories is judged the same way.
+    model when one is available and the day's allowance of new categories
+    is not used up. Nesting against the viewer's other categories is judged
+    the same way. Closed questions are never asked about: they were resolved
+    before the category existed.
 
     Raises:
         DelegationRequestError: If a category text is invalid
@@ -476,15 +555,25 @@ def judgments_response(
         for other in (_category(text, stores) for text in request.held)
         if other.id != category.id
     ]
-    questions = list(scenario.questions)
+    questions = _open_questions(scenario)
 
     judgments = dict(scenario.judgments)
     counts = JudgmentCountsSchema(recorded=len(questions), fetched=0, missing=0)
     failures: list[str] = []
+    limited = False
     if category.id not in pool:
+        on_record = gather_judgments(
+            questions, [category], stores.judgments, model=scenario.model
+        )
+        if on_record.missing and source is not None and not _allowance_left(stores):
+            # Over the day's allowance: ask nothing, for this category or its nesting.
+            limited = True
+            source = None
         report = gather_judgments(
             questions, [category], stores.judgments, model=scenario.model, source=source
         )
+        if report.fetched:
+            _count_new_category(stores)
         judgments.update(report.judgments)
         counts = JudgmentCountsSchema(
             recorded=report.recorded,
@@ -512,7 +601,7 @@ def judgments_response(
     return JudgmentsResponse(
         category=_category_schema(category),
         model=scenario.model,
-        live=source is not None,
+        live=source is not None or limited,
         judgments=counts,
         nesting=JudgmentCountsSchema(
             recorded=nested.recorded,
@@ -528,9 +617,10 @@ def judgments_response(
                 title=question.title,
                 probability=judgments.get((question.id, category.id)),
             )
-            for entry in scenario.papers
+            for entry in scenario.open_papers
             for question in entry.paper.questions
         ],
+        limited=limited,
         failures=failures,
     )
 
@@ -578,7 +668,7 @@ def _metrics(resolution: QuestionResolution) -> MetricsSchema:
 def _receipt(
     network: Network,
     resolution: QuestionResolution,
-    cast: dict[str, SingleChoiceBallot],
+    cast: Mapping[str, SingleChoiceBallot],
 ) -> ReceiptSchema | None:
     trace = resolution.traces.get(VIEWER)
     if trace is None:
@@ -610,100 +700,316 @@ def _receipt(
     )
 
 
-def resolve_response(request: ResolveRequest, stores: RuntimeStores) -> ResolveResponse:
-    """
-    Process one curated ballot paper for the network with the viewer's changes.
+@dataclass(frozen=True)
+class _Resolved:
+    """One question, resolved and counted both ways."""
 
-    Raises:
-        DelegationRequestError: If the ballot paper is unknown, a delegation
-            is invalid, or a vote names an unknown question or option
+    question: Question
+    voters: frozenset[str]
+    resolution: QuestionResolution
+    # Everyone's own ballot, the viewer's only if they voted
+    cast: Mapping[str, SingleChoiceBallot]
+    delegated: ElectionResult
+    direct: ElectionResult
+
+
+def _resolve_paper(
+    entry: ScenarioPaper,
+    network: Network,
+    judgments: Judgments,
+    viewer_votes: Mapping[str, str],
+    viewer_direct: frozenset[str],
+    threshold: float,
+    tiebreak_seed: int,
+) -> list[_Resolved]:
     """
-    scenario = _scenario()
+    Resolve and count every question on a ballot paper.
+
+    Args:
+        viewer_votes: The viewer's own choice per question, where they have one
+        viewer_direct: Questions on which the viewer's vote overrides their
+            delegations
+    """
     simulation = _simulation()
-    try:
-        entry = scenario.paper(request.ballot_paper)
-    except KeyError:
-        raise DelegationRequestError(
-            f"Unknown ballot paper {request.ballot_paper!r}"
-        ) from None
-
     paper = entry.paper
-    on_paper = {question.id: question for question in paper.questions}
-    for question_id, option in request.viewer_votes.items():
-        question = on_paper.get(question_id)
-        if question is None:
-            raise DelegationRequestError(
-                f"Question {question_id!r} is not on this ballot paper"
-            )
-        if option not in {candidate.id for candidate in question.options}:
-            raise DelegationRequestError(
-                f"{option!r} is not an option on question {question_id!r}"
-            )
+    voters = frozenset(eligible_voters(network, paper.jurisdiction))
 
-    network = _viewer_network(request.viewer_delegations, stores)
-    judgments, unjudged = _judgments(network, list(paper.questions), stores)
-    voters = eligible_voters(network, paper.jurisdiction)
-
-    results: list[QuestionResultSchema] = []
+    resolved: list[_Resolved] = []
     for question in paper.questions:
-        viewer_choice = request.viewer_votes.get(question.id)
         resolution = resolve_question(
             network,
             question.id,
             voters,
             judgments,
-            threshold=request.threshold,
-            direct_voters={VIEWER} if viewer_choice is not None else frozenset(),
+            threshold=threshold,
+            direct_voters={VIEWER} if question.id in viewer_direct else frozenset(),
         )
         cast = sincere_ballots(simulation, question)
-        if viewer_choice is not None:
-            cast[VIEWER] = create_single_choice_ballot(VIEWER, viewer_choice)
+        if question.id in viewer_votes:
+            cast[VIEWER] = create_single_choice_ballot(
+                VIEWER, viewer_votes[question.id]
+            )
 
         candidates = list(question.options)
         # A fresh tiebreak for each count, so neither depends on the other.
         delegated = resolve_plurality(
             candidates,
             delegated_ballots(resolution, cast, _abstain),
-            random_tiebreak(request.tiebreak_seed),
+            random_tiebreak(tiebreak_seed),
         )
         direct = resolve_plurality(
             candidates,
             direct_ballots(voters, cast, _abstain),
-            random_tiebreak(request.tiebreak_seed),
+            random_tiebreak(tiebreak_seed),
         )
-        held = [
-            voter
-            for voter, trace in resolution.traces.items()
-            if trace.resolver == VIEWER and voter != VIEWER
-        ]
-        results.append(
-            QuestionResultSchema(
-                question_id=question.id,
-                title=question.title,
-                delegated=_tally(delegated),
-                direct=_tally(direct),
-                winner_changed=winners_differ(direct, delegated),
-                metrics=_metrics(resolution),
-                receipt=_receipt(network, resolution, cast),
-                inbox=InboxSchema(
-                    votes_for_others=len(held),
-                    held=[
-                        HeldVoteSchema(voter=voter, home=_home(network, voter))
-                        for voter in held
-                    ],
-                    answered=viewer_choice is not None,
-                ),
-            )
+        resolved.append(
+            _Resolved(question, voters, resolution, cast, delegated, direct)
         )
+    return resolved
+
+
+def _history_network() -> Network:
+    """The network as it stood for every closed paper: the viewer's starting account."""
+    scenario = _scenario()
+    network = _simulation().network
+    by_text = {category.text: category for category in scenario.categories}
+    for text, delegate in scenario.viewer.delegations:
+        network = add_delegation(network, VIEWER, by_text[text], delegate)
+    return network
+
+
+@lru_cache(maxsize=1)
+def _history() -> dict[str, list[_Resolved]]:
+    """
+    Every closed ballot paper, resolved once.
+
+    The viewer's past votes come from the scenario: a choice from their
+    authored position on every closed question except the ones they missed,
+    and an override of their delegations where the scenario says they voted
+    themself.
+    """
+    scenario = _scenario()
+    simulation = _simulation()
+    network = _history_network()
+    viewer = scenario.viewer
+    history: dict[str, list[_Resolved]] = {}
+    for entry in scenario.closed_papers:
+        votes = {
+            question.id: choice_at(simulation.config, viewer.position, VIEWER, question)
+            for question in entry.paper.questions
+            if question.id not in viewer.missed
+        }
+        history[entry.id] = _resolve_paper(
+            entry,
+            network,
+            scenario.judgments,
+            votes,
+            viewer.voted_directly,
+            scenario.threshold,
+            DEFAULT_TIEBREAK_SEED,
+        )
+    return history
+
+
+def _held_by(resolved: _Resolved, person: str) -> list[str]:
+    """The other voters whose vote this person decided."""
+    return [
+        voter
+        for voter, trace in resolved.resolution.traces.items()
+        if trace.resolver == person and voter != person
+    ]
+
+
+def _question_result(network: Network, resolved: _Resolved) -> QuestionResultSchema:
+    held = _held_by(resolved, VIEWER)
+    return QuestionResultSchema(
+        question_id=resolved.question.id,
+        title=resolved.question.title,
+        delegated=_tally(resolved.delegated),
+        direct=_tally(resolved.direct),
+        winner_changed=winners_differ(resolved.direct, resolved.delegated),
+        metrics=_metrics(resolved.resolution),
+        receipt=_receipt(network, resolved.resolution, resolved.cast),
+        inbox=InboxSchema(
+            votes_for_others=len(held),
+            held=[
+                HeldVoteSchema(voter=voter, home=_home(network, voter))
+                for voter in held
+            ],
+            answered=VIEWER in resolved.cast,
+        ),
+    )
+
+
+def resolve_response(request: ResolveRequest, stores: RuntimeStores) -> ResolveResponse:
+    """
+    Process one ballot paper.
+
+    An open paper is resolved for the network with the viewer's changes. A
+    closed paper is history: it is returned as it was resolved, with the
+    account the viewer started with, and the request's delegations, votes,
+    threshold and tiebreak seed are not used.
+
+    Raises:
+        DelegationRequestError: If the ballot paper is unknown, a delegation
+            is invalid, or a vote names an unknown question or option
+    """
+    scenario = _scenario()
+    try:
+        entry = scenario.paper(request.ballot_paper)
+    except KeyError:
+        raise DelegationRequestError(
+            f"Unknown ballot paper {request.ballot_paper!r}"
+        ) from None
+    paper = entry.paper
+
+    unjudged: list[Category] = []
+    if entry.is_open:
+        on_paper = {question.id: question for question in paper.questions}
+        for question_id, option in request.viewer_votes.items():
+            question = on_paper.get(question_id)
+            if question is None:
+                raise DelegationRequestError(
+                    f"Question {question_id!r} is not on this ballot paper"
+                )
+            if option not in {candidate.id for candidate in question.options}:
+                raise DelegationRequestError(
+                    f"{option!r} is not an option on question {question_id!r}"
+                )
+        network = _viewer_network(request.viewer_delegations, stores)
+        judgments, unjudged = _judgments(network, list(paper.questions), stores)
+        threshold, tiebreak_seed = request.threshold, request.tiebreak_seed
+        resolved = _resolve_paper(
+            entry,
+            network,
+            judgments,
+            request.viewer_votes,
+            frozenset(request.viewer_votes),
+            threshold,
+            tiebreak_seed,
+        )
+    else:
+        network = _history_network()
+        threshold, tiebreak_seed = scenario.threshold, DEFAULT_TIEBREAK_SEED
+        resolved = _history()[entry.id]
 
     return ResolveResponse(
         scenario=SCENARIO_SCHEMA,
         model=scenario.model,
         ballot_paper=entry.id,
         jurisdiction=paper.jurisdiction,
-        viewer_eligible=VIEWER in voters,
-        threshold=request.threshold,
-        tiebreak_seed=request.tiebreak_seed,
+        status="open" if entry.is_open else "closed",
+        closes_in_days=entry.closes_in_days,
+        viewer_eligible=VIEWER in eligible_voters(network, paper.jurisdiction),
+        threshold=threshold,
+        tiebreak_seed=tiebreak_seed,
         unjudged_categories=[category.text for category in unjudged],
-        questions=results,
+        questions=[_question_result(network, item) for item in resolved],
+    )
+
+
+# ---------------------------------------------------------------------------
+# GET /people/{person_id}
+# ---------------------------------------------------------------------------
+
+
+def profile_response(person: str) -> ProfileResponse:
+    """
+    One person's profile: who they are, what they have handed over and been
+    handed, and how each closed question went for them.
+
+    Read from the closed ballot papers only, so it is the same on every
+    request. For the viewer it describes the account they started with.
+
+    Raises:
+        DelegationRequestError: If there is no such person
+    """
+    scenario = _scenario()
+    network = _history_network()
+    if person not in network.persons:
+        raise DelegationRequestError(f"Unknown person {person!r}")
+
+    entries: list[HistoryEntrySchema] = []
+    most_held = 0
+    largest = 0.0
+    for paper in reversed(scenario.closed_papers):
+        for resolved in _history()[paper.id]:
+            resolution = resolved.resolution
+            trace = resolution.traces.get(person)
+            held = len(_held_by(resolved, person))
+            if trace is None and held == 0:
+                continue  # neither issued to them nor decided by them
+
+            most_held = max(most_held, held)
+            share = resolution.weights().get(person, 0) / len(resolved.voters)
+            largest = max(largest, share)
+
+            resolver = trace.resolver if trace is not None else person
+            own = resolved.cast.get(person)
+            how: Literal["voted", "delegated", "abstained"]
+            if resolver != person:
+                how = "delegated"
+            elif own is not None and own.choice is not None:
+                how = "voted"
+            else:
+                how = "abstained"
+            decision = resolution.decisions.get(person)
+            sent_under = (
+                network.categories[decision.category].text
+                if how == "delegated" and decision is not None and decision.category
+                else None
+            )
+            used = resolved.cast.get(resolver)
+            entries.append(
+                HistoryEntrySchema(
+                    ballot_paper=paper.id,
+                    paper_title=paper.title,
+                    jurisdiction=paper.paper.jurisdiction,
+                    closed_days_ago=-paper.closes_in_days,
+                    question_id=resolved.question.id,
+                    title=resolved.question.title,
+                    summary=resolved.question.summary,
+                    issued=trace is not None,
+                    how=how,
+                    category=sent_under,
+                    chain=list(trace.chain) if trace is not None else [person],
+                    resolver=resolver,
+                    choice=used.choice if used is not None else None,
+                    votes_for_others=held,
+                    share=round(share, 4),
+                    winners=resolved.delegated.winners,
+                )
+            )
+
+    issued = [entry for entry in entries if entry.issued]
+    delegated = sum(1 for entry in issued if entry.how == "delegated")
+    received = [d for d in network.delegations if d.delegate == person]
+    return ProfileResponse(
+        person=_person_schema(person),
+        stats=ProfileStatsSchema(
+            votes_issued=len(issued),
+            voted_personally=sum(1 for entry in issued if entry.how == "voted"),
+            delegated=delegated,
+            abstained=sum(1 for entry in issued if entry.how == "abstained"),
+            delegation_rate=round(delegated / len(issued), 4) if issued else None,
+            categories_handed_over=len(network.delegations_of(person)),
+            delegators=len({d.delegator for d in received}),
+            categories_received=len(received),
+            votes_decided_for_others=sum(entry.votes_for_others for entry in entries),
+            most_votes_held=most_held,
+            largest_share=round(largest, 4),
+        ),
+        delegations=[
+            ProfileDelegationSchema(
+                category=network.categories[d.category].text, delegate=d.delegate
+            )
+            for d in network.delegations_of(person)
+        ],
+        received=[
+            ProfileReceivedSchema(
+                delegator=d.delegator, category=network.categories[d.category].text
+            )
+            for d in received
+        ],
+        history=entries,
     )

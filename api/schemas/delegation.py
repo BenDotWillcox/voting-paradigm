@@ -75,7 +75,11 @@ class JurisdictionSchema(BaseModel):
 
 class PersonSchema(BaseModel):
     id: str
-    label: str
+    name: str = Field(description="A made-up display name; names can repeat.")
+    username: str = Field(description="Unique across the network.")
+    home: str | None = Field(
+        description="The district the person lives in; null outside the city."
+    )
     residences: list[str] = Field(description="Jurisdiction ids; empty for outsiders.")
     behaviour: str | None = Field(
         description="How this simulated person delegates; null for the viewer."
@@ -115,10 +119,17 @@ class QuestionSchema(BaseModel):
     options: list[OptionSchema]
 
 
+StatusLiteral = Literal["open", "closed"]
+
+
 class BallotPaperSchema(BaseModel):
     id: str
     title: str
     jurisdiction: str
+    closes_in_days: int = Field(
+        description="Days from today until the paper closes; negative once it has."
+    )
+    status: StatusLiteral
     eligible_voters: int
     questions: list[QuestionSchema]
 
@@ -140,7 +151,11 @@ class ScenarioResponse(BaseModel):
     delegations: list[DelegationSchema] = Field(
         description="The simulated network's delegations."
     )
-    ballot_papers: list[BallotPaperSchema]
+    viewer_delegations: list[ViewerDelegationSchema] = Field(
+        description="The delegations the viewer's account starts with, in list order. "
+        "Closed ballot papers were resolved with these."
+    )
+    ballot_papers: list[BallotPaperSchema] = Field(description="Oldest first.")
 
 
 # ---------------------------------------------------------------------------
@@ -245,7 +260,13 @@ class JudgmentsResponse(BaseModel):
     contains: list[str] = Field(
         description="Held categories that sit inside this one, by text."
     )
-    scores: list[QuestionScoreSchema]
+    scores: list[QuestionScoreSchema] = Field(
+        description="One per question on an open ballot paper."
+    )
+    limited: bool = Field(
+        description="Whether the day's allowance of newly judged categories was used up, "
+        "so the decision model was not asked."
+    )
     failures: list[str] = Field(
         description="One message per failed request to the decision model."
     )
@@ -377,6 +398,11 @@ class ResolveResponse(BaseModel):
     model: str
     ballot_paper: str
     jurisdiction: str
+    status: StatusLiteral = Field(
+        description="A closed paper is resolved with the delegations and votes the viewer "
+        "had when it closed; the request's are not used."
+    )
+    closes_in_days: int
     viewer_eligible: bool
     threshold: float
     tiebreak_seed: int
@@ -385,3 +411,88 @@ class ResolveResponse(BaseModel):
         "The viewer keeps those questions."
     )
     questions: list[QuestionResultSchema]
+
+
+# ---------------------------------------------------------------------------
+# GET /people/{person_id}
+# ---------------------------------------------------------------------------
+
+HowLiteral = Literal["voted", "delegated", "abstained"]
+
+
+class ProfileStatsSchema(BaseModel):
+    votes_issued: int = Field(description="Closed questions issued to this person.")
+    voted_personally: int
+    delegated: int = Field(description="Of those, decided by someone else.")
+    abstained: int = Field(description="Held by this person and not voted on.")
+    delegation_rate: float | None = Field(
+        description="Share of issued votes decided by someone else; null with none issued."
+    )
+    categories_handed_over: int
+    delegators: int = Field(
+        description="People who have handed this person at least one category."
+    )
+    categories_received: int = Field(description="Delegations made to this person.")
+    votes_decided_for_others: int = Field(
+        description="Other people's votes this person decided, over every closed question."
+    )
+    most_votes_held: int = Field(
+        description="The most other people's votes this person held on one question."
+    )
+    largest_share: float = Field(
+        description="The largest share of one question's votes this person decided, their own included."
+    )
+
+
+class ProfileDelegationSchema(BaseModel):
+    category: str = Field(description="Category text.")
+    delegate: str
+
+
+class ProfileReceivedSchema(BaseModel):
+    delegator: str
+    category: str = Field(description="Category text.")
+
+
+class HistoryEntrySchema(BaseModel):
+    ballot_paper: str
+    paper_title: str
+    jurisdiction: str
+    closed_days_ago: int
+    question_id: str
+    title: str
+    summary: str
+    issued: bool = Field(
+        description="Whether this person was issued the question. When false they appear "
+        "only because other people's votes reached them."
+    )
+    how: HowLiteral = Field(
+        description="Whether this person voted themself, their vote was decided by a delegate, "
+        "or they held the decision and did not vote."
+    )
+    category: str | None = Field(
+        description="Text of the category the vote was sent under, when delegated."
+    )
+    chain: list[str] = Field(description="From this person to whoever decided.")
+    resolver: str
+    choice: str | None = Field(
+        description="The option on this person's ballot; null is an abstention."
+    )
+    votes_for_others: int = Field(
+        description="Other people's votes this person decided on the question."
+    )
+    share: float = Field(
+        description="The share of the question's votes this person decided, their own included."
+    )
+    winners: list[str] = Field(description="The result with delegation.")
+
+
+class ProfileResponse(BaseModel):
+    person: PersonSchema
+    stats: ProfileStatsSchema
+    delegations: list[ProfileDelegationSchema] = Field(
+        description="What this person has handed over. For the viewer, the delegations "
+        "their account started with."
+    )
+    received: list[ProfileReceivedSchema]
+    history: list[HistoryEntrySchema] = Field(description="Most recent first.")
