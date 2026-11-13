@@ -10,6 +10,8 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException
 
 from ..schemas.delegation import (
+    BacktestRequest,
+    BacktestResponse,
     CityResponse,
     ErrorResponse,
     JudgmentsRequest,
@@ -24,6 +26,7 @@ from ..schemas.delegation import (
     ValidateResponse,
 )
 from ..services.delegation import (
+    backtest_response,
     DelegationRequestError,
     LiveSource,
     RuntimeStores,
@@ -204,5 +207,31 @@ def city() -> CityResponse:
 def trace(request: TraceRequest, stores: Stores, source: Source) -> TraceResponse:
     try:
         return trace_response(request, stores, source)
+    except DelegationRequestError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+@router.post(
+    "/backtest",
+    response_model=BacktestResponse,
+    summary="Replay the closed questions under a change to the viewer's delegations",
+    description=(
+        "Routes the viewer's vote on every closed question that was issued to "
+        "them twice, through the network of the day each ballot paper closed: "
+        "with the delegations they have now, and with the change they are "
+        "considering. Returns, for each set, how many votes would have gone to "
+        "a delegate and how often that delegate chose what the account's own "
+        "position chooses, and lists the questions that would have gone "
+        "somewhere else with what each resolver actually chose. Votes the "
+        "viewer cast themself in the past are set aside. Reads recorded "
+        "judgments only; a category the viewer wrote that was never judged "
+        "against a closed question keeps that question with the viewer and is "
+        "named in the response."
+    ),
+    responses=_INVALID,
+)
+def backtest(request: BacktestRequest, stores: Stores) -> BacktestResponse:
+    try:
+        return backtest_response(request, stores)
     except DelegationRequestError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error

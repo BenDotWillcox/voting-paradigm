@@ -7,6 +7,7 @@ import {
   profileResponseSchema,
   resolveBallotPaperResponseSchema,
   scenarioResponseSchema,
+  backtestResponseSchema,
   traceMeasureResponseSchema,
   validateDelegationResponseSchema,
 } from "@/lib/validations/delegation-schemas";
@@ -15,6 +16,8 @@ import type {
   CategoryJudgmentsRequest,
   CategoryJudgmentsResponse,
   DelegationScenario,
+  BacktestRequest,
+  DelegationBacktest,
   MeasureTrace,
   TraceMeasureRequest,
   PersonProfile,
@@ -142,4 +145,8 @@ export function getCityResults(): Promise<CityResults> {
  */
 export function traceMeasure(request: TraceMeasureRequest): Promise<MeasureTrace> {
   return call("/trace", traceMeasureResponseSchema, request, 60000);
+}
+
+export function backtestDelegations(request: BacktestRequest): Promise<DelegationBacktest> {
+  return call("/backtest", backtestResponseSchema, request, 30000);
 }

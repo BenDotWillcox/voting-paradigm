@@ -38,6 +38,7 @@ RESOLVE_URL = "/api/delegation/resolve"
 PEOPLE_URL = "/api/delegation/people"
 CITY_URL = "/api/delegation/city"
 TRACE_URL = "/api/delegation/trace"
+BACKTEST_URL = "/api/delegation/backtest"
 
 VIEWER = "you"
 # Open ballot papers, and two that have closed
@@ -787,6 +788,7 @@ def test_routes_are_documented() -> None:
         PEOPLE_URL + "/{person_id}",
         CITY_URL,
         TRACE_URL,
+        BACKTEST_URL,
     }
     for path in paths:
         for operation in schema["paths"][path].values():
@@ -1407,3 +1409,160 @@ class TestTrace:
         self, client: TestClient, body: dict[str, Any]
     ) -> None:
         assert client.post(TRACE_URL, json=body).status_code == 422
+
+
+class TestBacktest:
+    """Replaying the closed questions under a change to the viewer's delegations."""
+
+    PARKS = {"category": "parks and recreation", "delegate": "d1-076"}
+
+    def start(self, client: TestClient) -> list[dict[str, str]]:
+        starting: list[dict[str, str]] = client.get(SCENARIO_URL).json()[
+            "viewer_delegations"
+        ]
+        return starting
+
+    def backtest(
+        self,
+        client: TestClient,
+        before: list[dict[str, str]],
+        after: list[dict[str, str]],
+        **extra: Any,
+    ) -> dict[str, Any]:
+        response = client.post(
+            BACKTEST_URL, json={"before": before, "after": after, **extra}
+        )
+        assert response.status_code == 200, response.text
+        result: dict[str, Any] = response.json()
+        return result
+
+    def test_no_change_changes_nothing(self, client: TestClient) -> None:
+        start = self.start(client)
+        body = self.backtest(client, start, start)
+        assert body["changed"] == []
+        assert body["before"] == body["after"]
+        assert body["unjudged_categories"] == []
+        # Every closed question on a paper issued to the viewer
+        assert body["questions"] == 40
+        assert 0 < body["before"]["delegated"] < body["questions"]
+
+    def test_each_summary_adds_up(self, client: TestClient) -> None:
+        start = self.start(client)
+        body = self.backtest(client, [], start)
+        for side in (body["before"], body["after"]):
+            assert side["delegated"] == (
+                side["agreed"] + side["disagreed"] + side["not_voted"]
+            )
+        assert body["before"]["delegated"] == 0
+
+    def test_adding_a_category_moves_only_the_questions_about_it(
+        self, client: TestClient
+    ) -> None:
+        start = self.start(client)
+        body = self.backtest(client, start, [*start, self.PARKS])
+        assert body["changed"]
+        for item in body["changed"]:
+            assert item["after"]["category"] == self.PARKS["category"]
+            assert item["after"]["resolver"] != VIEWER
+        levy = next(q for q in body["changed"] if q["question_id"] == "q56")
+        # It left under taxes before; the narrower match now takes it
+        assert levy["before"]["category"] == TAXES
+        assert levy["title"] == "Parks levy renewal"
+        assert levy["closed_days_ago"] > 0
+
+    def test_removing_everything_keeps_every_vote(self, client: TestClient) -> None:
+        start = self.start(client)
+        body = self.backtest(client, start, [])
+        assert body["after"] == {
+            "delegated": 0,
+            "agreed": 0,
+            "disagreed": 0,
+            "not_voted": 0,
+        }
+        assert len(body["changed"]) == body["before"]["delegated"]
+        for item in body["changed"]:
+            after = item["after"]
+            assert (after["resolver"], after["category"], after["agrees"]) == (
+                VIEWER,
+                None,
+                None,
+            )
+            assert after["choice"] == item["own_choice"]
+
+    def test_agreement_compares_the_resolvers_recorded_choice(
+        self, client: TestClient
+    ) -> None:
+        body = self.backtest(client, [], self.start(client))
+        for item in body["changed"]:
+            after = item["after"]
+            if after["choice"] is None:
+                assert after["agrees"] is None
+            elif item["ballot_type"] == "approval":
+                assert after["agrees"] == (
+                    set(after["choice"]) == set(item["own_choice"])
+                )
+            else:
+                assert after["agrees"] == (
+                    after["choice"][0] == item["own_choice"][0]
+                )
+        days = [item["closed_days_ago"] for item in body["changed"]]
+        assert days == sorted(days)  # most recent first
+
+    def test_it_matches_the_record_since_the_account_last_changed(
+        self, client: TestClient
+    ) -> None:
+        # The account's last change was 45 days ago, so papers closed since
+        # then were resolved with the delegations it has today.
+        body = self.backtest(client, [], self.start(client))
+        replayed = {
+            item["question_id"]: item["after"]
+            for item in body["changed"]
+            if item["closed_days_ago"] < 45
+        }
+        history = client.get(f"{PEOPLE_URL}/{VIEWER}").json()["history"]
+        recorded = {
+            entry["question_id"]: entry
+            for entry in history
+            if entry["closed_days_ago"] < 45 and entry["how"] == "delegated"
+        }
+        assert recorded
+        for question_id, entry in recorded.items():
+            assert replayed[question_id]["resolver"] == entry["resolver"]
+            assert replayed[question_id]["category"] == entry["category"]
+            assert replayed[question_id]["choice"] == entry["choice"]
+
+    def test_a_category_never_judged_against_the_past_is_named(
+        self, client: TestClient
+    ) -> None:
+        start = self.start(client)
+        written = {"category": WRITTEN, "delegate": KEEPER}
+        body = self.backtest(client, start, [*start, written])
+        assert body["unjudged_categories"] == [WRITTEN]
+        # A missing judgment keeps the vote with the voter
+        assert body["after"]["delegated"] == 0
+
+    def test_a_stricter_threshold_delegates_less(self, client: TestClient) -> None:
+        start = self.start(client)
+        loose = self.backtest(client, [], start, threshold=0.5)
+        strict = self.backtest(client, [], start, threshold=0.95)
+        assert loose["after"]["delegated"] > strict["after"]["delegated"]
+        assert strict["threshold"] == 0.95
+
+    @pytest.mark.parametrize(
+        "after",
+        [
+            [{"category": TAXES, "delegate": "nobody"}],
+            [{"category": TAXES, "delegate": VIEWER}],
+            [
+                {"category": TAXES, "delegate": KEEPER},
+                {"category": TAXES, "delegate": OTHER_KEEPER},
+            ],
+            [{"category": f"topic {n}", "delegate": KEEPER} for n in range(13)],
+        ],
+    )
+    def test_invalid_delegations_are_rejected(
+        self, client: TestClient, after: list[dict[str, str]]
+    ) -> None:
+        response = client.post(BACKTEST_URL, json={"before": [], "after": after})
+        assert response.status_code == 422
+        assert "detail" in response.json()

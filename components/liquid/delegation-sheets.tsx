@@ -24,6 +24,7 @@ import {
   type DelegationCheck,
   type HeldDelegation,
 } from "./account-provider";
+import { BacktestPanel } from "./backtest-panel";
 import { otherWordings, suggestCategories } from "./categories";
 import { categoryKey, personName, type Directory } from "./people";
 import { Chain, PersonLine, ProfileButton } from "./person-bits";
@@ -474,6 +475,12 @@ export function ManageDelegationSheet({
               others={others}
               live={scenario.live_judgments}
             />
+            <BacktestPanel
+              before={delegations}
+              after={delegations.map((held, position) =>
+                position === index ? step.held : held,
+              )}
+            />
             <PanelFooter className="gap-2">
               <Button variant="ghost" onClick={() => setStep({ name: "view" })}>
                 Cancel
@@ -506,6 +513,7 @@ export function ManageDelegationSheet({
               category={current.category}
               delegate={current.delegate}
             />
+            <BacktestPanel before={delegations} after={others} />
             <PanelFooter className="gap-2">
               <Button variant="ghost" onClick={() => setStep({ name: "view" })}>
                 Cancel
@@ -720,6 +728,10 @@ export function AddDelegateSheet({
                   held={step.held}
                   others={delegations}
                   live={scenario.live_judgments}
+                />
+                <BacktestPanel
+                  before={delegations}
+                  after={[...delegations, step.held]}
                 />
                 <PanelFooter className="gap-2">
                   <Button
