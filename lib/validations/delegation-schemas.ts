@@ -502,3 +502,49 @@ export const traceMeasureResponseSchema = z.object({
   ),
   failures: z.array(z.string()),
 });
+
+// ---------------------------------------------------------------------------
+// POST /backtest
+// ---------------------------------------------------------------------------
+
+export const backtestRequestSchema = z.object({
+  before: viewerDelegationsSchema,
+  after: viewerDelegationsSchema,
+  threshold: thresholdSchema,
+});
+
+const backtestRouteSchema = z.object({
+  resolver: z.string(),
+  category: z.string().nullable(),
+  choice: choiceSchema.nullable(),
+  agrees: z.boolean().nullable(),
+});
+
+const backtestSummarySchema = z.object({
+  delegated: z.number(),
+  agreed: z.number(),
+  disagreed: z.number(),
+  not_voted: z.number(),
+});
+
+export const backtestResponseSchema = z.object({
+  questions: z.number(),
+  threshold: z.number(),
+  unjudged_categories: z.array(z.string()),
+  before: backtestSummarySchema,
+  after: backtestSummarySchema,
+  changed: z.array(
+    z.object({
+      ballot_paper: z.string(),
+      paper_title: z.string(),
+      closed_days_ago: z.number(),
+      question_id: z.string(),
+      label: z.string(),
+      title: z.string(),
+      ballot_type: z.enum(["single_choice", "ranked", "approval"]),
+      own_choice: choiceSchema,
+      before: backtestRouteSchema,
+      after: backtestRouteSchema,
+    })
+  ),
+});

@@ -835,3 +835,93 @@ class TraceResponse(BaseModel):
         description="The same question routed at each threshold from 0.50 to 0.95."
     )
     failures: list[str]
+
+
+# ---------------------------------------------------------------------------
+# POST /backtest
+# ---------------------------------------------------------------------------
+
+
+class BacktestRequest(BaseModel):
+    before: ViewerDelegations = Field(
+        description="The viewer's delegations as they are now."
+    )
+    after: ViewerDelegations = Field(
+        description="The viewer's delegations with the change being considered."
+    )
+    threshold: float = Field(default=DEFAULT_THRESHOLD, ge=0, le=1)
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "before": _EXAMPLE_DELEGATIONS[:1],
+                    "after": [
+                        _EXAMPLE_DELEGATIONS[0],
+                        {
+                            "category": "bike lanes and cycling safety",
+                            "delegate": "d1-006",
+                        },
+                    ],
+                }
+            ]
+        }
+    }
+
+
+class BacktestRouteSchema(BaseModel):
+    resolver: str = Field(description="Who would have decided the viewer's vote.")
+    category: str | None = Field(
+        description="The category the vote would have left under; null when kept."
+    )
+    choice: Choice | None = Field(
+        description="What the resolver chose; null when they cast no ballot."
+    )
+    agrees: bool | None = Field(
+        description=(
+            "Whether a delegate's choice matched the account's own position; null "
+            "when the viewer kept the vote or the delegate cast nothing."
+        )
+    )
+
+
+class BacktestSummarySchema(BaseModel):
+    delegated: int = Field(description="Past questions that would have gone to a delegate.")
+    agreed: int = Field(description="Of those, how many the delegate voted as the account would.")
+    disagreed: int
+    not_voted: int = Field(description="Of those, how many ended with someone who cast nothing.")
+
+
+class BacktestQuestionSchema(BaseModel):
+    ballot_paper: str
+    paper_title: str
+    closed_days_ago: int
+    question_id: str
+    label: str
+    title: str
+    ballot_type: BallotTypeLiteral
+    own_choice: Choice = Field(
+        description="What the account's own position chooses on this question."
+    )
+    before: BacktestRouteSchema
+    after: BacktestRouteSchema
+
+
+class BacktestResponse(BaseModel):
+    questions: int = Field(description="Closed questions that were issued to the viewer.")
+    threshold: float
+    unjudged_categories: list[str] = Field(
+        description=(
+            "Categories the viewer wrote that have no recorded judgment for some "
+            "closed question. The rule fails closed on those questions, so the "
+            "backtest under-counts what such a category would have covered."
+        )
+    )
+    before: BacktestSummarySchema
+    after: BacktestSummarySchema
+    changed: list[BacktestQuestionSchema] = Field(
+        description=(
+            "The questions on which the viewer's vote would have gone somewhere "
+            "else, or left under another category, most recent first."
+        )
+    )

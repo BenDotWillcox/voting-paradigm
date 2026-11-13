@@ -103,6 +103,11 @@ from voting import DEFAULT_TIEBREAK_SEED, ElectionResult, IRVResult, random_tieb
 from voting.types import Ballot
 
 from ..schemas.delegation import (
+    BacktestQuestionSchema,
+    BacktestRequest,
+    BacktestResponse,
+    BacktestRouteSchema,
+    BacktestSummarySchema,
     BallotPaperSchema,
     CategorySchema,
     CategoryScoreSchema,
@@ -931,6 +936,13 @@ def _resolve_paper(
 
 
 @lru_cache(maxsize=64)
+def _others_on(day: int) -> Network:
+    """Everyone but the viewer: the network as it stood at the end of a day."""
+    simulation = _simulation()
+    return network_on(simulation.network, simulation.changes, day)
+
+
+@lru_cache(maxsize=64)
 def _network_on(day: int) -> Network:
     """
     The network as it stood at the end of a day, with the delegations the
@@ -938,8 +950,7 @@ def _network_on(day: int) -> Network:
     starts the demo with.
     """
     scenario = _scenario()
-    simulation = _simulation()
-    network = network_on(simulation.network, simulation.changes, day)
+    network = _others_on(day)
     by_text = {category.text: category for category in scenario.categories}
     for text, delegate in scenario.viewer.delegations_on(day):
         network = add_delegation(network, VIEWER, by_text[text], delegate)
@@ -1548,4 +1559,153 @@ def trace_response(
         routing=_trace_routing(network, resolve_at(request.threshold), len(voters)),
         sweep=sweep,
         failures=failures,
+    )
+
+
+# ---------------------------------------------------------------------------
+# POST /backtest
+# ---------------------------------------------------------------------------
+
+
+def _viewer_network_on(
+    day: int, delegations: list[ViewerDelegationSchema], stores: RuntimeStores
+) -> Network:
+    """
+    Everyone else's network as it stood on a day, with these delegations as
+    the viewer's. One that would have closed a loop that day is left out, as
+    it could not have been made then.
+
+    Raises:
+        DelegationRequestError: If a delegation is invalid
+    """
+    network = _others_on(day)
+    for item in delegations:
+        try:
+            network = add_delegation(
+                network, VIEWER, _category(item.category, stores), item.delegate
+            )
+        except DelegationLoopError:
+            continue
+        except InvalidNetworkError as error:
+            raise DelegationRequestError(str(error)) from error
+    return _with_recorded_nesting(network, stores)
+
+
+def _agrees(
+    ballot_type: BallotType, own: Sequence[str], other: Sequence[str] | None
+) -> bool | None:
+    """Whether a delegate's choice matches the account's own: the same first
+    choice, or for approvals the same set."""
+    if other is None:
+        return None
+    if ballot_type == "approval":
+        return set(own) == set(other)
+    return list(own[:1]) == list(other[:1])
+
+
+def backtest_response(
+    request: BacktestRequest, stores: RuntimeStores
+) -> BacktestResponse:
+    """
+    Replay the closed questions under two sets of the viewer's delegations.
+
+    For every closed question that was issued to the viewer, the viewer's
+    vote is routed twice through the network of the day the paper closed:
+    once with the delegations they have now and once with the change they are
+    considering. Whoever it ends with is looked up in the record, so the
+    answer says what that person actually chose. The votes the viewer cast
+    themself in the past are set aside: this asks what the delegations alone
+    would have done. Reads recorded judgments only.
+
+    Raises:
+        DelegationRequestError: If a delegation is invalid
+    """
+    scenario = _scenario()
+    summaries = [
+        {"delegated": 0, "agreed": 0, "disagreed": 0, "not_voted": 0} for _ in range(2)
+    ]
+    unjudged: dict[str, None] = {}
+    changed: list[BacktestQuestionSchema] = []
+    issued = 0
+
+    for entry in reversed(scenario.closed_papers):
+        day = entry.closes_in_days
+        if VIEWER not in eligible_voters(_others_on(day), entry.paper.jurisdiction):
+            continue
+        sides: list[tuple[Network, Judgments]] = []
+        for delegations in (request.before, request.after):
+            network = _viewer_network_on(day, delegations, stores)
+            judgments, missing = _judgments(
+                network, list(entry.paper.questions), stores
+            )
+            unjudged.update((category.text, None) for category in missing)
+            sides.append((network, judgments))
+
+        for resolved in _history()[entry.id]:
+            measure = resolved.measure
+            own = _viewer_past_choice(measure)
+            issued += 1
+            routes: list[BacktestRouteSchema] = []
+            for index, (network, judgments) in enumerate(sides):
+                resolution = resolve_question(
+                    network,
+                    measure.question.id,
+                    frozenset({VIEWER}),
+                    judgments,
+                    threshold=request.threshold,
+                )
+                resolver = resolution.traces[VIEWER].resolver
+                decision = resolution.decisions[VIEWER]
+                if resolver == VIEWER:
+                    routes.append(
+                        BacktestRouteSchema(
+                            resolver=VIEWER, category=None, choice=own, agrees=None
+                        )
+                    )
+                    continue
+                choice = resolved.choice_of(resolver)
+                agrees = _agrees(measure.ballot_type, own, choice)
+                summary = summaries[index]
+                summary["delegated"] += 1
+                summary[
+                    "not_voted"
+                    if agrees is None
+                    else "agreed" if agrees else "disagreed"
+                ] += 1
+                routes.append(
+                    BacktestRouteSchema(
+                        resolver=resolver,
+                        category=(
+                            network.categories[decision.category].text
+                            if decision.category
+                            else None
+                        ),
+                        choice=choice,
+                        agrees=agrees,
+                    )
+                )
+            before, after = routes
+            if (before.resolver, before.category) != (after.resolver, after.category):
+                changed.append(
+                    BacktestQuestionSchema(
+                        ballot_paper=entry.id,
+                        paper_title=entry.title,
+                        closed_days_ago=-day,
+                        question_id=measure.question.id,
+                        label=measure.label,
+                        title=measure.question.title,
+                        ballot_type=measure.ballot_type,
+                        own_choice=own,
+                        before=before,
+                        after=after,
+                    )
+                )
+
+    return BacktestResponse(
+        questions=issued,
+        threshold=request.threshold,
+        unjudged_categories=list(unjudged),
+        before=BacktestSummarySchema(**summaries[0]),
+        after=BacktestSummarySchema(**summaries[1]),
+        changed=changed,
     )

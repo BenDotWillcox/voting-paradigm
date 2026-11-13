@@ -7,6 +7,7 @@ import {
   getCategoryJudgments,
   getPersonProfile,
   resolveBallotPaper,
+  backtestDelegations,
   traceMeasure,
   validateDelegation,
 } from "@/lib/delegation-api";
@@ -14,11 +15,13 @@ import {
   categoryJudgmentsRequestSchema,
   personIdSchema,
   resolveBallotPaperRequestSchema,
+  backtestRequestSchema,
   traceMeasureRequestSchema,
   validateDelegationRequestSchema,
 } from "@/lib/validations/delegation-schemas";
 import type {
   CategoryJudgmentsResponse,
+  DelegationBacktest,
   MeasureTrace,
   PersonProfile,
   ResolveBallotPaperResponse,
@@ -118,5 +121,14 @@ export async function traceMeasureAction(input: unknown): Promise<ActionResult<M
   return run("Measure traced", traceMeasureRequestSchema, input, traceMeasure, (request) => ({
     question: request.question_id ?? "draft",
     delegations: request.viewer_delegations.length,
+  }));
+}
+
+export async function backtestDelegationsAction(
+  input: unknown
+): Promise<ActionResult<DelegationBacktest>> {
+  return run("Past votes replayed", backtestRequestSchema, input, backtestDelegations, (request) => ({
+    before: request.before.length,
+    after: request.after.length,
   }));
 }
