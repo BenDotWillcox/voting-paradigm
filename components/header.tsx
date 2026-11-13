@@ -63,7 +63,9 @@ export default function Header() {
           <SiteMark />
           <span className="text-[15px] font-semibold tracking-tight">{SITE_NAME}</span>
         </Link>
-        <nav ref={navRef} aria-label="Demos" className="-mx-4 scroll-px-4 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0">
+        {/* On phones the pill row scrolls with no scrollbar; faded edges show
+            that more demos sit off screen on either side. */}
+        <nav ref={navRef} aria-label="Demos" className="-mx-4 scroll-px-4 overflow-x-auto px-4 [scrollbar-width:none] [mask-image:linear-gradient(90deg,transparent,#000_20px,#000_calc(100%-20px),transparent)] sm:mx-0 sm:px-0 sm:[mask-image:none]">
           <ul className="flex w-max items-center gap-0.5 rounded-full border border-site-navy/10 bg-white/80 p-1 shadow-[0_1px_2px_rgb(13_23_38/0.06)]">
             {navItems.map((item) => {
               const active = pathname === item.href || pathname.startsWith(`${item.href}/`);

@@ -1,18 +1,18 @@
 .layout {
   --ink:#192d32; --quiet:#647277; --line:#dce4e3; --canvas:#f8faf8;
   --paper:#fff; --teal:#0c766d; --teal-soft:#eaf4f0; --probe:#a9690e;
-  --taper:#496984; --yes:#16836b; --no:#b15d54;
+  --taper:#496984; --yes:#3a6ea5; --no:#8b5a9e;
   display:grid; grid-template-columns:minmax(0,7fr) minmax(0,3fr); gap:28px; align-items:start;
   color:var(--ink);
 }
-:global(.dark) .layout { --ink:#e6eeed; --quiet:#9eafae; --line:#314442; --canvas:#172622; --paper:#1b2a26; --teal:#6ad9c0; --teal-soft:#223f36; --probe:#e8b668; --taper:#9fbdd9; --yes:#72d7b5; --no:#eb9d91; }
+:global(.dark) .layout { --ink:#e6eeed; --quiet:#9eafae; --line:#314442; --canvas:#172622; --paper:#1b2a26; --teal:#6ad9c0; --teal-soft:#223f36; --probe:#e8b668; --taper:#9fbdd9; --yes:#8fb8e6; --no:#c9a2db; }
 .ballot {
   min-width:0; border:1px solid var(--line); border-radius:16px;
   background:var(--paper); overflow:hidden;
   box-shadow:0 1px 2px #0f2a2a0a, 0 12px 32px -18px #0f3a3a33;
   position:relative;
 }
-.ballot::before { content:""; position:absolute; inset:0 0 auto; height:3px; background:linear-gradient(90deg, var(--teal), var(--taper) 45%, var(--probe) 75%, var(--no)); pointer-events:none; }
+.ballot::before { content:""; position:absolute; inset:0 0 auto; height:3px; background:linear-gradient(90deg, var(--teal), var(--taper) 45%, var(--probe) 75%, #b15d54); pointer-events:none; }
 /* Details column: the ballot read back as information. */
 .aside { min-width:0; display:grid; gap:14px; position:sticky; top:20px; }
 .asideContext { font-size:13px; line-height:1.7; color:var(--quiet); }
@@ -80,6 +80,16 @@
 .annotationTitle { fill:var(--handle-color); font-weight:500; }
 .annotationDetail { fill:var(--quiet); }
 .probeMuted { opacity:.55; }
+.beyondLimit .taperMarker { stroke-dasharray:2.5 2; opacity:.75; }
+/* Phone/tablet copy of the 2022 options, directly under the chart. */
+.inlineHistorical { display:none; list-style:none; margin:4px 0 0; padding:12px 14px; gap:8px; border:1px solid var(--line); border-radius:10px; background:var(--paper); }
+.inlineHistorical li { --tone:var(--teal); display:grid; grid-template-columns:minmax(0,1fr) minmax(60px,1.2fr) 34px; align-items:center; gap:10px; font-size:11px; }
+.inlineHistorical li.yes { --tone:var(--yes); }
+.inlineHistorical li.no { --tone:var(--no); }
+.inlineHistorical span { color:var(--tone); font-weight:600; white-space:nowrap; }
+.inlineHistorical i { display:block; height:6px; border-radius:3px; background:color-mix(in srgb,var(--tone) 14%,transparent); overflow:hidden; }
+.inlineHistorical b { display:block; height:100%; background:var(--tone); }
+.inlineHistorical strong { text-align:right; font-weight:500; font-variant-numeric:tabular-nums; }
 .annotationLeader.probeMuted { opacity:.15; }
 .handle:hover .labelBackground { stroke:color-mix(in srgb,var(--handle-color) 30%,transparent); }
 .handle:focus-visible .hitTarget { stroke:var(--handle-color); stroke-width:1.5; stroke-dasharray:3 3; }
@@ -122,7 +132,7 @@
 @media(max-width:560px) { .submissionFooter { align-items:stretch; flex-direction:column; padding:18px; gap:13px; } }
 @media(min-width:1100px) { .visualColumn { padding:31px 32px 23px; } }
 @media(max-width:1280px) { .fineGrid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-@media(max-width:960px) { .layout { grid-template-columns:minmax(0,1fr); } .aside { position:static; grid-template-columns:repeat(2,minmax(0,1fr)); } .asideContext,.aside .methodDetails { grid-column:1/-1; } }
+@media(max-width:960px) { .inlineHistorical { display:grid; } .layout { grid-template-columns:minmax(0,1fr); } .aside { position:static; grid-template-columns:repeat(2,minmax(0,1fr)); } .asideContext,.aside .methodDetails { grid-column:1/-1; } }
 @media(max-width:640px) { .aside { grid-template-columns:minmax(0,1fr); } }
 @media(max-width:560px) { .visualColumn { padding:22px 10px 19px; } .questionHeader { padding:0 7px; gap:10px; } .questionHeader h2 { font-size:22px; } .questionHeader p { font-size:12px; } .eyebrow { font-size:9px; line-height:1.5; } .resetButton { font-size:0; padding:4px; } .resetButton svg { width:16px; height:16px; } .fineControls,.methodDetails { padding:16px 18px; } .fineControls > summary small { display:none; } .fineControls > summary::after { margin-left:auto; } .fineGrid { grid-template-columns:minmax(0,1fr); gap:23px; } .legend { gap:13px; font-size:9px; } }
 @media(prefers-reduced-motion:reduce) { .ballot *, .ballot *::before,.ballot *::after { animation:none !important; transition:none !important; } }

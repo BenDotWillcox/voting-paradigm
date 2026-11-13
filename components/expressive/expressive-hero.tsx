@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import styles from "./expressive-hero.module.css";
 
 // Decorative preference curves in the same family as the richer ballot:
@@ -45,21 +45,42 @@ function curvePath(spec: CurveSpec, t: number, reveal: number) {
   return { line: parts.join(" "), fill: parts.length > 1 ? `${parts.join(" ")} L${round(px(Math.min(end, DOMAIN)))},${BOTTOM} L${LEFT},${BOTTOM} Z` : "", peak: ideal <= end ? { x: round(px(ideal)), y: py(1) } : null };
 }
 
+function curveFrame(spec: CurveSpec, clock: number) {
+  const reveal = Math.max(0, Math.min(1, (clock-spec.delay)/DRAW_SECONDS));
+  const eased = 1-(1-reveal)**3;
+  return curvePath(spec, Math.max(0, clock-spec.delay-DRAW_SECONDS)+spec.delay*7, eased);
+}
+// Server and first client render agree on the undrawn state.
+const FIRST_FRAME = CURVES.map((spec) => curveFrame(spec, 0));
+
+type CurveNodes = { fill: SVGPathElement | null; line: SVGPathElement | null; peak: SVGCircleElement | null };
+
 export function ExpressiveHero() {
-  const [clock, setClock] = useState(0);
   const [animate, setAnimate] = useState(false);
   const host = useRef<HTMLDivElement>(null);
+  const nodes = useRef<CurveNodes[]>(CURVES.map(() => ({ fill: null, line: null, peak: null })));
 
   useEffect(() => {
+    // Paint frames straight into the SVG; React state per frame would
+    // re-render the whole hero sixty times a second.
+    const paint = (clock: number) => CURVES.forEach((spec, index) => {
+      const { line, fill, peak } = curveFrame(spec, clock);
+      const node = nodes.current[index];
+      node.line?.setAttribute("d", line);
+      node.fill?.setAttribute("d", fill);
+      if (!node.peak) return;
+      node.peak.style.display = peak ? "" : "none";
+      if (peak) { node.peak.setAttribute("cx", String(peak.x)); node.peak.setAttribute("cy", String(peak.y)); }
+    });
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (reduced.matches) { setClock(DRAW_SECONDS+2); return; }
+    if (reduced.matches) { paint(DRAW_SECONDS+2); return; }
     setAnimate(true);
     let frame = 0, visible = true, last = performance.now(), elapsed = 0;
     const observer = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; });
     if (host.current) observer.observe(host.current);
     const tick = (now: number) => {
       // Pause (rather than skip ahead) while scrolled out of view.
-      if (visible && !document.hidden) { elapsed += Math.min(0.1, (now-last)/1000); setClock(elapsed); }
+      if (visible && !document.hidden) { elapsed += Math.min(0.1, (now-last)/1000); paint(elapsed); }
       last = now;
       frame = requestAnimationFrame(tick);
     };
@@ -72,38 +93,38 @@ export function ExpressiveHero() {
     <div className={styles.inner}>
       <Link href="/" className={styles.back}><ArrowLeft className="h-4 w-4" aria-hidden="true" />All demos</Link>
 
-      <figure className={`${styles.sheet} ${animate ? styles.sheetAnimated : ""}`} aria-hidden="true">
-        <div className={styles.sheetHeading}>Proposition 121 (Statutory)</div>
-        <div className={styles.sheetLines}><i /><i /><i style={{ width: "62%" }} /></div>
-        <div className={styles.sheetChoices}>
-          <span>YES/FOR<b className={styles.bubble}><em className={styles.markYes} /></b></span>
-          <span>NO/AGAINST<b className={styles.bubble}><em className={styles.markNo} /></b></span>
-        </div>
-        <figcaption>One mark. One bit.</figcaption>
-      </figure>
-
       <div className={styles.copy}>
         <p className={styles.eyebrow}>Demo 06 · Expressive ballots</p>
         <h1 id="expressive-title">A ballot can say more than a single choice.</h1>
         <p className={styles.lede}>What does a yes or no leave unsaid? Answer Colorado’s 2022 tax question two ways, then see what changes when a ballot can express room for compromise.</p>
       </div>
 
-      <div ref={host} className={styles.visual} aria-hidden="true">
-        <svg viewBox={`0 0 ${W} ${H}`} className={styles.curves} preserveAspectRatio="xMidYMid meet">
-          {[0, 0.5, 1].map((score) => <line key={score} x1={LEFT} x2={RIGHT} y1={py(score)} y2={py(score)} className={styles.grid} />)}
-          {[0, 2, 4, 6, 8, 10].map((value) => <text key={value} x={px(value)} y={BOTTOM+24} textAnchor={value === 0 ? "start" : value === 10 ? "end" : "middle"} className={styles.tick}>{value}%</text>)}
-          {CURVES.map((spec) => {
-            const reveal = Math.max(0, Math.min(1, (clock-spec.delay)/DRAW_SECONDS));
-            const eased = 1-(1-reveal)**3;
-            const { line, fill, peak } = curvePath(spec, Math.max(0, clock-spec.delay-DRAW_SECONDS)+spec.delay*7, eased);
-            return <g key={spec.tone} className={styles[spec.tone]}>
-              {fill && <path d={fill} className={styles.area} />}
-              <path d={line} className={styles.line} />
-              {peak && <circle cx={peak.x} cy={peak.y} r={4.5} className={styles.peak} />}
-            </g>;
-          })}
-        </svg>
-        <p className={styles.visualCaption}>Ideal rate · what you accept · how fast support falls away</p>
+      {/* The story in one row: a single mark, then the curves it leaves out. */}
+      <div className={styles.story} aria-hidden="true">
+        <figure className={`${styles.sheet} ${animate ? styles.sheetAnimated : ""}`}>
+          <div className={styles.sheetHeading}>Proposition 121 (Statutory)</div>
+          <div className={styles.sheetLines}><i /><i /><i style={{ width: "62%" }} /></div>
+          <div className={styles.sheetChoices}>
+            <span>YES/FOR<b className={styles.bubble}><em className={styles.markYes} /></b></span>
+            <span>NO/AGAINST<b className={styles.bubble}><em className={styles.markNo} /></b></span>
+          </div>
+          <figcaption>One mark. One bit.</figcaption>
+        </figure>
+
+        <div className={styles.connector}><ArrowRight className={styles.connectorArrow} /><span>or say how much</span></div>
+
+        <div ref={host} className={styles.visual}>
+          <svg viewBox={`0 0 ${W} ${H}`} className={styles.curves} preserveAspectRatio="xMidYMid meet">
+            {[0, 0.5, 1].map((score) => <line key={score} x1={LEFT} x2={RIGHT} y1={py(score)} y2={py(score)} className={styles.grid} />)}
+            {[0, 2, 4, 6, 8, 10].map((value) => <text key={value} x={px(value)} y={BOTTOM+24} textAnchor={value === 0 ? "start" : value === 10 ? "end" : "middle"} className={styles.tick}>{value}%</text>)}
+            {CURVES.map((spec, index) => <g key={spec.tone} className={styles[spec.tone]}>
+              <path ref={(element) => { nodes.current[index].fill = element; }} d={FIRST_FRAME[index].fill} className={styles.area} />
+              <path ref={(element) => { nodes.current[index].line = element; }} d={FIRST_FRAME[index].line} className={styles.line} />
+              <circle ref={(element) => { nodes.current[index].peak = element; }} cx={0} cy={0} r={4.5} className={styles.peak} style={{ display: "none" }} />
+            </g>)}
+          </svg>
+          <p className={styles.visualCaption}>Ideal rate · what you accept · how fast support falls away</p>
+        </div>
       </div>
     </div>
   </section>;
