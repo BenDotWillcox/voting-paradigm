@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { AccountProvider } from "@/components/liquid/account-provider";
 import { AppShell } from "@/components/liquid/app-shell";
+import { RoutingTracer } from "@/components/liquid/routing-tracer";
 import { getDelegationScenario } from "@/lib/delegation-api";
 import type { DelegationScenario } from "@/types/delegation";
 
@@ -53,6 +54,7 @@ export default async function LiquidLayout({ children }: { children: React.React
       {scenario ? (
         <AccountProvider scenario={scenario}>
           <AppShell>{children}</AppShell>
+          <RoutingTracer />
         </AccountProvider>
       ) : (
         <div className="max-w-3xl rounded-lg border p-5 text-sm leading-relaxed text-muted-foreground">

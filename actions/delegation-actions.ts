@@ -7,16 +7,19 @@ import {
   getCategoryJudgments,
   getPersonProfile,
   resolveBallotPaper,
+  traceMeasure,
   validateDelegation,
 } from "@/lib/delegation-api";
 import {
   categoryJudgmentsRequestSchema,
   personIdSchema,
   resolveBallotPaperRequestSchema,
+  traceMeasureRequestSchema,
   validateDelegationRequestSchema,
 } from "@/lib/validations/delegation-schemas";
 import type {
   CategoryJudgmentsResponse,
+  MeasureTrace,
   PersonProfile,
   ResolveBallotPaperResponse,
   ValidateDelegationResponse,
@@ -105,4 +108,15 @@ export async function getPersonProfileAction(
   input: unknown
 ): Promise<ActionResult<PersonProfile>> {
   return run("Profile loaded", personIdSchema, input, getPersonProfile, () => ({}));
+}
+
+/**
+ * Route one question, curated or drafted, through the network as it stands
+ * with the viewer's delegations, and return the scores and where votes go.
+ */
+export async function traceMeasureAction(input: unknown): Promise<ActionResult<MeasureTrace>> {
+  return run("Measure traced", traceMeasureRequestSchema, input, traceMeasure, (request) => ({
+    question: request.question_id ?? "draft",
+    delegations: request.viewer_delegations.length,
+  }));
 }

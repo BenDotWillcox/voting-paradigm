@@ -81,6 +81,7 @@ from delegation.ballots import (
 from delegation.scenario import (
     SCENARIO_SCHEMA,
     SCENARIO_SIMULATION,
+    YES_NO,
     Measure,
     Scenario,
     ScenarioPaper,
@@ -137,6 +138,17 @@ from ..schemas.delegation import (
     RoundSchema,
     ScenarioResponse,
     TallySchema,
+    TraceCategorySchema,
+    TraceFlowSchema,
+    TraceKeptSchema,
+    TraceQuestionSchema,
+    TraceRequest,
+    TraceResolverSchema,
+    TraceResponse,
+    TraceRoutingSchema,
+    TraceScoreSchema,
+    TraceSweepSchema,
+    TraceViewerSchema,
     ValidateRequest,
     ValidateResponse,
     ViewerChangeSchema,
@@ -148,8 +160,15 @@ ENV_FILE = REPO_ROOT / ".env.local"
 CACHE_DIR_VARIABLE = "DELEGATION_CACHE_DIR"
 LIVE_VARIABLE = "DELEGATION_LIVE_JUDGMENTS"
 DAILY_CAP_VARIABLE = "DELEGATION_LIVE_DAILY_CATEGORIES"
-# New categories the decision model may be asked about in one day (UTC)
+MEASURE_CAP_VARIABLE = "DELEGATION_LIVE_DAILY_MEASURES"
+# New categories, and drafted measures, the decision model may be asked about
+# in one day (UTC)
 DEFAULT_DAILY_CAP = 200
+DEFAULT_MEASURE_CAP = 100
+# The thresholds a traced question is routed at, to show what moving it does
+TRACE_SWEEP = tuple(round(0.5 + 0.05 * step, 2) for step in range(10))
+TRACE_ROWS = 12
+DRAFT_ID = "draft"
 
 
 class DelegationRequestError(ValueError):
@@ -170,6 +189,7 @@ class RuntimeStores:
     # no count and applies no limit
     usage: Path | None = None
     daily_cap: int = DEFAULT_DAILY_CAP
+    daily_measure_cap: int = DEFAULT_MEASURE_CAP
 
 
 # ---------------------------------------------------------------------------
@@ -196,11 +216,15 @@ def default_stores() -> RuntimeStores:
     configured = read_setting(CACHE_DIR_VARIABLE, ENV_FILE)
     directory = Path(configured) if configured else REPO_ROOT / ".cache" / "delegation"
     cap = read_setting(DAILY_CAP_VARIABLE, ENV_FILE)
+    measures = read_setting(MEASURE_CAP_VARIABLE, ENV_FILE)
     return RuntimeStores(
         judgments=JudgmentStore(directory / "judgments.jsonl"),
         nesting=NestingStore(directory / "nesting.jsonl"),
         usage=directory / "usage.json",
         daily_cap=int(cap) if cap and cap.isdigit() else DEFAULT_DAILY_CAP,
+        daily_measure_cap=(
+            int(measures) if measures and measures.isdigit() else DEFAULT_MEASURE_CAP
+        ),
     )
 
 
@@ -426,31 +450,48 @@ def _today() -> str:
     return datetime.now(timezone.utc).date().isoformat()
 
 
-def _used_today(stores: RuntimeStores) -> int:
+Counted = Literal["categories", "measures"]
+
+
+def _usage_today(stores: RuntimeStores) -> dict[str, int]:
+    """Today's counts of what the decision model was newly asked about."""
     if stores.usage is None or not stores.usage.exists():
-        return 0
+        return {}
     try:
         record = json.loads(stores.usage.read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        return 0
+        return {}
     if not isinstance(record, dict) or record.get("day") != _today():
-        return 0
-    used = record.get("categories", 0)
-    return used if isinstance(used, int) else 0
+        return {}
+    return {
+        key: value
+        for key, value in record.items()
+        if key != "day" and isinstance(value, int) and not isinstance(value, bool)
+    }
 
 
-def _allowance_left(stores: RuntimeStores) -> bool:
-    return stores.usage is None or _used_today(stores) < stores.daily_cap
+def _used_today(stores: RuntimeStores, what: Counted = "categories") -> int:
+    return _usage_today(stores).get(what, 0)
+
+
+def _allowance_left(stores: RuntimeStores, what: Counted = "categories") -> bool:
+    cap = stores.daily_cap if what == "categories" else stores.daily_measure_cap
+    return stores.usage is None or _used_today(stores, what) < cap
+
+
+def _count_new(stores: RuntimeStores, what: Counted) -> None:
+    if stores.usage is None:
+        return
+    used = _usage_today(stores)
+    used[what] = used.get(what, 0) + 1
+    stores.usage.parent.mkdir(parents=True, exist_ok=True)
+    stores.usage.write_text(
+        json.dumps({"day": _today(), **used}, sort_keys=True), encoding="utf-8"
+    )
 
 
 def _count_new_category(stores: RuntimeStores) -> None:
-    if stores.usage is None:
-        return
-    stores.usage.parent.mkdir(parents=True, exist_ok=True)
-    stores.usage.write_text(
-        json.dumps({"day": _today(), "categories": _used_today(stores) + 1}),
-        encoding="utf-8",
-    )
+    _count_new(stores, "categories")
 
 
 # ---------------------------------------------------------------------------
@@ -1288,4 +1329,212 @@ def city_response() -> CityResponse:
             )
             for person in ranked[:CITY_DECIDERS]
         ],
+    )
+
+
+# ---------------------------------------------------------------------------
+# POST /trace
+# ---------------------------------------------------------------------------
+
+
+def _trace_routing(
+    network: Network, resolution: QuestionResolution, voters: int
+) -> TraceRoutingSchema:
+    """One resolution, summarised: where votes left, where they ended, and why some stayed."""
+    by_category: dict[str, int] = {}
+    flows: dict[tuple[str, str], int] = {}
+    kept: dict[str, int] = {}
+    for voter, trace in resolution.traces.items():
+        decision = resolution.decisions[voter]
+        if trace.resolver == voter or decision.category is None:
+            # Kept outright, or sent out and returned by a loop.
+            reason = trace.kept_because.value
+            kept[reason] = kept.get(reason, 0) + 1
+            continue
+        text = network.categories[decision.category].text
+        by_category[text] = by_category.get(text, 0) + 1
+        flows[(text, trace.resolver)] = flows.get((text, trace.resolver), 0) + 1
+
+    weights = resolution.weights()
+    heaviest = sorted(weights, key=lambda person: (-weights[person], person))
+    viewer: TraceViewerSchema | None = None
+    if VIEWER in resolution.traces:
+        decision, trace = resolution.decisions[VIEWER], resolution.traces[VIEWER]
+        viewer = TraceViewerSchema(
+            outcome=decision.outcome.value,
+            category=(
+                network.categories[decision.category].text
+                if decision.category
+                else None
+            ),
+            set_aside=[network.categories[c].text for c in decision.set_aside],
+            chain=list(trace.chain),
+            resolver=trace.resolver,
+        )
+    return TraceRoutingSchema(
+        threshold=resolution.threshold,
+        metrics=_metrics(resolution),
+        by_category=[
+            TraceCategorySchema(category=text, votes=votes)
+            for text, votes in sorted(by_category.items(), key=lambda item: (-item[1], item[0]))
+        ],
+        flows=[
+            TraceFlowSchema(category=text, resolver=resolver, votes=votes)
+            for (text, resolver), votes in sorted(
+                flows.items(), key=lambda item: (-item[1], item[0])
+            )[:TRACE_ROWS]
+        ],
+        resolvers=[
+            TraceResolverSchema(
+                person=person,
+                votes=weights[person],
+                share=round(weights[person] / voters, 4) if voters else 0.0,
+            )
+            for person in heaviest[:TRACE_ROWS]
+            if weights[person] > 1
+        ],
+        kept=[
+            TraceKeptSchema(reason=reason, votes=votes)  # type: ignore[arg-type]
+            for reason, votes in sorted(kept.items(), key=lambda item: (-item[1], item[0]))
+        ],
+        viewer=viewer,
+    )
+
+
+def trace_response(
+    request: TraceRequest, stores: RuntimeStores, source: LiveSource | None
+) -> TraceResponse:
+    """
+    Route one question through today's network and show the working.
+
+    A curated question is traced from its recorded judgments, whether its
+    ballot paper is open or closed: this asks how it would route now, not
+    how it did. A draft is a yes/no measure the caller wrote. Recorded
+    judgments for its exact wording are used first; the rest are asked of
+    the decision model when one is available and the day's allowance of
+    drafted measures is not used up. Without judgments nobody delegates.
+
+    Raises:
+        DelegationRequestError: If the question or jurisdiction is unknown,
+            or a delegation is invalid
+    """
+    scenario = _scenario()
+    simulation = _simulation()
+    network = _viewer_network(request.viewer_delegations, stores)
+    pool = _pool_ids(scenario)
+    failures: list[str] = []
+    origin: Literal["recorded", "fetched", "unavailable", "limited"] = "recorded"
+
+    if request.question_id is not None:
+        try:
+            measure = scenario.measure(request.question_id)
+        except KeyError:
+            raise DelegationRequestError(
+                f"Unknown question {request.question_id!r}"
+            ) from None
+        question = measure.question
+        jurisdiction = next(
+            entry.paper.jurisdiction
+            for entry in scenario.papers
+            if measure in entry.measures
+        )
+        judgments, _ = _judgments(network, [question], stores)
+    else:
+        assert request.title and request.summary and request.jurisdiction
+        jurisdiction = request.jurisdiction
+        if jurisdiction not in jurisdictions(simulation.config):
+            raise DelegationRequestError(f"Unknown jurisdiction {jurisdiction!r}")
+        question = Question(DRAFT_ID, request.title, request.summary, YES_NO)
+        categories = list(scenario.categories) + [
+            category
+            for category in _viewer_categories(network)
+            if category.id not in pool
+        ]
+        on_record = gather_judgments(
+            [question], categories, stores.judgments, model=scenario.model
+        )
+        limited = (
+            bool(on_record.missing)
+            and source is not None
+            and not _allowance_left(stores, "measures")
+        )
+        report = gather_judgments(
+            [question],
+            categories,
+            stores.judgments,
+            model=scenario.model,
+            source=None if limited else source,
+        )
+        if report.fetched:
+            _count_new(stores, "measures")
+            origin = "fetched"
+        elif report.missing:
+            origin = "limited" if limited else "unavailable"
+        judgments = report.judgments
+        failures += report.failures
+
+    scored = {
+        category_id: probability
+        for (question_id, category_id), probability in judgments.items()
+        if question_id == question.id
+    }
+    voters = frozenset(eligible_voters(network, jurisdiction))
+
+    def resolve_at(threshold: float) -> QuestionResolution:
+        return resolve_question(
+            network, question.id, voters, judgments, threshold=threshold
+        )
+
+    holders: dict[str, int] = {}
+    for delegation in network.delegations:
+        holders[delegation.category] = holders.get(delegation.category, 0) + 1
+    held = {category.id for category in _viewer_categories(network)}
+    in_use = [
+        category
+        for category in network.categories.values()
+        if category.id in pool or holders.get(category.id)
+    ]
+    in_use.sort(
+        key=lambda category: (-scored.get(category.id, -1.0), category.text)
+    )
+
+    sweep: list[TraceSweepSchema] = []
+    for threshold in TRACE_SWEEP:
+        metrics = _metrics(resolve_at(threshold))
+        sweep.append(
+            TraceSweepSchema(
+                threshold=threshold,
+                delegated_share=metrics.delegated_share,
+                largest_share=metrics.largest_share,
+                largest_resolver=metrics.largest_resolver,
+            )
+        )
+
+    return TraceResponse(
+        model=scenario.model,
+        question=TraceQuestionSchema(
+            id=request.question_id,
+            title=question.title,
+            summary=question.summary,
+            jurisdiction=jurisdiction,
+        ),
+        source=origin,
+        judged=all(category_id in scored for category_id in pool),
+        voters=len(voters),
+        scores=[
+            TraceScoreSchema(
+                category=category.id,
+                text=category.text,
+                probability=scored.get(category.id),
+                holders=holders.get(category.id, 0),
+                held_by_viewer=category.id in held,
+                inside=sorted(
+                    broad for narrow, broad in network.nesting if narrow == category.id
+                ),
+            )
+            for category in in_use
+        ],
+        routing=_trace_routing(network, resolve_at(request.threshold), len(voters)),
+        sweep=sweep,
+        failures=failures,
     )

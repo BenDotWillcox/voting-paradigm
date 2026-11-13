@@ -4,7 +4,7 @@
   "threshold": 0.7,
   "nesting_threshold": 0.7,
   "source": {
-    "measures_sha256": "dabc85d0391bf72f30bf3267bd2646e0f3b80fe03863862f67df4c42122b5de5",
+    "measures_sha256": "3e0e6c2426bff29a666ab40662238d033383a97c997b716f7344d489435a0259",
     "benchmark": "eval/benchmarks/delegation_router_v1",
     "benchmark_judgments_sha256": "c06637371a0c8a8f84b4f6cce80972b29101781ce3ceefa1ebabe2e78b73be66",
     "nesting_sha256": "ff8ff03383a766e97e8f9377e1d1a6b541020a79847dadf4a1956cdaf0abb0c3",
@@ -1468,70 +1468,6 @@
             ],
             "local": 0.3
           }
-        },
-        {
-          "label": "Measure C",
-          "id": "q60",
-          "title": "Site for the new central library",
-          "kind": "Advisory vote",
-          "ballot_type": "approval",
-          "summary": "Chooses where the new central library will be built from three sites; voters may approve any number of them.",
-          "wording": "Where should the new central library be built? Approve every site you could accept.",
-          "fiscal": "The $60 million library bond is already approved; the sites differ by up to $8 million.",
-          "placed_by": "Library Board",
-          "for": "",
-          "against": "",
-          "options": [
-            {
-              "id": "civic",
-              "name": "Civic Square, on the current site",
-              "note": "Rebuild where the library stands; it closes for three years.",
-              "support": {
-                "appeal": 0.2,
-                "site": [
-                  0.3,
-                  0.36
-                ],
-                "local": 0.3
-              }
-            },
-            {
-              "id": "depot",
-              "name": "The old rail depot",
-              "note": "Keeps the old library open during building; next to the bus exchange.",
-              "support": {
-                "appeal": 0.1,
-                "lean": [
-                  0.0,
-                  0.3,
-                  0.0
-                ],
-                "site": [
-                  0.44,
-                  0.2
-                ],
-                "local": 0.3
-              }
-            },
-            {
-              "id": "pier",
-              "name": "Tidewater Pier head",
-              "note": "A landmark on the water; farthest from transit and the most expensive.",
-              "support": {
-                "appeal": -0.1,
-                "lean": [
-                  0.2,
-                  0.2,
-                  0.0
-                ],
-                "site": [
-                  0.1,
-                  0.2
-                ],
-                "local": 0.3
-              }
-            }
-          ]
         }
       ]
     },
@@ -1966,6 +1902,70 @@
               0.2
             ]
           }
+        },
+        {
+          "label": "Measure C",
+          "id": "q60",
+          "title": "Site for the new central library",
+          "kind": "Advisory vote",
+          "ballot_type": "approval",
+          "summary": "Chooses where the new central library will be built from three sites; voters may approve any number of them.",
+          "wording": "Where should the city's new central library be built? Approve every site you could accept.",
+          "fiscal": "The $60 million library bond is already approved; the sites differ by up to $8 million.",
+          "placed_by": "Library Board",
+          "for": "",
+          "against": "",
+          "options": [
+            {
+              "id": "civic",
+              "name": "Civic Square, on the current site",
+              "note": "Rebuild where the library stands; it closes for three years.",
+              "support": {
+                "appeal": 0.2,
+                "site": [
+                  0.3,
+                  0.36
+                ],
+                "local": 0.3
+              }
+            },
+            {
+              "id": "depot",
+              "name": "The old rail depot",
+              "note": "Keeps the old library open during building; next to the bus exchange.",
+              "support": {
+                "appeal": 0.1,
+                "lean": [
+                  0.0,
+                  0.3,
+                  0.0
+                ],
+                "site": [
+                  0.44,
+                  0.2
+                ],
+                "local": 0.3
+              }
+            },
+            {
+              "id": "pier",
+              "name": "Tidewater Pier head",
+              "note": "A landmark on the water; farthest from transit and the most expensive.",
+              "support": {
+                "appeal": -0.1,
+                "lean": [
+                  0.2,
+                  0.2,
+                  0.0
+                ],
+                "site": [
+                  0.1,
+                  0.2
+                ],
+                "local": 0.3
+              }
+            }
+          ]
         }
       ]
     }
@@ -3539,38 +3539,6 @@
       "cat_b41f6dc6c478": 0.02,
       "cat_8da9cebe88e7": 0.02
     },
-    "q60": {
-      "cat_8e295ce3c3f5": 0.07,
-      "cat_09222771eb37": 0.29,
-      "cat_0254b0fd6e96": 0.08,
-      "cat_2c8c41cf8558": 0.02,
-      "cat_04ace7e0f76c": 0.12,
-      "cat_919ea530d2a6": 0.74,
-      "cat_2bf384d345da": 0.05,
-      "cat_3fce160f72c0": 0.02,
-      "cat_48974f300f50": 0.02,
-      "cat_ae5363ecb6c1": 0.02,
-      "cat_4a981d5ce634": 0.06,
-      "cat_b95d6b8c7f00": 0.09,
-      "cat_737bf6e9bbeb": 0.93,
-      "cat_93ad7735ba5d": 0.01,
-      "cat_7a4bb9974ce3": 0.02,
-      "cat_2a1cec731467": 0.02,
-      "cat_53d187a16b68": 0.02,
-      "cat_4c9789adb7cb": 0.02,
-      "cat_850da2a13aaf": 0.01,
-      "cat_4778155ece57": 0.02,
-      "cat_7ab4ee828658": 0.01,
-      "cat_9883ca30005f": 0.02,
-      "cat_e7576c9d1f43": 0.02,
-      "cat_e34feeb7bdab": 0.03,
-      "cat_ff75f19ebe51": 0.02,
-      "cat_27f058736e73": 0.02,
-      "cat_fafdfd51fc19": 0.01,
-      "cat_140594b1ade1": 0.02,
-      "cat_b41f6dc6c478": 0.03,
-      "cat_8da9cebe88e7": 0.01
-    },
     "q01": {
       "cat_8e295ce3c3f5": 0.82,
       "cat_09222771eb37": 0.09,
@@ -4146,6 +4114,38 @@
       "cat_140594b1ade1": 0.02,
       "cat_b41f6dc6c478": 0.02,
       "cat_8da9cebe88e7": 0.02
+    },
+    "q60": {
+      "cat_8e295ce3c3f5": 0.07,
+      "cat_09222771eb37": 0.29,
+      "cat_0254b0fd6e96": 0.08,
+      "cat_2c8c41cf8558": 0.02,
+      "cat_04ace7e0f76c": 0.12,
+      "cat_919ea530d2a6": 0.74,
+      "cat_2bf384d345da": 0.05,
+      "cat_3fce160f72c0": 0.02,
+      "cat_48974f300f50": 0.02,
+      "cat_ae5363ecb6c1": 0.02,
+      "cat_4a981d5ce634": 0.06,
+      "cat_b95d6b8c7f00": 0.09,
+      "cat_737bf6e9bbeb": 0.93,
+      "cat_93ad7735ba5d": 0.01,
+      "cat_7a4bb9974ce3": 0.02,
+      "cat_2a1cec731467": 0.02,
+      "cat_53d187a16b68": 0.02,
+      "cat_4c9789adb7cb": 0.02,
+      "cat_850da2a13aaf": 0.01,
+      "cat_4778155ece57": 0.02,
+      "cat_7ab4ee828658": 0.01,
+      "cat_9883ca30005f": 0.02,
+      "cat_e7576c9d1f43": 0.02,
+      "cat_e34feeb7bdab": 0.03,
+      "cat_ff75f19ebe51": 0.02,
+      "cat_27f058736e73": 0.02,
+      "cat_fafdfd51fc19": 0.01,
+      "cat_140594b1ade1": 0.02,
+      "cat_b41f6dc6c478": 0.03,
+      "cat_8da9cebe88e7": 0.01
     }
   }
 }

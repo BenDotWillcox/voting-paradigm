@@ -9,7 +9,7 @@ order, and any votes they have cast themself.
 
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, Field, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints, model_validator
 
 from delegation import DEFAULT_THRESHOLD, MAX_CATEGORY_LENGTH
 from voting.types import DEFAULT_TIEBREAK_SEED
@@ -667,3 +667,163 @@ class CityResponse(BaseModel):
     deciders: list[CityDeciderSchema] = Field(
         description="The people who decided the most votes for others, most first."
     )
+
+
+# ---------------------------------------------------------------------------
+# POST /trace
+# ---------------------------------------------------------------------------
+
+MAX_TITLE_LENGTH = 120
+MAX_SUMMARY_LENGTH = 400
+
+
+class TraceRequest(BaseModel):
+    question_id: str | None = Field(
+        default=None,
+        max_length=80,
+        description="Id of a curated question to trace. Leave out to trace a draft.",
+    )
+    title: (
+        Annotated[
+            str,
+            StringConstraints(
+                strip_whitespace=True, min_length=3, max_length=MAX_TITLE_LENGTH
+            ),
+        ]
+        | None
+    ) = Field(default=None, description="A draft measure's title.")
+    summary: (
+        Annotated[
+            str,
+            StringConstraints(
+                strip_whitespace=True, min_length=10, max_length=MAX_SUMMARY_LENGTH
+            ),
+        ]
+        | None
+    ) = Field(default=None, description="One sentence on what the draft would do.")
+    jurisdiction: str | None = Field(
+        default=None,
+        max_length=40,
+        description="Who a draft is issued to: the city or one district.",
+    )
+    viewer_delegations: ViewerDelegations
+    threshold: float = Field(default=DEFAULT_THRESHOLD, ge=0, le=1)
+
+    @model_validator(mode="after")
+    def _one_of(self) -> "TraceRequest":
+        drafted = (self.title, self.summary, self.jurisdiction)
+        if self.question_id is None and any(part is None for part in drafted):
+            raise ValueError("Give a question_id, or a title, summary and jurisdiction")
+        if self.question_id is not None and any(part is not None for part in drafted):
+            raise ValueError("Give a question_id or a draft, not both")
+        return self
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {"question_id": "q10", "viewer_delegations": _EXAMPLE_DELEGATIONS},
+                {
+                    "title": "Dog park at Cannery Yard",
+                    "summary": "Turns two acres of the Cannery Yard into a fenced off-leash dog park.",
+                    "jurisdiction": "district-2",
+                    "viewer_delegations": [],
+                },
+            ]
+        }
+    }
+
+
+TraceSourceLiteral = Literal["recorded", "fetched", "unavailable", "limited"]
+
+
+class TraceQuestionSchema(BaseModel):
+    id: str | None = Field(description="Null for a draft.")
+    title: str
+    summary: str
+    jurisdiction: str
+
+
+class TraceScoreSchema(BaseModel):
+    category: str = Field(description="Category id.")
+    text: str
+    probability: float | None = Field(description="Null when there is no judgment.")
+    holders: int = Field(description="People who have handed this category to someone.")
+    held_by_viewer: bool
+    inside: list[str] = Field(description="Ids of broader categories it sits inside.")
+
+
+class TraceCategorySchema(BaseModel):
+    category: str = Field(description="Category text.")
+    votes: int = Field(description="Voters whose own vote left them under this category.")
+
+
+class TraceFlowSchema(BaseModel):
+    category: str = Field(description="Category text the vote first left under.")
+    resolver: str
+    votes: int
+
+
+class TraceResolverSchema(BaseModel):
+    person: str
+    votes: int = Field(description="Votes this person decides, their own included.")
+    share: float
+
+
+class TraceKeptSchema(BaseModel):
+    reason: KeptLiteral
+    votes: int = Field(description="Voters whose own vote stayed with them for this reason.")
+
+
+class TraceViewerSchema(BaseModel):
+    outcome: OutcomeLiteral
+    category: str | None
+    set_aside: list[str]
+    chain: list[str]
+    resolver: str
+
+
+class TraceRoutingSchema(BaseModel):
+    threshold: float
+    metrics: MetricsSchema
+    by_category: list[TraceCategorySchema] = Field(description="Most votes first.")
+    flows: list[TraceFlowSchema] = Field(
+        description="From the category a vote first left under to whoever decides it; "
+        "the largest flows first."
+    )
+    resolvers: list[TraceResolverSchema] = Field(
+        description="The people who decide the most votes, most first."
+    )
+    kept: list[TraceKeptSchema]
+    viewer: TraceViewerSchema | None = Field(
+        description="Where the viewer's own vote goes; null when it is not issued to them."
+    )
+
+
+class TraceSweepSchema(BaseModel):
+    threshold: float
+    delegated_share: float
+    largest_share: float
+    largest_resolver: str | None
+
+
+class TraceResponse(BaseModel):
+    model: str
+    question: TraceQuestionSchema
+    source: TraceSourceLiteral = Field(
+        description="Where the judgments came from: already recorded, asked just now, "
+        "unavailable because the decision model is switched off or failed, or held back "
+        "because the day's allowance of drafted measures is used up."
+    )
+    judged: bool = Field(
+        description="Whether every pool category has a judgment. Without them nobody's "
+        "vote is delegated."
+    )
+    voters: int
+    scores: list[TraceScoreSchema] = Field(
+        description="Every category in use, highest probability first."
+    )
+    routing: TraceRoutingSchema
+    sweep: list[TraceSweepSchema] = Field(
+        description="The same question routed at each threshold from 0.50 to 0.95."
+    )
+    failures: list[str]
