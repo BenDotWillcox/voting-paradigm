@@ -84,7 +84,9 @@ const { outputText } = ts.transpileModule(`${source}\nexport { ScenarioSelector,
 });
 const exports = {};
 const dependencies = {
-  react: React,
+  // Static copy tests have no layout. Before-paint effects are exercised by
+  // test_expressive_layout.mjs instead of running DOM measurement during SSR.
+  react: { ...React, useLayoutEffect: React.useEffect },
   "react/jsx-runtime": jsxRuntime,
   "next/link": { default: ({ children, ...props }) => React.createElement("a", props, children) },
   "lucide-react": Object.fromEntries(["ArrowDown", "ArrowRight", "ChevronLeft", "ChevronRight"].map((name) => [name, () => null])),
@@ -195,7 +197,8 @@ test("a pending scenario keeps the loaded selection and other choices available"
   assert.match(button(html, "Broad agreement"), /aria-pressed="true"/);
   assert.match(button(html, "Polarized electorate"), /aria-pressed="false"/);
   assert.match(button(html, "Polarized electorate"), /Loading/);
-  assert.match(button(html, "Original electorate"), /Restore/);
+  assert.match(button(html, "Original electorate"), /Try this/);
+  assert.match(button(html, "Original electorate"), /aria-pressed="false"/);
   assert.doesNotMatch(html, /\sdisabled=""/);
   assert.match(plainText(html), /All results still show Broad agreement/);
   assert.match(plainText(html), /submitted curve and explicit yes\/no answer stay the same/);
@@ -212,13 +215,20 @@ test("a fresh ballot disables scenario changes while failures retain a local ret
   assert.match(plainText(failed), /All results still show Original electorate/);
 });
 
-test("scenario choices follow the voter browser and precede the combine action", () => {
+test("four matching scenario cards follow the voter browser with the original selected initially", () => {
   const html = render(exports.ElectorateResults, { ...controls, data: fixtures.prepared, ballot: baseline.ballot });
   const text = plainText(html);
   assert.match(text, /Combine these 100 ballots/);
   assert.match(text, /Try a different electorate/);
-  for (const label of ["Broad agreement", "Polarized electorate", "Intense minority", "Original electorate"]) {
-    assert.ok(button(html, label));
+  const grid = html.match(/<div class="scenarioGrid">([\s\S]*?)<\/div>/)?.[1];
+  assert.ok(grid, "All electorate choices must share the card grid");
+  const cards = [...grid.matchAll(/<button\b[^>]*>[\s\S]*?<\/button>/g)].map(([markup]) => markup);
+  assert.equal(cards.length, 4);
+  const labels = ["Original electorate", "Broad agreement", "Polarized electorate", "Intense minority"];
+  for (const [index, label] of labels.entries()) {
+    assert.ok(plainText(cards[index]).includes(label), `${label} must occupy its expected position in the grid`);
+    assert.match(cards[index], /class="scenarioCard"/);
+    assert.match(cards[index], index === 0 ? /aria-pressed="true"/ : /aria-pressed="false"/);
   }
   const landmarks = ["Browse all 100", "100 voters. One yes/no question.", "Try a different electorate", "Combine these 100 ballots"];
   let previousIndex = -1;

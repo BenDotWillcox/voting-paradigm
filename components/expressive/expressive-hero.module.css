@@ -2,7 +2,7 @@
    preference information. Left half echoes the scantron zone; right half
    echoes the richer zone. */
 .hero {
-  --ink:#0d0f12; --quiet:#4a5765; --line:#b7c8db; --sheet:#fff; --rule:#cfdcea;
+  --ink:#0d0f12; --quiet:#4a5765; --line:#b7c8db; --sheet:#eaf1f8; --rule:#cfdcea;
   --teal:#0c766d; --deep:#16836b; --gold:#a9690e; --taper:#496984; --rose:#b15d54;
   position:relative; isolation:isolate; overflow:hidden; color:var(--ink);
   background:linear-gradient(90deg, var(--sheet) 0, var(--sheet) 34%, #f1f6f4 62%, #f7f5ec 100%);
@@ -18,28 +18,28 @@
 .hero::after {
   content:""; position:absolute; inset:0; z-index:-1; pointer-events:none;
   background:
-    radial-gradient(34rem 26rem at 66% 26%, color-mix(in srgb,var(--teal) 28%,transparent), transparent 70%),
-    radial-gradient(30rem 24rem at 98% 18%, color-mix(in srgb,var(--rose) 22%,transparent), transparent 70%),
-    radial-gradient(34rem 26rem at 92% 88%, color-mix(in srgb,var(--gold) 30%,transparent), transparent 70%),
-    radial-gradient(30rem 22rem at 60% 96%, color-mix(in srgb,var(--taper) 24%,transparent), transparent 70%),
+    radial-gradient(34rem 26rem at 66% 26%, color-mix(in srgb,var(--teal) 42%,transparent), transparent 70%),
+    radial-gradient(30rem 24rem at 98% 18%, color-mix(in srgb,var(--rose) 34%,transparent), transparent 70%),
+    radial-gradient(34rem 26rem at 92% 88%, color-mix(in srgb,var(--gold) 42%,transparent), transparent 70%),
+    radial-gradient(30rem 22rem at 60% 96%, color-mix(in srgb,var(--taper) 32%,transparent), transparent 70%),
     radial-gradient(color-mix(in srgb,var(--taper) 26%,transparent) 1px, transparent 1.5px) 0 0/20px 20px;
   -webkit-mask-image:linear-gradient(90deg, transparent 36%, #000 72%);
           mask-image:linear-gradient(90deg, transparent 36%, #000 72%);
 }
 .timingMarks { position:absolute; left:0; top:24px; bottom:24px; width:9px; opacity:.85; background:repeating-linear-gradient(to bottom, var(--ink) 0 7px, transparent 7px 32px); }
-.edge { position:absolute; left:0; right:0; bottom:0; height:3px; background:linear-gradient(90deg, var(--ink) 0, var(--ink) 30%, var(--teal) 52%, var(--taper) 68%, var(--gold) 84%, var(--rose) 100%); }
 
 /* Desktop: sheet | centred copy | curves — the left-to-right story.
    Below 1100px all three stack: copy, then sheet, then curves. */
 .inner {
-  max-width:80rem; margin:0 auto; padding:28px 24px 56px;
-  display:grid; gap:20px 40px; align-items:center;
-  grid-template-columns:minmax(0,4fr) minmax(0,5fr) minmax(0,5fr);
+  max-width:100rem; margin:0 auto; padding:28px 24px 56px;
+  display:grid; gap:20px 32px; align-items:center;
+  grid-template-columns:minmax(0,1fr) minmax(0,2.25fr) minmax(0,1fr);
   grid-template-areas:"back back back" "sheet copy visual";
 }
-.back { grid-area:back; justify-self:start; display:inline-flex; align-items:center; gap:8px; margin-bottom:8px; font-size:14px; color:var(--quiet); transition:color .15s; }
+.back { grid-area:back; justify-self:start; display:inline-flex; align-items:center; gap:8px; margin-bottom:8px; padding:8px 12px; border:1px solid color-mix(in srgb,var(--line) 65%,#fff); border-radius:10px; background:#fff; font-size:14px; line-height:1.35; color:var(--quiet); transition:color .15s; }
 .back:hover { color:var(--ink); }
-.copy { grid-area:copy; min-width:0; text-align:center; }
+.back:focus-visible { outline:2px solid var(--teal); outline-offset:3px; }
+.copy { grid-area:copy; min-width:0; padding:32px 36px; text-align:center; background:#fff; border:1px solid color-mix(in srgb,var(--line) 65%,#fff); border-radius:16px; box-shadow:0 6px 22px -16px #1b2b4033; }
 .eyebrow { margin:0 0 12px; font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace; font-size:12px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--ink); }
 .copy h1 { margin:0 0 14px; font-size:clamp(30px,3.2vw,42px); font-weight:600; line-height:1.12; letter-spacing:-.035em; text-wrap:balance; }
 .lede { margin:0 auto; max-width:34rem; font-size:17px; line-height:1.65; color:var(--quiet); text-wrap:pretty; }
@@ -50,7 +50,7 @@
 .sheetLines { display:grid; gap:7px; padding:12px 9px 14px; }
 .sheetLines i { display:block; height:6px; width:100%; background:#e4e6e8; border-radius:1px; }
 .sheetChoices { display:grid; grid-template-columns:1fr 1fr; border-top:1px solid #222; }
-.sheetChoices span { display:flex; align-items:center; justify-content:flex-end; gap:10px; padding:11px 12px; font-size:11px; }
+.sheetChoices span { display:flex; align-items:center; justify-content:flex-end; gap:clamp(6px,.6vw,10px); padding:11px clamp(8px,.65vw,12px); font-size:11px; }
 .sheetChoices span + span { border-left:1px solid #222; }
 .bubble { position:relative; display:block; width:26px; height:13px; border:1px solid #333; border-radius:50%; overflow:hidden; }
 .bubble em { position:absolute; inset:-1px; background:#111; border-radius:50%; clip-path:inset(0 100% 0 0); }
@@ -75,14 +75,15 @@
 .area { fill:color-mix(in srgb,var(--c) 9%,transparent); }
 .line { fill:none; stroke:var(--c); stroke-width:2.4; stroke-linejoin:round; stroke-linecap:round; }
 .peak { fill:var(--c); stroke:#fff; stroke-width:2; }
-.visualCaption { margin:6px 0 0; text-align:center; font-size:11px; letter-spacing:.06em; color:color-mix(in srgb,var(--teal) 70%,var(--ink)); }
+.visualCaption { margin:6px 0 0; text-align:center; font-size:11px; line-height:1.6; letter-spacing:.06em; color:color-mix(in srgb,var(--teal) 70%,var(--ink)); }
 
 @media(max-width:1100px) {
   .inner { grid-template-columns:minmax(0,1fr); grid-template-areas:"back" "copy" "sheet" "visual"; gap:28px; }
+  .copy { justify-self:center; width:100%; max-width:840px; }
   .visual { justify-self:center; width:100%; max-width:640px; }
   .hero { background:linear-gradient(180deg, var(--sheet) 0, var(--sheet) 45%, #f1f6f4 70%, #f7f5ec 100%); }
   .hero::before { -webkit-mask-image:linear-gradient(180deg, #000 40%, transparent 62%); mask-image:linear-gradient(180deg, #000 40%, transparent 62%); }
   .hero::after { -webkit-mask-image:linear-gradient(180deg, transparent 45%, #000 75%); mask-image:linear-gradient(180deg, transparent 45%, #000 75%); }
 }
-@media(max-width:640px) { .inner { padding:24px 16px 40px; } .timingMarks { width:5px; } .lede { font-size:15px; } }
+@media(max-width:640px) { .inner { padding:24px 16px 40px; } .timingMarks { width:5px; } .copy { padding:22px 18px; } .lede { font-size:15px; } }
 @media(prefers-reduced-motion:reduce) { .sheet em { animation:none !important; } }

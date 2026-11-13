@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { memo, useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ArrowDown, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { scalarFocusRange, scalarPresentationPreview, scalarTransitionTicks, SCALAR_DOMAIN, type ScalarGraphRange } from "@/lib/expressive-scalar-graph";
 import { useScalarViewport } from "@/lib/use-scalar-viewport";
@@ -29,6 +29,7 @@ const scenarioLabels: Record<ScalarScenario, string> = {
   "intense-minority": "Intense minority",
 };
 const scenarioPresets: { id: ScalarScenario; description: string }[] = [
+  { id: "prepared", description: "Varied ideal rates, tolerances, and approval bands across the electorate." },
   { id: "broad-agreement", description: "Nearby ideals, varied tolerances, and overlapping approval bands." },
   { id: "polarized", description: "Two separated camps, with different curves within each." },
   { id: "intense-minority", description: "A smaller group’s scores fall sharply; a larger group is more tolerant." },
@@ -59,10 +60,14 @@ const BackgroundCurves = memo(function BackgroundCurves({ voters }: { voters: Pr
 
 function Plot({ viewport, label, children }: { viewport: Viewport; label: string; children: (geometry: PlotGeometry) => ReactNode }) {
   const container = useRef<HTMLDivElement>(null);
+  const svg = useRef<SVGSVGElement>(null);
   const [width, setWidth] = useState(800);
   const clipId = useId().replaceAll(":", "");
-  useEffect(() => {
-    if (!container.current) return;
+  useLayoutEffect(() => {
+    if (!container.current || !svg.current) return;
+    // A scenario remount must use the displayed content width before its first
+    // paint; painting the 800px fallback changes the SVG height and page scroll.
+    setWidth(Math.max(260, svg.current.getBoundingClientRect().width));
     const observer = new ResizeObserver(([entry]) => setWidth(Math.max(260, entry.contentRect.width)));
     observer.observe(container.current);
     return () => observer.disconnect();
@@ -76,8 +81,8 @@ function Plot({ viewport, label, children }: { viewport: Viewport; label: string
   const y = (score: number) => bottom - score * (bottom - top);
   const transform = `translate(${left} ${top}) scale(${(right - left) / span} ${bottom - top}) translate(${-viewport.view.minimum} 0)`;
   return <div className={styles.plotWrap} ref={container}>
-    <svg className={styles.plot} viewBox={`0 0 ${width} ${bottom + 49}`} role="img" aria-label={label}>
-      <defs><clipPath id={clipId}><rect x={left} y={top - 5} width={right - left} height={bottom - top + 10} /></clipPath></defs>
+    <svg ref={svg} className={styles.plot} viewBox={`0 0 ${width} ${bottom + 49}`} role="img" aria-label={label}>
+      <defs><clipPath id={clipId}><rect x={left} y={top - 10} width={right - left} height={bottom - top + 20} /></clipPath></defs>
       {[0, 0.5, 1].map((score) => <g key={score}><line className={styles.grid} x1={left} x2={right} y1={y(score)} y2={y(score)} /><text x={left - 11} y={y(score) + 4} textAnchor="end">{score}</text></g>)}
       <text x={left} y={12} className={styles.axisTitle}>Declared score</text>
       {scalarTransitionTicks(viewport.from, viewport.target, viewport.progress, width < 500).map(({ value, opacity }) => x(value) >= left - 1 && x(value) <= right + 1 && <g key={value} opacity={opacity}>
@@ -102,6 +107,7 @@ function ZoomControls({ viewport, focus, focusLabel }: { viewport: Viewport; foc
 function VoterGraph({ voters, selected, data }: { voters: PreparedVoter[]; selected: PreparedVoter; data: ScalarComparisonResponse }) {
   const viewport = useScalarViewport(scalarFocusRange(data.status_quo));
   const outside = selected.ballot.ideal < viewport.target.minimum || selected.ballot.ideal > viewport.target.maximum;
+  const idealAtOption = selected.ballot.ideal === data.status_quo || selected.ballot.ideal === data.proposal;
   return <div className={styles.voterGraph}>
     <div className={styles.graphToolbar}>
       <span className={styles.graphKey}><i className={`${styles.lineKey} ${voteClass(selected.binary_vote)}`} />Selected voter <i className={styles.contextKey} />Other voters</span>
@@ -114,8 +120,9 @@ function VoterGraph({ voters, selected, data }: { voters: PreparedVoter[]; selec
           <line className={styles.statusMarker} x1={x(data.status_quo)} x2={x(data.status_quo)} y1={top} y2={bottom} />
           <line className={styles.proposalMarker} x1={x(data.proposal)} x2={x(data.proposal)} y1={top} y2={bottom} />
           <g transform={transform}><path d={selected.path} className={`${styles.selectedCurve} ${voteClass(selected.binary_vote)}`} vectorEffect="non-scaling-stroke" /></g>
-          <circle className={`${styles.idealDot} ${voteClass(selected.binary_vote)}`} cx={x(selected.ballot.ideal)} cy={y(1)} r={4.5} />
-          <circle className={styles.statusDot} cx={x(data.status_quo)} cy={y(selected.status_quo_score)} r={5} />
+          {/* Keep the ideal's outline visible when an option sits at its peak. */}
+          <circle className={`${styles.idealDot} ${voteClass(selected.binary_vote)}`} cx={x(selected.ballot.ideal)} cy={y(1)} r={idealAtOption ? 8 : 4.5} />
+          <rect className={styles.statusDot} x={x(data.status_quo) - 4} y={y(selected.status_quo_score) - 4} width={8} height={8} />
           <path className={styles.proposalDot} d={`M ${x(data.proposal)} ${y(selected.proposal_score) - 5} l 5 5 l -5 5 l -5 -5 Z`} />
         </g>
       </>}
@@ -141,15 +148,16 @@ function VoterStrip({ voters, selectedIndex, onSelect }: { voters: PreparedVoter
     if (element && strip.current) strip.current.scrollLeft = element.offsetLeft + element.offsetWidth / 2 - strip.current.clientWidth / 2;
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     // External arrows, shortcuts, and the range select a card; native scrolling
     // updates lastSelected first so it never fights the user's momentum.
+    // Center a fresh electorate before paint instead of flashing its first card.
     if (!initialized.current || lastSelected.current !== selectedIndex) center(selectedIndex);
     initialized.current = true;
     lastSelected.current = selectedIndex;
   }, [center, selectedIndex]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!strip.current) return;
     const observer = new ResizeObserver(() => center(lastSelected.current));
     observer.observe(strip.current);
@@ -253,7 +261,6 @@ function ScenarioSelector({ scenario, onScenarioChange, scenarioPending, scenari
           <span className={styles.scenarioDescription}>{description}</span>
         </button>)}
       </div>
-      <button type="button" className={styles.originalScenario} aria-pressed={scenario === "prepared"} onClick={() => onScenarioChange("prepared")}>Original electorate{scenarioPending === "prepared" ? " · Loading…" : scenario === "prepared" ? " · Shown" : " · Restore"}</button>
     </fieldset>
     <p className={styles.scenarioStatus} role="status">{scenarioDisabled
       ? "Comparing your new ballot. These results still show your previous submission."

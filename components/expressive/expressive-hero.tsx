@@ -106,6 +106,5 @@ export function ExpressiveHero() {
         <p className={styles.visualCaption}>Ideal rate · what you accept · how fast support falls away</p>
       </div>
     </div>
-    <span className={styles.edge} aria-hidden="true" />
   </section>;
 }
