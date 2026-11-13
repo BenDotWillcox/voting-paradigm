@@ -11,6 +11,7 @@ import { WindowOverlay } from "./app-window";
 import { choiceLabel, findQuestion, outcomeLabel } from "./ballots";
 
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+import { trustedWith } from "./categories";
 import { ChangesList } from "./changes-list";
 import { HubGraph } from "./hub-graph";
 import {
@@ -409,16 +410,11 @@ function TrustedWith({
   const { directory } = useAccount();
   const { person } = profile;
   const subject = isViewer ? "you" : "them";
-  const received = useMemo(() => {
-    const byCategory = new Map<string, string[]>();
-    for (const entry of profile.received) {
-      byCategory.set(entry.category, [
-        ...(byCategory.get(entry.category) ?? []),
-        entry.delegator,
-      ]);
-    }
-    return [...byCategory.entries()].sort((a, b) => b[1].length - a[1].length);
-  }, [profile.received]);
+  // Wordings the decision model judged to be the same thing count together
+  const received = useMemo(
+    () => trustedWith(directory.groups, profile.received),
+    [directory.groups, profile.received],
+  );
 
   return (
     <section className="liquid-panel space-y-2 p-4">
@@ -431,9 +427,9 @@ function TrustedWith({
         </p>
       ) : (
         <ul className="space-y-1.5 text-sm">
-          {received.map(([category, people]) => (
-            <li key={category}>
-              <span className="font-medium">{category}</span>
+          {received.map(({ label, people, wordings }) => (
+            <li key={label}>
+              <span className="font-medium">{label}</span>
               <span className="text-muted-foreground">
                 {" "}
                 ·{" "}
@@ -451,6 +447,16 @@ function TrustedWith({
                     ))
                   : `${people.length} people`}
               </span>
+              {wordings.length > 1 && (
+                <span className="block text-xs text-muted-foreground">
+                  written as{" "}
+                  {wordings.map((wording, index) => (
+                    <span key={wording.text}>
+                      {index > 0 && ", "}“{wording.text}” ({wording.count})
+                    </span>
+                  ))}
+                </span>
+              )}
             </li>
           ))}
         </ul>

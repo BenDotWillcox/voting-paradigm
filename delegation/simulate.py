@@ -194,6 +194,9 @@ class SimulationConfig:
     max_categories: int = 7
     # How much likelier a person is to pick a broad category than a narrow one
     broad_weight: float = 3.0
+    # The chance that a person writes a category in one of its other
+    # wordings, when the pool has any for it
+    share_reworded: float = 0.4
     # People who delegate one category to the viewer, per district, when
     # viewer_inbound does not spell them out
     viewer_delegators_per_district: int = 2
@@ -311,6 +314,7 @@ def simulate_network(
     categories: Sequence[Category],
     config: SimulationConfig = SimulationConfig(),
     nesting: Iterable[NestingPair] = (),
+    wordings: Mapping[CategoryId, Sequence[Category]] | None = None,
 ) -> Simulation:
     """
     Build the seeded synthetic network.
@@ -318,7 +322,10 @@ def simulate_network(
     Args:
         categories: The pool people draw their categories from
         config: The population's parameters
-        nesting: Which pool categories sit inside which
+        nesting: Which categories sit inside which, other wordings included
+        wordings: Other ways people write a pool category, by its id.
+            Each is a category of its own: a person who would hand over
+            the pool category sometimes writes one of these instead.
 
     Raises:
         ValueError: If there are no categories or the shares exceed one
@@ -376,10 +383,35 @@ def simulate_network(
         )
         for category in categories
     }
+    wordings = wordings or {}
+    other_wordings = [
+        wording for category in categories for wording in wordings.get(category.id, ())
+    ]
+    # Whoever is well known for a category is well known for it however
+    # it is written
+    for category in categories:
+        for wording in wordings.get(category.id, ()):
+            experts[wording.id] = experts[category.id]
+
+    def worded(person: PersonId, category: Category) -> Category:
+        """The wording this person uses for a pool category."""
+        options = wordings.get(category.id, ())
+        if not options:
+            return category
+        # Drawn per person and category, so it moves no other draw
+        draw = random.Random(f"{config.seed}:wording:{person}:{category.id}")
+        if draw.random() >= config.share_reworded:
+            return category
+        return draw.choice(list(options))
 
     nesting = frozenset(nesting)
-    narrow = {inner for inner, _ in nesting}
-    network = create_network(persons, categories)
+    # Narrow within the pool: another wording that happens to be broader does
+    # not make a pool category less likely to be picked
+    in_pool = {category.id for category in categories}
+    narrow = {
+        inner for inner, outer in nesting if inner in in_pool and outer in in_pool
+    }
+    network = create_network(persons, [*categories, *other_wordings])
 
     def delegate(delegator: PersonId, category: Category, chosen: PersonId) -> None:
         nonlocal network
@@ -408,7 +440,7 @@ def simulate_network(
                 around = residents[home[person]] if person in home else outsiders
                 options = [other for other in around if other not in (person, VIEWER)]
             if options:
-                delegate(person, category, rng.choice(options))
+                delegate(person, worded(person, category), rng.choice(options))
 
     # A few people hand one category to the viewer, so the viewer answers for
     # others, including on ballots issued to districts the viewer is not in.
@@ -422,7 +454,12 @@ def simulate_network(
             free = [
                 member
                 for member in residents.get(district_id(number), [])
-                if member != VIEWER and network.delegate_for(member, named.id) is None
+                if member != VIEWER
+                # Nobody hands over the same thing twice in two wordings
+                and all(
+                    network.delegate_for(member, written.id) is None
+                    for written in (named, *wordings.get(named.id, ()))
+                )
             ]
             if free:
                 delegate(rng.choice(free), named, VIEWER)

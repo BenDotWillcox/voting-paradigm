@@ -25,13 +25,13 @@ from delegation.simulate import CITY, VIEWER, district_id, simulate_network
 ROOT = Path(__file__).resolve().parents[2]
 SCENARIO = load_scenario()
 SIMULATION = simulate_network(
-    SCENARIO.categories, SCENARIO_SIMULATION, SCENARIO.nesting
+    SCENARIO.pool, SCENARIO_SIMULATION, SCENARIO.nesting, SCENARIO.wordings
 )
 
 
 class TestScenarioFile:
     def test_pool_papers_and_judgments(self) -> None:
-        assert len(SCENARIO.categories) == 30
+        assert len(SCENARIO.categories) == 50
         assert len(SCENARIO.papers) == 12
         assert [
             (entry.id, entry.paper.jurisdiction) for entry in SCENARIO.open_papers
@@ -45,14 +45,17 @@ class TestScenarioFile:
         assert all(entry.closes_in_days < 0 for entry in SCENARIO.closed_papers)
         # Every labelled question is used once.
         assert len(SCENARIO.questions) == 68
-        assert len(SCENARIO.judgments) == 68 * 30
+        assert len(SCENARIO.judgments) == 68 * 50
         assert SCENARIO.model == "jev-1.14.0"
 
-    def test_nesting_is_between_pool_categories_and_includes_tree_frogs(self) -> None:
+    def test_nesting_includes_tree_frogs_and_the_evaluations_pairs(self) -> None:
         frogs = create_category("the well-being of tree frogs in the Amazon").id
         environment = create_category("the environment and conservation").id
         assert (frogs, environment) in SCENARIO.nesting
-        assert len(SCENARIO.nesting) == 11
+        pool = {category.id for category in SCENARIO.pool}
+        within = [pair for pair in SCENARIO.nesting if pool.issuperset(pair)]
+        assert len(within) == 11
+        assert len(SCENARIO.nesting) == 43
 
     def test_lookups(self) -> None:
         assert SCENARIO.paper("city-general-3").title == "Port Alder general ballot"
@@ -309,3 +312,100 @@ class TestScenarioPopulation:
             for resolution in resolutions.values()
             for decision in resolution.decisions.values()
         )
+
+
+class TestWordings:
+    """Other wordings of pool categories, and the groups derived from them."""
+
+    def text(self, category_id: str) -> str:
+        category = SCENARIO.category(category_id)
+        assert category is not None
+        return category.text
+
+    def group(self, text: str) -> set[str]:
+        return {self.text(member) for member in SCENARIO.group_of(create_category(text).id)}
+
+    def test_the_pool_and_its_other_wordings(self) -> None:
+        assert len(SCENARIO.pool) == 30
+        assert SCENARIO.categories[:30] == SCENARIO.pool
+        others = [w for wordings in SCENARIO.wordings.values() for w in wordings]
+        assert len(others) == 20 and len(SCENARIO.wordings) == 11
+        assert {category.id for category in SCENARIO.pool}.isdisjoint(
+            wording.id for wording in others
+        )
+        assert set(SCENARIO.wordings) <= {category.id for category in SCENARIO.pool}
+
+    def test_every_category_is_in_exactly_one_group(self) -> None:
+        members = [member for group in SCENARIO.groups for member in group]
+        assert sorted(members) == sorted(category.id for category in SCENARIO.categories)
+        assert sum(len(group) > 1 for group in SCENARIO.groups) == 11
+
+    def test_wordings_of_the_same_thing_are_grouped(self) -> None:
+        assert self.group("all things taxes") == {
+            "all things taxes",
+            "taxes",
+            "anything to do with taxes",
+        }
+        assert self.group("ranked-choice voting") == {
+            "ranked choice voting",
+            "ranked-choice voting",
+        }
+
+    def test_a_narrower_or_broader_wording_is_nested_not_grouped(self) -> None:
+        # The decision model read these four as narrower or broader than the
+        # pool category they were written beside, so they stand alone.
+        for alone in (
+            "tax policy",
+            "the environment",
+            "schools and education",
+            "housing and zoning",
+        ):
+            assert self.group(alone) == {alone}
+        taxes = create_category("all things taxes").id
+        assert (create_category("tax policy").id, taxes) in SCENARIO.nesting
+        schools = create_category("public schools and education").id
+        assert (schools, create_category("schools and education").id) in SCENARIO.nesting
+
+    def test_no_group_joins_two_pool_categories(self) -> None:
+        pool = {category.id for category in SCENARIO.pool}
+        assert all(len(pool.intersection(group)) <= 1 for group in SCENARIO.groups)
+
+    def test_grouped_categories_are_never_nested(self) -> None:
+        for narrow, broad in SCENARIO.nesting:
+            assert broad not in SCENARIO.group_of(narrow)
+
+    def test_a_category_outside_the_network_is_its_own_group(self) -> None:
+        assert SCENARIO.group_of("cat_missing") == ("cat_missing",)
+
+    def test_rewording_changes_the_words_and_nothing_else(self) -> None:
+        plain = simulate_network(SCENARIO.pool, SCENARIO_SIMULATION, SCENARIO.nesting)
+        base = {
+            wording.id: pool_id
+            for pool_id, wordings in SCENARIO.wordings.items()
+            for wording in wordings
+        }
+        reworded = [d for d in SIMULATION.network.delegations if d.category in base]
+        assert len(reworded) > 100
+        assert sorted(
+            (d.delegator, base.get(d.category, d.category), d.delegate)
+            for d in SIMULATION.network.delegations
+        ) == sorted(
+            (d.delegator, d.category, d.delegate) for d in plain.network.delegations
+        )
+
+    def test_nobody_writes_one_category_two_ways(self) -> None:
+        base = {
+            wording.id: pool_id
+            for pool_id, wordings in SCENARIO.wordings.items()
+            for wording in wordings
+        }
+        held = [
+            (d.delegator, base.get(d.category, d.category))
+            for d in SIMULATION.network.delegations
+        ]
+        assert len(held) == len(set(held))
+
+    def test_well_known_people_are_known_for_every_wording(self) -> None:
+        for pool_id, wordings in SCENARIO.wordings.items():
+            for wording in wordings:
+                assert SIMULATION.experts[wording.id] == SIMULATION.experts[pool_id]

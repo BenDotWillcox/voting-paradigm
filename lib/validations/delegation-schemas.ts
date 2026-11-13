@@ -97,6 +97,8 @@ export const categorySchema = z.object({
   text: z.string(),
   in_pool: z.boolean(),
   inside: z.array(z.string()),
+  // Other wordings the decision model judged to be the same thing
+  same_as: z.array(z.string()).default([]),
 });
 
 const optionSchema = z.object({

@@ -24,6 +24,7 @@ import {
   type DelegationCheck,
   type HeldDelegation,
 } from "./account-provider";
+import { otherWordings, suggestCategories } from "./categories";
 import { categoryKey, personName, type Directory } from "./people";
 import { Chain, PersonLine, ProfileButton } from "./person-bits";
 import { PersonSearch } from "./person-search";
@@ -149,28 +150,77 @@ function CategoryField({
   value: string;
   onChange: (value: string) => void;
 }) {
-  const { scenario } = useAccount();
+  const { directory } = useAccount();
+  const typed = categoryKey(value);
+  const written = directory.groups.byKey.get(typed);
+  // What other people already write that matches, unless this is exactly it
+  const similar = suggestCategories(directory.groups, value).filter(
+    (group) => group !== written,
+  );
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id}>Decisions about…</Label>
       <Input
         id={id}
-        list={`${id}-pool`}
         value={value}
         maxLength={MAX_CATEGORY_LENGTH}
         placeholder="in your own words, broad or narrow"
         autoComplete="off"
         onChange={(event) => onChange(event.target.value)}
       />
-      <datalist id={`${id}-pool`}>
-        {scenario.categories.map((entry) => (
-          <option key={entry.id} value={entry.text} />
-        ))}
-      </datalist>
-      <p className="text-xs text-muted-foreground">
-        Anything from “all things taxes” to “the well-being of tree frogs in the
-        Amazon”.
-      </p>
+      {!typed && (
+        <p className="text-xs text-muted-foreground">
+          Anything from “all things taxes” to “the well-being of tree frogs in
+          the Amazon”.
+        </p>
+      )}
+      {written && (
+        <p className="text-xs text-muted-foreground">
+          {written.holders} {written.holders === 1 ? "person hands" : "people hand"}{" "}
+          this over
+          {otherWordings(written, value).length > 0 && (
+            <>
+              , counting those who write it as “
+              {otherWordings(written, value).join("”, “")}”
+            </>
+          )}
+          .
+        </p>
+      )}
+      {typed && !written && similar.length === 0 && (
+        <p className="text-xs text-muted-foreground">
+          Nobody else writes it this way. That is fine: each question is checked
+          against your words.
+        </p>
+      )}
+      {similar.length > 0 && (
+        <div className="space-y-1">
+          <p className="liquid-label">Others write</p>
+          <ul className="space-y-1">
+            {similar.map((group) => (
+              <li key={group.id}>
+                <button
+                  type="button"
+                  onClick={() => onChange(group.label)}
+                  className="flex w-full items-baseline justify-between gap-3 rounded-md border border-transparent px-2 py-1.5 text-left text-sm hover:border-border hover:bg-accent"
+                >
+                  <span className="min-w-0">
+                    <span className="font-medium">{group.label}</span>
+                    {group.wordings.length > 1 && (
+                      <span className="block text-xs text-muted-foreground">
+                        also “{otherWordings(group, group.label).join("”, “")}”
+                      </span>
+                    )}
+                  </span>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {group.holders} {group.holders === 1 ? "person" : "people"}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
@@ -733,7 +783,7 @@ export function AddDelegateSheet({
   );
 }
 
-/** The categories a well-known person is known for, as one-click suggestions. */
+/** What people already hand a person, or what they are well known for, as one-click suggestions. */
 function KnownFor({
   directory,
   delegate,
@@ -743,17 +793,30 @@ function KnownFor({
   delegate: string;
   onPick: (text: string) => void;
 }) {
+  // What other people already hand this person, wordings of one thing together
+  const trusted = directory.groups.all
+    .flatMap((group) => {
+      const entry = group.trusted.find((item) => item.person === delegate);
+      return entry ? [{ text: group.label, count: entry.delegators }] : [];
+    })
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 6);
   const known = (directory.persons.get(delegate)?.well_known_for ?? [])
-    .map((id) => directory.categoryText.get(id))
-    .filter((text): text is string => text !== undefined);
-  if (known.length === 0) return null;
+    .map((id) => directory.groups.byCategory.get(id)?.label)
+    .filter((text): text is string => text !== undefined)
+    .filter((text) => !trusted.some((entry) => entry.text === text))
+    .map((text) => ({ text, count: 0 }));
+  const suggestions = [...trusted, ...known];
+  if (suggestions.length === 0) return null;
   return (
     <div className="space-y-1.5">
       <p className="text-xs text-muted-foreground">
-        {personName(directory, delegate)} is well known for
+        {trusted.length > 0
+          ? `People already hand ${personName(directory, delegate)}`
+          : `${personName(directory, delegate)} is well known for`}
       </p>
       <div className="flex flex-wrap gap-1.5">
-        {known.map((text) => (
+        {suggestions.map(({ text, count }) => (
           <button
             key={text}
             type="button"
@@ -761,6 +824,9 @@ function KnownFor({
             className="rounded-full border px-2.5 py-1 text-xs hover:bg-accent"
           >
             {text}
+            {count > 0 && (
+              <span className="ml-1.5 text-muted-foreground">{count}</span>
+            )}
           </button>
         ))}
       </div>

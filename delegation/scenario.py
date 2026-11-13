@@ -201,8 +201,15 @@ class Scenario:
     city: str
     # A name for each district, by jurisdiction id
     districts: Mapping[JurisdictionId, str]
+    # Every category people in the network write: the pool, then the other
+    # wordings of pool categories
     categories: tuple[Category, ...]
-    # (narrow, broad) pairs of pool categories
+    # The other wordings some people use for a pool category, by its id
+    wordings: Mapping[CategoryId, tuple[Category, ...]]
+    # Categories the decision model judged to be the same thing, each
+    # category in exactly one group
+    groups: tuple[tuple[CategoryId, ...], ...]
+    # (narrow, broad) pairs of categories
     nesting: frozenset[NestingPair]
     # Oldest first
     papers: tuple[ScenarioPaper, ...]
@@ -212,6 +219,23 @@ class Scenario:
     # Questions whose judgments stand in for ones not yet recorded: they were
     # judged under earlier wording. Empty once the scenario is fully judged.
     provisional: frozenset[QuestionId]
+
+    @property
+    def pool(self) -> tuple[Category, ...]:
+        """The categories people draw from, without their other wordings."""
+        reworded = {
+            wording.id for others in self.wordings.values() for wording in others
+        }
+        return tuple(
+            category for category in self.categories if category.id not in reworded
+        )
+
+    def group_of(self, category_id: CategoryId) -> tuple[CategoryId, ...]:
+        """The group a category is in; itself alone when it is not in the pool."""
+        for group in self.groups:
+            if category_id in group:
+                return group
+        return (category_id,)
 
     @property
     def questions(self) -> tuple[Question, ...]:
@@ -370,6 +394,27 @@ def load_scenario(path: Path = SCENARIO_PATH) -> Scenario:
     if len(known) != len(categories):
         raise InvalidScenarioError("A category appears twice")
 
+    by_id = {category.id: category for category in categories}
+    wordings: dict[CategoryId, list[Category]] = {}
+    for item in raw["categories"]:
+        base = item.get("wording_of")
+        if base is None:
+            continue
+        if base not in known or base == item["id"]:
+            raise InvalidScenarioError(
+                f"Category {item['id']!r} is a wording of nothing in the pool"
+            )
+        wordings.setdefault(base, []).append(by_id[item["id"]])
+    if any(base in {w.id for ws in wordings.values() for w in ws} for base in wordings):
+        raise InvalidScenarioError("A wording has wordings of its own")
+
+    groups = tuple(tuple(group) for group in raw["groups"])
+    grouped = [member for group in groups for member in group]
+    if sorted(grouped) != sorted(known):
+        raise InvalidScenarioError(
+            "The groups do not hold every category exactly once"
+        )
+
     nesting = frozenset((narrow, broad) for narrow, broad in raw["nesting"])
     for narrow, broad in nesting:
         if narrow not in known or broad not in known:
@@ -448,6 +493,8 @@ def load_scenario(path: Path = SCENARIO_PATH) -> Scenario:
         city=raw["city"]["name"],
         districts=dict(raw["city"]["districts"]),
         categories=tuple(categories),
+        wordings={base: tuple(others) for base, others in wordings.items()},
+        groups=groups,
         nesting=nesting,
         papers=tuple(papers),
         viewer=read_viewer(raw["viewer"], known, closed),

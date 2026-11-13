@@ -9,6 +9,20 @@
       "district-3": "Eastgate"
     }
   },
+  "wordings_note": "Other ways some residents write a category from the pool. Each is a category of its own for routing. Which of them the decision model treats as the same thing is asked of it, not declared here; this list only decides who writes what.",
+  "wordings": [
+    {"of": "all things taxes", "also": ["taxes", "tax policy", "anything to do with taxes"]},
+    {"of": "the city budget and spending", "also": ["city spending and the budget", "how the city spends its money"]},
+    {"of": "the environment and conservation", "also": ["the environment", "environmental protection and conservation"]},
+    {"of": "public schools and education", "also": ["schools and education", "public education"]},
+    {"of": "housing and land use", "also": ["housing and zoning", "land use and housing"]},
+    {"of": "transportation and roads", "also": ["roads and transportation", "streets, roads and transit"]},
+    {"of": "policing and public safety", "also": ["police and public safety", "public safety and policing"]},
+    {"of": "public health and health care", "also": ["health care and public health"]},
+    {"of": "how elections are run", "also": ["election administration", "how we run our elections"]},
+    {"of": "ranked choice voting", "also": ["ranked-choice voting"]},
+    {"of": "the minimum wage", "also": ["minimum wage"]}
+  ],
   "viewer": {
     "position": [0.2, 0.25, 0.3],
     "delegations": [

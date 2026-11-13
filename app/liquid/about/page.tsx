@@ -75,6 +75,15 @@ export default async function LiquidAboutPage() {
           acceptable category. One author wrote both the categories and the labels, so those
           rates reflect the labels as well as the model.
         </p>
+        <p className="text-muted-foreground">
+          People write the same category in different words. A vote only ever moves under the
+          words its voter wrote, but profiles and suggestions count wordings together when the
+          decision model says each one sits inside the other. Of 20 extra wordings written for
+          this city, it grouped 16 with the category they were written beside and read the
+          other 4 as broader or narrower (“tax policy” as part of “all things taxes”, for
+          one). It grouped no two categories that were written as different things. The same
+          author wrote the wordings, so this is a small check, not a measurement.
+        </p>
       </section>
 
       <section className="space-y-2">
