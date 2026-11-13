@@ -127,7 +127,16 @@ export function ScalarComparison() {
           </div>
           <ScalarBallot onSubmitBallot={submitBallot} canSubmit={vote !== null} isSubmitting={busy} submittedBallot={submission?.request.ballot}
             context={<p>The 2022 ballot was binary. This experimental curve starts at the then-current statutory rate of {rateText(TAX_MEASURE.statusQuo)}. Shape it to show your ideal rate, what you would accept, and how quickly your support falls away.</p>}
-            submissionHint={!vote ? "Choose Yes or No above, then shape your curve and compare." : voteChanged ? "Yes/no answer edited. The comparison still uses your submitted answers." : undefined} />
+            footerControl={<fieldset className={styles.voteEcho}>
+              <legend>Your 2022 answer</legend>
+              <div>
+                {(["yes", "no"] as const).map((choice) => <label key={choice}>
+                  <input type="radio" name={`${ballotId}-vote-echo`} value={choice} checked={vote === choice} onChange={() => setVote(choice)} />
+                  <span>{choice === "yes" ? "Yes" : "No"} <small>{rateText(choice === "yes" ? TAX_MEASURE.proposal : TAX_MEASURE.statusQuo)}</small></span>
+                </label>)}
+              </div>
+            </fieldset>}
+            submissionHint={!vote ? "Pick your 2022 answer here or on the ballot above to compare." : voteChanged ? "Yes/no answer edited. The comparison still uses your submitted answers." : undefined} />
         </section>
 
         <section ref={resultRef} className={styles.comparison} aria-labelledby={`${ballotId}-results`}>

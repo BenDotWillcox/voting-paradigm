@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { memo, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { memo, useCallback, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ArrowDown, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { scalarFocusRange, scalarPresentationPreview, scalarTransitionTicks, SCALAR_DOMAIN, type ScalarGraphRange } from "@/lib/expressive-scalar-graph";
 import { useScalarViewport } from "@/lib/use-scalar-viewport";
@@ -10,10 +10,16 @@ import type { ScalarBallotState } from "@/types/expressive-scalar";
 import styles from "./electorate-results.module.css";
 
 const rateText = (rate: number) => `${rate.toFixed(2)}%`;
-const scoreText = (score: number, digits = 4) => score > 0 && score < 0.0001 ? score.toExponential(digits - 1) : score.toFixed(digits);
-// Preserve visible ordering even for tails close to zero or almost-equal peaks.
+// Two decimals by default; a nonzero score too small to show reads "<0.01"
+// rather than a misleading 0.00.
+const scoreText = (score: number, digits = 2) => {
+  const floor = 10 ** -digits;
+  return score > 0 && score < floor / 2 ? `<${floor.toFixed(digits)}` : score.toFixed(digits);
+};
+// Preserve visible ordering even for tails close to zero or almost-equal peaks:
+// add digits only when two different scores would otherwise print the same.
 function pairScoreText(first: number, second: number, tied: boolean): [string, string] {
-  for (let digits = 4; digits <= 12; digits += 1) {
+  for (let digits = 2; digits <= 12; digits += 1) {
     const values: [string, string] = [scoreText(first, digits), scoreText(second, digits)];
     if (tied || values[0] !== values[1] || digits === 12) return values;
   }
@@ -84,7 +90,7 @@ function Plot({ viewport, label, children }: { viewport: Viewport; label: string
     <svg ref={svg} className={styles.plot} viewBox={`0 0 ${width} ${bottom + 49}`} role="img" aria-label={label}>
       <defs><clipPath id={clipId}><rect x={left} y={top - 10} width={right - left} height={bottom - top + 20} /></clipPath></defs>
       {[0, 0.5, 1].map((score) => <g key={score}><line className={styles.grid} x1={left} x2={right} y1={y(score)} y2={y(score)} /><text x={left - 11} y={y(score) + 4} textAnchor="end">{score}</text></g>)}
-      <text x={left} y={12} className={styles.axisTitle}>Declared score</text>
+      <text x={left} y={12} className={styles.axisTitle}>Support (0–1)</text>
       {scalarTransitionTicks(viewport.from, viewport.target, viewport.progress, width < 500).map(({ value, opacity }) => x(value) >= left - 1 && x(value) <= right + 1 && <g key={value} opacity={opacity}>
         <line className={styles.tick} x1={x(value)} x2={x(value)} y1={bottom} y2={bottom + 5} />
         <text x={x(value)} y={bottom + 21} textAnchor={x(value) < left + 12 ? "start" : x(value) > right - 12 ? "end" : "middle"}>{Number(value.toFixed(2))}%</text>
@@ -243,6 +249,59 @@ function BinaryTally({ data }: { data: ScalarComparisonResponse }) {
   </div>;
 }
 
+/** A display margin on the 0–1 mean-score scale, not part of the decision rule. */
+const NEAR_BEST_MARGIN = 0.01;
+
+/** Contiguous rate stretches whose mean score is within NEAR_BEST_MARGIN of the maximum. */
+function nearBestSegments(data: ScalarComparisonResponse): [number, number][] {
+  const threshold = data.max_mean_score - NEAR_BEST_MARGIN;
+  const segments: [number, number][] = [];
+  let start: number | null = null;
+  let previous = 0;
+  for (const point of data.points) {
+    if (point.mean_score >= threshold) {
+      if (start === null) start = point.rate;
+      previous = point.rate;
+    } else if (start !== null) {
+      segments.push([start, previous]);
+      start = null;
+    }
+  }
+  if (start !== null) segments.push([start, previous]);
+  return segments;
+}
+
+/** Name each stretch rather than one span that would hide the gaps between them. */
+function nearBestText(segments: [number, number][]) {
+  const parts = segments.map(([start, end]) => start === end ? rateText(start) : `${rateText(start)}–${rateText(end)}`);
+  if (parts.length > 3) return `${parts.slice(0, 2).join(", ")} and ${parts.length - 2} more stretches`;
+  return parts.length === 1 ? parts[0] : `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+}
+
+const pointsText = (shift: number) => `${shift > 0 ? "+" : "−"}${Math.abs(shift).toFixed(2)} pts`;
+
+/** Lead with the change from the yes/no result and who prefers it, not a lone winning rate. */
+function WinnerSummary({ data }: { data: ScalarComparisonResponse }) {
+  const binaryRate = data.binary.outcome_rate;
+  const tied = data.winner_rates.length > 1;
+  const rate = data.winner_rates[0];
+  const winner = data.points[Math.round(rate / data.candidate_step)];
+  const same = !tied && rate === binaryRate;
+  return <div className={styles.winner}>
+    <span>{tied ? "Equal highest averages" : "Highest average"}</span>
+    <div className={styles.winnerShift}>
+      {!same && <><span className={styles.winnerFrom}><small>Yes/no<span className={styles.srOnly}> outcome</span></small><s>{rateText(binaryRate)}</s><span className={styles.srOnly}> changes to</span></span>
+      <ArrowRight size={16} aria-hidden="true" /></>}
+      <strong><RateWinners rates={data.winner_rates} /></strong>
+    </div>
+    <small>{same
+      ? "Same rate as the yes/no outcome."
+      : tied
+        ? `${data.winner_rates.length} rates share average score ${scoreText(data.max_mean_score, 2)}.`
+        : <>{pointsText(rate - binaryRate)} · <b>{winner.prefer_this} prefer {rateText(rate)}</b>, {winner.prefer_binary} prefer {rateText(binaryRate)}, {winner.indifferent} equal</>}</small>
+  </div>;
+}
+
 function RateWinners({ rates }: { rates: number[] }) {
   if (rates.length === 1) return <>{rateText(rates[0])}</>;
   if (rates.length <= 3) return <>{rates.map(rateText).join(" / ")}</>;
@@ -253,8 +312,8 @@ function ScenarioSelector({ scenario, onScenarioChange, scenarioPending, scenari
   const descriptionId = useId();
   return <div className={styles.scenarios}>
     <fieldset disabled={scenarioDisabled} aria-describedby={descriptionId}>
-      <legend>Try a different electorate</legend>
-      <p id={descriptionId}>Change the other 99 voters. Your submitted curve and explicit yes/no answer stay the same, and every result updates together.</p>
+      <legend>Who else is voting?</legend>
+      <p id={descriptionId}>Your ballot joins 99 synthetic voters. Switch electorates to see how every result below changes; your submitted curve and yes/no answer stay the same.</p>
       <div className={styles.scenarioGrid}>
         {scenarioPresets.map(({ id, description }) => <button key={id} type="button" className={styles.scenarioCard} aria-pressed={scenario === id} onClick={() => onScenarioChange(id)}>
           <span className={styles.scenarioCardHeading}><strong>{scenarioLabels[id]}</strong><span>{scenarioPending === id ? "Loading…" : scenario === id ? "Shown" : "Try this"}</span></span>
@@ -279,8 +338,11 @@ function WhatToNotice({ data }: { data: ScalarComparisonResponse }) {
   const sameOutcome = !multipleWinners && binaryIsWinner;
   const exampleIsBinary = winnerRate === data.binary.outcome_rate;
   const samePair = data.pair.winner_rates.length === 1 && data.pair.winner_rates[0] === data.binary.outcome_rate;
+  const segments = nearBestSegments(data);
+  const flatTop = segments.length > 1 || segments[0][1] - segments[0][0] > data.candidate_step * 2;
   return <section className={styles.notice} aria-label="What to notice about these results">
     <h4>What to notice</h4>
+    {flatTop && <p className={styles.noticeLead}>The top is flat: rates at {nearBestText(segments)} all average within {NEAR_BEST_MARGIN} of the highest score. The exact winner is sensitive to small changes in who votes; the shaded band on the chart shows how wide that plateau is.</p>}
     <p>{data.pair.winner_rates.length > 1
       ? `The two original rates tie on average score; richer scores do not select a single winner between them.`
       : samePair
@@ -314,6 +376,7 @@ function AggregateResults({ data, ballot, voters }: { data: ScalarComparisonResp
   };
   const fullRange = viewport.target.minimum === 0 && viewport.target.maximum === 100;
   const pairScores = pairScoreText(data.pair.proposal_mean, data.pair.status_quo_mean, data.pair.winner_rates.length > 1);
+  const nearBest = useMemo(() => nearBestSegments(data), [data]);
   return <>
     <div className={styles.outcomeSteps}>
       <div><span className={styles.stepNumber}>1</span><h4>Yes/no ballot</h4><strong>{rateText(data.binary.outcome_rate)}</strong><p>{data.binary.passed ? "The reduction passes." : data.binary.yes === data.binary.no ? "The count is tied; the status quo remains." : "The status quo remains."} {data.binary.yes} Yes · {data.binary.no} No{data.binary.abstain > 0 ? ` · ${data.binary.abstain} unmarked` : ""}.</p></div>
@@ -326,6 +389,7 @@ function AggregateResults({ data, ballot, voters }: { data: ScalarComparisonResp
       <div className={styles.graphToolbar}><span className={styles.graphKey}><i className={styles.meanKey} />Average of all 100 curves</span><ZoomControls viewport={viewport} focus={inspected.rate} focusLabel="Focus inspected" /></div>
       <Plot viewport={viewport} label={`Average declared score by tax rate. Maximum ${scoreText(data.max_mean_score)}. Inspected rate ${rateText(inspected.rate)}, average score ${scoreText(inspected.mean_score)}.`}>
         {({ x, y, transform, clipId, top, bottom }) => <g clipPath={`url(#${clipId})`}>
+          {nearBest.map(([start, end]) => <rect key={start} className={styles.nearBestBand} x={x(start - data.candidate_step / 2)} y={top} width={Math.max(2, x(end + data.candidate_step / 2) - x(start - data.candidate_step / 2))} height={bottom - top} />)}
           <g transform={transform}><BackgroundCurves voters={voters} /><path className={styles.meanArea} d={`${aggregatePath} L 100 1 L 0 1 Z`} /><path className={styles.meanCurve} d={aggregatePath} vectorEffect="non-scaling-stroke" /></g>
           <line className={styles.binaryMarker} x1={x(data.binary.outcome_rate)} x2={x(data.binary.outcome_rate)} y1={top} y2={bottom} />
           {data.winner_rates.map((rate) => <circle key={rate} className={styles.winnerDot} cx={x(rate)} cy={y(data.max_mean_score)} r={4} />)}
@@ -333,7 +397,7 @@ function AggregateResults({ data, ballot, voters }: { data: ScalarComparisonResp
           <circle className={styles.inspectorDot} cx={x(inspected.rate)} cy={y(inspected.mean_score)} r={6} />
         </g>}
       </Plot>
-      <div className={styles.plotLegend}><span><i className={styles.meanKey} />Highest average</span><span><i className={styles.binaryKey} />Yes/no outcome · {rateText(data.binary.outcome_rate)}</span><span><i className={styles.probeKey} />Inspected rate</span></div>
+      <div className={styles.plotLegend}><span><i className={styles.meanKey} />Average score</span><span><i className={styles.nearBestKey} />Within {NEAR_BEST_MARGIN} of the highest average</span><span><i className={styles.binaryKey} />Yes/no outcome · {rateText(data.binary.outcome_rate)}</span><span><i className={styles.probeKey} />Inspected rate</span></div>
       <div className={styles.inspection}>
         <div className={styles.inspectionControl}>
           <div className={styles.inspectionLabel}><label htmlFor={rangeId}>Inspect a rate</label><output htmlFor={rangeId}>{rateText(inspected.rate)}</output></div>
@@ -417,27 +481,21 @@ function VoterBrowser({ data, voters }: { data: ScalarComparisonResponse; voters
 
 export function ElectorateResults({ data, ballot, ...scenarioControls }: { data: ScalarComparisonResponse; ballot: ScalarBallotState } & ScenarioControls) {
   const voters = useMemo(() => [...data.electorate.voters].sort((a, b) => a.ballot.ideal - b.ballot.ideal || a.id.localeCompare(b.id)).map(prepareVoter), [data.electorate.voters]);
-  const [combined, setCombined] = useState(false);
   const [dataset, setDataset] = useState({ data, revision: 0 });
   // Adjust before rendering children, so an accepted response never displays
   // the previous dataset's selected voter or inspected rate, even on a retry.
   if (dataset.data !== data) setDataset({ data, revision: dataset.revision + 1 });
-  const aggregateId = useId();
-  const aggregateRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (combined) aggregateRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" });
-  }, [combined]);
 
   return <div className={styles.results}>
-    <div className={styles.browserHeading}><div><p className={styles.eyebrow}>First, see what a yes/no answer leaves out</p><h3>100 curves. One narrow choice.</h3><p>Scroll through the electorate, ordered by ideal rate. Different preferences can produce the same mark.</p><p className={styles.activeScenario}><strong>{scenarioLabels[data.scenario]}</strong>{scenarioControls.scenarioDisabled ? " · Previous submission shown while your new ballot is compared" : scenarioControls.scenarioPending ? ` · Still shown while ${scenarioLabels[scenarioControls.scenarioPending]} loads` : scenarioControls.scenarioError ? " · Previous results retained" : " · 99 synthetic voters + your submitted ballot"}</p></div></div>
-    {/* Reset only dataset-specific exploration; keep the combine step and
-        scenario controls mounted so scenario changes preserve focus and place. */}
-    <VoterBrowser key={dataset.revision} data={data} voters={voters} />
+    {/* The electorate changes every result below, so it is chosen first.
+        Scenario controls and the combined result stay mounted across
+        scenario changes to preserve focus and place. */}
     <ScenarioSelector scenario={data.scenario} {...scenarioControls} />
-    <div className={styles.combinePrompt}><div><h3>What if we keep the curves?</h3><p>Use these same 100 voters to score both the original choices and the wider range of tax rates.</p></div><button type="button" aria-expanded={combined} aria-controls={aggregateId} onClick={() => { if (combined) aggregateRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" }); else setCombined(true); }}>{combined ? "View the combined result" : "Combine these 100 ballots"}<ArrowDown size={16} aria-hidden="true" /></button></div>
-    <div ref={aggregateRef} id={aggregateId} className={styles.aggregateAnchor}>{combined && <div className={styles.aggregate}>
-      <div className={styles.aggregateHeading}><div><p className={styles.eyebrow}>The same 100 ballots, combined</p><h3>A collective score for every available rate.</h3><p>Give each ballot equal weight. At each rate, average its 100 declared scores; choose the highest average.</p></div><div className={styles.winner}><span>{data.winner_rates.length === 1 ? "Highest average at" : "Equal highest averages"}</span><strong><RateWinners rates={data.winner_rates} /></strong><small>Average score {scoreText(data.max_mean_score)}</small></div></div>
+    <div className={styles.browserHeading}><div><p className={styles.eyebrow}>First, see what a yes/no answer leaves out</p><h3>100 curves. One narrow choice.</h3><p>Scroll through the electorate, ordered by ideal rate. Different preferences can produce the same mark.</p></div></div>
+    <VoterBrowser key={dataset.revision} data={data} voters={voters} />
+    <div className={styles.aggregate}>
+      <div className={styles.aggregateHeading}><div><p className={styles.eyebrow}>Then keep the curves: the same 100 ballots, combined</p><h3>A collective score for every available rate.</h3><p>Give each ballot equal weight. At each rate, average its 100 declared scores; choose the highest average.</p></div><WinnerSummary data={data} /></div>
       <AggregateResults key={dataset.revision} data={data} ballot={ballot} voters={voters} />
-    </div>}</div>
+    </div>
   </div>;
 }

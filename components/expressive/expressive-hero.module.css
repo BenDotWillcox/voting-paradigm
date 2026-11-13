@@ -28,24 +28,27 @@
 }
 .timingMarks { position:absolute; left:0; top:24px; bottom:24px; width:9px; opacity:.85; background:repeating-linear-gradient(to bottom, var(--ink) 0 7px, transparent 7px 32px); }
 
-/* Desktop: sheet | centred copy | curves — the left-to-right story.
-   Below 1100px all three stack: copy, then sheet, then curves. */
+/* Copy first, then the story in one row inside the content column:
+   answer sheet, then "or say how much", then curves. Stacks below 760px. */
 .inner {
-  max-width:100rem; margin:0 auto; padding:28px 24px 56px;
-  display:grid; gap:20px 32px; align-items:center;
-  grid-template-columns:minmax(0,1fr) minmax(0,2.25fr) minmax(0,1fr);
-  grid-template-areas:"back back back" "sheet copy visual";
+  max-width:80rem; margin:0 auto; padding:28px 24px 56px;
+  display:grid; gap:28px; justify-items:center;
+  grid-template-areas:"back" "copy" "story";
 }
+/* Equal side columns keep the connector on the same centre line as the copy. */
+.story { grid-area:story; width:100%; max-width:1120px; display:grid; align-items:center; gap:28px; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); }
+.connector { display:flex; flex-direction:column; align-items:center; gap:6px; color:var(--quiet); font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; white-space:nowrap; }
+.connectorArrow { width:28px; height:28px; color:var(--teal); }
 .back { grid-area:back; justify-self:start; display:inline-flex; align-items:center; gap:8px; margin-bottom:8px; padding:8px 12px; border:1px solid color-mix(in srgb,var(--line) 65%,#fff); border-radius:10px; background:#fff; font-size:14px; line-height:1.35; color:var(--quiet); transition:color .15s; }
 .back:hover { color:var(--ink); }
 .back:focus-visible { outline:2px solid var(--teal); outline-offset:3px; }
-.copy { grid-area:copy; min-width:0; padding:32px 36px; text-align:center; background:#fff; border:1px solid color-mix(in srgb,var(--line) 65%,#fff); border-radius:16px; box-shadow:0 6px 22px -16px #1b2b4033; }
+.copy { grid-area:copy; width:100%; max-width:840px; min-width:0; padding:32px 36px; text-align:center; background:#fff; border:1px solid color-mix(in srgb,var(--line) 65%,#fff); border-radius:16px; box-shadow:0 6px 22px -16px #1b2b4033; }
 .eyebrow { margin:0 0 12px; font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace; font-size:12px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--ink); }
 .copy h1 { margin:0 0 14px; font-size:clamp(30px,3.2vw,42px); font-weight:600; line-height:1.12; letter-spacing:-.035em; text-wrap:balance; }
 .lede { margin:0 auto; max-width:34rem; font-size:17px; line-height:1.65; color:var(--quiet); text-wrap:pretty; }
 
 /* Miniature answer sheet. */
-.sheet { grid-area:sheet; justify-self:center; width:100%; margin:0; max-width:320px; background:#fff; border:1px solid #222; font-family:Arial,Helvetica,sans-serif; box-shadow:0 3px 0 -1px #dfe7f0, 0 10px 24px -16px #1b2b4033; }
+.sheet { justify-self:end; width:100%; margin:0; max-width:360px; background:#fff; border:1px solid #222; font-family:Arial,Helvetica,sans-serif; box-shadow:0 3px 0 -1px #dfe7f0, 0 10px 24px -16px #1b2b4033; }
 .sheetHeading { padding:5px 8px; background:#dedede; border-bottom:1px solid #222; font-size:12px; font-weight:700; }
 .sheetLines { display:grid; gap:7px; padding:12px 9px 14px; }
 .sheetLines i { display:block; height:6px; width:100%; background:#e4e6e8; border-radius:1px; }
@@ -67,7 +70,7 @@
 }
 
 /* Preference curves. */
-.visual { grid-area:visual; min-width:0; }
+.visual { min-width:0; }
 .curves { display:block; width:100%; height:auto; overflow:visible; }
 .grid { stroke:color-mix(in srgb,var(--ink) 12%,transparent); stroke-width:1; stroke-dasharray:2 5; }
 .tick { fill:var(--quiet); font-size:11px; font-variant-numeric:tabular-nums; }
@@ -77,10 +80,11 @@
 .peak { fill:var(--c); stroke:#fff; stroke-width:2; }
 .visualCaption { margin:6px 0 0; text-align:center; font-size:11px; line-height:1.6; letter-spacing:.06em; color:color-mix(in srgb,var(--teal) 70%,var(--ink)); }
 
-@media(max-width:1100px) {
-  .inner { grid-template-columns:minmax(0,1fr); grid-template-areas:"back" "copy" "sheet" "visual"; gap:28px; }
-  .copy { justify-self:center; width:100%; max-width:840px; }
-  .visual { justify-self:center; width:100%; max-width:640px; }
+@media(max-width:760px) {
+  .story { grid-template-columns:minmax(0,1fr); justify-items:center; gap:14px; }
+  .sheet { justify-self:center; }
+  .connectorArrow { transform:rotate(90deg); }
+  .visual { width:100%; max-width:640px; }
   .hero { background:linear-gradient(180deg, var(--sheet) 0, var(--sheet) 45%, #f1f6f4 70%, #f7f5ec 100%); }
   .hero::before { -webkit-mask-image:linear-gradient(180deg, #000 40%, transparent 62%); mask-image:linear-gradient(180deg, #000 40%, transparent 62%); }
   .hero::after { -webkit-mask-image:linear-gradient(180deg, transparent 45%, #000 75%); mask-image:linear-gradient(180deg, transparent 45%, #000 75%); }

@@ -10,6 +10,7 @@ const BOULDER_SAMPLE_URL = "https://assets.bouldercounty.gov/wp-content/uploads/
 export function IncomeTaxBallot({ vote, onVoteChange }: { vote: BinaryVote | null; onVoteChange: (vote: BinaryVote) => void }) {
   const id = useId();
 
+  // One sheet: source caption, ballot and its meaning, then footnotes.
   return <div className={styles.example}>
     <div className={styles.reference}>
       <p>Interactive ballot excerpt · {TAX_MEASURE.electionDate}</p>
@@ -41,8 +42,8 @@ export function IncomeTaxBallot({ vote, onVoteChange }: { vote: BinaryVote | nul
       <aside className={styles.context} aria-label="Meaning of the two answers">
         <p className={styles.contextLabel}>The choice in 2022</p>
         <dl>
-          <div><dt>YES/FOR</dt><dd>Reduce the statutory rate to <strong>{TAX_MEASURE.proposal.toFixed(2)}%</strong>.</dd></div>
-          <div><dt>NO/AGAINST</dt><dd>Keep the statutory rate at <strong>{TAX_MEASURE.statusQuo.toFixed(2)}%</strong>.</dd></div>
+          <div className={vote === "yes" ? styles.chosen : undefined}><dt>YES/FOR{vote === "yes" && <span className={styles.chosenTag}>Your answer</span>}</dt><dd>Reduce the statutory rate to <strong>{TAX_MEASURE.proposal.toFixed(2)}%</strong>.</dd></div>
+          <div className={vote === "no" ? styles.chosen : undefined}><dt>NO/AGAINST{vote === "no" && <span className={styles.chosenTag}>Your answer</span>}</dt><dd>Keep the statutory rate at <strong>{TAX_MEASURE.statusQuo.toFixed(2)}%</strong>.</dd></div>
         </dl>
         <p className={styles.contextNote}>The historical question is real. Your answer here is used only in the demo’s synthetic comparison.</p>
         <details className={styles.guide}>
