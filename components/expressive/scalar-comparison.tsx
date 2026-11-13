@@ -107,8 +107,8 @@ export function ScalarComparison() {
     <div className={styles.scantronZone}>
       <div className={styles.inner}>
         <section aria-labelledby={`${ballotId}-heading`}>
-          <p className={styles.step}><span>01</span>The 2022 ballot</p>
           <div className={styles.sectionHeading}>
+            <p className={styles.step}><span>01</span>The 2022 ballot</p>
             <h2 id={`${ballotId}-heading`}>One policy question. How much can your answer say?</h2>
             <p>In 2022, Colorado voters were asked whether to reduce the statutory income tax rate from {rateText(TAX_MEASURE.statusQuo)} to {rateText(TAX_MEASURE.proposal)}. Answer that ballot question first, exactly as it was printed.</p>
           </div>
@@ -119,11 +119,10 @@ export function ScalarComparison() {
 
     {/* Part two: the ballot as it could be. Colour arrives with information. */}
     <div className={styles.richZone}>
-      <div className={styles.spectrum} aria-hidden="true" />
       <div className={styles.inner}>
         <section aria-labelledby={`${ballotId}-richer`}>
-          <p className={styles.step}><span>02</span>A richer ballot</p>
           <div className={styles.sectionHeading}>
+            <p className={styles.step}><span>02</span>A richer ballot</p>
             <h2 id={`${ballotId}-richer`}>Same question. Room to say how much.</h2>
           </div>
           <ScalarBallot onSubmitBallot={submitBallot} canSubmit={vote !== null} isSubmitting={busy} submittedBallot={submission?.request.ballot}
@@ -132,13 +131,13 @@ export function ScalarComparison() {
         </section>
 
         <section ref={resultRef} className={styles.comparison} aria-labelledby={`${ballotId}-results`}>
-          <p className={styles.step}><span>03</span>Compare the results</p>
           <div className={styles.sectionHeading}>
+            <p className={styles.step}><span>03</span>Compare the results</p>
             <h2 id={`${ballotId}-results`}>What becomes visible when a ballot says more?</h2>
             <p>Your two answers join 99 synthetic voters. Explore their different preferences and the yes/no answers they produce, then combine those same 100 ballots into a tax rate. These are illustrative outcomes, not the actual 2022 election results.</p>
           </div>
           {error && requestKind === "ballot" && <div className={styles.error} role="alert"><p>{error}</p><button type="button" disabled={busy} onClick={() => lastRequest && void compare(lastRequest)}>Retry submitted ballot</button></div>}
-          {submission && requestKind === "ballot" && (busy || error) && <p role="status">{busy ? "Comparing your submitted answers. The results below still show your previous submission." : "The results below still show your previous submission."}</p>}
+          {submission && requestKind === "ballot" && (busy || error) && <p className={styles.snapshot} role="status">{busy ? "Comparing your submitted answers. The results below still show your previous submission." : "The results below still show your previous submission."}</p>}
           {submission ? <ElectorateResults
             key={JSON.stringify({ ballot: submission.request.ballot, binary_vote: submission.request.binary_vote })}
             data={submission.data} ballot={submission.request.ballot}

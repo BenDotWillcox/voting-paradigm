@@ -2,15 +2,15 @@
   --ink:#192d32; --quiet:#647277; --line:#dce4e3; --canvas:#f8faf8;
   --paper:#fff; --teal:#0c766d; --teal-soft:#eaf4f0; --gold:#a9690e;
   --rose:#98625c;
-  --taper:#496984; --sheet:#fff; --rule:#cfdcea;
+  --taper:#496984; --sheet:#eaf1f8; --rule:#cfdcea;
   color:var(--ink);
 }
 :global(.dark) .walkthrough { --ink:#e6eeed; --quiet:#9eafae; --line:#314442; --canvas:#172622; --paper:#1b2a26; --teal:#6ad9c0; --teal-soft:#223f36; --gold:#e8b668; --rose:#d6a098; --taper:#9fbdd9; --sheet:#141c25; --rule:#223142; }
 .inner { position:relative; max-width:80rem; margin:0 auto; padding:0 24px; }
 
-/* Part one — answer sheet. White paper, black ink, ruled lines, timing marks. */
+/* Part one — answer sheet. White panels over pale blue ruled paper. */
 .scantronZone {
-  --ink:#0d0f12; --quiet:#4a5765; --line:#b7c8db; --canvas:#fff; --paper:#fff;
+  --ink:#0d0f12; --quiet:#4a5765; --line:#b7c8db; --canvas:#f4f8fc; --paper:#fff;
   position:relative; padding:56px 0 64px;
   background:
     repeating-linear-gradient(to bottom, transparent 0 31px, var(--rule) 31px 32px),
@@ -29,7 +29,7 @@
 /* Part two — information field. The ruled sheet fades out as colour fades in. */
 .richZone {
   position:relative; isolation:isolate; padding:56px 0 80px;
-  background:linear-gradient(to bottom, var(--sheet) 0, #f3f7f6 260px, #f7f8f3 100%);
+  background:linear-gradient(to bottom, var(--sheet) 0, #edf6f2 260px, #fff5e2 100%);
 }
 :global(.dark) .richZone { background:linear-gradient(to bottom, var(--sheet) 0, #13201d 260px, #141d1a 100%); }
 .richZone::before {
@@ -41,25 +41,25 @@
 .richZone::after {
   content:""; position:absolute; inset:0; z-index:-1; pointer-events:none;
   background:
-    radial-gradient(46rem 32rem at 4% 10%, color-mix(in srgb,var(--teal) 30%,transparent), transparent 70%),
-    radial-gradient(40rem 30rem at 98% 16%, color-mix(in srgb,var(--gold) 28%,transparent), transparent 70%),
-    radial-gradient(44rem 34rem at 30% 40%, color-mix(in srgb,var(--taper) 18%,transparent), transparent 70%),
-    radial-gradient(44rem 34rem at 88% 55%, color-mix(in srgb,var(--teal) 22%,transparent), transparent 70%),
-    radial-gradient(42rem 32rem at 6% 72%, color-mix(in srgb,var(--rose) 22%,transparent), transparent 70%),
-    radial-gradient(42rem 32rem at 80% 92%, color-mix(in srgb,var(--gold) 22%,transparent), transparent 70%),
+    radial-gradient(46rem 32rem at 4% 10%, color-mix(in srgb,var(--teal) 46%,transparent), transparent 70%),
+    radial-gradient(40rem 30rem at 98% 16%, color-mix(in srgb,var(--gold) 42%,transparent), transparent 70%),
+    radial-gradient(44rem 34rem at 30% 40%, color-mix(in srgb,var(--taper) 30%,transparent), transparent 70%),
+    radial-gradient(44rem 34rem at 88% 55%, color-mix(in srgb,var(--teal) 38%,transparent), transparent 70%),
+    radial-gradient(42rem 32rem at 6% 72%, color-mix(in srgb,var(--rose) 34%,transparent), transparent 70%),
+    radial-gradient(42rem 32rem at 80% 92%, color-mix(in srgb,var(--gold) 36%,transparent), transparent 70%),
     radial-gradient(color-mix(in srgb,var(--taper) 22%,transparent) 1px, transparent 1.5px) 0 0/20px 20px;
   -webkit-mask-image:linear-gradient(to bottom, transparent 0, #000 320px);
           mask-image:linear-gradient(to bottom, transparent 0, #000 320px);
 }
-.spectrum { position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg, var(--ink) 0, var(--ink) 12%, var(--teal) 34%, var(--taper) 56%, var(--gold) 76%, var(--rose) 100%); opacity:.85; }
-:global(.dark) .spectrum { --ink:#eef2f6; }
 .richZone .step span { color:#fff; border:0; background:linear-gradient(135deg, var(--teal), var(--taper) 55%, var(--gold)); }
 
 .step { display:flex; align-items:center; gap:10px; color:var(--quiet); font-size:13px; font-weight:500; margin:0 0 14px; }
 .step span { display:inline-flex; align-items:center; justify-content:center; min-width:38px; height:20px; padding:0 8px; border-radius:999px; font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace; font-size:11px; font-weight:600; letter-spacing:.04em; }
-.sectionHeading { margin:0 0 20px; max-width:780px; }
+.sectionHeading { margin:0 auto 20px; max-width:840px; padding:clamp(20px,3vw,28px); border:1px solid var(--line); border-radius:14px; background:var(--paper); box-shadow:0 4px 18px -12px #192d3226; text-align:center; }
+.sectionHeading .step { justify-content:center; }
 .sectionHeading h2 { margin:0 0 10px; font-size:27px; font-weight:600; line-height:1.25; letter-spacing:-.035em; }
-.sectionHeading p { color:var(--quiet); font-size:14px; line-height:1.7; margin:0; }
+.sectionHeading h2:last-child { margin-bottom:0; }
+.sectionHeading p:not(.step) { color:var(--quiet); font-size:14px; line-height:1.7; margin:0; }
 .binaryBallot { display:grid; grid-template-columns:minmax(0,1fr) minmax(320px,.8fr); gap:32px; padding:27px 30px; background:var(--paper); border:1px solid var(--line); border-radius:14px; margin-bottom:24px; }
 .eyebrow { color:var(--teal); font-size:10px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; margin:0 0 10px; }
 .binaryBallot h3 { font-size:22px; font-weight:600; line-height:1.35; letter-spacing:-.025em; margin:0 0 9px; }
@@ -71,11 +71,11 @@
 .voteChoice strong { display:block; font-size:15px; font-weight:600; }
 .voteChoice small { display:block; color:var(--quiet); margin-top:4px; font-size:11px; line-height:1.5; }
 .comparison { scroll-margin-top:25px; margin-top:72px; }
-.emptyState { border:1px dashed color-mix(in srgb,var(--teal) 35%,var(--line)); border-radius:12px; padding:30px; color:var(--quiet); font-size:13px; line-height:1.7; background:color-mix(in srgb,var(--paper) 65%,transparent); }
+.emptyState { border:1px dashed color-mix(in srgb,var(--teal) 35%,var(--line)); border-radius:12px; padding:30px; color:var(--quiet); font-size:13px; line-height:1.7; background:var(--paper); }
 .error { padding:18px 22px; border:1px solid color-mix(in srgb,var(--rose) 40%,var(--line)); border-radius:10px; margin-bottom:20px; background:color-mix(in srgb,var(--rose) 5%,var(--paper)); }
 .error p { margin:0; font-size:13px; line-height:1.7; }
 .error button { margin-top:10px; font-size:12px; font-weight:600; color:var(--ink); text-decoration:underline; text-underline-offset:4px; }
-.snapshot { color:var(--quiet); font-size:11px; line-height:1.7; margin:0 0 20px; }
+.snapshot { color:var(--quiet); font-size:11px; line-height:1.7; margin:0 0 20px; padding:16px 20px; border:1px solid var(--line); border-radius:12px; background:var(--paper); }
 .scenarioBar { display:flex; justify-content:space-between; align-items:center; gap:20px; padding:20px 24px; border:1px solid var(--line); border-radius:12px; background:var(--canvas); margin-bottom:25px; }
 .scenarioBar h3 { font-size:14px; font-weight:600; margin:0 0 5px; }
 .scenarioBar p { color:var(--quiet); font-size:11px; line-height:1.6; margin:0; max-width:540px; }
