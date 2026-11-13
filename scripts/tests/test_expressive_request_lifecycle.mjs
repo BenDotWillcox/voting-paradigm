@@ -113,9 +113,12 @@ function createHost() {
     get lateUpdates() { return lateUpdates; },
     get busy() { return child("ScalarBallot").isSubmitting; },
     get result() { return child("ElectorateResults"); },
+    get resultKey() { return find((node) => node.type === "ElectorateResults")?.key; },
     get error() { const node = find((item) => item.props.role === "alert"); return node ? text(node) : null; },
     async choose(vote = "no") { child("IncomeTaxBallot").onVoteChange(vote); await flush(); },
     async submit(value = ballot) { child("ScalarBallot").onSubmitBallot(value); await flush(); },
+    async scenario(value) { child("ElectorateResults").onScenarioChange(value); await flush(); },
+    async retryScenario() { child("ElectorateResults").onRetryScenario(); await flush(); },
     async retry() {
       const button = find((node) => node.type === "button" && text(node) === "Retry submitted ballot");
       assert.ok(button && !button.props.disabled, "Retry must be available after a failure");
@@ -127,8 +130,8 @@ function createHost() {
       assert.equal(timer.delay, 15_000);
       timers.delete(id); timer.callback(); await flush();
     },
-    async succeed(index, id) {
-      requests[index].resolve({ ok: true, json: async () => ({ valid: true, id }) }); await flush();
+    async succeed(index, id, scenario = JSON.parse(requests[index].options.body).scenario ?? "prepared") {
+      requests[index].resolve({ ok: true, json: async () => ({ valid: true, id, scenario }) }); await flush();
     },
     async unmount() {
       mounted = false;
@@ -240,4 +243,69 @@ test("unmount aborts transport and late results cause no state updates", async (
   assert.equal(host.timers.size, 0);
   await host.succeed(0, "after-unmount");
   assert.equal(host.lateUpdates, 0);
+});
+
+test("scenario switches preserve the submitted pair, draft vote, and results component identity", async () => {
+  const host = await start(); await host.succeed(0, "original");
+  const key = host.resultKey;
+  await host.choose("yes");
+  for (const [index, scenario] of ["broad-agreement", "polarized", "intense-minority", "prepared"].entries()) {
+    await host.scenario(scenario);
+    assert.deepEqual(JSON.parse(host.requests[index + 1].options.body), { ballot, binary_vote: "no", scenario });
+    assert.equal(host.result.scenarioPending, scenario);
+    await host.succeed(index + 1, scenario);
+    assert.equal(host.resultKey, key, "Changing the electorate must not remount and close the combined results");
+    assert.equal(host.result.data.scenario, scenario);
+    assert.deepEqual(JSON.parse(JSON.stringify(host.result.ballot)), ballot);
+    assert.equal(host.child("IncomeTaxBallot").vote, "yes", "Unsubmitted edits remain in the ballot form");
+    assert.equal(host.result.scenarioPending, null);
+  }
+  await host.scenario("prepared");
+  assert.equal(host.requests.length, 5, "An unchanged active scenario does not refetch");
+});
+
+test("rapid scenario switches apply only the newest complete dataset", async () => {
+  const host = await start(); await host.succeed(0, "original");
+  await host.scenario("polarized"); await host.scenario("intense-minority");
+  assert.equal(host.requests[1].options.signal.aborted, true);
+  assert.equal(host.result.data.id, "original", "The previous electorate stays intact during loading");
+  await host.succeed(2, "minority"); await host.succeed(1, "late-polarized");
+  assert.equal(host.result.data.id, "minority");
+  assert.equal(host.result.data.scenario, "intense-minority");
+  assert.equal(host.result.scenarioPending, null);
+});
+
+test("failed scenario switches preserve active results and retry the exact submitted scenario", async () => {
+  const host = await start(); await host.succeed(0, "original");
+  await host.scenario("polarized"); await host.expire();
+  assert.equal(host.result.data.scenario, "prepared");
+  assert.match(host.result.scenarioError, /took too long/);
+  assert.equal(host.error, null, "Scenario errors are displayed beside the scenario controls");
+  await host.choose("yes"); await host.retryScenario();
+  assert.deepEqual(JSON.parse(host.requests[2].options.body), { ballot, binary_vote: "no", scenario: "polarized" });
+  await host.succeed(2, "retried");
+  assert.equal(host.result.data.scenario, "polarized");
+  assert.equal(host.result.scenarioError, null);
+});
+
+test("scenario responses cannot silently substitute another electorate", async () => {
+  const host = await start(); await host.succeed(0, "original");
+  await host.scenario("polarized"); await host.succeed(1, "wrong", "prepared");
+  assert.match(host.result.scenarioError, /requested electorate could not be loaded/);
+  assert.equal(host.result.data.id, "original");
+  assert.equal(host.busy, false);
+});
+
+test("a new ballot keeps the active scenario and cannot be superseded by an old-ballot scenario switch", async () => {
+  const host = await start(); await host.succeed(0, "original");
+  await host.scenario("polarized"); await host.succeed(1, "polarized");
+  await host.choose("yes"); await host.submit(nextBallot);
+  assert.deepEqual(JSON.parse(host.requests[2].options.body), { ballot: nextBallot, binary_vote: "yes", scenario: "polarized" });
+  assert.equal(host.result.scenarioDisabled, true);
+  await host.scenario("intense-minority");
+  assert.equal(host.requests.length, 3);
+  await host.succeed(2, "updated-ballot");
+  assert.equal(host.result.data.id, "updated-ballot");
+  assert.equal(host.result.scenarioDisabled, false);
+  assert.equal(host.result.ballot.ideal, 6);
 });

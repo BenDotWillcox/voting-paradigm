@@ -2,15 +2,15 @@
   --ink:#192d32; --quiet:#647277; --line:#dce4e3; --canvas:#f8faf8;
   --paper:#fff; --teal:#0c766d; --teal-soft:#eaf4f0; --gold:#a9690e;
   --rose:#98625c;
-  --taper:#496984; --sheet:#eaf1f8; --rule:#cfdcea;
+  --taper:#496984; --sheet:#fff; --rule:#cfdcea;
   color:var(--ink);
 }
 :global(.dark) .walkthrough { --ink:#e6eeed; --quiet:#9eafae; --line:#314442; --canvas:#172622; --paper:#1b2a26; --teal:#6ad9c0; --teal-soft:#223f36; --gold:#e8b668; --rose:#d6a098; --taper:#9fbdd9; --sheet:#141c25; --rule:#223142; }
 .inner { position:relative; max-width:80rem; margin:0 auto; padding:0 24px; }
 
-/* Part one — answer sheet. Pale blue form, black ink, ruled lines, timing marks. */
+/* Part one — answer sheet. White paper, black ink, ruled lines, timing marks. */
 .scantronZone {
-  --ink:#0d0f12; --quiet:#4a5765; --line:#b7c8db; --canvas:#f4f8fc; --paper:#fff;
+  --ink:#0d0f12; --quiet:#4a5765; --line:#b7c8db; --canvas:#fff; --paper:#fff;
   position:relative; padding:56px 0 64px;
   background:
     repeating-linear-gradient(to bottom, transparent 0 31px, var(--rule) 31px 32px),

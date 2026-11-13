@@ -2,7 +2,7 @@
    preference information. Left half echoes the scantron zone; right half
    echoes the richer zone. */
 .hero {
-  --ink:#0d0f12; --quiet:#4a5765; --line:#b7c8db; --sheet:#eaf1f8; --rule:#cfdcea;
+  --ink:#0d0f12; --quiet:#4a5765; --line:#b7c8db; --sheet:#fff; --rule:#cfdcea;
   --teal:#0c766d; --deep:#16836b; --gold:#a9690e; --taper:#496984; --rose:#b15d54;
   position:relative; isolation:isolate; overflow:hidden; color:var(--ink);
   background:linear-gradient(90deg, var(--sheet) 0, var(--sheet) 34%, #f1f6f4 62%, #f7f5ec 100%);

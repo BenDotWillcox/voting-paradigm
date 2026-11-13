@@ -37,6 +37,10 @@ test("comparison requires a separate explicit binary answer", () => {
     assert.equal(scalarComparisonRequestSchema.safeParse({ ...baseline, binary_vote }).success, false);
   }
   assert.equal(scalarComparisonRequestSchema.safeParse({ ...baseline, ballot: { ...baseline.ballot, approval_min: 7 } }).success, false);
+  for (const scenario of ["prepared", "broad-agreement", "polarized", "intense-minority"]) {
+    assert.ok(scalarComparisonRequestSchema.safeParse({ ...baseline, scenario }).success);
+  }
+  assert.equal(scalarComparisonRequestSchema.safeParse({ ...baseline, scenario: "unknown" }).success, false);
 });
 
 test("the richer ballot accepts the full theoretical range and rejects rates beyond it", () => {
@@ -49,6 +53,39 @@ test("the richer ballot accepts the full theoretical range and rejects rates bey
     }
   }
   assert.equal(scalarComparisonRequestSchema.safeParse({ ...baseline, ballot: { ...baseline.ballot, upper_half_width: 100.05 } }).success, false);
+});
+
+test("every scenario reconciles through the API and browser contract without changing the submitted pair", () => {
+  const python = process.env.EXPRESSIVE_TEST_PYTHON || [join(root, "venv", "Scripts", "python.exe"), join(root, "venv", "bin", "python")].find(existsSync) || "python";
+  const scenarios = ["prepared", "broad-agreement", "polarized", "intense-minority"];
+  const requests = scenarios.map((scenario) => ({ ...baseline, binary_vote: "yes", scenario }));
+  const reference = spawnSync(python, ["-c", `
+import asyncio, json, sys
+import httpx
+from api.main import app
+async def run():
+    results = []
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        for body in json.load(sys.stdin):
+            response = await client.post("/api/expressive/scalar/compare", json=body)
+            response.raise_for_status()
+            results.append(response.json())
+    json.dump(results, sys.stdout, allow_nan=False)
+asyncio.run(run())
+`], { cwd: root, input: JSON.stringify(requests), encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
+  assert.equal(reference.status, 0, reference.error?.message || reference.stderr);
+  const results = JSON.parse(reference.stdout);
+  const users = [];
+  results.forEach((body, index) => {
+    const result = scalarComparisonResponseSchema.parse(body);
+    assert.equal(result.scenario, scenarios[index]);
+    users.push(result.electorate.voters.find((voter) => voter.id === "you"));
+    assert.equal(result.user_binary_vote, "yes");
+    assert.equal(result.user_curve_vote, "no", "The explicit Yes remains despite the curve favoring No");
+  });
+  users.forEach((user) => assert.deepEqual(user, users[0]));
+  assert.equal(new Set(results.map((result) => result.electorate.id)).size, 4);
+  assert.equal(new Set(results.map((result) => JSON.stringify(result.electorate.voters.filter((voter) => voter.id !== "you")))).size, 4);
 });
 
 test("Python comparison payloads satisfy the frontend contract and its reconciliation guards", () => {
@@ -82,6 +119,7 @@ asyncio.run(run())
   results.forEach((result) => assert.doesNotThrow(() => scalarComparisonResponseSchema.parse(result)));
   for (const [index, result] of results.entries()) {
     assert.equal(result.model, "scalar-comparison-v4");
+    assert.equal(result.scenario, "prepared");
     assert.equal(result.status_quo, 4.55);
     assert.equal(result.proposal, 4.4);
     assert.equal(result.electorate.voters.length, 100);

@@ -1,7 +1,7 @@
-"""Compare two ballot formats using one reproducible, fictional electorate.
+"""Compare two ballot formats using a reproducible, fictional electorate.
 
 The binary question uses Colorado's 2022 Proposition 121 rates. The 99 prepared
-curves are an illustrative seeded fixture, not a model of Colorado voters. The
+curves are illustrative fixtures, not a model of Colorado voters. The
 submitted user completes the same 100 voters used in every tally. Equal 0--1
 score weight is a voting-rule convention, not measured interpersonal welfare.
 """
@@ -17,6 +17,10 @@ from typing import Literal
 from expressive.scalar import SCALAR_DOMAIN_MAX, ScalarBallot, evaluate_scalar
 
 BinaryVote = Literal["yes", "no", "abstain"]
+ComparisonScenario = Literal["prepared", "broad-agreement", "polarized", "intense-minority"]
+COMPARISON_SCENARIOS: tuple[ComparisonScenario, ...] = (
+    "prepared", "broad-agreement", "polarized", "intense-minority",
+)
 STATUS_QUO: Literal[4.55] = 4.55
 PROPOSAL: Literal[4.4] = 4.4
 CANDIDATE_STEP: Literal[0.05] = 0.05
@@ -138,7 +142,103 @@ def prepared_voters() -> tuple[ComparisonVoter, ...]:
     return tuple(voters)
 
 
-@lru_cache(maxsize=128)
+@dataclass(frozen=True)
+class AuthoredCohort:
+    count: int
+    ideals: tuple[float, float]
+    half_widths: tuple[float, float]
+    approval_min: tuple[float, float]
+    approval_max: tuple[float, float]
+    # Most bounds are absolute policy rates; the narrow minority instead draws
+    # positive distances below and above its individually sampled ideal.
+    approval_offsets: bool = False
+
+
+@dataclass(frozen=True)
+class AuthoredScenario:
+    label: str
+    description: str
+    seed: int
+    cohorts: tuple[AuthoredCohort, ...]
+
+
+# These bounds and seeds are authored teaching choices, not population estimates
+# or measured welfare levels. Each parameter is a separate uniform draw, rounded
+# to three decimals; neither the submitted user nor any tally is consulted.
+# No seed search, winner conditioning, rejection sampling, or hidden weights.
+AUTHORED_SCENARIOS: dict[ComparisonScenario, AuthoredScenario] = {
+    "broad-agreement": AuthoredScenario(
+        label="Broad agreement",
+        description=("99 fictional voters with ideals sampled from 3.70% to 5.00%. Independent "
+                     "draws vary both tapers and the endpoints of broadly overlapping approval "
+                     "ranges. These authored ranges use a fixed seed; your unchanged ballot "
+                     "is the 100th."),
+        seed=20221109,
+        cohorts=(AuthoredCohort(99, (3.7, 5.0), (0.9, 2.6), (2.4, 3.6), (5.1, 7.2)),),
+    ),
+    "polarized": AuthoredScenario(
+        label="Polarized electorate",
+        description=("99 fictional voters in two camps: 49 have ideals sampled from 2.40% to "
+                     "3.70%, and 50 from 5.30% to 6.70%. Independent draws vary both tapers "
+                     "and approval endpoints, with disjoint approval ranges between camps. "
+                     "These authored ranges use a fixed seed; your unchanged ballot is the 100th."),
+        seed=20221110,
+        cohorts=(AuthoredCohort(49, (2.4, 3.7), (0.45, 1.0), (1.2, 2.3), (4.4, 4.48)),
+                 AuthoredCohort(50, (5.3, 6.7), (0.45, 1.0), (4.49, 4.55), (6.8, 8.0))),
+    ),
+    "intense-minority": AuthoredScenario(
+        label="Intense minority",
+        description=("99 fictional voters: 65 have ideals sampled from 4.55% to 5.10% with "
+                     "broad tapers, while 34 have ideals from 4.25% to 4.45% with narrow "
+                     "tapers. Both tapers and approval endpoints vary independently; the "
+                     "narrow group's approval bounds are sampled as distances from each ideal. "
+                     "These authored ranges use a fixed seed. Larger declared score gaps "
+                     "do not measure interpersonal welfare; your unchanged ballot is the 100th."),
+        seed=20221111,
+        cohorts=(AuthoredCohort(65, (4.55, 5.1), (1.3, 3.6), (2, 4), (5.5, 8)),
+                 AuthoredCohort(34, (4.25, 4.45), (0.07, 0.18), (0.15, 0.5), (0.15, 0.4),
+                                approval_offsets=True)),
+    ),
+}
+
+
+def _cohort_ballot(cohort: AuthoredCohort, rng: random.Random) -> ScalarBallot:
+    """Draw one curve from the declared bounds without conditioning its result."""
+    def draw(bounds: tuple[float, float]) -> float:
+        return round(rng.uniform(*bounds), 3)
+
+    ideal = draw(cohort.ideals)
+    lower_width, upper_width = draw(cohort.half_widths), draw(cohort.half_widths)
+    lower, upper = draw(cohort.approval_min), draw(cohort.approval_max)
+    if cohort.approval_offsets:
+        lower, upper = round(ideal - lower, 3), round(ideal + upper, 3)
+    return ScalarBallot(ideal, lower_width, upper_width, lower, upper)
+
+
+@lru_cache(maxsize=4)
+def scenario_voters(scenario: ComparisonScenario) -> tuple[ComparisonVoter, ...]:
+    """Return the selected fixed 99 without consulting any submitted ballot."""
+    if scenario == "prepared":
+        return prepared_voters()
+    if scenario not in AUTHORED_SCENARIOS:
+        raise ValueError("Unknown comparison scenario.")
+    fixture = AUTHORED_SCENARIOS[scenario]
+    rng = random.Random(fixture.seed)
+    voters = []
+    for cohort in fixture.cohorts:
+        for _ in range(cohort.count):
+            index = len(voters) + 1
+            ballot = _cohort_ballot(cohort, rng)
+            voters.append(ComparisonVoter(
+                id=f"voter-{index:03d}", label=f"Voter {index:02d}",
+                ballot=ballot, binary_vote=curve_vote(ballot),
+            ))
+    return tuple(voters)
+
+
+# Retain all four fixed backgrounds plus a bounded set of recent user curves.
+# Otherwise switching among 99-unique-voter scenarios thrashes a 128-entry cache.
+@lru_cache(maxsize=4 * 99 + 32)
 def _sample_ballot(ballot: ScalarBallot) -> tuple[tuple[float, bool], ...]:
     """Reuse the unchanged prepared curves across submissions, with bounded storage."""
     return tuple((probe.score, probe.approved) for probe in (
@@ -196,15 +296,29 @@ def aggregate_electorate(electorate: ComparisonElectorate) -> ComparisonResult:
     )
 
 
-def compare_ballots(ballot: ScalarBallot, binary_vote: Literal["yes", "no"]) -> ComparisonResult:
-    """Add the exact submitted ballot and explicit binary vote to the fixed 99."""
+def compare_ballots(
+    ballot: ScalarBallot,
+    binary_vote: Literal["yes", "no"],
+    scenario: ComparisonScenario = "prepared",
+) -> ComparisonResult:
+    """Add the exact submitted pair to the selected fixed 99, with equal weight."""
     if binary_vote not in ("yes", "no"):
         raise ValueError("The submitted binary vote must be yes or no.")
+    voters = (*scenario_voters(scenario), ComparisonVoter("you", "You", ballot, binary_vote))
+    if scenario != "prepared":
+        fixture = AUTHORED_SCENARIOS[scenario]
+        return aggregate_electorate(ComparisonElectorate(
+            id=f"scalar-electorate-{scenario}-v2",
+            label=fixture.label,
+            description=fixture.description,
+            seed=fixture.seed,
+            voters=voters,
+        ))
     return aggregate_electorate(ComparisonElectorate(
         id="scalar-electorate-v1",
         label="One electorate, 100 different curves",
         description=("99 reproducible fictional voters plus your submitted ballot. Ideals, tapers, and "
                      "approval ranges vary; this is an illustration, not a sample of Colorado voters."),
         seed=ELECTORATE_SEED,
-        voters=(*prepared_voters(), ComparisonVoter("you", "You", ballot, binary_vote)),
+        voters=voters,
     ))

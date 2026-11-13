@@ -7,10 +7,12 @@ const count = z.number().int().min(0).max(100);
 const vote = z.enum(["yes", "no"]);
 const curveVote = z.enum(["yes", "no", "abstain"]);
 const offeredRate = z.union([z.literal(4.55), z.literal(4.4)]);
+const scenario = z.enum(["prepared", "broad-agreement", "polarized", "intense-minority"]);
 
 export const scalarComparisonRequestSchema = z.object({
   ballot: scalarPreviewRequestSchema,
   binary_vote: vote,
+  scenario: scenario.optional(),
 }).strict();
 
 const ballotSchema = z.object({
@@ -44,6 +46,7 @@ const pointSchema = z.object({
 
 export const scalarComparisonResponseSchema = z.object({
   model: z.literal("scalar-comparison-v4"),
+  scenario,
   status_quo: z.literal(4.55),
   proposal: z.literal(4.4),
   electorate_size: z.literal(100),

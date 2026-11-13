@@ -7,7 +7,7 @@ import { ElectorateResults } from "./electorate-results";
 import { scalarComparisonResponseSchema } from "@/lib/validations/expressive-comparison";
 import { RequestTimeoutError, withRequestDeadline } from "@/lib/request-deadline";
 import { TAX_MEASURE } from "@/lib/expressive-tax-measure";
-import type { BinaryVote, ScalarComparisonRequest, ScalarComparisonResponse } from "@/types/expressive-comparison";
+import type { BinaryVote, ScalarComparisonRequest, ScalarComparisonResponse, ScalarScenario } from "@/types/expressive-comparison";
 import type { ScalarBallotState } from "@/types/expressive-scalar";
 import styles from "./scalar-comparison.module.css";
 
@@ -16,6 +16,7 @@ const COMPARISON_TIMEOUT_MS = 15_000;
 const UNAVAILABLE_MESSAGE = "The comparison is unavailable. Your answers are still here; please try again.";
 class ComparisonResponseError extends Error {}
 type Submission = { request: ScalarComparisonRequest; data: ScalarComparisonResponse };
+type RequestKind = "ballot" | "scenario";
 
 export function ScalarComparison() {
   const [vote, setVote] = useState<BinaryVote | null>(null);
@@ -23,6 +24,7 @@ export function ScalarComparison() {
   const [lastRequest, setLastRequest] = useState<ScalarComparisonRequest | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [requestKind, setRequestKind] = useState<RequestKind>("ballot");
   const controller = useRef<AbortController | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const ballotId = useId();
@@ -32,11 +34,12 @@ export function ScalarComparison() {
     controller.current = null;
   }, []);
 
-  async function compare(request: ScalarComparisonRequest) {
+  async function compare(request: ScalarComparisonRequest, kind: RequestKind = "ballot") {
     controller.current?.abort();
     const active = new AbortController();
     controller.current = active;
     setLastRequest(request);
+    setRequestKind(kind);
     setBusy(true);
     setError(null);
     try {
@@ -64,11 +67,12 @@ export function ScalarComparison() {
         }
         const parsed = scalarComparisonResponseSchema.safeParse(body);
         if (!parsed.success) throw new ComparisonResponseError("The comparison could not be read. Your answers are still here; please try again.");
+        if (parsed.data.scenario !== (request.scenario ?? "prepared")) throw new ComparisonResponseError("The requested electorate could not be loaded. Your answers are still here; please try again.");
         return parsed.data;
       }, { timeoutMs: COMPARISON_TIMEOUT_MS, signal: active.signal });
       if (controller.current !== active || active.signal.aborted) return;
       setSubmission({ request, data });
-      resultRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" });
+      if (kind === "ballot") resultRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" });
     } catch (caught) {
       if (controller.current !== active || active.signal.aborted) return;
       setError(caught instanceof RequestTimeoutError
@@ -85,7 +89,15 @@ export function ScalarComparison() {
   }
 
   function submitBallot(ballot: ScalarBallotState) {
-    if (vote) void compare({ ballot, binary_vote: vote });
+    if (vote) void compare({ ballot, binary_vote: vote, ...(submission ? { scenario: submission.data.scenario } : {}) });
+  }
+
+  function changeScenario(scenario: ScalarScenario) {
+    if (!submission || (busy && requestKind === "ballot")) return;
+    if (!busy && !error && scenario === submission.data.scenario) return;
+    // Use the submitted pair, including its explicit Yes/No answer. Draft
+    // edits in the ballot form are independent until the visitor submits them.
+    void compare({ ...submission.request, scenario }, "scenario");
   }
 
   const voteChanged = submission && vote !== submission.request.binary_vote;
@@ -125,9 +137,17 @@ export function ScalarComparison() {
             <h2 id={`${ballotId}-results`}>What becomes visible when a ballot says more?</h2>
             <p>Your two answers join 99 synthetic voters. Explore their different preferences and the yes/no answers they produce, then combine those same 100 ballots into a tax rate. These are illustrative outcomes, not the actual 2022 election results.</p>
           </div>
-          {error && <div className={styles.error} role="alert"><p>{error}</p><button type="button" disabled={busy} onClick={() => lastRequest && void compare(lastRequest)}>Retry submitted ballot</button></div>}
-          {submission && (busy || error) && <p role="status">{busy ? "Comparing your submitted answers. The results below still show your previous submission." : "The results below still show your previous submission."}</p>}
-          {submission ? <ElectorateResults key={JSON.stringify(submission.request)} data={submission.data} ballot={submission.request.ballot} /> : <div className={styles.emptyState} role="status">{busy ? "Comparing your submitted ballot with the prepared electorate…" : "Submit your two answers above to reveal the comparison."}</div>}
+          {error && requestKind === "ballot" && <div className={styles.error} role="alert"><p>{error}</p><button type="button" disabled={busy} onClick={() => lastRequest && void compare(lastRequest)}>Retry submitted ballot</button></div>}
+          {submission && requestKind === "ballot" && (busy || error) && <p role="status">{busy ? "Comparing your submitted answers. The results below still show your previous submission." : "The results below still show your previous submission."}</p>}
+          {submission ? <ElectorateResults
+            key={JSON.stringify({ ballot: submission.request.ballot, binary_vote: submission.request.binary_vote })}
+            data={submission.data} ballot={submission.request.ballot}
+            onScenarioChange={changeScenario}
+            scenarioPending={busy && requestKind === "scenario" ? lastRequest?.scenario ?? "prepared" : null}
+            scenarioError={requestKind === "scenario" ? error : null}
+            scenarioDisabled={busy && requestKind === "ballot"}
+            onRetryScenario={() => lastRequest && void compare(lastRequest, "scenario")}
+          /> : <div className={styles.emptyState} role="status">{busy ? "Comparing your submitted ballot with the prepared electorate…" : "Submit your two answers above to reveal the comparison."}</div>}
         </section>
       </div>
     </div>

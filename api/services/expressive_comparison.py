@@ -18,9 +18,10 @@ def compare_scalar_ballots(request: ScalarComparisonRequest) -> ScalarComparison
         approval_min=request.ballot.approval_min,
         approval_max=request.ballot.approval_max,
     )
-    result = compare_ballots(ballot, request.binary_vote)
+    result = compare_ballots(ballot, request.binary_vote, request.scenario)
     return ScalarComparisonResponse.model_validate({
         "model": "scalar-comparison-v4",
+        "scenario": request.scenario,
         "status_quo": STATUS_QUO,
         "proposal": PROPOSAL,
         "electorate_size": 100,
