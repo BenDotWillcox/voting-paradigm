@@ -538,6 +538,13 @@ def _district_lean(
     )
 
 
+def district_area(
+    config: SimulationConfig, district: JurisdictionId
+) -> tuple[float, float, float, float]:
+    """A district's part of the unit square, as (x0, y0, x1, y1)."""
+    return _district_area(config, district)
+
+
 def _district_area(
     config: SimulationConfig, district: JurisdictionId
 ) -> tuple[float, float, float, float]:

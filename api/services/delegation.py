@@ -93,6 +93,7 @@ from delegation.simulate import (
     Simulation,
     cast_day,
     casts,
+    district_area,
     jurisdictions,
     network_on,
     option_utilities,
@@ -103,6 +104,10 @@ from voting import DEFAULT_TIEBREAK_SEED, ElectionResult, IRVResult, random_tieb
 from voting.types import Ballot
 
 from ..schemas.delegation import (
+    CityVoteDistrictSchema,
+    CityVoteResidentSchema,
+    CityVoteResponse,
+    CityVoteSiteSchema,
     BacktestQuestionSchema,
     BacktestRequest,
     BacktestResponse,
@@ -539,6 +544,11 @@ def scenario_response(live: bool) -> ScenarioResponse:
                     else scenario.districts.get(
                         jurisdiction, f"District {jurisdiction[-1]}"
                     )
+                ),
+                area=(
+                    None
+                    if jurisdiction == CITY
+                    else list(district_area(simulation.config, jurisdiction))
                 ),
             )
             for jurisdiction in jurisdictions(simulation.config)
@@ -1290,6 +1300,10 @@ def city_response() -> CityResponse:
                     kind=resolved.measure.kind,
                     title=resolved.question.title,
                     ballot_type=resolved.measure.ballot_type,
+                    has_site=any(
+                        drawn.site is not None
+                        for drawn in resolved.measure.support.options.values()
+                    ),
                     voters=voters,
                     cast_delegated=cast,
                     cast_direct=direct.total_ballots - direct.abstentions,
@@ -1708,4 +1722,99 @@ def backtest_response(
         before=BacktestSummarySchema(**summaries[0]),
         after=BacktestSummarySchema(**summaries[1]),
         changed=changed,
+    )
+
+
+# ---------------------------------------------------------------------------
+# GET /city/votes/{question_id}
+# ---------------------------------------------------------------------------
+
+
+@lru_cache(maxsize=128)
+def city_vote_response(question_id: str) -> CityVoteResponse:
+    """
+    One closed question, resident by resident: whose ballot counted for each
+    person and what it said, with the measure's sites, for a map. Votes are
+    public in this world. Read from the closed ballot papers only.
+
+    Raises:
+        DelegationRequestError: If there is no such closed question
+    """
+    scenario = _scenario()
+    simulation = _simulation()
+    found = next(
+        (
+            (paper, resolved)
+            for paper in scenario.closed_papers
+            for resolved in _history()[paper.id]
+            if resolved.question.id == question_id
+        ),
+        None,
+    )
+    if found is None:
+        raise DelegationRequestError(f"No closed question {question_id!r}")
+    paper, resolved = found
+    measure, question = resolved.measure, resolved.question
+    network = _network_on(paper.closes_in_days)
+
+    residents: list[CityVoteResidentSchema] = []
+    districts: dict[str, CityVoteDistrictSchema] = {}
+    for person in sorted(resolved.voters):
+        resolver = resolved.resolution.traces[person].resolver
+        choice = resolved.choice_of(resolver)
+        how: Literal["voted", "delegated", "abstained"] = (
+            "delegated"
+            if resolver != person
+            else "voted" if choice is not None else "abstained"
+        )
+        residents.append(
+            CityVoteResidentSchema(
+                person=person, how=how, resolver=resolver, choice=choice
+            )
+        )
+        home = _home(network, person)
+        if home is None:
+            continue
+        district = districts.setdefault(
+            home,
+            CityVoteDistrictSchema(
+                jurisdiction=home,
+                voters=0,
+                counted=0,
+                by_option={option.id: 0 for option in question.options},
+            ),
+        )
+        district.voters += 1
+        if choice is None:
+            continue
+        district.counted += 1
+        for option in choice if measure.ballot_type == "approval" else choice[:1]:
+            district.by_option[option] += 1
+
+    names = {option.id: option.name for option in question.options}
+    sites = [
+        CityVoteSiteSchema(
+            option=option_id,
+            name=names[option_id] if len(question.options) > 2 else question.title,
+            location=list(drawn.site),
+        )
+        for option_id, drawn in measure.support.options.items()
+        if drawn.site is not None and option_id in names
+    ]
+    return CityVoteResponse(
+        question_id=question.id,
+        label=measure.label,
+        title=question.title,
+        ballot_type=measure.ballot_type,
+        jurisdiction=paper.paper.jurisdiction,
+        closed_days_ago=-paper.closes_in_days,
+        options=[
+            OptionSchema(id=o.id, name=o.name, note=measure.option_notes.get(o.id))
+            for o in question.options
+        ],
+        winners=resolved.delegated.winners,
+        sites=sites,
+        reach=simulation.config.site_reach,
+        residents=residents,
+        districts=[districts[key] for key in sorted(districts)],
     )

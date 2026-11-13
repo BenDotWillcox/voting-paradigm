@@ -10,6 +10,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException
 
 from ..schemas.delegation import (
+    CityVoteResponse,
     BacktestRequest,
     BacktestResponse,
     CityResponse,
@@ -26,6 +27,7 @@ from ..schemas.delegation import (
     ValidateResponse,
 )
 from ..services.delegation import (
+    city_vote_response,
     backtest_response,
     DelegationRequestError,
     LiveSource,
@@ -233,5 +235,27 @@ def trace(request: TraceRequest, stores: Stores, source: Source) -> TraceRespons
 def backtest(request: BacktestRequest, stores: Stores) -> BacktestResponse:
     try:
         return backtest_response(request, stores)
+    except DelegationRequestError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+@router.get(
+    "/city/votes/{question_id}",
+    response_model=CityVoteResponse,
+    summary="One closed question, resident by resident, for a map",
+    description=(
+        "For everyone a closed question was issued to: whether they voted "
+        "themself, someone else decided their vote or they cast nothing, who "
+        "decided it, and the ballot that counted for them. Also the measure's "
+        "sites in the unit square, how far a site's pull reaches, and the "
+        "counted ballots per option in each district. Votes are public in "
+        "this simulated city. Read from the closed ballot papers only, so it "
+        "never changes."
+    ),
+    responses=_INVALID,
+)
+def city_vote(question_id: str) -> CityVoteResponse:
+    try:
+        return city_vote_response(question_id)
     except DelegationRequestError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error

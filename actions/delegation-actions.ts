@@ -8,12 +8,14 @@ import {
   getPersonProfile,
   resolveBallotPaper,
   backtestDelegations,
+  getCityVote,
   traceMeasure,
   validateDelegation,
 } from "@/lib/delegation-api";
 import {
   categoryJudgmentsRequestSchema,
   personIdSchema,
+  questionIdSchema,
   resolveBallotPaperRequestSchema,
   backtestRequestSchema,
   traceMeasureRequestSchema,
@@ -21,6 +23,7 @@ import {
 } from "@/lib/validations/delegation-schemas";
 import type {
   CategoryJudgmentsResponse,
+  CityVote,
   DelegationBacktest,
   MeasureTrace,
   PersonProfile,
@@ -131,4 +134,9 @@ export async function backtestDelegationsAction(
     before: request.before.length,
     after: request.after.length,
   }));
+}
+
+/** One closed question, resident by resident, for the city map. */
+export async function getCityVoteAction(input: unknown): Promise<ActionResult<CityVote>> {
+  return run("Vote loaded", questionIdSchema, input, getCityVote, (question) => ({ question }));
 }

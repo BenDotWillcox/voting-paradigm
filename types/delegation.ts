@@ -9,6 +9,7 @@ import type {
   resolveBallotPaperResponseSchema,
   scenarioResponseSchema,
   backtestRequestSchema,
+  cityVoteResponseSchema,
   backtestResponseSchema,
   traceMeasureRequestSchema,
   traceMeasureResponseSchema,
@@ -52,3 +53,6 @@ export type MeasureTrace = z.infer<typeof traceMeasureResponseSchema>;
 export type BacktestRequest = z.infer<typeof backtestRequestSchema>;
 /** The closed votes replayed under a change to the viewer's delegations. */
 export type DelegationBacktest = z.infer<typeof backtestResponseSchema>;
+
+/** One closed question, resident by resident, for the city map. */
+export type CityVote = z.infer<typeof cityVoteResponseSchema>;
