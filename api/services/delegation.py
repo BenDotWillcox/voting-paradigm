@@ -205,7 +205,9 @@ def _scenario() -> Scenario:
 @lru_cache(maxsize=1)
 def _simulation() -> Simulation:
     scenario = _scenario()
-    return simulate_network(scenario.categories, SCENARIO_SIMULATION, scenario.nesting)
+    return simulate_network(
+        scenario.pool, SCENARIO_SIMULATION, scenario.nesting, scenario.wordings
+    )
 
 
 @lru_cache(maxsize=1)
@@ -360,6 +362,9 @@ def _category_schema(
         text=category.text,
         in_pool=category.id in _pool_ids(scenario),
         inside=sorted(broad for narrow, broad in nesting if narrow == category.id),
+        same_as=[
+            other for other in scenario.group_of(category.id) if other != category.id
+        ],
     )
 
 
@@ -372,9 +377,15 @@ def _home(network: Network, person: str) -> str | None:
 
 @lru_cache(maxsize=1)
 def _well_known() -> dict[str, list[str]]:
-    """The categories each well-known person is known for."""
+    """
+    The categories each well-known person is known for, as the pool
+    words them; other wordings of the same category are not repeated.
+    """
+    pool = {category.id for category in _scenario().pool}
     known: dict[str, list[str]] = {}
     for category_id, people in _simulation().experts.items():
+        if category_id not in pool:
+            continue
         for person in people:
             known.setdefault(person, []).append(category_id)
     return known

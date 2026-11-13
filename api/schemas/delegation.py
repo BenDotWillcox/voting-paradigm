@@ -103,6 +103,14 @@ class CategorySchema(BaseModel):
         default_factory=list,
         description="Ids of broader categories this one sits inside.",
     )
+    same_as: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Ids of other wordings in the network that the decision model judged "
+            "to be the same thing as this one. For reading the network only: a "
+            "vote moves under the exact category its voter wrote."
+        ),
+    )
 
 
 class DelegationSchema(BaseModel):

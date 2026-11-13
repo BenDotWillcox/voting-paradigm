@@ -9,7 +9,14 @@ Writes delegation/data/scenario_v3.json from two sources:
   account and its past
 - recorded judgments: the category pool and its nesting from the router
   evaluation (eval/benchmarks/delegation_router_v1/), and one yes/no
-  judgment for every measure against every pool category
+  judgment for every measure against every category
+
+The measures file also lists other wordings some residents use for a pool
+category. Each is a category of its own and needs the same judgments: one
+against every measure, and containment against every other category both
+ways (recorded_v3/nesting.jsonl). Nesting and the groups of wordings that
+mean the same thing are both derived from the containment answers. A
+wording that is not fully judged is left out of the scenario.
 
 A judgment belongs to the exact title, summary and option names the decision
 model was shown. A measure whose wording is unchanged since the evaluation
@@ -49,9 +56,13 @@ from delegation import (  # noqa: E402
     JudgmentStore,
     NestingStore,
     Question,
+    create_category,
+    derive_nesting,
     gather_judgments,
     gather_nesting,
+    normalize_category_text,
 )
+from delegation.grouping import derive_groups  # noqa: E402
 from delegation.jev import JEV_MODEL  # noqa: E402
 from delegation.scenario import (  # noqa: E402
     DATA,
@@ -68,12 +79,13 @@ from eval.delegation_router import (  # noqa: E402
     RouterEvalConfig,
     RouterFixture,
     load_fixture,
-    ordered_pairs,
 )
 
 BENCHMARK = ROOT / "eval" / "benchmarks" / "delegation_router_v1"
 # Judgments for measures reworded since the evaluation
 RECORDED = DATA / "recorded_v3" / "judgments.jsonl"
+# Containment judgments that involve a wording outside the evaluation's pool
+RECORDED_NESTING = DATA / "recorded_v3" / "nesting.jsonl"
 ENV_FILE = ROOT / ".env.local"
 
 
@@ -118,28 +130,53 @@ def build(strict: bool = False) -> dict[str, Any]:
     raw = _source()
     fixture = load_fixture()
     config = RouterEvalConfig()
-    categories = [entry.category for entry in fixture.categories]
+    pool = [entry.category for entry in fixture.categories]
     measures = _measures(raw)
     questions = [measure.question for measure in measures]
 
-    judgments, missing = _judged(questions, categories)
+    judgments, missing = _judged(questions, pool)
     if missing and strict:
         raise SystemExit(
             f"{len(missing)} measures are not judged as now worded; run collect"
         )
-    provisional = _stand_ins(fixture, missing, categories)
+    provisional = _stand_ins(fixture, missing, pool)
     judgments.update(provisional)
 
-    nested = gather_nesting(
-        ordered_pairs(fixture),
-        NestingStore(BENCHMARK / "nesting.jsonl"),
-        model=JEV_MODEL,
-        threshold=config.nesting_threshold,
-    )
-    if nested.missing:
+    # Other wordings join the scenario only once they are fully judged
+    authored = _wordings(raw, pool)
+    wording_judgments, unjudged = _wordings_judged(questions, pool, authored)
+    if unjudged and strict:
         raise SystemExit(
-            f"{len(nested.missing)} containment judgments are not recorded"
+            f"{len(unjudged)} wordings are not fully judged; run collect"
         )
+    wording_of = {
+        wording.id: base
+        for base, others in authored.items()
+        for wording in others
+        if wording.id not in unjudged
+    }
+    categories = pool + [
+        wording
+        for others in authored.values()
+        for wording in others
+        if wording.id in wording_of
+    ]
+    judgments.update(wording_judgments)
+
+    contained = _containment(categories)
+    wanted = [
+        (first.id, second.id)
+        for first in categories
+        for second in categories
+        if first.id != second.id
+    ]
+    absent = [pair for pair in wanted if pair not in contained]
+    if absent:
+        raise SystemExit(f"{len(absent)} containment judgments are not recorded")
+    nesting = derive_nesting(contained, config.nesting_threshold)
+    groups = derive_groups(
+        [category.id for category in categories], contained, config.nesting_threshold
+    )
 
     return {
         "schema": SCENARIO_SCHEMA,
@@ -154,13 +191,29 @@ def build(strict: bool = False) -> dict[str, Any]:
             "recorded_judgments_sha256": (
                 _sha256(RECORDED) if RECORDED.exists() else None
             ),
+            "recorded_nesting_sha256": (
+                _sha256(RECORDED_NESTING) if RECORDED_NESTING.exists() else None
+            ),
         },
         "provisional": sorted(question.id for question in missing),
         "city": raw["city"],
         "categories": [
-            {"id": category.id, "text": category.text} for category in categories
+            {"id": category.id, "text": category.text}
+            | (
+                {"wording_of": wording_of[category.id]}
+                if category.id in wording_of
+                else {}
+            )
+            for category in categories
         ],
-        "nesting": sorted([narrow, broad] for narrow, broad in nested.nesting),
+        "unjudged_wordings": sorted(
+            wording.text
+            for others in authored.values()
+            for wording in others
+            if wording.id in unjudged
+        ),
+        "groups": [list(group) for group in groups],
+        "nesting": sorted([narrow, broad] for narrow, broad in nesting),
         "viewer": raw["viewer"],
         "ballot_papers": [
             {
@@ -186,6 +239,70 @@ def build(strict: bool = False) -> dict[str, Any]:
             for question in questions
         },
     }
+
+
+def _wordings(
+    raw: dict[str, Any], pool: Sequence[Category]
+) -> dict[str, list[Category]]:
+    """The other wordings written for pool categories, by pool category id."""
+    by_text = {normalize_category_text(category.text): category for category in pool}
+    taken = set(by_text)
+    wordings: dict[str, list[Category]] = {}
+    for entry in raw.get("wordings", []):
+        base = by_text.get(normalize_category_text(entry["of"]))
+        if base is None:
+            raise SystemExit(f"wordings: {entry['of']!r} is not a pool category")
+        for text in entry["also"]:
+            wording = create_category(text)
+            if normalize_category_text(wording.text) in taken:
+                raise SystemExit(f"wordings: {text!r} is written twice")
+            taken.add(normalize_category_text(wording.text))
+            wordings.setdefault(base.id, []).append(wording)
+    return wordings
+
+
+def _wordings_judged(
+    questions: Sequence[Question],
+    pool: Sequence[Category],
+    wordings: dict[str, list[Category]],
+) -> tuple[dict[tuple[str, str], float], set[str]]:
+    """
+    The recorded judgments for the other wordings, and the ids of the
+    wordings that are missing one: against a measure, or against another
+    category either way round.
+    """
+    others = [wording for group in wordings.values() for wording in group]
+    report = gather_judgments(
+        questions, others, JudgmentStore(RECORDED), model=JEV_MODEL
+    )
+    unjudged = {category_id for _, category_id in report.missing}
+    contained = _containment([*pool, *others])
+    everyone = [*pool, *others]
+    for wording in others:
+        for other in everyone:
+            if other.id == wording.id:
+                continue
+            if (wording.id, other.id) not in contained or (
+                other.id,
+                wording.id,
+            ) not in contained:
+                unjudged.add(wording.id)
+    return report.judgments, unjudged
+
+
+def _containment(categories: Sequence[Category]) -> dict[tuple[str, str], float]:
+    """Every recorded containment judgment between these categories."""
+    pairs = [
+        (first, second)
+        for first in categories
+        for second in categories
+        if first.id != second.id
+    ]
+    contained: dict[tuple[str, str], float] = {}
+    for path in (BENCHMARK / "nesting.jsonl", RECORDED_NESTING):
+        report = gather_nesting(pairs, NestingStore(path), model=JEV_MODEL)
+        contained.update(report.probabilities)
+    return contained
 
 
 def _stand_ins(
@@ -216,22 +333,76 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
-def _unjudged() -> tuple[list[Question], list[Category]]:
-    categories = [entry.category for entry in load_fixture().categories]
-    _, missing = _judged(
-        [measure.question for measure in _measures(_source())], categories
-    )
-    return missing, categories
+# The most containment pairs sent in one request
+NESTING_BATCH = 60
+
+
+class _Wanted:
+    """What is not yet recorded for the scenario as now written."""
+
+    def __init__(self) -> None:
+        raw = _source()
+        self.pool = [entry.category for entry in load_fixture().categories]
+        self.questions = [measure.question for measure in _measures(raw)]
+        # Measures reworded since the evaluation, against the pool
+        _, self.reworded = _judged(self.questions, self.pool)
+        # Every measure against the other wordings
+        self.wordings = [
+            wording for group in _wordings(raw, self.pool).values() for wording in group
+        ]
+        report = gather_judgments(
+            self.questions, self.wordings, JudgmentStore(RECORDED), model=JEV_MODEL
+        )
+        self.wording_judgments = len(report.missing)
+        self.wording_questions = [
+            question
+            for question in self.questions
+            if any(question_id == question.id for question_id, _ in report.missing)
+        ]
+        # Containment between every two categories, both ways
+        everyone = [*self.pool, *self.wordings]
+        contained = _containment(everyone)
+        self.pairs = [
+            (first, second)
+            for first in everyone
+            for second in everyone
+            if first.id != second.id and (first.id, second.id) not in contained
+        ]
+
+    @property
+    def requests(self) -> int:
+        return (
+            len(self.reworded)
+            + len(self.wording_questions)
+            + -(-len(self.pairs) // NESTING_BATCH)
+        )
+
+    @property
+    def judgments(self) -> int:
+        return (
+            len(self.reworded) * len(self.pool)
+            + self.wording_judgments
+            + len(self.pairs)
+        )
 
 
 def plan() -> int:
-    missing, categories = _unjudged()
-    print(f"Measures not judged as now worded: {len(missing)}")
-    for question in missing:
+    wanted = _Wanted()
+    print(f"Measures not judged as now worded: {len(wanted.reworded)}")
+    for question in wanted.reworded:
         print(f"  {question.id}  {question.title}")
     print(
-        f"collect would send {len(missing)} requests "
-        f"for {len(missing) * len(categories)} judgments to {JEV_MODEL}."
+        f"Other wordings: {len(wanted.wordings)}; "
+        f"{wanted.wording_judgments} judgments against measures missing, "
+        f"in {len(wanted.wording_questions)} requests"
+    )
+    print(
+        f"Containment pairs missing: {len(wanted.pairs)}, "
+        f"in {-(-len(wanted.pairs) // NESTING_BATCH)} requests"
+    )
+    print(
+        f"collect would send {wanted.requests} requests "
+        f"for {wanted.judgments} judgments to {JEV_MODEL}."
     )
     return 0
 
@@ -239,27 +410,54 @@ def plan() -> int:
 def collect() -> int:
     from delegation.jev import JevSource, read_api_key
 
-    missing, categories = _unjudged()
-    if not missing:
+    wanted = _Wanted()
+    if not wanted.requests:
         print("Nothing to collect.")
         return 0
     key = read_api_key(ENV_FILE)
     if not key:
         raise SystemExit("No API key: set TYPESAFE_API_KEY or add it to .env.local")
     source = JevSource(key)
+    fetched = 0
+    missing = 0
+    failures: list[str] = []
     try:
-        report = gather_judgments(
-            missing, categories, JudgmentStore(RECORDED), model=JEV_MODEL, source=source
-        )
+        for questions, categories in (
+            (wanted.reworded, wanted.pool),
+            (wanted.wording_questions, wanted.wordings),
+        ):
+            if not questions or not categories:
+                continue
+            report = gather_judgments(
+                questions,
+                categories,
+                JudgmentStore(RECORDED),
+                model=JEV_MODEL,
+                source=source,
+            )
+            fetched += report.fetched
+            missing += len(report.missing)
+            failures += report.failures
+        if wanted.pairs:
+            nested = gather_nesting(
+                wanted.pairs,
+                NestingStore(RECORDED_NESTING),
+                model=JEV_MODEL,
+                source=source,
+                batch_size=NESTING_BATCH,
+            )
+            fetched += nested.fetched
+            missing += len(nested.missing)
+            failures += nested.failures
     finally:
         source.close()
     print(
-        f"Recorded {report.fetched} judgments in {source.requests} requests; "
-        f"{len(report.missing)} still missing."
+        f"Recorded {fetched} judgments in {source.requests} requests; "
+        f"{missing} still missing."
     )
-    for failure in report.failures:
+    for failure in failures:
         print(f"  failed: {failure}")
-    return 1 if report.missing else 0
+    return 1 if missing else 0
 
 
 def write(strict: bool) -> int:
@@ -268,6 +466,9 @@ def write(strict: bool) -> int:
     SCENARIO_PATH.write_bytes(body)
     provisional = json.loads(body)["provisional"]
     print(f"{SCENARIO_PATH.relative_to(ROOT).as_posix()}: {len(body) / 1024:.1f} KB")
+    unjudged = json.loads(body)["unjudged_wordings"]
+    if unjudged:
+        print(f"{len(unjudged)} wordings are left out until they are judged")
     if provisional:
         print(
             f"{len(provisional)} measures use judgments recorded for their "

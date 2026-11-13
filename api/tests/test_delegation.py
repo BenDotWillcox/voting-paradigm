@@ -170,7 +170,7 @@ class TestScenario:
             (ADVISORY, 241, 3),
         ]
         assert all((p["status"] == "open") == (p["closes_in_days"] > 0) for p in papers)
-        assert len(body["categories"]) == 30
+        assert len(body["categories"]) == 50
         assert all(category["in_pool"] for category in body["categories"])
 
     def test_viewer_is_a_resident_whose_account_starts_with_delegations(
@@ -210,8 +210,37 @@ class TestScenario:
     ) -> None:
         body = client.get(SCENARIO_URL).json()
         by_text = {category["text"]: category for category in body["categories"]}
-        assert by_text[FROGS]["inside"] == [by_text[ENVIRONMENT]["id"]]
-        assert by_text[ENVIRONMENT]["inside"] == []
+        assert by_text[ENVIRONMENT]["id"] in by_text[FROGS]["inside"]
+        # Also inside the broader wordings other people use
+        assert by_text["the environment"]["id"] in by_text[FROGS]["inside"]
+        assert by_text[ENVIRONMENT]["inside"] == [by_text["the environment"]["id"]]
+        assert by_text[TAXES]["inside"] == []
+
+    def test_wordings_of_the_same_thing_point_at_each_other(
+        self, client: TestClient
+    ) -> None:
+        body = client.get(SCENARIO_URL).json()
+        by_id = {category["id"]: category for category in body["categories"]}
+        by_text = {category["text"]: category for category in body["categories"]}
+        same = {by_id[other]["text"] for other in by_text[TAXES]["same_as"]}
+        assert same == {"taxes", "anything to do with taxes"}
+        for category in body["categories"]:
+            for other in category["same_as"]:
+                assert category["id"] in by_id[other]["same_as"]
+                assert other not in category["inside"]
+        # Narrower, so nested rather than the same thing
+        assert by_text["tax policy"]["same_as"] == []
+        assert by_text[TAXES]["id"] in by_text["tax policy"]["inside"]
+        assert by_text[FROGS]["same_as"] == []
+        # People really do write the other wordings
+        held = {d["category"] for d in body["delegations"]}
+        assert by_text["taxes"]["id"] in held
+
+    def test_a_written_category_is_the_same_as_nothing(self, client: TestClient) -> None:
+        body = client.post(
+            VALIDATE_URL, json={"proposed": {"category": WRITTEN, "delegate": KEEPER}}
+        ).json()
+        assert body["category"]["same_as"] == []
 
     def test_names_usernames_and_well_known_people(self, client: TestClient) -> None:
         body = client.get(SCENARIO_URL).json()
@@ -1227,11 +1256,11 @@ class TestTrace:
         assert (body["source"], body["judged"]) == ("recorded", True)
         assert body["question"]["jurisdiction"] == "city" and body["voters"] == 241
         scores = body["scores"]
-        assert len(scores) == 30
+        assert len(scores) == 50
         probabilities = [score["probability"] for score in scores]
         assert probabilities == sorted(probabilities, reverse=True)
-        top = {score["text"] for score in scores[:2]}
-        assert top == {ENVIRONMENT, FROGS}
+        top = {score["text"] for score in scores[:4]}
+        assert {ENVIRONMENT, FROGS} <= top
         frogs = next(score for score in scores if score["text"] == FROGS)
         assert frogs["inside"] and frogs["holders"] > 0 and not frogs["held_by_viewer"]
 

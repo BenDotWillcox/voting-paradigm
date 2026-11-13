@@ -1,4 +1,5 @@
 import type { DelegationPerson, DelegationScenario } from "@/types/delegation";
+import { buildCategoryGroups, type CategoryGroups } from "./categories";
 
 /** Lookups the liquid democracy pages need, built once from the scenario. */
 export type Directory = {
@@ -7,6 +8,8 @@ export type Directory = {
   byUsername: Map<string, DelegationPerson>;
   jurisdictions: Map<string, string>;
   categoryText: Map<string, string>;
+  /** Wordings of the same category, counted together. */
+  groups: CategoryGroups;
 };
 
 export function buildDirectory(scenario: DelegationScenario): Directory {
@@ -16,6 +19,7 @@ export function buildDirectory(scenario: DelegationScenario): Directory {
     byUsername: new Map(scenario.persons.map((person) => [person.username, person])),
     jurisdictions: new Map(scenario.jurisdictions.map((place) => [place.id, place.name])),
     categoryText: new Map(scenario.categories.map((category) => [category.id, category.text])),
+    groups: buildCategoryGroups(scenario),
   };
 }
 
