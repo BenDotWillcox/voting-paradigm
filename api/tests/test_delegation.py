@@ -789,6 +789,7 @@ def test_routes_are_documented() -> None:
         CITY_URL,
         TRACE_URL,
         BACKTEST_URL,
+        CITY_URL + "/votes/{question_id}",
     }
     for path in paths:
         for operation in schema["paths"][path].values():
@@ -1566,3 +1567,129 @@ class TestBacktest:
         response = client.post(BACKTEST_URL, json={"before": [], "after": after})
         assert response.status_code == 422
         assert "detail" in response.json()
+
+
+class TestCityMap:
+    """Where people live, and one closed question resident by resident."""
+
+    BAR_HOURS = "q65"  # Extended bar hours on Foundry Row, Eastgate
+    FIRE_STATION = "q41"  # ranked, three sites, Harbor
+
+    def vote(self, client: TestClient, question_id: str) -> dict[str, Any]:
+        response = client.get(f"{CITY_URL}/votes/{question_id}")
+        assert response.status_code == 200, response.text
+        result: dict[str, Any] = response.json()
+        return result
+
+    def test_districts_have_areas_and_residents_live_inside_theirs(
+        self, client: TestClient
+    ) -> None:
+        body = client.get(SCENARIO_URL).json()
+        areas = {place["id"]: place["area"] for place in body["jurisdictions"]}
+        assert areas["city"] is None
+        assert areas["district-1"] == [0.0, 0.5, 1.0, 1.0]
+        assert areas["district-2"] == [0.0, 0.0, 0.55, 0.5]
+        assert areas["district-3"] == [0.55, 0.0, 1.0, 0.5]
+        housed = 0
+        for person in body["persons"]:
+            if person["home"] is None:
+                assert person["location"] is None
+                continue
+            x0, y0, x1, y1 = areas[person["home"]]
+            x, y = person["location"]
+            assert x0 <= x <= x1 and y0 <= y <= y1
+            housed += 1
+        assert housed == 241
+
+    def test_everyone_issued_the_question_is_listed_once(
+        self, client: TestClient
+    ) -> None:
+        body = self.vote(client, self.BAR_HOURS)
+        assert (body["jurisdiction"], body["ballot_type"]) == (
+            "district-3",
+            "single_choice",
+        )
+        people = [resident["person"] for resident in body["residents"]]
+        assert len(people) == len(set(people)) == 80
+        assert all(person.startswith("d3-") for person in people)
+        assert body["closed_days_ago"] > 0
+
+    def test_how_a_vote_went_fits_who_decided_it(self, client: TestClient) -> None:
+        body = self.vote(client, self.BAR_HOURS)
+        seen = set()
+        for resident in body["residents"]:
+            seen.add(resident["how"])
+            if resident["how"] == "delegated":
+                assert resident["resolver"] != resident["person"]
+            else:
+                assert resident["resolver"] == resident["person"]
+                assert (resident["choice"] is None) == (resident["how"] == "abstained")
+        assert seen == {"voted", "delegated", "abstained"}
+
+    def test_district_counts_match_the_citys_count(self, client: TestClient) -> None:
+        body = self.vote(client, self.BAR_HOURS)
+        row = next(
+            q
+            for q in client.get(CITY_URL).json()["questions"]
+            if q["question_id"] == self.BAR_HOURS
+        )
+        (district,) = body["districts"]
+        assert district["jurisdiction"] == "district-3"
+        assert district["voters"] == row["voters"] == 80
+        assert district["counted"] == row["cast_delegated"]
+        assert sum(district["by_option"].values()) == district["counted"]
+        counted = [r for r in body["residents"] if r["choice"] is not None]
+        assert len(counted) == district["counted"]
+        assert body["winners"] == row["winners"]
+
+    def test_a_yes_or_no_measure_has_one_site_named_after_it(
+        self, client: TestClient
+    ) -> None:
+        body = self.vote(client, self.BAR_HOURS)
+        assert body["sites"] == [
+            {"option": "yes", "name": body["title"], "location": [0.75, 0.3]}
+        ]
+        assert 0 < body["reach"] < 1
+
+    def test_a_site_choice_has_a_site_per_option(self, client: TestClient) -> None:
+        body = self.vote(client, self.FIRE_STATION)
+        assert body["ballot_type"] == "ranked"
+        options = {option["id"]: option["name"] for option in body["options"]}
+        assert len(options) == 3
+        assert {site["option"]: site["name"] for site in body["sites"]} == options
+        for resident in body["residents"]:
+            if resident["choice"] is not None:
+                assert sorted(resident["choice"]) == sorted(options)
+        (district,) = body["districts"]
+        # First choices only, one per counted ballot
+        assert sum(district["by_option"].values()) == district["counted"]
+
+    def test_a_citywide_question_has_every_district_and_no_site(
+        self, client: TestClient
+    ) -> None:
+        body = self.vote(client, "q56")  # Parks levy renewal
+        assert body["sites"] == [] and body["jurisdiction"] == "city"
+        assert [d["jurisdiction"] for d in body["districts"]] == [
+            "district-1",
+            "district-2",
+            "district-3",
+        ]
+        assert sum(d["voters"] for d in body["districts"]) == len(body["residents"]) == 241
+
+    def test_it_agrees_with_a_residents_profile(self, client: TestClient) -> None:
+        body = self.vote(client, self.FIRE_STATION)
+        by_person = {resident["person"]: resident for resident in body["residents"]}
+        history = client.get(f"{PEOPLE_URL}/d2-022").json()["history"]
+        entry = next(e for e in history if e["question_id"] == self.FIRE_STATION)
+        resident = by_person["d2-022"]
+        assert resident["how"] == entry["how"]
+        assert resident["resolver"] == entry["resolver"]
+        assert resident["choice"] == entry["choice"]
+
+    @pytest.mark.parametrize("question_id", ["q60", "nope"])  # open, unknown
+    def test_only_closed_questions_have_one(
+        self, client: TestClient, question_id: str
+    ) -> None:
+        response = client.get(f"{CITY_URL}/votes/{question_id}")
+        assert response.status_code == 422
+        assert "closed question" in response.json()["detail"]

@@ -146,7 +146,14 @@ export const scenarioResponseSchema = z.object({
   threshold: z.number(),
   viewer: z.string(),
   live_judgments: z.boolean(),
-  jurisdictions: z.array(z.object({ id: z.string(), name: z.string() })),
+  jurisdictions: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      // A district's part of the unit square, as [x0, y0, x1, y1]
+      area: z.array(z.number()).length(4).nullable().default(null),
+    })
+  ),
   persons: z.array(personSchema),
   categories: z.array(categorySchema),
   delegations: z.array(
@@ -395,6 +402,8 @@ export const cityResponseSchema = z.object({
   ),
   questions: z.array(
     z.object({
+      // Whether the measure, or any of its options, is about one place
+      has_site: z.boolean().default(false),
       ballot_paper: z.string(),
       paper_title: z.string(),
       jurisdiction: z.string(),
@@ -545,6 +554,43 @@ export const backtestResponseSchema = z.object({
       own_choice: choiceSchema,
       before: backtestRouteSchema,
       after: backtestRouteSchema,
+    })
+  ),
+});
+
+// ---------------------------------------------------------------------------
+// GET /city/votes/{question_id}
+// ---------------------------------------------------------------------------
+
+export const questionIdSchema = z.string().min(1).max(80);
+
+export const cityVoteResponseSchema = z.object({
+  question_id: z.string(),
+  label: z.string(),
+  title: z.string(),
+  ballot_type: z.enum(["single_choice", "ranked", "approval"]),
+  jurisdiction: z.string(),
+  closed_days_ago: z.number(),
+  options: z.array(z.object({ id: z.string(), name: z.string() })),
+  winners: z.array(z.string()),
+  sites: z.array(
+    z.object({ option: z.string(), name: z.string(), location: z.array(z.number()).length(2) })
+  ),
+  reach: z.number(),
+  residents: z.array(
+    z.object({
+      person: z.string(),
+      how: z.enum(["voted", "delegated", "abstained"]),
+      resolver: z.string(),
+      choice: choiceSchema.nullable(),
+    })
+  ),
+  districts: z.array(
+    z.object({
+      jurisdiction: z.string(),
+      voters: z.number(),
+      counted: z.number(),
+      by_option: z.record(z.string(), z.number()),
     })
   ),
 });

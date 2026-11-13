@@ -3,6 +3,7 @@ import type { z } from "zod";
 import { cache } from "react";
 import {
   cityResponseSchema,
+  cityVoteResponseSchema,
   categoryJudgmentsResponseSchema,
   profileResponseSchema,
   resolveBallotPaperResponseSchema,
@@ -13,6 +14,7 @@ import {
 } from "@/lib/validations/delegation-schemas";
 import type {
   CityResults,
+  CityVote,
   CategoryJudgmentsRequest,
   CategoryJudgmentsResponse,
   DelegationScenario,
@@ -149,4 +151,9 @@ export function traceMeasure(request: TraceMeasureRequest): Promise<MeasureTrace
 
 export function backtestDelegations(request: BacktestRequest): Promise<DelegationBacktest> {
   return call("/backtest", backtestResponseSchema, request, 30000);
+}
+
+/** One closed question, resident by resident: whose ballot counted for whom. */
+export function getCityVote(questionId: string): Promise<CityVote> {
+  return call(`/city/votes/${encodeURIComponent(questionId)}`, cityVoteResponseSchema);
 }

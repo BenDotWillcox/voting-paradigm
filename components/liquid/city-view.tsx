@@ -6,6 +6,7 @@ import type { CityQuestion, CityResults } from "@/types/delegation";
 import { useAccount } from "./account-provider";
 import { AppLink as Link } from "./app-link";
 import { findQuestion, outcomeLabel } from "./ballots";
+import { CityMap } from "./city-map";
 import { ago, percent, personName, profileHref } from "./people";
 import { PersonAvatar } from "./person-bits";
 import { StatCard, StatStrip } from "./stat-card";
@@ -151,6 +152,8 @@ export function CityView({ city }: { city: CityResults }) {
           />
         </div>
       </section>
+
+      <CityMap city={city} />
 
       <section className="space-y-3">
         <h3 className="liquid-label">Who decided the most for others</h3>

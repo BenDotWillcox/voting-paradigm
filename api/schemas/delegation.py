@@ -71,6 +71,13 @@ _EXAMPLE_DELEGATIONS: list[Any] = [
 class JurisdictionSchema(BaseModel):
     id: str
     name: str
+    area: list[float] | None = Field(
+        default=None,
+        description=(
+            "A district's part of the unit square, as [x0, y0, x1, y1]; null for "
+            "the city as a whole."
+        ),
+    )
 
 
 class PersonSchema(BaseModel):
@@ -607,6 +614,10 @@ class CityQuestionSchema(BaseModel):
     kind: str
     title: str
     ballot_type: BallotTypeLiteral
+    has_site: bool = Field(
+        default=False,
+        description="Whether the measure, or any of its options, is about one place.",
+    )
     voters: int = Field(description="People the question was issued to.")
     cast_delegated: int = Field(
         description="Ballots that counted with delegation: voters whose resolver voted."
@@ -925,3 +936,61 @@ class BacktestResponse(BaseModel):
             "else, or left under another category, most recent first."
         )
     )
+
+
+# ---------------------------------------------------------------------------
+# GET /city/votes/{question_id}
+# ---------------------------------------------------------------------------
+
+
+class CityVoteSiteSchema(BaseModel):
+    option: str = Field(description="The option that would be built here.")
+    name: str
+    location: list[float] = Field(description="Its place in the unit square, as [x, y].")
+
+
+class CityVoteResidentSchema(BaseModel):
+    person: str
+    how: Literal["voted", "delegated", "abstained"] = Field(
+        description=(
+            "Whether they cast their own ballot, someone else decided their "
+            "vote, or they kept it and cast nothing."
+        )
+    )
+    resolver: str = Field(description="Who decided the vote; themself unless delegated.")
+    choice: Choice | None = Field(
+        description="The ballot that counted for them; null when the resolver cast nothing."
+    )
+
+
+class CityVoteDistrictSchema(BaseModel):
+    jurisdiction: str
+    voters: int = Field(description="Residents the question was issued to.")
+    counted: int = Field(description="Of those, how many had a ballot count.")
+    by_option: dict[str, int] = Field(
+        description=(
+            "Ballots per option: the single or first choice, or for an approval "
+            "question every option approved."
+        )
+    )
+
+
+class CityVoteResponse(BaseModel):
+    question_id: str
+    label: str
+    title: str
+    ballot_type: BallotTypeLiteral
+    jurisdiction: str
+    closed_days_ago: int
+    options: list[OptionSchema]
+    winners: list[str]
+    sites: list[CityVoteSiteSchema] = Field(
+        description="Where the measure, or each of its options, would be built."
+    )
+    reach: float = Field(
+        description="The distance at which a site's pull on a resident falls to about a third."
+    )
+    residents: list[CityVoteResidentSchema] = Field(
+        description="Everyone the question was issued to."
+    )
+    districts: list[CityVoteDistrictSchema]
