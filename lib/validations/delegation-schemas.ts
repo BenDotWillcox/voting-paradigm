@@ -48,6 +48,38 @@ export const categoryJudgmentsRequestSchema = z.object({
   held: z.array(categoryTextSchema).max(MAX_VIEWER_DELEGATIONS),
 });
 
+export const MAX_TITLE_LENGTH = 120;
+export const MAX_SUMMARY_LENGTH = 400;
+
+/** Trace a curated question by id, or a drafted yes/no measure. */
+export const traceMeasureRequestSchema = z
+  .object({
+    question_id: z.string().max(80).optional(),
+    title: z
+      .string()
+      .trim()
+      .min(3, "Give the measure a title.")
+      .max(MAX_TITLE_LENGTH, `Keep the title under ${MAX_TITLE_LENGTH} characters.`)
+      .optional(),
+    summary: z
+      .string()
+      .trim()
+      .min(10, "Say in a sentence what the measure would do.")
+      .max(MAX_SUMMARY_LENGTH, `Keep the summary under ${MAX_SUMMARY_LENGTH} characters.`)
+      .optional(),
+    jurisdiction: z.string().max(40).optional(),
+    viewer_delegations: viewerDelegationsSchema,
+    threshold: thresholdSchema,
+  })
+  .refine(
+    (value) =>
+      value.question_id !== undefined ||
+      (value.title !== undefined &&
+        value.summary !== undefined &&
+        value.jurisdiction !== undefined),
+    "Choose a measure, or write a title and a summary."
+  );
+
 export const resolveBallotPaperRequestSchema = z.object({
   ballot_paper: z.string().min(1).max(80),
   viewer_delegations: viewerDelegationsSchema,
@@ -391,4 +423,80 @@ export const cityResponseSchema = z.object({
       largest_share: z.number(),
     })
   ),
+});
+
+// ---------------------------------------------------------------------------
+// POST /trace
+// ---------------------------------------------------------------------------
+
+const outcomeSchema = z.enum([
+  "direct_vote",
+  "no_delegations",
+  "router_unavailable",
+  "none_available",
+  "delegated",
+]);
+const keptSchema = z.enum([
+  "direct_vote",
+  "no_delegations",
+  "router_unavailable",
+  "none_available",
+  "loop",
+]);
+
+export const traceMeasureResponseSchema = z.object({
+  model: z.string(),
+  question: z.object({
+    id: z.string().nullable(),
+    title: z.string(),
+    summary: z.string(),
+    jurisdiction: z.string(),
+  }),
+  source: z.enum(["recorded", "fetched", "unavailable", "limited"]),
+  judged: z.boolean(),
+  voters: z.number(),
+  scores: z.array(
+    z.object({
+      category: z.string(),
+      text: z.string(),
+      probability: z.number().nullable(),
+      holders: z.number(),
+      held_by_viewer: z.boolean(),
+      inside: z.array(z.string()),
+    })
+  ),
+  routing: z.object({
+    threshold: z.number(),
+    metrics: z.object({
+      voters: z.number(),
+      delegated_share: z.number(),
+      largest_share: z.number(),
+      largest_resolver: z.string().nullable(),
+      gini: z.number(),
+      chain_lengths: z.array(z.object({ hops: z.number(), votes: z.number() })),
+      loops: z.array(z.array(z.string())),
+    }),
+    by_category: z.array(z.object({ category: z.string(), votes: z.number() })),
+    flows: z.array(z.object({ category: z.string(), resolver: z.string(), votes: z.number() })),
+    resolvers: z.array(z.object({ person: z.string(), votes: z.number(), share: z.number() })),
+    kept: z.array(z.object({ reason: keptSchema, votes: z.number() })),
+    viewer: z
+      .object({
+        outcome: outcomeSchema,
+        category: z.string().nullable(),
+        set_aside: z.array(z.string()),
+        chain: z.array(z.string()),
+        resolver: z.string(),
+      })
+      .nullable(),
+  }),
+  sweep: z.array(
+    z.object({
+      threshold: z.number(),
+      delegated_share: z.number(),
+      largest_share: z.number(),
+      largest_resolver: z.string().nullable(),
+    })
+  ),
+  failures: z.array(z.string()),
 });

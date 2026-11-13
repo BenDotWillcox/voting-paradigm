@@ -37,6 +37,7 @@ JUDGMENTS_URL = "/api/delegation/judgments"
 RESOLVE_URL = "/api/delegation/resolve"
 PEOPLE_URL = "/api/delegation/people"
 CITY_URL = "/api/delegation/city"
+TRACE_URL = "/api/delegation/trace"
 
 VIEWER = "you"
 # Open ballot papers, and two that have closed
@@ -163,10 +164,10 @@ class TestScenario:
             for p in papers
             if p["status"] == "open"
         ] == [
-            (SPECIAL, 80, 3),
+            (SPECIAL, 80, 2),
             (GENERAL, 241, 14),
             ("district-1-special-3", 81, 2),
-            (ADVISORY, 241, 2),
+            (ADVISORY, 241, 3),
         ]
         assert all((p["status"] == "open") == (p["closes_in_days"] > 0) for p in papers)
         assert len(body["categories"]) == 30
@@ -756,6 +757,7 @@ def test_routes_are_documented() -> None:
         RESOLVE_URL,
         PEOPLE_URL + "/{person_id}",
         CITY_URL,
+        TRACE_URL,
     }
     for path in paths:
         for operation in schema["paths"][path].values():
@@ -1015,17 +1017,18 @@ class TestBallotTypes:
     def test_an_approval_vote_counts_for_the_votes_the_viewer_holds(
         self, client: TestClient
     ) -> None:
-        waiting = question(resolve(client, SPECIAL), "q60")  # the library's site
+        waiting = question(resolve(client, ADVISORY), "q60")  # the library's site
         held = waiting["inbox"]["votes_for_others"]
         assert held >= 1 and waiting["ballot_type"] == "approval"
 
         answered = question(
-            resolve(client, SPECIAL, viewer_votes={"q60": ["civic", "depot"]}), "q60"
+            resolve(client, ADVISORY, viewer_votes={"q60": ["civic", "depot"]}), "q60"
         )
         before, after = waiting["delegated"]["counts"], answered["delegated"]["counts"]
         assert answered["delegated"]["method"] == "approval"
-        assert after["civic"] == before["civic"] + held
-        assert after["depot"] == before["depot"] + held
+        # The viewer's own ballot counts too: the paper is issued to the whole city.
+        assert after["civic"] == before["civic"] + held + 1
+        assert after["depot"] == before["depot"] + held + 1
         assert after["pier"] == before["pier"]
 
     def test_a_yes_no_question_takes_exactly_one_option(
@@ -1201,3 +1204,177 @@ class TestProfileChanges:
             if change["delegator"] == VIEWER and change["before"] == "d2-007"
         ]
         assert [change["category"] for change in moved_from] == ["housing and land use"]
+
+
+DRAFT = {
+    "title": "Dog park at Cannery Yard",
+    "summary": "Turns two acres of the Cannery Yard into a fenced off-leash dog park.",
+    "jurisdiction": "district-2",
+}
+
+
+class TestTrace:
+    def trace(self, client: TestClient, **body: Any) -> dict[str, Any]:
+        response = client.post(TRACE_URL, json=body)
+        assert response.status_code == 200, response.text
+        result: dict[str, Any] = response.json()
+        return result
+
+    def test_a_curated_question_is_traced_from_recorded_judgments(
+        self, client: TestClient
+    ) -> None:
+        body = self.trace(client, question_id="q10")  # Amazon amphibian habitat grant
+        assert (body["source"], body["judged"]) == ("recorded", True)
+        assert body["question"]["jurisdiction"] == "city" and body["voters"] == 241
+        scores = body["scores"]
+        assert len(scores) == 30
+        probabilities = [score["probability"] for score in scores]
+        assert probabilities == sorted(probabilities, reverse=True)
+        top = {score["text"] for score in scores[:2]}
+        assert top == {ENVIRONMENT, FROGS}
+        frogs = next(score for score in scores if score["text"] == FROGS)
+        assert frogs["inside"] and frogs["holders"] > 0 and not frogs["held_by_viewer"]
+
+    def test_routing_accounts_for_every_vote(self, client: TestClient) -> None:
+        body = self.trace(client, question_id="q10")
+        routing = body["routing"]
+        sent = sum(entry["votes"] for entry in routing["by_category"])
+        kept = sum(entry["votes"] for entry in routing["kept"])
+        assert sent + kept == body["voters"]
+        assert sent == round(routing["metrics"]["delegated_share"] * body["voters"])
+        assert {ENVIRONMENT, FROGS} <= {
+            entry["category"] for entry in routing["by_category"]
+        }
+        resolvers = routing["resolvers"]
+        assert [r["votes"] for r in resolvers] == sorted(
+            (r["votes"] for r in resolvers), reverse=True
+        )
+        assert resolvers[0]["person"] == routing["metrics"]["largest_resolver"]
+        assert resolvers[0]["share"] == routing["metrics"]["largest_share"]
+        flows = routing["flows"]
+        assert flows and all(flow["votes"] >= 1 for flow in flows)
+
+    def test_it_agrees_with_resolving_the_open_paper(self, client: TestClient) -> None:
+        starting = client.get(SCENARIO_URL).json()["viewer_delegations"]
+        traced = self.trace(client, question_id="q10", viewer_delegations=starting)
+        item = question(resolve(client, viewer_delegations=starting), "q10")
+        assert traced["routing"]["metrics"] == item["metrics"]
+        viewer, receipt = traced["routing"]["viewer"], item["receipt"]
+        for key in ("outcome", "category", "set_aside", "chain", "resolver"):
+            assert viewer[key] == receipt[key]
+
+    def test_a_closed_question_is_routed_through_todays_network(
+        self, client: TestClient
+    ) -> None:
+        # The viewer handed sales tax rates over after this question closed.
+        starting = client.get(SCENARIO_URL).json()["viewer_delegations"]
+        viewer = self.trace(client, question_id="q05", viewer_delegations=starting)[
+            "routing"
+        ]["viewer"]
+        assert viewer["outcome"] == "delegated" and viewer["category"] == TAXES
+
+    def test_raising_the_threshold_never_delegates_more(
+        self, client: TestClient
+    ) -> None:
+        # The fire station's site: three categories score between 0.7 and 0.85.
+        sweep = self.trace(client, question_id="q41")["sweep"]
+        assert [row["threshold"] for row in sweep] == [
+            0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95
+        ]
+        shares = [row["delegated_share"] for row in sweep]
+        assert shares == sorted(shares, reverse=True) and shares[0] > shares[-1]
+        body = self.trace(client, question_id="q41", threshold=0.9)
+        assert body["routing"]["threshold"] == 0.9
+        assert body["routing"]["metrics"]["delegated_share"] == sweep[8]["delegated_share"]
+
+    def test_a_question_about_nothing_stays_with_every_voter(
+        self, client: TestClient
+    ) -> None:
+        routing = self.trace(client, question_id="q68")["routing"]  # standard time
+        assert routing["by_category"] == [] and routing["flows"] == []
+        assert routing["resolvers"] == []
+        assert sum(entry["votes"] for entry in routing["kept"]) == 241
+
+    def test_a_ballot_not_issued_to_the_viewer_has_no_viewer_route(
+        self, client: TestClient
+    ) -> None:
+        body = self.trace(client, question_id="q34")  # Harbor only
+        assert body["voters"] == 80 and body["routing"]["viewer"] is None
+
+    def test_a_draft_without_the_model_is_unjudged_and_nobody_delegates(
+        self, client: TestClient
+    ) -> None:
+        body = self.trace(client, **DRAFT)
+        assert (body["source"], body["judged"]) == ("unavailable", False)
+        assert body["question"]["id"] is None and body["voters"] == 80
+        assert all(score["probability"] is None for score in body["scores"])
+        assert body["routing"]["metrics"]["delegated_share"] == 0
+
+    def test_a_draft_is_judged_once_and_then_replayed(self, client: TestClient) -> None:
+        source = ScriptedSource({"draft": 0.9})
+        use_source(source)
+        first = self.trace(client, **DRAFT)
+        assert (first["source"], first["judged"]) == ("fetched", True)
+        assert first["routing"]["metrics"]["delegated_share"] > 0
+        again = self.trace(client, **DRAFT)
+        assert again["source"] == "recorded" and source.judge_calls == 1
+        assert again["routing"] == first["routing"]
+        # Other wording is another question.
+        self.trace(client, **{**DRAFT, "title": "Dog park at the Cannery Yard"})
+        assert source.judge_calls == 2
+
+    def test_a_draft_is_judged_against_the_viewers_written_category_too(
+        self, client: TestClient
+    ) -> None:
+        use_source(ScriptedSource({"draft": 0.9}))
+        body = self.trace(
+            client,
+            **{**DRAFT, "jurisdiction": "district-1"},
+            viewer_delegations=delegations((WRITTEN, KEEPER)),
+        )
+        written = next(score for score in body["scores"] if score["text"] == WRITTEN)
+        assert written["held_by_viewer"] and written["probability"] == 0.9
+        assert body["routing"]["viewer"]["resolver"] == KEEPER
+
+    def test_drafts_stop_at_the_days_allowance(self, tmp_path: Path) -> None:
+        capped = service.RuntimeStores(
+            judgments=JudgmentStore(tmp_path / "judgments.jsonl"),
+            nesting=NestingStore(tmp_path / "nesting.jsonl"),
+            usage=tmp_path / "usage.json",
+            daily_measure_cap=1,
+        )
+        source = ScriptedSource({"draft": 0.9})
+        app.dependency_overrides[service.default_stores] = lambda: capped
+        app.dependency_overrides[service.default_source] = lambda: source
+        try:
+            client = TestClient(app)
+            assert self.trace(client, **DRAFT)["source"] == "fetched"
+            other = self.trace(client, **{**DRAFT, "title": "A second draft measure"})
+            assert (other["source"], other["judged"]) == ("limited", False)
+            assert source.judge_calls == 1
+            # What is already recorded still replays, and categories have their own count.
+            assert self.trace(client, **DRAFT)["source"] == "recorded"
+            assert service._allowance_left(capped, "categories")
+        finally:
+            app.dependency_overrides.clear()
+
+    def test_a_failing_model_is_reported(self, client: TestClient) -> None:
+        use_source(ScriptedSource({}, fail=True))
+        body = self.trace(client, **DRAFT)
+        assert body["source"] == "unavailable" and body["failures"]
+
+    @pytest.mark.parametrize(
+        "body",
+        [
+            {},
+            {"question_id": "q99"},
+            {"question_id": "q10", "title": "Both a question and a draft"},
+            {"title": "No summary or place"},
+            {**DRAFT, "jurisdiction": "district-9"},
+            {**DRAFT, "summary": "Short"},
+        ],
+    )
+    def test_malformed_requests_are_refused(
+        self, client: TestClient, body: dict[str, Any]
+    ) -> None:
+        assert client.post(TRACE_URL, json=body).status_code == 422

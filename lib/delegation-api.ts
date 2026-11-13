@@ -7,6 +7,7 @@ import {
   profileResponseSchema,
   resolveBallotPaperResponseSchema,
   scenarioResponseSchema,
+  traceMeasureResponseSchema,
   validateDelegationResponseSchema,
 } from "@/lib/validations/delegation-schemas";
 import type {
@@ -14,6 +15,8 @@ import type {
   CategoryJudgmentsRequest,
   CategoryJudgmentsResponse,
   DelegationScenario,
+  MeasureTrace,
+  TraceMeasureRequest,
   PersonProfile,
   ResolveBallotPaperRequest,
   ResolveBallotPaperResponse,
@@ -131,4 +134,12 @@ export function resolveBallotPaper(
 /** Every closed question across the city: turnout, delegation and results. */
 export function getCityResults(): Promise<CityResults> {
   return call("/city", cityResponseSchema);
+}
+
+/**
+ * Route one question through today's network and return the working. A
+ * drafted measure may be sent to the decision model, so it is given longer.
+ */
+export function traceMeasure(request: TraceMeasureRequest): Promise<MeasureTrace> {
+  return call("/trace", traceMeasureResponseSchema, request, 60000);
 }

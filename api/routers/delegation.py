@@ -18,6 +18,8 @@ from ..schemas.delegation import (
     ResolveRequest,
     ResolveResponse,
     ScenarioResponse,
+    TraceRequest,
+    TraceResponse,
     ValidateRequest,
     ValidateResponse,
 )
@@ -32,6 +34,7 @@ from ..services.delegation import (
     profile_response,
     resolve_response,
     scenario_response,
+    trace_response,
     validate_response,
 )
 
@@ -177,3 +180,29 @@ def profile(person_id: str) -> ProfileResponse:
 )
 def city() -> CityResponse:
     return city_response()
+
+
+@router.post(
+    "/trace",
+    response_model=TraceResponse,
+    summary="Route one question through the network and show the working",
+    description=(
+        "Takes a curated question, or a yes/no measure the caller drafts, and "
+        "routes it through today's network. Returns the decision model's "
+        "probability for every category in use, the categories votes left "
+        "under, who ends up deciding them, why the rest stayed with their "
+        "voters, concentration measures, and the same question routed at each "
+        "threshold from 0.50 to 0.95. A curated question reads recorded "
+        "judgments only. A draft uses recorded judgments for its exact wording "
+        "first; the rest are asked of the decision model only when the server "
+        "has live judgments switched on and the day's allowance of drafted "
+        "measures is not used up. Without judgments nobody's vote is "
+        "delegated, and the response says why."
+    ),
+    responses=_INVALID,
+)
+def trace(request: TraceRequest, stores: Stores, source: Source) -> TraceResponse:
+    try:
+        return trace_response(request, stores, source)
+    except DelegationRequestError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error

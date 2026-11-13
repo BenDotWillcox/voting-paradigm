@@ -11,6 +11,7 @@ import { WindowOverlay } from "./app-window";
 import { choiceLabel, findQuestion, outcomeLabel } from "./ballots";
 
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+import { ChangesList } from "./changes-list";
 import { HubGraph } from "./hub-graph";
 import {
   ago,
@@ -24,11 +25,12 @@ import { PersonAvatar } from "./person-bits";
 import { StatCard, StatStrip } from "./stat-card";
 import { TrendChart, type TrendPoint } from "./trend-chart";
 
-type Tab = "stats" | "graph" | "history";
+type Tab = "stats" | "graph" | "history" | "changes";
 const TABS: { id: Tab; label: string }[] = [
   { id: "stats", label: "Stats" },
   { id: "graph", label: "Graph" },
   { id: "history", label: "Voting history" },
+  { id: "changes", label: "Changes" },
 ];
 
 type Filter = "all" | HistoryEntry["how"];
@@ -130,6 +132,9 @@ export function ProfileView({ profile }: { profile: PersonProfile }) {
       )}
       {tab === "history" && (
         <HistoryTab profile={profile} isViewer={isViewer} />
+      )}
+      {tab === "changes" && (
+        <ChangesList profile={profile} isViewer={isViewer} />
       )}
     </div>
   );

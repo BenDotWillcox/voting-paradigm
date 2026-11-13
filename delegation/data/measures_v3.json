@@ -614,24 +614,6 @@
           "for": "Harbor has less park per resident than any other district.",
           "against": "The pier is the last deep-water berth the port has. Once it is lawn it stays lawn.",
           "support": {"appeal": 0.3, "lean": [0.4, -0.2, 0.0], "site": [0.08, 0.2], "local": 0.3}
-        },
-        {
-          "id": "q60", "title": "Site for the new central library", "kind": "Advisory vote",
-          "ballot_type": "approval",
-          "summary": "Chooses where the new central library will be built from three sites; voters may approve any number of them.",
-          "wording": "Where should the new central library be built? Approve every site you could accept.",
-          "fiscal": "The $60 million library bond is already approved; the sites differ by up to $8 million.",
-          "placed_by": "Library Board",
-          "for": "",
-          "against": "",
-          "options": [
-            {"id": "civic", "name": "Civic Square, on the current site", "note": "Rebuild where the library stands; it closes for three years.",
-             "support": {"appeal": 0.2, "site": [0.3, 0.36], "local": 0.3}},
-            {"id": "depot", "name": "The old rail depot", "note": "Keeps the old library open during building; next to the bus exchange.",
-             "support": {"appeal": 0.1, "lean": [0.0, 0.3, 0.0], "site": [0.44, 0.2], "local": 0.3}},
-            {"id": "pier", "name": "Tidewater Pier head", "note": "A landmark on the water; farthest from transit and the most expensive.",
-             "support": {"appeal": -0.1, "lean": [0.2, 0.2, 0.0], "site": [0.1, 0.2], "local": 0.3}}
-          ]
         }
       ]
     },
@@ -846,6 +828,24 @@
           "for": "Nobody has ever enjoyed the Monday after the clocks go forward.",
           "against": "Permanent standard time means a 4:15 a.m. sunrise in June.",
           "support": {"appeal": 0.1, "lean": [0.0, 0.0, 0.2]}
+        },
+        {
+          "id": "q60", "title": "Site for the new central library", "kind": "Advisory vote",
+          "ballot_type": "approval",
+          "summary": "Chooses where the new central library will be built from three sites; voters may approve any number of them.",
+          "wording": "Where should the city's new central library be built? Approve every site you could accept.",
+          "fiscal": "The $60 million library bond is already approved; the sites differ by up to $8 million.",
+          "placed_by": "Library Board",
+          "for": "",
+          "against": "",
+          "options": [
+            {"id": "civic", "name": "Civic Square, on the current site", "note": "Rebuild where the library stands; it closes for three years.",
+             "support": {"appeal": 0.2, "site": [0.3, 0.36], "local": 0.3}},
+            {"id": "depot", "name": "The old rail depot", "note": "Keeps the old library open during building; next to the bus exchange.",
+             "support": {"appeal": 0.1, "lean": [0.0, 0.3, 0.0], "site": [0.44, 0.2], "local": 0.3}},
+            {"id": "pier", "name": "Tidewater Pier head", "note": "A landmark on the water; farthest from transit and the most expensive.",
+             "support": {"appeal": -0.1, "lean": [0.2, 0.2, 0.0], "site": [0.1, 0.2], "local": 0.3}}
+          ]
         }
       ]
     }

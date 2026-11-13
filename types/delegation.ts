@@ -8,6 +8,8 @@ import type {
   resolveBallotPaperRequestSchema,
   resolveBallotPaperResponseSchema,
   scenarioResponseSchema,
+  traceMeasureRequestSchema,
+  traceMeasureResponseSchema,
   validateDelegationRequestSchema,
   validateDelegationResponseSchema,
   viewerDelegationSchema,
@@ -41,3 +43,6 @@ export type DelegationChange = PersonProfile["changes"][number];
 
 export type CityResults = z.infer<typeof cityResponseSchema>;
 export type CityQuestion = CityResults["questions"][number];
+
+export type TraceMeasureRequest = z.infer<typeof traceMeasureRequestSchema>;
+export type MeasureTrace = z.infer<typeof traceMeasureResponseSchema>;
