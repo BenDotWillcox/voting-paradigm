@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { memo, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type Ref } from "react";
 import { ArrowDown, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { scalarFocusRange, scalarPresentationPreview, scalarTransitionTicks, SCALAR_DOMAIN, type ScalarGraphRange } from "@/lib/expressive-scalar-graph";
 import { useScalarViewport } from "@/lib/use-scalar-viewport";
@@ -284,8 +284,8 @@ function WhatToNotice({ data }: { data: ScalarComparisonResponse }) {
     <p>{data.pair.winner_rates.length > 1
       ? `The two original rates tie on average score; richer scores do not select a single winner between them.`
       : samePair
-        ? `Using scores leaves the original two-option result unchanged at ${rateText(data.binary.outcome_rate)}.`
-        : `Using scores changes the original two-option result from ${rateText(data.binary.outcome_rate)} to ${rateText(data.pair.winner_rates[0])}.`} {multipleWinners
+        ? `Averaging scores leaves the original two-option result unchanged at ${rateText(data.binary.outcome_rate)}.`
+        : `Averaging scores changes the original two-option result from ${rateText(data.binary.outcome_rate)} to ${rateText(data.pair.winner_rates[0])}.`} {multipleWinners
           ? `${data.winner_rates.length} rates tie for the highest average across the full range.${binaryIsWinner ? " The yes/no outcome is among them." : " The yes/no outcome is not among them."}`
           : sameOutcome
             ? "Opening the full range also selects that same yes/no outcome."
@@ -302,6 +302,7 @@ function WhatToNotice({ data }: { data: ScalarComparisonResponse }) {
 }
 
 function AggregateResults({ data, ballot, voters }: { data: ScalarComparisonResponse; ballot: ScalarBallotState; voters: PreparedVoter[] }) {
+  const considerationsId = useId();
   const initialRate = data.winner_rates[0];
   const [inspectedRate, setInspectedRate] = useState(initialRate);
   const viewport = useScalarViewport(scalarFocusRange(initialRate));
@@ -316,9 +317,9 @@ function AggregateResults({ data, ballot, voters }: { data: ScalarComparisonResp
   const pairScores = pairScoreText(data.pair.proposal_mean, data.pair.status_quo_mean, data.pair.winner_rates.length > 1);
   return <>
     <div className={styles.outcomeSteps}>
-      <div><span className={styles.stepNumber}>1</span><h4>Yes/no ballot</h4><strong>{rateText(data.binary.outcome_rate)}</strong><p>{data.binary.passed ? "The reduction passes." : data.binary.yes === data.binary.no ? "The count is tied; the status quo remains." : "The status quo remains."} {data.binary.yes} Yes · {data.binary.no} No{data.binary.abstain > 0 ? ` · ${data.binary.abstain} unmarked` : ""}.</p></div>
-      <div><span className={styles.stepNumber}>2</span><h4>Richer scores, same two options</h4><strong><RateWinners rates={data.pair.winner_rates} /></strong><div className={styles.pairScores}><span>{rateText(data.proposal)} <b title={data.pair.proposal_mean.toPrecision(12)}>{pairScores[0]}</b></span><span>{rateText(data.status_quo)} <b title={data.pair.status_quo_mean.toPrecision(12)}>{pairScores[1]}</b></span></div><p>Average scores can distinguish strength of preference within the original choice.</p></div>
-      <div className={styles.expandedOutcome}><span className={styles.stepNumber}>3</span><h4>Richer scores, more options</h4><strong><RateWinners rates={data.winner_rates} /></strong><p>Now allow rates from 0–100%, in 0.05 percentage-point steps. This also changes the available policy choices.</p></div>
+      <div><span className={styles.stepNumber}>1</span><h4>Yes/no ballot</h4><strong>{rateText(data.binary.outcome_rate)}</strong><p>{data.binary.passed ? "The reduction passes." : data.binary.yes === data.binary.no ? "The count is tied; the status quo remains." : "The status quo remains."} {data.binary.yes} Yes · {data.binary.no} No{data.binary.abstain > 0 ? ` · ${data.binary.abstain} unmarked` : ""}. A yes/no majority decides between the original two rates.</p></div>
+      <div><span className={styles.stepNumber}>2</span><h4>Richer scores, same two options</h4><strong><RateWinners rates={data.pair.winner_rates} /></strong><div className={styles.pairScores}><span>{rateText(data.proposal)} <b title={data.pair.proposal_mean.toPrecision(12)}>{pairScores[0]}</b></span><span>{rateText(data.status_quo)} <b title={data.pair.status_quo_mean.toPrecision(12)}>{pairScores[1]}</b></span></div><p>Switching from a yes/no majority to average scores changes the decision rule, even with the same two options.</p></div>
+      <div className={styles.expandedOutcome}><span className={styles.stepNumber}>3</span><h4>Richer scores, more options</h4><strong><RateWinners rates={data.winner_rates} /></strong><p>Keep averaging scores, then expand the available outcomes to rates from 0–100%, in 0.05 percentage-point steps. The ballots and scoring rule stay the same; the available outcomes change.</p></div>
     </div>
     <WhatToNotice data={data} />
 
@@ -354,17 +355,36 @@ function AggregateResults({ data, ballot, voters }: { data: ScalarComparisonResp
       </div>
       <div className={styles.preferenceComparison}><span>Compared with the yes/no outcome ({rateText(data.binary.outcome_rate)}):</span><strong>{inspected.prefer_this} prefer {rateText(inspected.rate)}</strong><span>{inspected.prefer_binary} prefer {rateText(data.binary.outcome_rate)}</span><span>{inspected.indifferent} score them equally</span></div>
     </div>
+    <aside className={styles.considerations} aria-labelledby={considerationsId}>
+      <p className={styles.eyebrow}>Things to consider</p>
+      <h3 id={considerationsId}>How do we prepare a fair question?</h3>
+      <p>Even a standard yes/no ballot initiative can prompt debate over individual words. Supporters and opponents may challenge language they believe leads voters toward one answer. In Colorado, a Title Board sets the ballot title, with opportunities for challenges and appeals. The aim is to describe the choice fairly.</p>
+      <p>An expressive ballot creates more dimensions to disagree over. I chose to start this graph at {rateText(data.status_quo)}, the statutory rate presented as the status quo in the 2022 question. Where should the curve start, and how quickly should it taper on either side? How should the question itself be framed?</p>
+      <p>This demo allows answers across a theoretical range of 0–100%. Does it make sense to offer that whole range? Even if it does, should the initial viewing window show all of it, or focus on rates near the starting point, as this one does? The range of allowed answers and the range shown first are separate design choices.</p>
+      <p>Each of these choices could shape what feels reasonable or worth considering. More room for expression also means a more complex discussion about how to prepare a ballot without steering its answers. Which defaults, boundaries, and framing would voters with different views consider fair?</p>
+      <a className={styles.sourceLink} href="https://leg.colorado.gov/how-file-initiatives" target="_blank" rel="noreferrer">Colorado’s title-setting and review process ↗</a>
+    </aside>
+    <section className={styles.tradeoffs} aria-label="Tradeoffs of richer ballots">
+      <h3>What the extra information costs</h3>
+      <dl className={styles.explanationGrid}>
+        <div><dt>Majority and declared intensity</dt><dd>Averaging can select a rate that fewer voters prefer. Larger reported score differences can outweigh more people with smaller differences.</dd></div>
+        <div><dt>Strategic reporting</dt><dd>Voters might sharpen curves or narrow approval to influence the result. More expressive ballots do not guarantee more truthful answers.</dd></div>
+        <div><dt>Cognitive effort</dt><dd>Choosing tolerances takes more work than marking yes/no. The interface must help people understand what their settings mean.</dd></div>
+      </dl>
+    </section>
     {data.winner_rates.length > 4 && <details className={styles.details}><summary>All {data.winner_rates.length} equally scoring rates</summary><p>{data.winner_rates.map(rateText).join(", ")}</p></details>}
-    <details className={styles.details}><summary>What this illustration assumes</summary>
+    <details className={styles.details}><summary>Assumptions and social choice</summary>
       <p>These are 99 synthetic voters plus your submitted ballot, held fixed within the selected scenario. Switching scenarios changes the other 99 voters and keeps your submitted curve and explicit yes/no answer. The presets vary ideal rates, tolerance on either side, and approval bands within themed groups. A fixed seed keeps each sample repeatable. Their curves describe declared scores, not probabilities or measured wellbeing. The population is illustrative, not a forecast or a reconstruction of Colorado’s electorate. Seed: {data.electorate.seed}.</p>
-      <p>The mean treats each voter’s normalized 0–1 scale as comparable and gives each ballot equal weight. That is an explicit modeling choice. It neither guarantees a majority-preferred result nor removes incentives to vote strategically. A rate outside a voter’s approval band receives a score of zero; it is not vetoed.</p>
+      <p>A ranking states an order of preference; scores also assign numerical differences. The mean gives each ballot equal weight and treats equally sized score differences as comparable across people. Setting every peak to 1 does not establish equal experienced gains or losses. This choice does not guarantee either a majority-preferred result or that truthful reporting is the best strategy. A rate outside a voter’s approval band receives a score of zero; it is not vetoed.</p>
+      <p>This interface also restricts expression: one ideal, different declines on each side, and one approval interval containing the ideal. Preferences with several separated peaks or acceptable ranges will not fit. Adding information does not settle which decision rule a community should accept.</p>
       <p>For synthetic voters, the higher score at {rateText(data.proposal)} or {rateText(data.status_quo)} determines Yes or No. Equal scores leave the binary ballot unmarked; your explicitly submitted choice is retained. Yes must exceed No for the proposal to pass; a tie retains the status quo. Scores within {data.score_tie_tolerance} are treated as tied. All tied score maxima are reported.</p>
-      <p>Offering every rate from 0–100% is a thought experiment, not a claim that every rate is economically or legally feasible. Comparing the two original rates first separates richer information from expanding the set of policy options.</p>
+      <p>Offering every rate from 0–100% is a thought experiment, not a claim that every rate is economically or legally feasible. Comparing the original two rates holds the options fixed; it still changes both ballot information and the aggregation rule.</p>
+      <p>Further reading: Amartya Sen, <a href="https://www.aeaweb.org/articles?id=10.1257/aer.89.3.349" target="_blank" rel="noreferrer">The Possibility of Social Choice (1999) ↗</a>.</p>
     </details>
-    <section className={styles.closing} aria-label="The opportunity for richer ballots">
-      <p className={styles.eyebrow}>The opportunity</p>
-      <h3>A vote can express room for compromise.</h3>
-      <p className={styles.takeaway}>A richer ballot makes more of each voter’s preference available to the decision rule. Choosing that rule—and the options it can choose—remains a separate democratic decision.</p>
+    <section className={styles.closing} aria-label="When richer ballots are worth the effort">
+      <p className={styles.eyebrow}>The design question</p>
+      <h3>When is the extra information worth the effort?</h3>
+      <p className={styles.takeaway}>Compare what your curve reveals with the effort it takes to express it. A richer ballot earns its place when that information helps a community make a decision it understands and accepts.</p>
       <nav className={styles.closingLinks} aria-label="Continue exploring">
         <a href="#rate-ballot">Edit your ballot <ArrowRight size={14} aria-hidden="true" /></a>
         <Link href="/">Explore other demos <ArrowRight size={14} aria-hidden="true" /></Link>
@@ -415,7 +435,7 @@ function VoterBrowser({ data, voters }: { data: ScalarComparisonResponse; voters
   </div>;
 }
 
-export function ElectorateResults({ data, ballot, ...scenarioControls }: { data: ScalarComparisonResponse; ballot: ScalarBallotState } & ScenarioControls) {
+export function ElectorateResults({ data, ballot, voterBrowserRef, ...scenarioControls }: { data: ScalarComparisonResponse; ballot: ScalarBallotState; voterBrowserRef?: Ref<HTMLDivElement> } & ScenarioControls) {
   const voters = useMemo(() => [...data.electorate.voters].sort((a, b) => a.ballot.ideal - b.ballot.ideal || a.id.localeCompare(b.id)).map(prepareVoter), [data.electorate.voters]);
   const [combined, setCombined] = useState(false);
   const [dataset, setDataset] = useState({ data, revision: 0 });
@@ -429,11 +449,20 @@ export function ElectorateResults({ data, ballot, ...scenarioControls }: { data:
   }, [combined]);
 
   return <div className={styles.results}>
-    <div className={styles.browserHeading}><div><p className={styles.eyebrow}>First, see what a yes/no answer leaves out</p><h3>100 curves. One narrow choice.</h3><p>Scroll through the electorate, ordered by ideal rate. Different preferences can produce the same mark.</p><p className={styles.activeScenario}><strong>{scenarioLabels[data.scenario]}</strong>{scenarioControls.scenarioDisabled ? " · Previous submission shown while your new ballot is compared" : scenarioControls.scenarioPending ? ` · Still shown while ${scenarioLabels[scenarioControls.scenarioPending]} loads` : scenarioControls.scenarioError ? " · Previous results retained" : " · 99 synthetic voters + your submitted ballot"}</p></div></div>
+    <div ref={voterBrowserRef} tabIndex={-1} className={styles.browserHeading}><div><p className={styles.eyebrow}>First, see what a yes/no answer leaves out</p><h3>100 curves. One narrow choice.</h3><p>Scroll through the electorate, ordered by ideal rate. Different preferences can produce the same mark.</p><p className={styles.activeScenario}><strong>{scenarioLabels[data.scenario]}</strong>{scenarioControls.scenarioDisabled ? " · Previous submission shown while your new ballot is compared" : scenarioControls.scenarioPending ? ` · Still shown while ${scenarioLabels[scenarioControls.scenarioPending]} loads` : scenarioControls.scenarioError ? " · Previous results retained" : " · 99 synthetic voters + your submitted ballot"}</p></div></div>
     {/* Reset only dataset-specific exploration; keep the combine step and
         scenario controls mounted so scenario changes preserve focus and place. */}
     <VoterBrowser key={dataset.revision} data={data} voters={voters} />
     <ScenarioSelector scenario={data.scenario} {...scenarioControls} />
+    <section className={styles.designChoices} aria-label="Three choices in ballot design">
+      <h3>Three separate design choices</h3>
+      <dl className={styles.explanationGrid}>
+        <div><dt>Expression</dt><dd>What can a voter say? Here, a yes/no mark becomes a curve with an ideal, tolerances, and an approval band. The interface determines which preferences fit.</dd></div>
+        <div><dt>Available outcomes</dt><dd>What may be chosen? Keeping the two original rates and allowing the full range are different policy choices.</dd></div>
+        <div><dt>Aggregation</dt><dd>How are votes combined? This demo moves from counting yes/no marks to averaging normalized 0–1 scores with equal ballot weight.</dd></div>
+      </dl>
+      <p className={styles.comparabilityNote}>Treating equal score differences as comparable across voters is an assumption. Normalized scores are not measurements of comparable wellbeing.</p>
+    </section>
     <div className={styles.combinePrompt}><div><h3>What if we keep the curves?</h3><p>Use these same 100 voters to score both the original choices and the wider range of tax rates.</p></div><button type="button" aria-expanded={combined} aria-controls={aggregateId} onClick={() => { if (combined) aggregateRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" }); else setCombined(true); }}>{combined ? "View the combined result" : "Combine these 100 ballots"}<ArrowDown size={16} aria-hidden="true" /></button></div>
     <div ref={aggregateRef} id={aggregateId} className={styles.aggregateAnchor}>{combined && <div className={styles.aggregate}>
       <div className={styles.aggregateHeading}><div><p className={styles.eyebrow}>The same 100 ballots, combined</p><h3>A collective score for every available rate.</h3><p>Give each ballot equal weight. At each rate, average its 100 declared scores; choose the highest average.</p></div><div className={styles.winner}><span>{data.winner_rates.length === 1 ? "Highest average at" : "Equal highest averages"}</span><strong><RateWinners rates={data.winner_rates} /></strong><small>Average score {scoreText(data.max_mean_score)}</small></div></div>

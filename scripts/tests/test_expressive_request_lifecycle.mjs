@@ -19,8 +19,8 @@ function deferred() {
 }
 
 function createHost() {
-  const hooks = [], effects = [], requests = [], timers = new Map();
-  let cursor = 0, nextTimer = 1, dirty = true, tree, mounted = true, lateUpdates = 0;
+  const hooks = [], effects = [], requests = [], timers = new Map(), attention = [];
+  let cursor = 0, nextTimer = 1, dirty = true, tree, mounted = true, lateUpdates = 0, commit = 0;
   const jsx = (type, props, key) => ({ type, props: props ?? {}, key });
   const react = {
     useState(initial) {
@@ -102,6 +102,19 @@ function createHost() {
       await Promise.resolve();
       if (mounted && dirty) {
         cursor = 0; dirty = false; tree = ScalarComparison();
+        commit++;
+        // React attaches child refs during commit, before passive effects. A
+        // fresh target identifies which result was on screen when navigation
+        // happened, catching a scroll that runs against the previous result.
+        const result = child("ElectorateResults");
+        if (result?.voterBrowserRef) {
+          const target = result.data.id;
+          const committedAt = commit;
+          result.voterBrowserRef.current = {
+            focus(options) { attention.push({ action: "focus", target, committedAt, options: JSON.parse(JSON.stringify(options)) }); },
+            scrollIntoView(options) { attention.push({ action: "scroll", target, committedAt, options: JSON.parse(JSON.stringify(options)) }); },
+          };
+        }
         for (const effect of effects.splice(0)) effect();
       }
     }
@@ -109,7 +122,7 @@ function createHost() {
   const find = (predicate) => nodes().find(predicate);
   const child = (type) => find((node) => node.type === type)?.props;
   return {
-    requests, timers, flush, text, child,
+    requests, timers, flush, text, child, attention,
     get lateUpdates() { return lateUpdates; },
     get busy() { return child("ScalarBallot").isSubmitting; },
     get result() { return child("ElectorateResults"); },
@@ -135,6 +148,8 @@ function createHost() {
     },
     async unmount() {
       mounted = false;
+      const ref = child("ElectorateResults")?.voterBrowserRef;
+      if (ref) ref.current = null;
       for (const hook of hooks) hook?.cleanup?.();
       await flush();
     },
@@ -145,8 +160,35 @@ async function start() {
   const host = createHost();
   await host.flush(); await host.choose(); await host.submit();
   assert.equal(host.busy, true);
+  assert.deepEqual(host.attention, [], "Starting a request must not move focus or scroll");
   return host;
 }
+
+function assertNavigation(events, target) {
+  assert.deepEqual(events.map(({ action, target: result }) => ({ action, target: result })), [
+    { action: "focus", target }, { action: "scroll", target },
+  ]);
+  assert.equal(events[0].committedAt, events[1].committedAt);
+  assert.ok(events[0].committedAt > 0, "The destination must have been committed before focus and scroll");
+  assert.deepEqual(events[0].options, { preventScroll: true });
+  assert.deepEqual(events[1].options, { behavior: "instant", block: "start" });
+}
+
+test("accepted first and repeated ballot comparisons focus and scroll the newly committed voter browser", async () => {
+  const host = await start();
+  await host.succeed(0, "first-result");
+  assertNavigation(host.attention, "first-result");
+  for (const [index, id] of ["changed-ballot", "same-ballot-again"].entries()) {
+    const previousEvents = host.attention.length;
+    await host.submit(nextBallot);
+    assert.equal(host.attention.length, previousEvents, "The retained previous result must not be scrolled during loading");
+    await host.succeed(index + 1, id);
+    assertNavigation(host.attention.slice(previousEvents), id);
+  }
+  await host.choose("yes");
+  assert.equal(host.attention.length, 6, "Editing the draft vote must not revisit the results");
+  await host.unmount();
+});
 
 test("a stalled fetch times out, preserves answers, and retries the submitted pair", async () => {
   const host = await start();
@@ -163,6 +205,7 @@ test("a stalled fetch times out, preserves answers, and retries the submitted pa
   assert.equal(host.error, null);
   assert.equal(host.result.data.id, "retried");
   assert.equal(host.timers.size, 0);
+  assertNavigation(host.attention, "retried");
 });
 
 test("the deadline also bounds a stalled response body", async () => {
@@ -174,6 +217,7 @@ test("the deadline also bounds a stalled response body", async () => {
   assert.match(host.error, /took too long/);
   body.resolve({ valid: true, id: "late-body" }); await host.flush();
   assert.equal(host.result, undefined, "A response body arriving after timeout must not become the result");
+  assert.deepEqual(host.attention, [], "Failure and an expired response must not move focus or scroll");
 });
 
 test("network rejection and non-JSON gateway failures become friendly retry states", async () => {
@@ -209,10 +253,12 @@ test("superseded requests cannot overwrite results or clear the current busy sta
   assert.equal(host.busy, true);
   assert.equal(host.result, undefined);
   assert.equal(host.error, null);
+  assert.deepEqual(host.attention, [], "An obsolete response must not navigate before the current result arrives");
   await host.succeed(1, "newest");
   assert.equal(host.result.data.id, "newest");
   assert.equal(host.result.ballot.ideal, nextBallot.ideal);
   assert.equal(host.busy, false);
+  assertNavigation(host.attention, "newest");
 });
 
 test("late completion after timeout cannot interfere with a retry", async () => {
@@ -221,6 +267,7 @@ test("late completion after timeout cannot interfere with a retry", async () => 
   await host.succeed(0, "expired");
   assert.equal(host.busy, true);
   assert.equal(host.result, undefined);
+  assert.deepEqual(host.attention, []);
   await host.succeed(1, "retry-result");
   assert.equal(host.result.data.id, "retry-result");
 });
@@ -230,10 +277,12 @@ test("failed subsequent submissions retain and identify the previous result", as
   await host.submit(nextBallot);
   assert.equal(host.result.data.id, "previous");
   assert.match(host.text(), /results below still show your previous submission/);
+  assertNavigation(host.attention, "previous");
   await host.expire();
   assert.equal(host.result.data.id, "previous");
   assert.equal(host.child("ScalarBallot").submittedBallot.ideal, ballot.ideal);
   assert.match(host.text(), /results below still show your previous submission/);
+  assertNavigation(host.attention, "previous");
 });
 
 test("unmount aborts transport and late results cause no state updates", async () => {
@@ -243,6 +292,7 @@ test("unmount aborts transport and late results cause no state updates", async (
   assert.equal(host.timers.size, 0);
   await host.succeed(0, "after-unmount");
   assert.equal(host.lateUpdates, 0);
+  assert.deepEqual(host.attention, []);
 });
 
 test("scenario switches preserve the submitted pair, draft vote, and results component identity", async () => {
@@ -259,6 +309,7 @@ test("scenario switches preserve the submitted pair, draft vote, and results com
     assert.deepEqual(JSON.parse(JSON.stringify(host.result.ballot)), ballot);
     assert.equal(host.child("IncomeTaxBallot").vote, "yes", "Unsubmitted edits remain in the ballot form");
     assert.equal(host.result.scenarioPending, null);
+    assertNavigation(host.attention, "original");
   }
   await host.scenario("prepared");
   assert.equal(host.requests.length, 5, "An unchanged active scenario does not refetch");
@@ -273,6 +324,7 @@ test("rapid scenario switches apply only the newest complete dataset", async () 
   assert.equal(host.result.data.id, "minority");
   assert.equal(host.result.data.scenario, "intense-minority");
   assert.equal(host.result.scenarioPending, null);
+  assertNavigation(host.attention, "original");
 });
 
 test("failed scenario switches preserve active results and retry the exact submitted scenario", async () => {
@@ -286,6 +338,7 @@ test("failed scenario switches preserve active results and retry the exact submi
   await host.succeed(2, "retried");
   assert.equal(host.result.data.scenario, "polarized");
   assert.equal(host.result.scenarioError, null);
+  assertNavigation(host.attention, "original");
 });
 
 test("scenario responses cannot silently substitute another electorate", async () => {

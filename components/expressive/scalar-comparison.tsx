@@ -15,7 +15,7 @@ const rateText = (value: number) => `${value.toFixed(2)}%`;
 const COMPARISON_TIMEOUT_MS = 15_000;
 const UNAVAILABLE_MESSAGE = "The comparison is unavailable. Your answers are still here; please try again.";
 class ComparisonResponseError extends Error {}
-type Submission = { request: ScalarComparisonRequest; data: ScalarComparisonResponse };
+type Submission = { request: ScalarComparisonRequest; data: ScalarComparisonResponse; kind: RequestKind };
 type RequestKind = "ballot" | "scenario";
 
 export function ScalarComparison() {
@@ -33,6 +33,14 @@ export function ScalarComparison() {
     controller.current?.abort();
     controller.current = null;
   }, []);
+
+  useEffect(() => {
+    if (submission?.kind !== "ballot") return;
+    // Wait for the accepted dataset and its 100-curve browser to be committed.
+    // Starting a request, changing scenarios, or failing must not move the page.
+    resultRef.current?.focus({ preventScroll: true });
+    resultRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" });
+  }, [submission]);
 
   async function compare(request: ScalarComparisonRequest, kind: RequestKind = "ballot") {
     controller.current?.abort();
@@ -71,8 +79,7 @@ export function ScalarComparison() {
         return parsed.data;
       }, { timeoutMs: COMPARISON_TIMEOUT_MS, signal: active.signal });
       if (controller.current !== active || active.signal.aborted) return;
-      setSubmission({ request, data });
-      if (kind === "ballot") resultRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" });
+      setSubmission({ request, data, kind });
     } catch (caught) {
       if (controller.current !== active || active.signal.aborted) return;
       setError(caught instanceof RequestTimeoutError
@@ -110,7 +117,22 @@ export function ScalarComparison() {
           <div className={styles.sectionHeading}>
             <p className={styles.step}><span>01</span>The 2022 ballot</p>
             <h2 id={`${ballotId}-heading`}>One policy question. How much can your answer say?</h2>
-            <p>In 2022, Colorado voters were asked whether to reduce the statutory income tax rate from {rateText(TAX_MEASURE.statusQuo)} to {rateText(TAX_MEASURE.proposal)}. Answer that ballot question first, exactly as it was printed.</p>
+            <p>A ballot is a designed way of turning a complex preference into a countable answer.</p>
+          </div>
+          <div className={styles.framingGrid}>
+            <section className={styles.framingCard} aria-labelledby={`${ballotId}-simple`}>
+              <h3 id={`${ballotId}-simple`}>Why keep the answer simple?</h3>
+              <p>A familiar American ballot asks you to choose one candidate, select a limited number of options, or answer yes or no. These are choices about how to ask a question.</p>
+              <p>They have substantial advantages: a straightforward way to answer, a small set of clearly defined responses, and a count that is easier to explain and check. That simplicity matters even when the decision itself is difficult.</p>
+              <p>A mark records a choice, but leaves out how strongly you prefer it, which alternatives you would accept, and what you would choose from a different set of options.</p>
+              <a className={styles.sourceLink} href="https://www.eac.gov/election-officials/design" target="_blank" rel="noreferrer">Ballot usability: EAC design guidance ↗</a>
+            </section>
+            <section className={styles.framingCard} aria-labelledby={`${ballotId}-example`}>
+              <h3 id={`${ballotId}-example`}>Why this tax question?</h3>
+              <p>Colorado’s 2022 ballot asked whether to reduce the statutory income tax rate from {rateText(TAX_MEASURE.statusQuo)} to {rateText(TAX_MEASURE.proposal)}. Both options sit on a numerical scale, so we can imagine asking about other rates too.</p>
+              <p>A No vote rejects this reduction; it does not tell us that {rateText(TAX_MEASURE.statusQuo)} is your ideal. A Yes vote does not tell us that {rateText(TAX_MEASURE.proposal)} is your ideal either.</p>
+              <p>This example isolates the rate. A fuller tax preference could depend on what the money funds, who pays, and other taxes. First, answer the historical question as it was printed.</p>
+            </section>
           </div>
           <IncomeTaxBallot vote={vote} onVoteChange={setVote} />
         </section>
@@ -124,13 +146,14 @@ export function ScalarComparison() {
           <div className={styles.sectionHeading}>
             <p className={styles.step}><span>02</span>A richer ballot</p>
             <h2 id={`${ballotId}-richer`}>Same question. Room to say how much.</h2>
+            <p>Try expressing an ideal rate, the range you would accept, and how quickly your support falls as the rate moves away from your ideal.</p>
           </div>
           <ScalarBallot onSubmitBallot={submitBallot} canSubmit={vote !== null} isSubmitting={busy} submittedBallot={submission?.request.ballot}
-            context={<p>The 2022 ballot was binary. This experimental curve starts at the then-current statutory rate of {rateText(TAX_MEASURE.statusQuo)}. Shape it to show your ideal rate, what you would accept, and how quickly your support falls away.</p>}
+            context={<><h3>Another ballot language</h3><p>This curve allows one ideal rate, different tolerances on either side, and one approval interval containing the ideal.</p><p>Outside your approval interval, your declared score is zero. That does not give you a veto over the collective result.</p></>}
             submissionHint={!vote ? "Choose Yes or No above, then shape your curve and compare." : voteChanged ? "Yes/no answer edited. The comparison still uses your submitted answers." : undefined} />
         </section>
 
-        <section ref={resultRef} className={styles.comparison} aria-labelledby={`${ballotId}-results`}>
+        <section className={styles.comparison} aria-labelledby={`${ballotId}-results`}>
           <div className={styles.sectionHeading}>
             <p className={styles.step}><span>03</span>Compare the results</p>
             <h2 id={`${ballotId}-results`}>What becomes visible when a ballot says more?</h2>
@@ -141,6 +164,7 @@ export function ScalarComparison() {
           {submission ? <ElectorateResults
             key={JSON.stringify({ ballot: submission.request.ballot, binary_vote: submission.request.binary_vote })}
             data={submission.data} ballot={submission.request.ballot}
+            voterBrowserRef={resultRef}
             onScenarioChange={changeScenario}
             scenarioPending={busy && requestKind === "scenario" ? lastRequest?.scenario ?? "prepared" : null}
             scenarioError={requestKind === "scenario" ? error : null}

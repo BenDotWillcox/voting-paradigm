@@ -220,6 +220,7 @@ test("four matching scenario cards follow the voter browser with the original se
   const text = plainText(html);
   assert.match(text, /Combine these 100 ballots/);
   assert.match(text, /Try a different electorate/);
+  assert.match(html, /<div tabindex="-1" class="browserHeading">/, "The voter-browser destination must accept programmatic focus without joining the tab order");
   const grid = html.match(/<div class="scenarioGrid">([\s\S]*?)<\/div>/)?.[1];
   assert.ok(grid, "All electorate choices must share the card grid");
   const cards = [...grid.matchAll(/<button\b[^>]*>[\s\S]*?<\/button>/g)].map(([markup]) => markup);
@@ -237,5 +238,17 @@ test("four matching scenario cards follow the voter browser with the original se
     assert.ok(index > previousIndex, `${landmark} must appear after the preceding section`);
     previousIndex = index;
   }
-  assert.doesNotMatch(text, /A collective score for every available rate|Richer scores, same two options|What to notice/);
+  assert.doesNotMatch(text, /A collective score for every available rate|Richer scores, same two options|What to notice|Things to consider|How do we prepare a fair question/);
+});
+
+test("ballot-design considerations follow the combined chart and precede its tradeoffs", () => {
+  const html = render(exports.AggregateResults, { data: fixtures.prepared, ballot: baseline.ballot, voters: [] });
+  const landmarks = ['class="aggregateChart"', 'class="preferenceComparison"', 'class="considerations"', 'class="tradeoffs"'];
+  let previousIndex = -1;
+  for (const landmark of landmarks) {
+    const index = html.indexOf(landmark);
+    assert.ok(index > previousIndex, `${landmark} must follow the preceding combined-results content`);
+    previousIndex = index;
+  }
+  assert.match(plainText(html), /Things to consider.*How do we prepare a fair question/);
 });

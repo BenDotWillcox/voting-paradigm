@@ -260,6 +260,7 @@ export function ScalarBallot({ onSubmitBallot, submittedBallot, canSubmit = true
   ] as const).map((option) => ({ ...option, ...scalarPresentationScore(ballot, option.rate) }));
 
   return <div className={styles.layout}>
+  <div className={styles.ballotColumn}>
   <section className={styles.ballot} aria-label="Scalar income-tax ballot">
     <div className={styles.visualColumn}>
       <div className={styles.questionHeader}><div><span className={styles.eyebrow}>Beyond the 2022 question · an experimental ballot</span><h2>What should the state income tax rate be?</h2></div><button type="button" className={styles.resetButton} onClick={reset} aria-label="Reset rate ballot"><RotateCcw size={14} /> Reset</button></div>
@@ -305,12 +306,17 @@ export function ScalarBallot({ onSubmitBallot, submittedBallot, canSubmit = true
         <div className={styles.controlSection}><h3>Rate probe</h3><div className={styles.controlTop}><label htmlFor={`${id}-probe`}>Inspect a proposed rate</label><div className={styles.numberInput}><NumberField id={`${id}-probe`} min={0} max={100} step={0.05} value={ballot.probe} onValueChange={(value) => update("probe",value)} aria-label="Proposed rate to inspect" /><span>%</span></div></div><input className={styles.range} type="range" min={0} max={100} step={0.05} value={ballot.probe} onChange={(event) => update("probe",Number(event.currentTarget.value))} aria-label="Adjust proposed rate" /><p>Probe edits inspect the current curve without changing your ballot.</p></div>
       </div>
     </details>
-    {onSubmitBallot && <div className={styles.submissionFooter}>
-      <p>{submissionHint || (curveChanged ? "Curve edited. The comparison still uses your submitted curve." : submittedBallot ? "The comparison uses your submitted curve. Submit again after making changes." : "Your curve joins 99 prepared ballots. The graph remains editable.")}</p>
-      <button type="button" disabled={!canSubmit || isSubmitting} onClick={() => onSubmitBallot({ ...ballot })}>{isSubmitting ? "Comparing ballots…" : submittedBallot ? "Compare again" : "Compare ballots"}<span aria-hidden="true">→</span></button>
-    </div>}
   </section>
+  <details className={styles.methodDetails}><summary><CircleHelp size={15} /> Guide to this ballot</summary><div>
+    <p>Drag the peak to set your ideal rate, the triangles to set inclusive approval bounds, and the gold probe to inspect a rate. Their labels are draggable too. Arrow keys adjust focused controls; Fine controls provide numerical inputs.</p>
+    <p>The full range is 0–100%. Zoom in to five percentage points either side of your ideal, rounded outward to whole percentages and clipped at 0% and 100%. The view stays fixed while dragging; press Ideal ±5 pp to recenter. Zoom never changes your ballot. An arrow beside a label means that value is outside the visible range: zoom out to see it, or drag its edge handle inward to bring it into view.</p>
+    <p>Move a taper diamond away from the ideal to broaden that side of the curve. It follows the half-value line to the plot edge, then moves up the edge rail as the half-value point extends beyond the displayed rate range. Rail height controls taper width; it is not a score.</p>
+    <p>The curve expresses declared value, not probability. Its peak is 1. Within the approval bounds, value is <code>2^−(distance from ideal / half-value distance)²</code>; outside them, value is zero and the probe dims. Clipping never rescales the surviving curve.</p>
+    <p>This experimental extension of the 2022 question has no tax-revenue or household-impact model. Assigning zero does not give an individual a veto. The comparison below uses a separately stated collective rule.</p>
+  </div></details>
+  </div>
 
+  <div className={styles.asideColumn}>
   <aside className={styles.aside} aria-label="Your richer ballot, read back">
     {context && <div className={styles.asideContext}>{context}</div>}
     <div className={styles.asideBlock}>
@@ -342,13 +348,11 @@ export function ScalarBallot({ onSubmitBallot, submittedBallot, canSubmit = true
         <li><i className={styles.dashedKey} /> Dashed · unclipped taper</li>
       </ul>
     </div>
-    <details className={styles.methodDetails}><summary><CircleHelp size={15} /> Guide to this ballot</summary><div>
-      <p>Drag the peak to set your ideal rate, the triangles to set inclusive approval bounds, and the gold probe to inspect a rate. Their labels are draggable too. Arrow keys adjust focused controls; Fine controls provide numerical inputs.</p>
-      <p>The full range is 0–100%. Zoom in to five percentage points either side of your ideal, rounded outward to whole percentages and clipped at 0% and 100%. The view stays fixed while dragging; press Ideal ±5 pp to recenter. Zoom never changes your ballot. An arrow beside a label means that value is outside the visible range: zoom out to see it, or drag its edge handle inward to bring it into view.</p>
-      <p>Move a taper diamond away from the ideal to broaden that side of the curve. It follows the half-value line to the plot edge, then moves up the edge rail as the half-value point extends beyond the displayed rate range. Rail height controls taper width; it is not a score.</p>
-      <p>The curve expresses declared value, not probability. Its peak is 1. Within the approval bounds, value is <code>2^−(distance from ideal / half-value distance)²</code>; outside them, value is zero and the probe dims. Clipping never rescales the surviving curve.</p>
-      <p>This experimental extension of the 2022 question has no tax-revenue or household-impact model. Assigning zero does not give an individual a veto. The comparison below uses a separately stated collective rule.</p>
-    </div></details>
   </aside>
+  </div>
+  {onSubmitBallot && <div className={styles.submissionFooter}>
+    <p>{submissionHint || (curveChanged ? "Curve edited. The comparison still uses your submitted curve." : submittedBallot ? "The comparison uses your submitted curve. Submit again after making changes." : "Your curve joins 99 prepared ballots. The graph remains editable.")}</p>
+    <button type="button" disabled={!canSubmit || isSubmitting} onClick={() => onSubmitBallot({ ...ballot })}>{isSubmitting ? "Comparing ballots…" : submittedBallot ? "Compare again" : "Compare ballots"}<span aria-hidden="true">→</span></button>
+  </div>}
   </div>;
 }

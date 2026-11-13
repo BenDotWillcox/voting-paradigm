@@ -85,7 +85,7 @@ export function ExpressiveHero() {
       <div className={styles.copy}>
         <p className={styles.eyebrow}>Demo 06 · Expressive ballots</p>
         <h1 id="expressive-title">A ballot can say more than a single choice.</h1>
-        <p className={styles.lede}>What does a yes or no leave unsaid? Answer Colorado’s 2022 tax question two ways, then see what changes when a ballot can express room for compromise.</p>
+        <p className={styles.lede}>What does a yes or no leave unsaid? Answer Colorado’s 2022 tax question two ways, then see what changes when a ballot allows for a more detailed expression of preference.</p>
       </div>
 
       <div ref={host} className={styles.visual} aria-hidden="true">
