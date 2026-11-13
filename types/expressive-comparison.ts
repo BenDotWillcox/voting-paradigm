@@ -2,10 +2,12 @@ import type { ScalarBallotState } from "@/types/expressive-scalar";
 
 export type BinaryVote = "yes" | "no";
 export type CurveVote = BinaryVote | "abstain";
+export type ScalarScenario = "prepared" | "broad-agreement" | "polarized" | "intense-minority";
 
 export interface ScalarComparisonRequest {
   ballot: ScalarBallotState;
   binary_vote: BinaryVote;
+  scenario?: ScalarScenario;
 }
 
 export interface ScalarComparisonVoter {
@@ -31,6 +33,7 @@ export interface ScalarComparisonPoint {
 
 export interface ScalarComparisonResponse {
   model: "scalar-comparison-v4";
+  scenario: ScalarScenario;
   status_quo: 4.55;
   proposal: 4.4;
   electorate_size: 100;

@@ -328,6 +328,24 @@ two rates and then over the full 0–100% range. Declared scores are not measure
 wellbeing; treating normalized 0–1 scales as comparable is an explicit modeling
 choice, and approval bounds zero scores rather than vetoing outcomes.
 
+The electorate selector sits below the full 100-voter browser (graph, voter strip,
+and tally) and before the combine prompt. It is available before the first
+combined result. Visitors can change the other 99 voters using three seeded
+synthetic presets: broad agreement, polarization, and an intense
+minority, or return to the original prepared electorate. Each preset varies
+ideals, directional tolerance, and approval bands within authored groups, with
+a fixed seed and a versioned fixture ID. Generation never depends on the
+submitted ballot or an aggregate winner. The optional comparison
+request `scenario` defaults to `prepared` and is echoed in the response. A switch
+preserves the submitted curve and explicit yes/no answer (including any conflict
+between them), updates the entire electorate and its results together, and keeps
+an already-open combined view open. Combined outcomes remain hidden until the
+visitor chooses to combine the ballots. Draft ballot edits remain separate until
+resubmitted. Interpretation stays with the combined results, must follow the
+returned results, report ties and unchanged outcomes honestly, and describe
+minority intensity as declared score differences and narrower tolerance rather
+than measured interpersonal welfare.
+
 The current demo ends after the tax results and takeaway. Budget-allocation,
 spending-package and schedule examples are paused; do not append them or add
 placeholder sections. A companion blog on the theory and trade-offs is separate

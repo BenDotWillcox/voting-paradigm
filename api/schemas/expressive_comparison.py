@@ -9,11 +9,13 @@ from api.schemas.expressive_scalar import HalfWidth, PolicyValue, ScalarPreviewR
 
 Count = Annotated[int, Field(ge=0, strict=True)]
 BinaryVote = Literal["yes", "no", "abstain"]
+ComparisonScenario = Literal["prepared", "broad-agreement", "polarized", "intense-minority"]
 
 
 class ScalarComparisonRequest(StrictSchema):
     ballot: ScalarPreviewRequest
     binary_vote: Literal["yes", "no"]
+    scenario: ComparisonScenario = "prepared"
 
     model_config = ConfigDict(extra="forbid", json_schema_extra={"examples": [{
         "ballot": {"ideal": 4.55, "lower_half_width": 2, "upper_half_width": 2,
@@ -75,6 +77,7 @@ class ComparisonPointSchema(StrictSchema):
 
 class ScalarComparisonResponse(StrictSchema):
     model: Literal["scalar-comparison-v4"]
+    scenario: ComparisonScenario
     status_quo: Literal[4.55]
     proposal: Literal[4.4]
     electorate_size: Literal[100]
