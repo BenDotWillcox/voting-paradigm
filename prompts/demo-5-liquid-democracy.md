@@ -2,27 +2,224 @@
 
 Living design document for the liquid democracy demo. Edit when decisions change.
 
-Status: design agreed 2026-11-09; categories revised the same day to be
-voter-defined. Build step 1 (the core, in `delegation/`) is implemented.
-Step 2 is implemented and run (judgment store, Jev adapter, category pool,
-labelled questions, router evaluation); its results are in
-`eval/benchmarks/delegation_router_v1/`. The evaluation led to one rule
-change, decided 2026-11-10: a narrower category overrules the broader one it
-sits inside. The rule is implemented, and Jev's ability to tell which
-categories are nested has been measured: it found 11 of 14 labelled pairs
-and no others. Step 3 is implemented: the seeded synthetic network, the
-curated scenario with its recorded judgments, and the four
-`/api/delegation` routes. Step 4, the `/liquid` page, is not built.
+Status: vision revised 2026-11-14 (see "The claim" and "The comparison"
+below); not yet built. The machinery from the first design (2026-11-09 to
+2026-11-13) stays: category routing, election processing, the loop rule, the
+router evaluation in `eval/benchmarks/delegation_router_v1/`, the four
+`/api/delegation` routes and the account app at `/liquid`. What changes is
+what the demo is for and how it argues it: a comparison of direct voting,
+elected representation and liquid democracy on a simulated population,
+presented as a research walkthrough, with the account app kept as a
+companion that shows what using it would look like.
 
-## What we're building
+## The claim
 
-A voter can hand a *category* of civic decisions to a specific person in the
-network. When a ballot arrives, each question on it is read, matched against
-the categories that voter has delegated, and either sent to the matching
-delegate or kept by the voter. Delegation is transitive: a delegate applies
-their own delegations to what they receive.
+Direct democracy is the reference. A voter is more likely than anyone else
+to choose the outcome they prefer, so their own sincere vote on a question is
+the best representation of them there is. Its cost is overhead: nobody can be
+informed on every question or has the time to answer each one thoughtfully.
 
-Three technical pieces carry the demo. Each has one decided answer:
+Elected representation is the practical answer to that overhead, and it
+costs fidelity in two separate ways:
+
+1. **Dilution.** The representative is shared with everyone in the district,
+   whose preferences differ from yours, and is elected by them.
+2. **Bundling.** One person stands for you on every issue. You will not agree
+   with any single candidate on everything, so you compromise on some issues
+   to win others.
+
+Liquid democracy removes both while keeping overhead low: you pick the person
+yourself (no dilution), per category (no bundling), and keep any question you
+want. The demo shows this on two axes, **overhead** (how many decisions you
+make yourself) and **fidelity** (how often the ballot counted for you matches
+the one you would have cast). Direct voting is one corner, representation a
+point at low overhead, and liquid democracy a curve between them. The
+question the demo answers is how close that curve gets to direct voting's
+fidelity at representation's overhead, and what it depends on.
+
+Liquid democracy is not claimed to beat direct voting, and is not modelled as
+a fix for poorly informed votes: in this model a voter's own vote is correct
+for them by definition.
+
+## The comparison
+
+### Arrangements
+
+Each arrangement decides whose ballot counts for a voter on a question.
+
+| Arrangement | Whose ballot counts for you | Dilution | Bundling |
+|---|---|---|---|
+| **Direct** | Yours, on every question | — | — |
+| **District representative** | Your district's representative, elected by plurality, on every question | yes | yes |
+| **Personal proxy** | One person you chose by your overall agreement, on every question | no | yes |
+| **Liquid** | Per category, a person you chose by your agreement on that category; yours on everything you keep | no | no |
+
+The personal proxy is not a real proposal. It is the step between the other
+two that separates the cost of dilution from the cost of bundling: the gap
+from representative to proxy is dilution, the gap from proxy to liquid is
+bundling.
+
+Abstention is the same everywhere: a voter whose counted ballot is empty
+(their resolver did not vote) gets no match.
+
+### Measures
+
+- **Fidelity** (per voter, per question): 1 if the ballot counted for the
+  voter equals their sincere choice, else 0. Averaged over voters and
+  questions. Direct voting scores 1 for everyone who votes. Unweighted: every
+  question counts the same, because a per-voter salience weight would be
+  hard to model credibly (decided 2026-11-14).
+- **Overhead** (per voter): the share of questions the voter decides
+  themself. Direct is 1, representative and proxy 0, liquid in between. The
+  number of delegations a voter maintains is reported beside it, so liquid's
+  upkeep is not hidden.
+- **Outcome agreement** (per question): whether the arrangement's winner is
+  the direct-voting winner. Representatives decide a city question as a
+  council majority. This is where Ostrogorski-style cases appear: a council
+  elected on bundled platforms that loses the issue-by-issue majority.
+- Fidelity is always measured on questions that come *after* the history the
+  delegates were chosen from (see below), never on the same questions.
+
+### The headline figure
+
+Overhead on the horizontal axis, fidelity on the vertical: direct, the
+district representative, the personal proxy, and the liquid curve traced by
+letting voters hand over zero, one, two, ... of their categories (best-scoring
+first). Every other figure is a sensitivity or a breakdown of this one.
+
+### Choosing delegates from vote history
+
+Nobody knows another person's preferences. What they can see, because votes
+are public in this world, is how that person voted. A voter chooses a
+delegate for a category by comparing that person's past votes on the
+category's questions with their own (proposed 2026-11-14):
+
+1. **History.** The questions in the category from earlier ballot papers.
+   Which questions belong to a category comes from the router, the same rule
+   that routes new questions.
+2. **Agreement.** For each candidate, over the questions on which the voter
+   voted themself: count a match when the candidate voted the same way
+   themself. A question the candidate did not vote on, or delegated onward,
+   counts as a miss, because a delegation would not have represented the
+   voter there either. Questions the voter skipped are left out.
+3. **Uncertainty.** Agreement is a Beta-binomial posterior with a uniform
+   prior. Candidates are ranked by the lower end of an 80% credible interval,
+   not by the raw rate, so 18 of 20 beats 2 of 2.
+4. **Choice.** The voter delegates the category to the top-ranked candidate
+   only if that lower bound clears an acceptance level; otherwise they keep
+   the category. The acceptance level is a run parameter.
+
+The personal proxy uses the same procedure over all questions instead of one
+category. Representatives are chosen differently, by platform, because that
+is how elections work: candidates state positions and voters pick the
+closest.
+
+Points that follow:
+
+- **Nobody is assumed to know anyone's positions.** The only constraint on how
+  well a voter chooses is how much history there is, which is observable and
+  can be swept.
+- **Agreement above chance.** On a question most of the city agrees on,
+  everyone matches everyone. Raw agreement therefore flatters every
+  candidate equally; it still ranks them correctly but overstates how good
+  the best one is. Reported, and an agreement-above-base-rate score is an
+  open question.
+- **Choosing the best of many is optimistic.** The top candidate's history
+  overstates their future agreement (winner's curse). This is why fidelity is
+  measured only on later questions.
+- **Building a history costs overhead.** A voter has history only on
+  questions they voted on. The simulation starts with a direct-voting period;
+  its overhead is reported separately as setup.
+- **Concentration and lost votes emerge.** Candidates who agree with many
+  people and vote reliably attract delegations; ones who skip votes score
+  lower because skipped votes count as misses.
+- **It is also an app feature.** The same ranking is a delegate
+  recommendation in the account app, with its interval shown.
+
+### Population model
+
+The simulation extends `delegation/simulate.py`. Every choice here is an
+assumption chosen to make the comparison legible, and the main ones are
+swept rather than fixed.
+
+- **Issue dimensions.** Each person has a position on D issue dimensions
+  (default 6). Positions follow a one-factor model: a shared left-right
+  factor plus an independent part per dimension. The factor loading sets
+  how correlated a person's positions are across issues. It is the most
+  important parameter: with fully correlated positions one representative
+  captures everyone and bundling costs nothing; with cross-cutting positions
+  bundling is expensive. It is swept.
+- **Districts.** Each district has a lean on each dimension, so residents of
+  a district are more alike than the city as a whole. The district count is
+  swept (one at-large seat, the current three, more) because smaller
+  districts dilute less.
+- **Questions.** Each question sits on one dimension with a cutpoint and a
+  direction; a person's sincere vote is the side they fall on, with a little
+  seeded noise on close calls. Single choice first; ranked and approval
+  measures come from the same utilities as today.
+- **Categories.** In the main runs a category is a dimension, and routing is
+  exact (each question's dimension is known). This isolates the comparison
+  from router error. Narrower categories (parts of a dimension) are a later
+  variant, which is where liquid should pull further ahead of a proxy.
+- **History.** Synthetic questions, many per dimension per year, so per-
+  category histories are long enough to rank candidates. The 68 authored
+  measures are too few for this and are used for the routing condition
+  below.
+- **Turnout.** Each person casts their own ballot with a seeded chance, as
+  today. In the direct arrangement a non-voter's fidelity is 0 for that
+  question, so direct voting is not idealised.
+- **Representatives.** Each district has a few candidates drawn from its
+  residents; their platform is their true position. Voters choose the
+  closest platform (unweighted distance across dimensions) and plurality
+  decides. The representative votes their sincere position on every
+  question, so representation is not handicapped by bad faith.
+
+### Routing condition
+
+Per-category delegation is only low-overhead because questions are filed
+into categories automatically; otherwise every voter would have to file every
+question and the overhead would come back. The router therefore belongs on
+the two axes:
+
+- **False delegation** sends a question to the wrong delegate: a fidelity
+  cost.
+- **False keep** leaves a question with a voter who wanted it handled: an
+  overhead cost.
+
+The main runs use exact routing. A second condition applies the router
+evaluation's measured error rates to the synthetic questions, and the 68
+authored measures are run through the real recorded judgments as a small
+check. The gap between exact and measured routing is what the router costs.
+
+### Sensitivity
+
+Reported as curves, not single numbers:
+
+- correlation of positions across issues (the factor loading);
+- history length before delegates are chosen;
+- number of districts;
+- the acceptance level for delegating a category;
+- turnout, including delegates' turnout;
+- exact versus measured routing.
+
+### What it leaves out
+
+Representatives deliberate, set agendas and broker compromises across issues;
+none of that is modelled. Bundling also lets a voter trade issues they care
+little about for ones they care about, which an unweighted issue-by-issue
+comparison does not credit. Strategic voting, campaigning and changing
+preferences are out. The walkthrough says so beside the headline figure.
+
+## The machinery
+
+The comparison runs on the machinery from the first design, unchanged unless
+noted. A voter can hand a *category* of civic decisions to a specific person
+in the network. When a ballot arrives, each question on it is read, matched
+against the categories that voter has delegated, and either sent to the
+matching delegate or kept by the voter. Delegation is transitive: a delegate
+applies their own delegations to what they receive.
+
+Three technical pieces carry it. Each has one decided answer:
 
 | Piece | Decision |
 |---|---|
@@ -30,14 +227,23 @@ Three technical pieces carry the demo. Each has one decided answer:
 | **Election processing** | The unit of work is one (voter, question) pair. Votes originate at eligible residents; the person who resolves a vote can be anyone in the network. Tallies are produced by copying each resolver's ballot back to the voters they answer for, so `voting/` is used unchanged. |
 | **Circular delegation** | Two layers. Creating a delegation that would close a loop in the identical category is rejected, and one that loops on a reference question raises a warning. At resolution, if a question's chain still loops, everyone on the loop keeps that decision. Every vote therefore ends at exactly one resolver. |
 
-The story being told: *topic-level delegation needs someone to decide what
-topic a decision belongs to. That used to require a clerk or a fixed tag on
-every measure. A small, fast decision model can do it per question, per voter,
-with a probability attached and a visible threshold, and the rest of the
-system can be made exact around it.*
+The routing story is a supporting point under the revised vision, not the
+headline: *topic-level delegation needs someone to decide what topic a
+decision belongs to. That used to require a clerk or a fixed tag on every
+measure. A small, fast decision model can do it per question, per voter, with
+a probability attached and a visible threshold, and the rest of the system
+can be made exact around it.* It is what keeps liquid democracy's overhead
+low (see "Routing condition").
 
 ## Vocabulary
 
+- **Arrangement** — a rule for whose ballot counts for a voter on a
+  question: direct, district representative, personal proxy or liquid.
+- **Fidelity** — whether the ballot counted for a voter equals their sincere
+  choice, averaged over voters and questions.
+- **Overhead** — the share of questions a voter decides themself.
+- **Agreement** — how often a candidate's own past votes on a category's
+  questions matched the voter's, with a credible interval.
 - **Person** — a member of the network. Has a set of residences (jurisdiction
   ids). May be a voter, a delegate, or both.
 - **Category** — a short piece of text, written by a voter, describing the
@@ -530,7 +736,15 @@ Behaviours worth knowing:
   `DELEGATION_LIVE_DAILY_CATEGORIES`, 200 by default. A written category is
   judged against the open questions only.
 
-## Synthetic network (scope cut)
+## Account scenario (the companion app's city)
+
+This is the city the account app runs on, built before the 2026-11-14
+revision. The comparison's population model (see "Population model") is
+separate and larger. Once that model exists, this scenario's delegation
+behaviours are replaced by choice from vote history, so the app and the
+walkthrough describe the same world; until then the app's delegations are
+preference-blind and its "result changed" counts are not evidence of
+anything.
 
 Built in `delegation/simulate.py`; the scenario's settings are in
 `delegation/scenario.py`.
@@ -538,17 +752,23 @@ Built in `delegation/simulate.py`; the scenario's settings are in
 - One city of three districts with 80 residents each, 20 people who live
   outside it and can still be delegates, and the viewer: 261 people, all
   seeded.
-- Each person has a position on one dimension. Each question has a direction
-  and a cutpoint on it, and a little seeded noise decides close calls. A
-  person's sincere ballot is the side they fall on. This supplies resolver
-  ballots and the direct-voting baseline. It is a toy spatial model and makes
-  no claim about real voters.
+- Each person has a position on three issue dimensions with a lean per
+  district and a pull toward measures sited near their home. Each question
+  has a direction and a cutpoint, and a little seeded noise decides close
+  calls. A person's sincere ballot is the side they fall on. This supplies
+  resolver ballots and the direct-voting baseline. It is a toy spatial model
+  and makes no claim about real voters.
 - A delegating person hands over three to seven pool categories, with broad
   categories three times as likely as narrow ones.
 - Three delegation behaviours: keep every decision (30% of the population as
   drawn), trust one of eight well-known people for the category (42%), trust
-  someone in your own district (28%). Every delegation goes through the
+  someone in your own district (28%). The delegate is drawn at random from
+  those, without regard to agreement. Every delegation goes through the
   creation check.
+- Measured 2026-11-14 on the 47 closed questions: 17% of votes were decided
+  by someone else, the heaviest resolver held 20% of one question, counted
+  turnout rose from 56.3% to 60.9%, and 252 of 1,569 delegated votes (16%)
+  ended with a resolver who did not vote.
 - Everyone has a made-up name and a unique username.
 - The viewer is a District 1 resident. The simulated network holds no
   delegations of theirs; the scenario gives their account eight to start
@@ -566,11 +786,47 @@ Built in `delegation/simulate.py`; the scenario's settings are in
   decided by a delegate.
 - These shares come from the assumed behaviours above, not from data.
 
-## UI (`/liquid`)
+## Presentation (revised 2026-11-14)
+
+The claim is about a population, and one account cannot show a frontier for
+a population. The demo therefore becomes two parts:
+
+1. **The walkthrough** (`/liquid`), written like a short research paper over
+   the simulated population, in the manner of the districting walkthrough and
+   the apportionment essay:
+   1. Setup: the city, the issue dimensions, how sincere votes arise.
+   2. The three arrangements on the two axes, and the headline figure.
+   3. The ladder: representative, proxy, liquid, separating dilution from
+      bundling.
+   4. How delegates are chosen from vote history, with the uncertainty
+      interval, and what history length buys.
+   5. Sensitivity: correlation across issues, districts, acceptance level,
+      turnout.
+   6. Outcomes against direct voting, including Ostrogorski-style cases.
+   7. Who decides what a question is about: the router, its evaluation, and
+      what its errors cost on each axis.
+   8. Failure modes: concentration, votes lost to resolvers who do not vote,
+      loops.
+   9. What is left out.
+2. **The control center** (the account app, moving to `/liquid/account`):
+   what using liquid democracy would look like for one person. Its scope is
+   frozen apart from three changes: delegate recommendations ranked by vote
+   history with their interval, a representation scorecard for the account
+   (its fidelity and overhead under its district representative, a personal
+   proxy and its delegations, on the closed questions), and moving City
+   Results and the city map into the walkthrough.
+
+The route change is a proposal; the walkthrough could instead live at
+`/liquid/study` with the app staying at `/liquid`.
+
+## Account app UI
 
 The demo is an account app in the simulated city. The first version was a
 single page (2026-11-10); it was rebuilt as an account with separate screens
-(2026-11-11) and then given an app frame and its own look.
+(2026-11-11) and then given an app frame and its own look. Since then it has
+gained City Results, an Activity log, a routing tracer, a backtest on edit,
+grouping of category wordings and a city map, which CLAUDE.md describes; the
+list below is the core.
 
 **Frame.** The demo header stays above. Everything under it is the app: a
 top bar with people search, a notifications bell and the signed-in account
@@ -635,6 +891,27 @@ an account name other than "You / @you".
    newly judged categories. The history is generated from the spatial model
    and still to be authored.
 
+Steps for the revised vision (2026-11-14), each its own PR:
+
+5. **Population and arrangements.** In `delegation/`, pure and seeded: the
+   one-factor population over D dimensions with district leans, synthetic
+   questions per dimension, turnout, district elections by plurality, the
+   personal proxy and liquid delegation chosen from vote history with the
+   Beta-binomial lower bound, a chronological split between history and
+   evaluation, and fidelity, overhead and outcome agreement. Tests include:
+   direct voting scores 1 for every voter who votes; with perfectly
+   correlated positions and one district, representative and proxy
+   fidelity converge; more history never lowers the expected rank quality
+   on a fixed population.
+6. **Benchmark.** `eval/benchmarks/delegation_frontier_v1/`: the headline
+   frontier, the ladder, the sensitivity sweeps and the routing condition,
+   rebuilt byte for byte from a runner, as the synthetic preference
+   benchmark is.
+7. **Walkthrough.** The `/liquid` research page over the benchmark's
+   recorded results, with a small live re-run where it is cheap.
+8. **Control center.** Regenerate the account scenario with history-based
+   delegation, add the recommendation and the scorecard, move the app.
+
 ## Reproducibility
 
 - **Pinned model.** Always `jev-1.14.0`, never `jev-latest`. The versioned id
@@ -675,6 +952,33 @@ requests.
    14 labelled nested pairs and no others. Lowering it to about 0.6 would
    find 13. Whether to lower it is undecided; see Piece 1.
 
+Raised by the 2026-11-14 revision:
+
+4. **Agreement above chance.** Rank candidates by raw agreement, or by
+   agreement above what two random voters would share on those questions.
+   Default: raw agreement with the lower bound, and report the inflation.
+5. **Bootstrapping history.** Default: a direct-voting period before
+   delegates are chosen, reported as setup overhead. Alternative: voters
+   review a sample of past questions, which costs overhead in the same way.
+6. **Re-choosing.** Choose once after the history period, or re-rank after
+   each ballot paper. Re-ranking is more realistic and shows churn; choosing
+   once is simpler to explain. Default: once, with re-ranking as a variant.
+7. **Which categories a voter hands over first.** Default: in order of the
+   top candidate's lower bound, which is what traces the liquid curve.
+8. **Representative candidates.** How many per district and how they are
+   drawn (at random from residents, or spread across the district's range).
+9. **Precedence between overlapping categories.** Highest score is within
+   the router's repeat noise for many pairs; the voter's own list order is
+   the alternative. Matters only once categories are narrower than a
+   dimension.
+10. **Onward delegation.** A received vote moves on under the receiver's own
+    categories, so it can end with someone the voter never chose. Report
+    how often; a per-delegation "decide it yourself" option is the
+    alternative.
+11. **Votes lost to resolvers who do not vote.** History-based choice
+    penalises unreliable delegates; whether a backup delegate is still
+    needed is decided from the benchmark.
+
 The route name is settled: the page stays at `/liquid`, which the placeholder
 and the navigation already use.
 
@@ -691,7 +995,14 @@ apportionment demo; it was not part of this update.
   calls for it.
 - Ranked backup delegates, split delegation, weight caps.
 - OpenAI Decisions and open-weight models as further comparison arms.
-- Delegate recommendations from demo 2's preference posterior.
+- Delegate recommendations from demo 2's preference posterior. The
+  comparison does not wait for demo 2: it needs many simulated people with
+  known preferences, which demo 2 does not provide. Demo 2 could later stand
+  in for the signed-in account's own positions.
+- Salience-weighted fidelity (decided against 2026-11-14 as hard to model
+  credibly).
+- Proportional or at-large representation as further baselines.
+- Grounding the cross-issue correlation in survey data (ANES, CES).
 
 ## References
 
