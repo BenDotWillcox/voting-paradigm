@@ -110,7 +110,10 @@ class BeliefCityConfig:
     seed: int = 20261116
     districts: int = 5
     residents_per_district: int = 100
-    history_questions_per_topic: int = 20
+    # One Congress of contested substantive roll calls over the eight topics
+    # (amendment A4): 428 in the 117th House, 720 in the 118th, so 54 to 90
+    # per topic; the lower, rounded down
+    history_questions_per_topic: int = 50
     evaluation_questions_per_topic: int = 20
     # Multiplier on the fitted within-topic spread of question parameters
     within_topic_spread: float = 1.0

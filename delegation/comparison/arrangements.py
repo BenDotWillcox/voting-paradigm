@@ -134,15 +134,16 @@ class TurnoutPolicy:
     shared, so raising a floor only ever adds ballots.
 
     The primary condition is symmetric: both floors are the office-holder
-    rate, 0.98, roughly how often members of the House cast their roll-call
-    votes (to be checked against Voteview before the primary run). Setting
-    `resolver_turnout` to 0 gives the co-reported condition, delegates at
-    ordinary turnout; `office_rate` 1 with `resolver_turnout` 0 reproduces
-    the pilot.
+    rate, 0.96, the share of roll calls on which members of the 118th House
+    cast a yea or nay while serving (Voteview; scripts/voteview_house_rates.py).
+    The 117th House reached 0.98 under its pandemic proxy-voting rule, itself
+    a form of delegation, so it is not used. Setting `resolver_turnout` to 0
+    gives the co-reported condition, delegates at ordinary turnout;
+    `office_rate` 1 with `resolver_turnout` 0 reproduces the pilot.
     """
 
-    office_rate: float = 0.98
-    resolver_turnout: float = 0.98
+    office_rate: float = 0.96
+    resolver_turnout: float = 0.96
 
     def __post_init__(self) -> None:
         for name in ("office_rate", "resolver_turnout"):

@@ -142,9 +142,15 @@ correction or a tuning.
   local measures.
 - **A1. Symmetric resolver turnout (primary).** Anyone who resolves votes
   for others votes at one office-holder rate, and that includes the
-  representative, who no longer votes with certainty. Default 0.98, roughly
-  how often members of the House cast their roll-call votes; to be checked
-  against Voteview before the primary run. Voters who keep a topic vote at
+  representative, who no longer votes with certainty. The rate is **0.96**,
+  checked against Voteview on 2026-11-16 (replacing a placeholder of 0.98):
+  members of the 118th House cast a yea or nay on 96.2% of the roll calls
+  held while they served (median member 97.5%, 10th percentile 91.1%). The
+  117th House reached 98.0%, but under its pandemic proxy-voting rule,
+  which let absent members vote through a colleague and is itself a form
+  of delegation, so it is not the anchor. Computed by
+  `scripts/voteview_house_rates.py` from the cached Voteview files, whose
+  SHA-256 it checks. Voters who keep a topic vote at
   their own rate. The pilot's arrangement, delegates at ordinary turnout,
   is co-reported. Reason: the pilot compared a representative who never
   misses with delegates who miss as often as anyone, an asymmetry that
@@ -170,9 +176,25 @@ correction or a tuning.
   per-topic estimate was noisy and the best-of-499 choice amplified it.
 - **A4. History length justified by realism.** The primary history length
   is set from a stated account of how long a real voting record would be
-  when delegates are chosen, not from the pilot, and declared before the
-  primary run (value still to be decided). The history sweep is reported
-  prominently, because the pilot showed the comparison is sensitive to it.
+  when delegates are chosen, not from the pilot. The history sweep is
+  reported prominently, because the pilot showed the comparison is
+  sensitive to it.
+
+  *Decided 2026-11-16: one Congress, 50 questions per topic.* The account:
+  voters choose delegates with the record a voter has before a House
+  election, one two-year Congress, which puts liquid's information on the
+  same footing as representation's. One Congress takes 428 (117th) to 720
+  (118th) contested substantive roll calls (passage and amendment votes,
+  procedural motions excluded, minority side at least 10%; Voteview, same
+  script). Spread over the simulation's eight topics, which stand for the
+  whole question space, that is 54 to 90 per topic. The primary value is
+  the lower, rounded down to 50 (400 history questions): a shorter history
+  hurts per-topic delegate choice most, so rounding down is the
+  conservative direction for H1. The sweep reports 10, 20, 50 and 100 per
+  topic. Limit: each voter's own record is their turnout rate times this,
+  so a voter at 30% turnout has about 15 trials per topic; how a voter
+  would build that record before delegating is the setup overhead already
+  reported separately.
 - **A5. Per-voter distribution (secondary).** Averages hide the voters
   represented against their views. On the pilot cities, 42% to 46% of
   residents' preferred candidate lost; with every resolver voting, 7% to
@@ -190,7 +212,8 @@ correction or a tuning.
   Whoever resolves at least one other voter's vote on a question casts
   their ballot when that question's turnout draw falls below the larger of
   their own rate and a floor: `office_rate` for the representative,
-  `resolver_turnout` for delegates. `PRIMARY_TURNOUT` sets both to 0.98;
+  `resolver_turnout` for delegates. `PRIMARY_TURNOUT` sets both to 0.96
+  (0.98 when first implemented; see A1);
   `ORDINARY_RESOLVER_TURNOUT` sets `resolver_turnout` to 0 (co-reported);
   `PILOT_TURNOUT` reproduces the pilot. Each question set now stores its
   uniform turnout draws, so raising a floor only ever adds ballots and the
@@ -208,7 +231,7 @@ correction or a tuning.
 
   | Condition | Representative | Proxy | Liquid (A3) | Liquid (uniform prior) |
   |---|---|---|---|---|
-  | A1 symmetric (0.98) | 0.613–0.632 | 0.720–0.729 | 0.724–0.731 | 0.693–0.706 |
+  | A1 symmetric (at the placeholder 0.98, 20 history questions per topic) | 0.613–0.632 | 0.720–0.729 | 0.724–0.731 | 0.693–0.706 |
   | Ordinary resolver turnout | 0.613–0.632 | 0.638–0.664 | 0.637–0.662 | 0.589–0.618 |
 
   The estimated strength was 55 to 74 pseudo-questions, against 20 real
