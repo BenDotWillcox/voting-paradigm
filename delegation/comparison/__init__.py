@@ -10,6 +10,10 @@ measures in `measures`. Design: prompts/demo-5-liquid-democracy.md.
 
 from .arrangements import (
     DIRECT,
+    ORDINARY_RESOLVER_TURNOUT,
+    PILOT_TURNOUT,
+    PRIMARY_TURNOUT,
+    TurnoutPolicy,
     FULL_TURNOUT,
     LIQUID,
     PROXY,
@@ -33,10 +37,12 @@ from .choice import (
     Agreement,
     Choice,
     ChoicePolicy,
+    PooledAgreements,
     agreement,
     agreement_counts,
     choose,
     lower_bound,
+    pooled_agreements,
 )
 from .measures import Measures, fidelity_by_voter, measure
 from .population import (
@@ -51,7 +57,9 @@ from .population import (
 
 
 def compare(
-    population: Population, policy: ChoicePolicy | None = None
+    population: Population,
+    policy: ChoicePolicy | None = None,
+    turnout: TurnoutPolicy = PRIMARY_TURNOUT,
 ) -> dict[str, Measures]:
     """
     Every arrangement on one population, keyed by arrangement. Outcome
@@ -61,9 +69,9 @@ def compare(
     outcomes = [
         reference,
         direct(population),
-        representative(population),
-        proxy(population, policy),
-        liquid(population, policy),
+        representative(population, turnout=turnout),
+        proxy(population, policy, turnout),
+        liquid(population, policy, turnout),
     ]
     return {o.arrangement: measure(population, o, reference) for o in outcomes}
 
@@ -71,6 +79,10 @@ def compare(
 __all__ = [
     "DEFAULT_CREDIBLE_MASS",
     "DIRECT",
+    "ORDINARY_RESOLVER_TURNOUT",
+    "PILOT_TURNOUT",
+    "PRIMARY_TURNOUT",
+    "TurnoutPolicy",
     "FULL_TURNOUT",
     "KEEP",
     "LIQUID",
@@ -86,6 +98,7 @@ __all__ = [
     "Measures",
     "Outcome",
     "Population",
+    "PooledAgreements",
     "PopulationConfig",
     "QuestionSet",
     "agreement",
@@ -103,6 +116,7 @@ __all__ = [
     "liquid",
     "lower_bound",
     "measure",
+    "pooled_agreements",
     "proxy",
     "representative",
     "simulate_population",

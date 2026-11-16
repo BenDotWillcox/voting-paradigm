@@ -33,6 +33,8 @@ from dataclasses import dataclass
 
 import numpy as np
 import numpy.typing as npt
+from scipy.optimize import minimize_scalar
+from scipy.special import betaln
 from scipy.stats import beta
 
 from .population import NO, NOT_CAST, YES, BoolArray, FloatArray, IntArray, VoteArray
@@ -52,10 +54,14 @@ class Agreement:
     trials: IntArray
     lower: FloatArray
     credible_mass: float
+    # The posterior mean when the prior is not uniform (pooled agreement)
+    posterior_mean: FloatArray | None = None
 
     @property
     def mean(self) -> FloatArray:
         """The posterior mean agreement."""
+        if self.posterior_mean is not None:
+            return self.posterior_mean
         return np.asarray((self.matches + 1.0) / (self.trials + 2.0))
 
     def ranking(self, voter: int) -> IntArray:
@@ -125,6 +131,81 @@ def agreement(
     return Agreement(matches, trials, lower, credible_mass)
 
 
+@dataclass(frozen=True, eq=False)
+class PooledAgreements:
+    """Per-category agreement that borrows strength from the whole record."""
+
+    agreements: tuple[Agreement, ...]
+    # Prior strength in pseudo-questions, estimated from the history
+    strength: float
+
+
+# Search range for the prior strength, in pseudo-questions
+_STRENGTH_BOUNDS = (0.1, 10_000.0)
+
+
+def pooled_agreements(
+    votes: VoteArray,
+    category: IntArray,
+    categories: int,
+    credible_mass: float = DEFAULT_CREDIBLE_MASS,
+) -> PooledAgreements:
+    """
+    Agreement per category, with a prior centred on the pair's agreement
+    over every other category (amendment A3).
+
+    For voter v, candidate c and category k, the prior is
+    Beta(s mu, s (1 - mu)), where mu is the posterior mean of v's agreement
+    with c on all history questions outside k (leaving k out, so its own
+    questions are not counted twice) and s is one prior strength for the
+    whole population. s is estimated by maximising the beta-binomial
+    marginal likelihood of every (voter, candidate, category) count, so a
+    population whose agreement varies little between categories gets a
+    strong prior and one whose agreement varies a lot gets a weak one. A
+    category with a thin record then leans on the rest of the record, and
+    one with a long record stands on its own.
+
+    Args:
+        votes: [person, question] ballots cast themselves
+        category: The category of each question (column)
+        categories: How many categories there are
+        credible_mass: Width of the credible interval for the lower bound
+    """
+    if not 0.0 < credible_mass < 1.0:
+        raise ValueError("credible_mass must be in (0, 1)")
+    if category.shape != (votes.shape[1],):
+        raise ValueError("one category per question is needed")
+    counts = [agreement_counts(votes[:, category == k]) for k in range(categories)]
+    total_m = np.sum([m for m, _ in counts], axis=0)
+    total_n = np.sum([n for _, n in counts], axis=0)
+    people = votes.shape[0]
+    off = ~np.eye(people, dtype=bool)
+    m_k = np.stack([m[off] for m, _ in counts]).astype(np.float64)
+    n_k = np.stack([n[off] for _, n in counts]).astype(np.float64)
+    mu = (total_m[off] - m_k + 1.0) / (total_n[off] - n_k + 2.0)
+
+    def negative_log_marginal(log_s: float) -> float:
+        s = np.exp(log_s)
+        a0, b0 = s * mu, s * (1.0 - mu)
+        return -float((betaln(m_k + a0, n_k - m_k + b0) - betaln(a0, b0)).sum())
+
+    low, high = np.log(_STRENGTH_BOUNDS[0]), np.log(_STRENGTH_BOUNDS[1])
+    fit = minimize_scalar(negative_log_marginal, bounds=(low, high), method="bounded")
+    strength = float(np.exp(fit.x))
+    q = (1.0 - credible_mass) / 2.0
+    agreements: list[Agreement] = []
+    for k, (m, n) in enumerate(counts):
+        prior_mean = (total_m - m + 1.0) / (total_n - n + 2.0)
+        a = strength * prior_mean + m
+        b = strength * (1.0 - prior_mean) + n - m
+        lower = np.asarray(beta.ppf(q, a, b), dtype=np.float64)
+        np.fill_diagonal(lower, -np.inf)
+        agreements.append(
+            Agreement(m, n, lower, credible_mass, posterior_mean=np.asarray(a / (a + b)))
+        )
+    return PooledAgreements(tuple(agreements), strength)
+
+
 @dataclass(frozen=True)
 class ChoicePolicy:
     """How voters turn agreement into delegations."""
@@ -134,6 +215,9 @@ class ChoicePolicy:
     # At most this many categories per voter, best first; None for no limit
     max_categories: int | None = None
     credible_mass: float = DEFAULT_CREDIBLE_MASS
+    # Per-category agreement borrows strength from the whole record (A3);
+    # False gives each category a uniform prior of its own
+    borrow_strength: bool = True
 
     def __post_init__(self) -> None:
         if not 0.0 <= self.acceptance <= 1.0:
