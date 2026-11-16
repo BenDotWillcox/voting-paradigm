@@ -35,7 +35,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from typing import Final
+from typing import Final, Protocol
 
 import numpy as np
 import numpy.typing as npt
@@ -124,15 +124,21 @@ class QuestionSet:
     """
 
     ids: tuple[QuestionId, ...]
-    # The dimension each question sits on
+    # The category each question belongs to, as an index into
+    # Population.categories (an issue dimension in the structural model, a
+    # topic in the fitted one)
     dimension: IntArray
-    # +1 when a higher position favours yes, -1 when it favours no
-    direction: IntArray
-    cutpoint: FloatArray
     # Each person's sincere vote, YES or NO
     sincere: VoteArray
     # Whether each person casts their own ballot on the question
     casts: BoolArray
+    # Structural model: +1 when a higher position favours yes, -1 when it
+    # favours no, and the cutpoint on the question's dimension
+    direction: IntArray | None = None
+    cutpoint: FloatArray | None = None
+    # Fitted model: each question's loadings and intercept
+    loadings: FloatArray | None = None
+    intercepts: FloatArray | None = None
 
     def __len__(self) -> int:
         return len(self.ids)
@@ -143,22 +149,41 @@ class QuestionSet:
         return np.where(self.casts, self.sincere, NOT_CAST).astype(np.int8)
 
     def on_dimension(self, dimension: int) -> IntArray:
-        """The indices of the questions on one dimension, in order."""
+        """The indices of the questions in one category, in order."""
         return np.flatnonzero(self.dimension == dimension).astype(np.int64)
+
+
+class CityConfig(Protocol):
+    """What the arrangements need from any population's configuration."""
+
+    @property
+    def seed(self) -> int: ...
+
+    @property
+    def districts(self) -> int: ...
+
+    @property
+    def candidates_per_district(self) -> int: ...
 
 
 @dataclass(frozen=True, eq=False)
 class Population:
     """One simulated city: people, districts, positions and both periods."""
 
-    config: PopulationConfig
+    config: CityConfig
     # Person ids in index order; sorting them gives the same order
     ids: tuple[PersonId, ...]
     district: IntArray
+    # Each person's position; election platforms are compared by distance
+    # in this space
     positions: FloatArray
     turnout: FloatArray
     history: QuestionSet
     evaluation: QuestionSet
+    # The delegation categories, indexed by QuestionSet.dimension
+    categories: tuple[str, ...]
+    # A name per district, indexed by `district`
+    district_names: tuple[str, ...]
     _index: dict[PersonId, int] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -267,6 +292,8 @@ def simulate_population(config: PopulationConfig | None = None) -> Population:
         turnout=np.asarray(turnout, dtype=np.float64),
         history=history,
         evaluation=evaluation,
+        categories=tuple(f"issue dimension {d + 1}" for d in range(config.dimensions)),
+        district_names=tuple(f"district {d + 1}" for d in range(config.districts)),
     )
 
 

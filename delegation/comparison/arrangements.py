@@ -245,7 +245,7 @@ def representative(population: Population, election: Election | None = None) -> 
 
 def _people(population: Population) -> list[Person]:
     return [
-        Person(person, frozenset({f"district-{population.district[i] + 1}"}))
+        Person(person, frozenset({population.district_names[population.district[i]]}))
         for i, person in enumerate(population.ids)
     ]
 
@@ -306,9 +306,9 @@ def _delegated_outcome(
 EVERYTHING = create_category("every question")
 
 
-def dimension_category(dimension: int) -> Category:
-    """The category standing for one issue dimension."""
-    return create_category(f"issue dimension {dimension + 1}")
+def population_categories(population: Population) -> list[Category]:
+    """The delegation categories of a population, in index order."""
+    return [create_category(name) for name in population.categories]
 
 
 def choose_proxies(population: Population, policy: ChoicePolicy) -> Choice:
@@ -318,11 +318,11 @@ def choose_proxies(population: Population, policy: ChoicePolicy) -> Choice:
 
 
 def choose_liquid(population: Population, policy: ChoicePolicy) -> Choice:
-    """Each voter's delegate per dimension, by agreement on that dimension."""
+    """Each voter's delegate per category, by agreement on that category."""
     votes = population.history.own_votes
     agreements = [
         agreement(votes[:, population.history.on_dimension(d)], policy.credible_mass)
-        for d in range(population.config.dimensions)
+        for d in range(len(population.categories))
     ]
     return choose(agreements, policy)
 
@@ -341,12 +341,12 @@ def proxy(population: Population, policy: ChoicePolicy | None = None) -> Outcome
 
 def liquid(population: Population, policy: ChoicePolicy | None = None) -> Outcome:
     """
-    Each voter's delegate for a question's dimension decides it; the voter
-    decides the dimensions they keep. Delegates apply their own delegations.
+    Each voter's delegate for a question's category decides it; the voter
+    decides the categories they keep. Delegates apply their own delegations.
     """
     policy = policy or ChoicePolicy()
     choice = choose_liquid(population, policy)
-    categories = [dimension_category(d) for d in range(population.config.dimensions)]
+    categories = population_categories(population)
     network = delegation_network(population, choice, categories)
     judgments = {
         (question, category.id): 1.0 if population.evaluation.dimension[q] == d else 0.0
