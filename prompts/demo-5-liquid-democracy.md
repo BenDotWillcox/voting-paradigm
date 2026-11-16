@@ -184,6 +184,41 @@ correction or a tuning.
   liquid wins; dropping the proxy arm because it complicates the story;
   adding backup delegates to H1 (a design variant, a possible later study).
 
+**A1 and A3 implemented (2026-11-16).**
+
+- **A1** is `TurnoutPolicy` in `delegation/comparison/arrangements.py`.
+  Whoever resolves at least one other voter's vote on a question casts
+  their ballot when that question's turnout draw falls below the larger of
+  their own rate and a floor: `office_rate` for the representative,
+  `resolver_turnout` for delegates. `PRIMARY_TURNOUT` sets both to 0.98;
+  `ORDINARY_RESOLVER_TURNOUT` sets `resolver_turnout` to 0 (co-reported);
+  `PILOT_TURNOUT` reproduces the pilot. Each question set now stores its
+  uniform turnout draws, so raising a floor only ever adds ballots and the
+  A2 sweep is monotone by construction.
+- **A3** is `pooled_agreements` in `delegation/comparison/choice.py`, used
+  by liquid's delegate choice unless `ChoicePolicy.borrow_strength` is
+  false. The prior for a (voter, candidate, topic) is
+  Beta(s·μ, s·(1 − μ)), with μ the pair's posterior mean agreement on
+  every *other* topic's history questions, so a topic's own questions are
+  not counted twice, and one strength s for the population, estimated by
+  maximising the beta-binomial marginal likelihood over all triples
+  (searched between 0.1 and 10,000 pseudo-questions).
+- **Working check, disclosed.** The same three pilot cities, every voter
+  delegating:
+
+  | Condition | Representative | Proxy | Liquid (A3) | Liquid (uniform prior) |
+  |---|---|---|---|---|
+  | A1 symmetric (0.98) | 0.613–0.632 | 0.720–0.729 | 0.724–0.731 | 0.693–0.706 |
+  | Ordinary resolver turnout | 0.613–0.632 | 0.638–0.664 | 0.637–0.662 | 0.589–0.618 |
+
+  The estimated strength was 55 to 74 pseudo-questions, against 20 real
+  history questions per topic: in this population a pair's agreement on
+  one topic is well predicted by their agreement on the others, so thin
+  topic records lean heavily on the whole record. This is the same finding
+  as before from another angle: bundling across topics costs little here.
+  These runs verify the code; they are not the primary run, whose seeds
+  are not yet drawn.
+
 A global sensitivity analysis (screening, then variance-based indices, with
 the seed as an input) comes after H1 is settled, not before.
 

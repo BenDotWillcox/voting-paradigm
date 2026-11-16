@@ -132,6 +132,10 @@ class QuestionSet:
     sincere: VoteArray
     # Whether each person casts their own ballot on the question
     casts: BoolArray
+    # The uniform draw behind `casts` (casts = draw < turnout rate). Kept so
+    # a higher turnout rate for the same person and question reuses the
+    # same draw: raising a rate only ever adds ballots
+    turnout_draw: FloatArray
     # Structural model: +1 when a higher position favours yes, -1 when it
     # favours no, and the cutpoint on the question's dimension
     direction: IntArray | None = None
@@ -245,7 +249,8 @@ def _questions(
     noise = rng.normal(0.0, config.preference_noise_sd, size=(config.size, count))
     utility = direction * (positions[:, dimension] - cutpoint) + noise
     sincere = np.where(utility > 0.0, YES, NO).astype(np.int8)
-    casts = rng.random((config.size, count)) < turnout[:, None]
+    draw = rng.random((config.size, count))
+    casts = draw < turnout[:, None]
     return QuestionSet(
         ids=tuple(f"{prefix}{i:04d}" for i in range(count)),
         dimension=dimension,
@@ -253,6 +258,7 @@ def _questions(
         cutpoint=np.asarray(cutpoint, dtype=np.float64),
         sincere=sincere,
         casts=np.asarray(casts, dtype=np.bool_),
+        turnout_draw=np.asarray(draw, dtype=np.float64),
     )
 
 

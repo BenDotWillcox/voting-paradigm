@@ -9,6 +9,9 @@ import pytest
 
 from delegation.comparison import (
     KEEP,
+    ORDINARY_RESOLVER_TURNOUT,
+    PILOT_TURNOUT,
+    TurnoutPolicy,
     NO,
     NOT_CAST,
     YES,
@@ -17,6 +20,7 @@ from delegation.comparison import (
     agreement,
     agreement_counts,
     choose,
+    choose_liquid,
     choose_proxies,
     compare,
     direct,
@@ -235,7 +239,7 @@ def test_representative(small):
         assert len(set(drawn.tolist())) == SMALL.candidates_per_district
         assert rep in drawn
         assert small.district[rep] == district
-    outcome = representative(small, election)
+    outcome = representative(small, election, PILOT_TURNOUT)
     rep = election.elected[small.district]
     assert np.array_equal(outcome.counted, small.evaluation.sincere[rep])
     assert not outcome.kept.any()
@@ -257,7 +261,7 @@ def test_liquid_with_no_delegations_is_direct(small):
 def test_delegated_resolvers_are_consistent(small):
     policy = ChoicePolicy()
     choice = choose_proxies(small, policy)
-    outcome = proxy(small, policy)
+    outcome = proxy(small, policy, ORDINARY_RESOLVER_TURNOUT)
     for v in range(small.size):
         for q in range(len(small.evaluation)):
             r = outcome.resolver[v, q]
@@ -322,3 +326,134 @@ def test_longer_history_picks_better_proxies():
         return float((sincere == sincere[delegate]).mean())
 
     assert chosen_agreement(2) < chosen_agreement(30)
+
+
+# ---------------------------------------------------------------------------
+# Resolver turnout (amendment A1)
+# ---------------------------------------------------------------------------
+
+
+def test_turnout_policy_rejects_bad_rates():
+    with pytest.raises(ValueError):
+        TurnoutPolicy(office_rate=1.5)
+    with pytest.raises(ValueError):
+        TurnoutPolicy(resolver_turnout=-0.1)
+
+
+def test_representative_votes_at_the_office_rate(small):
+    election = elect_representatives(small)
+    always = representative(small, election, TurnoutPolicy(office_rate=1.0))
+    assert (always.counted != NOT_CAST).all()
+    never = representative(small, election, TurnoutPolicy(office_rate=0.0))
+    # With no floor the representative votes at their own turnout rate
+    rep = election.elected[small.district]
+    assert np.array_equal(never.counted, small.evaluation.own_votes[rep])
+
+
+def test_resolvers_vote_at_the_floor_and_keepers_at_their_own_rate(small):
+    policy = ChoicePolicy()
+    full = proxy(small, policy, TurnoutPolicy(resolver_turnout=1.0))
+    cols = np.arange(len(small.evaluation))[None, :]
+    voters = np.arange(small.size)[:, None]
+    holds = np.zeros(full.resolver.shape, dtype=bool)
+    others = full.resolver != voters
+    holds[full.resolver[others], np.broadcast_to(cols, full.resolver.shape)[others]] = True
+    resolver_holds = holds[full.resolver, cols]
+    # Every vote resolved by someone holding others' votes is cast
+    assert (full.counted[resolver_holds] != NOT_CAST).all()
+    # A voter who keeps and holds nobody else's vote votes at their own rate
+    alone = full.kept & ~holds
+    own = small.evaluation.own_votes
+    assert np.array_equal(full.counted[alone], own[alone])
+
+
+def test_raising_resolver_turnout_only_adds_ballots(small):
+    policy = ChoicePolicy()
+    previous = None
+    for rate in (0.0, 0.5, 0.9, 1.0):
+        counted = liquid(small, policy, TurnoutPolicy(resolver_turnout=rate)).counted
+        if previous is not None:
+            # Coupled draws: a ballot cast at a lower floor is still cast
+            assert ((previous == NOT_CAST) | (counted == previous)).all()
+            assert (counted != NOT_CAST).sum() >= (previous != NOT_CAST).sum()
+        previous = counted
+
+
+def test_pilot_turnout_reproduces_the_old_rules(small):
+    policy = ChoicePolicy()
+    rep = representative(small, turnout=PILOT_TURNOUT)
+    assert (rep.counted != NOT_CAST).all()
+    old = proxy(small, policy, PILOT_TURNOUT)
+    cols = np.arange(len(small.evaluation))[None, :]
+    assert np.array_equal(old.counted, small.evaluation.own_votes[old.resolver, cols])
+
+
+# ---------------------------------------------------------------------------
+# Agreement pooled across categories (amendment A3)
+# ---------------------------------------------------------------------------
+
+POOL = PopulationConfig(
+    seed=5,
+    districts=2,
+    residents_per_district=60,
+    dimensions=4,
+    history_questions_per_dimension=15,
+    evaluation_questions_per_dimension=2,
+)
+
+
+def _pooled(config: PopulationConfig):
+    from delegation.comparison import pooled_agreements
+
+    pop = simulate_population(config)
+    return pop, pooled_agreements(
+        pop.history.own_votes, pop.history.dimension, config.dimensions
+    )
+
+
+def test_pooling_is_stronger_when_categories_agree():
+    # Fully correlated issues: a pair's agreement barely differs between
+    # categories, so the prior should carry more weight than when issues
+    # cut across
+    _, together = _pooled(replace(POOL, factor_loading=1.0))
+    _, apart = _pooled(replace(POOL, factor_loading=0.0))
+    assert together.strength > apart.strength
+
+
+def test_thin_categories_lean_on_the_whole_record():
+    from delegation.comparison import pooled_agreements
+
+    pop = simulate_population(replace(POOL, factor_loading=1.0))
+    votes = pop.history.own_votes
+    # Category 0 gets only two questions; category 1 gets the rest
+    category = np.ones(votes.shape[1], dtype=np.int64)
+    category[:2] = 0
+    pooled = pooled_agreements(votes, category, 2)
+    overall = agreement(votes)
+    thin_pooled = pooled.agreements[0].mean
+    thin_uniform = agreement(votes[:, :2]).mean
+    off = ~np.eye(pop.size, dtype=bool)
+    gap_pooled = np.abs(thin_pooled - overall.mean)[off].mean()
+    gap_uniform = np.abs(thin_uniform - overall.mean)[off].mean()
+    assert gap_pooled < gap_uniform
+
+
+def test_pooled_agreement_keeps_counts_and_excludes_self():
+    pop, pooled = _pooled(POOL)
+    for k, a in enumerate(pooled.agreements):
+        m, n = agreement_counts(pop.history.own_votes[:, pop.history.dimension == k])
+        assert np.array_equal(a.matches, m) and np.array_equal(a.trials, n)
+        assert np.isneginf(np.diag(a.lower)).all()
+        assert ((a.mean > 0) & (a.mean < 1)).all()
+
+
+def test_borrow_strength_can_be_switched_off():
+    pop = simulate_population(POOL)
+    uniform = choose_liquid(pop, ChoicePolicy(borrow_strength=False))
+    by_hand = choose(
+        [agreement(pop.history.own_votes[:, pop.history.on_dimension(d)]) for d in range(4)],
+        ChoicePolicy(),
+    )
+    assert np.array_equal(uniform.delegate, by_hand.delegate)
+    pooled = choose_liquid(pop, ChoicePolicy())
+    assert not np.array_equal(pooled.delegate, uniform.delegate)

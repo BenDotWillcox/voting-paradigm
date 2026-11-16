@@ -167,12 +167,14 @@ def _questions(
     noise = rng.standard_normal((positions.shape[0], count))
     utility = positions @ loadings.T + intercepts + noise
     sincere = np.where(utility > 0.0, YES, NO).astype(np.int8)
-    casts = rng.random(utility.shape) < turnout[:, None]
+    draw = rng.random(utility.shape)
+    casts = draw < turnout[:, None]
     return QuestionSet(
         ids=tuple(f"{prefix}{i:04d}" for i in range(count)),
         dimension=topic,
         sincere=sincere,
         casts=np.asarray(casts, dtype=np.bool_),
+        turnout_draw=np.asarray(draw, dtype=np.float64),
         loadings=np.asarray(loadings, dtype=np.float64),
         intercepts=np.asarray(intercepts, dtype=np.float64),
     )
