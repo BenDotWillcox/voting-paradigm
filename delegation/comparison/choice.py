@@ -11,7 +11,15 @@ with their own:
     would not have represented the voter there either.
   - Agreement is a Beta-binomial posterior with a uniform prior, and
     candidates are ranked by the lower end of a central credible interval
-    (80% by default), so 18 of 20 beats 2 of 2.
+    (80% by default). For one voter on one topic every candidate has the
+    same number of trials (the voter's own votes), so among candidates the
+    ranking follows the match count; the interval's width matters across
+    voters and topics, where it decides whether the best candidate clears
+    the acceptance level.
+  - Because a candidate's absence counts as a miss, agreement mixes
+    political agreement with attendance. That is what a delegation
+    delivers, so choice uses it; but it means pooling strength across
+    topics partly measures attendance (see `agreement_counts`).
   - A voter delegates only to a candidate whose lower bound clears the
     acceptance level, and never to themself.
   - Everyone chooses at once; loops are left to the resolution rule (see
@@ -79,17 +87,24 @@ class Agreement:
         return np.asarray(order[order != voter], dtype=np.int64)
 
 
-def agreement_counts(votes: VoteArray) -> tuple[IntArray, IntArray]:
+def agreement_counts(
+    votes: VoteArray, absence_is_miss: bool = True
+) -> tuple[IntArray, IntArray]:
     """
     Matches and trials for every (voter, candidate) pair.
 
     Args:
         votes: [person, question] ballots cast themselves: YES, NO or
             NOT_CAST
+        absence_is_miss: True (what delegate choice uses) counts a question
+            the candidate skipped as a miss, so agreement mixes political
+            agreement with attendance. False counts only questions both
+            voted on: political agreement alone, a diagnostic.
 
     Returns:
         matches[v, c]: questions v voted on where c cast the same ballot.
-        trials[v, c]: questions v voted on, the same for every c.
+        trials[v, c]: questions v voted on (the same for every c), or with
+            `absence_is_miss` False, questions both voted on.
     """
     if votes.ndim != 2:
         raise ValueError("votes must be a [person, question] matrix")
@@ -98,6 +113,9 @@ def agreement_counts(votes: VoteArray) -> tuple[IntArray, IntArray]:
     yes = (votes == YES).astype(np.int64)
     no = (votes == NO).astype(np.int64)
     matches = yes @ yes.T + no @ no.T
+    if not absence_is_miss:
+        cast_matrix = (votes != NOT_CAST).astype(np.int64)
+        return np.asarray(matches, dtype=np.int64), np.asarray(cast_matrix @ cast_matrix.T)
     cast = (votes != NOT_CAST).sum(axis=1).astype(np.int64)
     trials = np.broadcast_to(cast[:, None], matches.shape).copy()
     return np.asarray(matches, dtype=np.int64), trials
@@ -149,6 +167,7 @@ def pooled_agreements(
     category: IntArray,
     categories: int,
     credible_mass: float = DEFAULT_CREDIBLE_MASS,
+    absence_is_miss: bool = True,
 ) -> PooledAgreements:
     """
     Agreement per category, with a prior centred on the pair's agreement
@@ -170,12 +189,16 @@ def pooled_agreements(
         category: The category of each question (column)
         categories: How many categories there are
         credible_mass: Width of the credible interval for the lower bound
+        absence_is_miss: As in `agreement_counts`; False is a diagnostic of
+            how much of the pooling strength reflects attendance
     """
     if not 0.0 < credible_mass < 1.0:
         raise ValueError("credible_mass must be in (0, 1)")
     if category.shape != (votes.shape[1],):
         raise ValueError("one category per question is needed")
-    counts = [agreement_counts(votes[:, category == k]) for k in range(categories)]
+    counts = [
+        agreement_counts(votes[:, category == k], absence_is_miss) for k in range(categories)
+    ]
     total_m = np.sum([m for m, _ in counts], axis=0)
     total_n = np.sum([n for _, n in counts], axis=0)
     people = votes.shape[0]
@@ -252,6 +275,25 @@ class Choice:
 KEEP = -1
 
 
+def top_candidates(agreements: Sequence[Agreement]) -> tuple[IntArray, FloatArray]:
+    """
+    Each voter's top-ranked candidate per category and that candidate's
+    lower bound: [voter, category] arrays, KEEP and -inf when there is none.
+    """
+    if not agreements:
+        raise ValueError("at least one category is needed")
+    people = agreements[0].lower.shape[0]
+    top = np.full((people, len(agreements)), KEEP, dtype=np.int64)
+    best = np.full((people, len(agreements)), -np.inf, dtype=np.float64)
+    for k, a in enumerate(agreements):
+        for v in range(people):
+            ranked = a.ranking(v)
+            if len(ranked):
+                top[v, k] = ranked[0]
+                best[v, k] = a.lower[v, ranked[0]]
+    return top, best
+
+
 def choose(
     agreements: Sequence[Agreement],
     policy: ChoicePolicy,
@@ -284,14 +326,7 @@ def choose(
         raise ValueError("every agreement must cover the same people")
 
     count = len(agreements)
-    top = np.full((people, count), KEEP, dtype=np.int64)
-    best = np.full((people, count), -np.inf, dtype=np.float64)
-    for k, a in enumerate(agreements):
-        for v in range(people):
-            ranked = a.ranking(v)
-            if len(ranked):
-                top[v, k] = ranked[0]
-                best[v, k] = a.lower[v, ranked[0]]
+    top, best = top_candidates(agreements)
 
     delegate = np.full((people, count), KEEP, dtype=np.int64)
     chosen_lower = np.full((people, count), np.nan, dtype=np.float64)

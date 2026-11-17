@@ -331,6 +331,115 @@ def sample_positions(
     return out
 
 
+@dataclass(frozen=True, eq=False)
+class GroupedDraws:
+    """Posterior draws of the hierarchical position model."""
+
+    # [draw, respondent, dimension]
+    positions: npt.NDArray[np.float32]
+    # [draw, group, dimension]
+    group_means: FloatArray
+    # [draw, dimension, dimension]
+    within_cov: FloatArray
+    between_cov: FloatArray
+
+
+# Weak inverse-Wishart priors for the hierarchical position model: degrees
+# of freedom K + 2 and scale (K + 2) times a guess, so the prior mean of
+# each covariance is near its guess but carries the weight of only a few
+# observations
+_WITHIN_GUESS = 0.9
+_BETWEEN_GUESS = 0.1
+
+
+def sample_grouped_positions(
+    y: FloatArray,
+    items: ItemParameters,
+    group: npt.NDArray[np.int64],
+    config: PositionConfig,
+) -> GroupedDraws:
+    """
+    Posterior draws of positions conditioned on group membership.
+
+        theta_i ~ N(mu_g(i), W),  mu_g ~ N(0, T)
+
+    with W (within-group) and T (between-group) covariances sampled in the
+    same Gibbs run, items fixed. Conditioning on the group is what keeps
+    group differences intact: draws under one common N(0, I) prior shrink
+    every respondent toward the overall mean and so understate how much
+    groups differ, the known bias of unconditioned plausible values.
+
+    Args:
+        y: [respondent, item] answers, 1.0, 0.0 or NaN
+        items: Fixed item parameters
+        group: Each respondent's group index, 0..G-1
+        config: Iterations, burn-in, thinning and seed
+    """
+    from scipy.stats import invwishart
+
+    observed = _validate(y)
+    n, j = y.shape
+    if group.shape != (n,) or group.min() < 0:
+        raise ValueError("one non-negative group index per respondent is needed")
+    groups = int(group.max()) + 1
+    counts = np.bincount(group, minlength=groups).astype(np.float64)
+    k = items.dimensions
+    a, b = items.loadings, items.intercepts
+    rng = np.random.default_rng(np.random.SeedSequence([config.seed, k, 3]))
+    support = np.where(observed, y == 1.0, False)
+    missing = ~observed
+    df0 = k + 2.0
+    within = np.eye(k) * _WITHIN_GUESS
+    between = np.eye(k) * _BETWEEN_GUESS
+    mu = np.zeros((groups, k))
+    theta = np.zeros((n, k))
+    ata = a.T @ a
+    kept = range(config.burn_in, config.iterations, config.thin)
+    out_t = np.empty((len(kept), n, k), dtype=np.float32)
+    out_mu = np.empty((len(kept), groups, k))
+    out_w = np.empty((len(kept), k, k))
+    out_b = np.empty((len(kept), k, k))
+    slot = 0
+    for step in range(config.iterations):
+        # 1. Latent utilities
+        mean = theta @ a.T + b
+        z = _truncated_normal(rng, mean, support)
+        if missing.any():
+            z[missing] = mean[missing] + rng.standard_normal(int(missing.sum()))
+        # 2. Positions around their group's mean
+        w_inv = np.linalg.inv(within)
+        cov = np.linalg.inv(w_inv + ata)
+        chol = np.linalg.cholesky(cov)
+        means = (mu[group] @ w_inv + (z - b) @ a) @ cov
+        theta = means + rng.standard_normal((n, k)) @ chol.T
+        # 3. Group means: precision n_g W^-1 + T^-1
+        t_inv = np.linalg.inv(between)
+        sums = np.zeros((groups, k))
+        np.add.at(sums, group, theta)
+        precision = counts[:, None, None] * w_inv[None] + t_inv[None]
+        g_cov = np.linalg.inv(precision)
+        g_mean = np.einsum("gij,gj->gi", g_cov, sums @ w_inv)
+        g_chol = np.linalg.cholesky(g_cov)
+        mu = g_mean + np.einsum("gij,gj->gi", g_chol, rng.standard_normal((groups, k)))
+        # 4. Within- and between-group covariances
+        resid = theta - mu[group]
+        within = invwishart.rvs(
+            df=df0 + n, scale=np.eye(k) * df0 * _WITHIN_GUESS + resid.T @ resid,
+            random_state=rng,
+        ).reshape(k, k)
+        between = invwishart.rvs(
+            df=df0 + groups, scale=np.eye(k) * df0 * _BETWEEN_GUESS + mu.T @ mu,
+            random_state=rng,
+        ).reshape(k, k)
+        if step >= config.burn_in and (step - config.burn_in) % config.thin == 0:
+            out_t[slot] = theta
+            out_mu[slot] = mu
+            out_w[slot] = within
+            out_b[slot] = between
+            slot += 1
+    return GroupedDraws(out_t, out_mu, out_w, out_b)
+
+
 def split_rhat(draws: FloatArray) -> FloatArray:
     """
     Split R-hat (Gelman et al.) for each scalar in [chain, draw, ...].

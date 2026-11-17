@@ -221,16 +221,59 @@ def test_direct(small):
 
 
 def test_compare_measures_outcomes_against_full_turnout(small):
-    result = compare(small)
+    result = compare(small).measures
     assert list(result) == [
         "full_turnout",
         "direct",
         "representative",
+        "representative_by_record",
+        "district_choice",
         "proxy",
         "liquid",
     ]
     assert result["full_turnout"].outcome_agreement == 1.0
     assert result["full_turnout"].fidelity == 1.0
+
+
+def test_compare_is_the_calibrated_entry_point(small):
+    from delegation.comparison import acceptance_for_overhead, liquid_at_overhead
+
+    result = compare(small)
+    assert result.liquid_acceptance == acceptance_for_overhead(small)
+    calibrated, _ = liquid_at_overhead(small)
+    assert result.measures["liquid"].overhead == pytest.approx(calibrated.kept.mean())
+    # History and evaluation share topic proportions here, so with exact
+    # routing evaluation overhead equals history overhead exactly
+    assert result.measures["liquid"].overhead == pytest.approx(
+        result.liquid_acceptance.history_overhead
+    )
+
+
+def test_shares_sum_to_one_and_decompose_fidelity(small):
+    for m in compare(small).measures.values():
+        assert m.fidelity + m.contrary_share + m.none_share == pytest.approx(1.0)
+        if m.arrangement in ("proxy", "liquid", "district_choice"):
+            assert 0.0 <= m.resolver_attendance <= 1.0
+
+
+def test_matched_arms_share_candidates(small):
+    from delegation.comparison import (
+        district_choice,
+        record_preferences,
+        representative_by_record,
+    )
+
+    election = elect_representatives(small)
+    preferred = record_preferences(small, election)
+    for district, drawn in enumerate(election.candidates):
+        assert set(preferred[small.residents_of(district)]) <= set(drawn.tolist())
+    choice = district_choice(small, election, PILOT_TURNOUT)
+    assert np.array_equal(choice.resolver[:, 0], preferred)
+    elected = representative_by_record(small, election, PILOT_TURNOUT)
+    for district, drawn in enumerate(election.candidates):
+        rows = small.residents_of(district)
+        winner = set(elected.resolver[rows, 0].tolist())
+        assert len(winner) == 1 and winner <= set(drawn.tolist())
 
 
 def test_representative(small):
@@ -242,7 +285,8 @@ def test_representative(small):
     outcome = representative(small, election, PILOT_TURNOUT)
     rep = election.elected[small.district]
     assert np.array_equal(outcome.counted, small.evaluation.sincere[rep])
-    assert not outcome.kept.any()
+    # Only the elected residents decide, for themselves (consistent accounting)
+    assert np.array_equal(outcome.kept.any(axis=1), np.isin(np.arange(small.size), election.elected))
 
 
 def test_representative_wins_their_own_district_vote():
@@ -287,7 +331,8 @@ def test_mutual_best_matches_keep_through_the_loop_rule(small):
 
 
 def test_compare_is_deterministic(small):
-    assert compare(small) == compare(simulate_population(SMALL))
+    # repr, not ==: some measures are NaN when undefined, and NaN != NaN
+    assert repr(compare(small)) == repr(compare(simulate_population(SMALL)))
 
 
 # ---------------------------------------------------------------------------
@@ -457,3 +502,111 @@ def test_borrow_strength_can_be_switched_off():
     assert np.array_equal(uniform.delegate, by_hand.delegate)
     pooled = choose_liquid(pop, ChoicePolicy())
     assert not np.array_equal(pooled.delegate, uniform.delegate)
+
+
+# ---------------------------------------------------------------------------
+# The 10% overhead rule
+# ---------------------------------------------------------------------------
+
+
+def test_overhead_rule_meets_the_bound_from_history_only():
+    from delegation.comparison import acceptance_for_overhead, history_overhead
+
+    pop = simulate_population(POOL)
+    fixed = acceptance_for_overhead(pop, ChoicePolicy(), max_overhead=0.10)
+    assert fixed.feasible
+    assert fixed.history_overhead <= 0.10
+    assert history_overhead(pop, ChoicePolicy(acceptance=fixed.acceptance)) == pytest.approx(
+        fixed.history_overhead
+    )
+    # A stricter bound never allows a higher acceptance
+    stricter = acceptance_for_overhead(pop, ChoicePolicy(), max_overhead=0.05)
+    assert stricter.acceptance <= fixed.acceptance
+
+
+def test_overhead_rule_reports_an_impossible_bound():
+    from delegation.comparison import acceptance_for_overhead
+
+    pop = simulate_population(POOL)
+    impossible = acceptance_for_overhead(pop, ChoicePolicy(), max_overhead=0.0)
+    # Someone must decide, so zero overhead cannot be reached; the level
+    # with the lowest overhead is used and the city is flagged
+    assert not impossible.feasible
+    assert impossible.history_overhead > 0.0
+
+
+def test_overhead_rule_uses_no_evaluation_question():
+    from delegation.comparison import acceptance_for_overhead
+
+    pop = simulate_population(POOL)
+    other = simulate_population(replace(POOL, evaluation_questions_per_dimension=5))
+    # Same history, different evaluation period: same acceptance
+    assert acceptance_for_overhead(pop).acceptance == acceptance_for_overhead(other).acceptance
+
+
+def test_liquid_at_overhead_runs():
+    from delegation.comparison import liquid_at_overhead
+
+    pop = simulate_population(POOL)
+    outcome, fixed = liquid_at_overhead(pop)
+    assert outcome.arrangement == "liquid"
+    assert 0.0 <= fixed.acceptance <= 1.0
+
+
+# ---------------------------------------------------------------------------
+# Exact resolver and exhaustive overhead rule (pre-freeze review)
+# ---------------------------------------------------------------------------
+
+
+def test_fast_resolver_matches_the_graph_machinery():
+    from delegation.comparison.arrangements import (
+        _resolve_by_category,
+        reference_resolvers,
+    )
+
+    pop = simulate_population(POOL)
+    liquid_choice = choose_liquid(pop, ChoicePolicy())
+    assert np.array_equal(
+        _resolve_by_category(liquid_choice, pop.evaluation.dimension),
+        reference_resolvers(pop, liquid_choice, pop.evaluation, single_category=False),
+    )
+    proxy_choice = choose_proxies(pop, ChoicePolicy())
+    everything = np.zeros(len(pop.evaluation), dtype=np.int64)
+    assert np.array_equal(
+        _resolve_by_category(proxy_choice, everything),
+        reference_resolvers(pop, proxy_choice, pop.evaluation, single_category=True),
+    )
+
+
+def test_resolve_functional_on_loops_and_chains():
+    from delegation.comparison.arrangements import resolve_functional
+
+    # 0 <-> 1 is a loop; 2 -> 0 enters it; 3 -> 2 -> 0; 4 keeps; 5 -> 4
+    delegate_of = np.array([1, 0, 0, 2, KEEP, 4])
+    assert resolve_functional(delegate_of).tolist() == [0, 1, 0, 0, 4, 4]
+
+
+def test_overhead_rule_finds_the_level_that_breaks_a_mutual_pair():
+    from delegation.comparison.arrangements import _overhead_rule
+
+    # Ten people, one category. Everyone delegates to person 0, and 0 and 1
+    # are each other's best match. At acceptance 0 the loop rule leaves both
+    # deciding for themselves: overhead 0.2. A level just above person 1's
+    # bound breaks 1 -> 0, everyone resolves to 1: overhead 0.1.
+    top = np.array([[1], [0], [0], [0], [0], [0], [0], [0], [0], [0]])
+    best = np.array([[0.9], [0.4], [0.8], [0.8], [0.8], [0.8], [0.8], [0.8], [0.8], [0.8]])
+    fixed = _overhead_rule(top, best, np.array([1.0]), max_overhead=0.10)
+    assert fixed.feasible
+    assert fixed.history_overhead == pytest.approx(0.10)
+    assert 0.4 < fixed.acceptance <= 0.8
+
+
+def test_overhead_rule_takes_the_lowest_overhead_when_infeasible():
+    from delegation.comparison.arrangements import _overhead_rule
+
+    top = np.array([[1], [0]])
+    best = np.array([[0.9], [0.9]])
+    fixed = _overhead_rule(top, best, np.array([1.0]), max_overhead=0.10)
+    assert not fixed.feasible
+    # Delegating forms the pair loop (overhead 1); either way overhead is 1
+    assert fixed.history_overhead == pytest.approx(1.0)

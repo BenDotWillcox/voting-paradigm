@@ -38,6 +38,8 @@ from delegation.comparison.irt import (
     holdout_log_scores,
     holdout_mask,
     implied_correlation,
+    GroupedDraws,
+    sample_grouped_positions,
     sample_positions,
     split_rhat,
     support_rates,
@@ -48,7 +50,7 @@ CSV_PATH = ROOT / ".cache/ces/2024/CCES24_Common_OUTPUT_vv_topost_final.csv"
 CSV_MD5 = "b740b9305fee50e1a34656b513f55c57"
 CSV_SHA256 = "8a5e9fbc982961ad910bad9aed8d521fa0a85e85cded43fb308cce0ab22ba5d9"
 OUT_DIR = ROOT / ".cache/ces/fits"
-BELIEFS_PATH = ROOT / "delegation/data/beliefs_ces2024_v1.json"
+BELIEFS_PATH = ROOT / "delegation/data/beliefs_ces2024_v2.json"
 
 SOURCE = {
     "dataset": "Cooperative Election Study Common Content, 2024",
@@ -212,89 +214,97 @@ def _topic_distributions(items: ItemParameters) -> tuple[dict[str, object], floa
     """
     Per-topic normal distributions over (a, b) for drawing new questions.
 
-    Each topic's covariance is shrunk toward the covariance pooled within
-    all topics: (n_t S_t + kappa S_pool) / (n_t + kappa), with kappa the
-    length of the (a, b) vector, so a topic with two items leans mostly on
-    the pooled spread.
+    Items within a topic are worded in both directions ("ban assault rifles",
+    "make concealed carry easier"), so their loadings point in nearly
+    opposite directions and a plain average cancels toward zero. Each item is
+    therefore first aligned to its topic's principal loading direction:
+    an item whose loadings point against it is reflected, (a, b) -> (-a, -b),
+    which only swaps which answer counts as support. The simulation then
+    gives each new question a random wording direction. Without this step
+    the generated questions correlated far more weakly than CES 2022's items
+    did (median absolute correlation within a topic 0.32 against 0.47).
+
+    Each topic's covariance of aligned parameters is shrunk toward the
+    covariance pooled within all topics: (n_t S_t + kappa S_pool) /
+    (n_t + kappa), with kappa the length of the (a, b) vector, so a topic
+    with two items leans mostly on the pooled spread.
     """
     params = np.column_stack([items.loadings, items.intercepts])
+    k = items.dimensions
     topics = sorted({topic for _, topic, _ in ITEMS})
     index = {
         t: [i for i, (_, topic, _) in enumerate(ITEMS) if topic == t] for t in topics
     }
-    deviations = np.vstack(
-        [params[rows] - params[rows].mean(axis=0) for rows in index.values()]
-    )
+    aligned: dict[str, np.ndarray] = {}
+    polarity: dict[str, list[int]] = {}
+    for t, rows in index.items():
+        loadings = params[rows, :k]
+        _, vectors = np.linalg.eigh(loadings.T @ loadings)
+        direction = vectors[:, -1]
+        signs = np.where(loadings @ direction >= 0, 1, -1)
+        aligned[t] = params[rows] * signs[:, None]
+        polarity[t] = signs.tolist()
+    deviations = np.vstack([block - block.mean(axis=0) for block in aligned.values()])
     pooled = deviations.T @ deviations / (len(ITEMS) - len(topics))
     kappa = float(params.shape[1])
     out: dict[str, object] = {}
     for t, rows in index.items():
-        block = params[rows]
+        block = aligned[t]
         n = len(rows)
         centred = block - block.mean(axis=0)
         sample = centred.T @ centred / n
         cov = (n * sample + kappa * pooled) / (n + kappa)
         out[t] = {
             "items": [ITEMS[i][0] for i in rows],
+            "polarity": polarity[t],
             "mean": block.mean(axis=0).tolist(),
             "cov": cov.tolist(),
         }
     return out, kappa
 
 
-def _districts(
-    positions: np.ndarray, weight: np.ndarray, district: Sequence[str]
-) -> dict[str, object]:
+def retopic() -> None:
+    """Recompute the per-topic distributions of an existing fit from its items."""
+    raw = json.loads(BELIEFS_PATH.read_text())
+    loadings = np.array([item["a"] for item in raw["items"]])
+    intercepts = np.array([item["b"] for item in raw["items"]])
+    if [item["id"] for item in raw["items"]] != [item for item, _, _ in ITEMS]:
+        sys.exit("the fit's items do not match ITEMS")
+    topics, kappa = _topic_distributions(ItemParameters(loadings, intercepts))
+    raw["topics"] = topics
+    raw["topic_shrinkage_kappa"] = kappa
+    raw["topic_alignment"] = (
+        "items aligned to each topic's principal loading direction before "
+        "fitting the topic distribution; new questions get a random wording "
+        "direction"
+    )
+    BELIEFS_PATH.write_text(json.dumps(raw, indent=2) + "\n")
+    print(f"rewrote topics in {BELIEFS_PATH.relative_to(ROOT)}")
+
+
+def _districts(draws: list[GroupedDraws], names: Sequence[str], counts: np.ndarray) -> dict[str, object]:
     """
-    District means of theta, shrunk toward the national mean (empirical
-    Bayes), and the pooled within-district covariance, from posterior draws
-    of every respondent's position (plausible values), weighted by
-    commonweight. Respondents without a district or weight are left out.
+    District means and covariances from the hierarchical position model.
+
+    Each district keeps its posterior mean and posterior covariance of mu_g,
+    so a simulated district can draw its mean from the posterior instead of
+    using a shrunk point estimate, whose spread would understate how much
+    districts differ. The within- and between-district covariances are
+    posterior means. Fitted unweighted: the hierarchical model conditions on
+    district, and `commonweight` is not used.
     """
-    keys = np.array(district)
-    usable = (keys != "") & np.isfinite(weight) & (weight > 0)
-    keys, w = keys[usable], weight[usable]
-    # Kept in float32; each district's slice is widened as it is used
-    draws = positions[:, usable, :]
-    names = sorted(set(keys.tolist()))
-    k = draws.shape[2]
-    national = np.zeros(k)
-    for d in range(draws.shape[0]):
-        national += w @ draws[d].astype(np.float64)
-    national /= w.sum() * draws.shape[0]
-    raw = np.zeros((len(names), k))
-    posterior_var = np.zeros((len(names), k, k))
-    within = np.zeros((k, k))
-    n_eff = np.zeros(len(names))
-    counts = np.zeros(len(names), dtype=int)
-    for gi, g in enumerate(names):
-        rows = np.flatnonzero(keys == g)
-        wg = w[rows]
-        block = draws[:, rows, :].astype(np.float64)
-        per_draw = np.einsum("n,dnk->dk", wg, block) / wg.sum()
-        raw[gi] = per_draw.mean(axis=0)
-        posterior_var[gi] = np.atleast_2d(np.cov(per_draw.T, ddof=1)) / draws.shape[0]
-        centred = block - per_draw[:, None, :]
-        within += np.einsum("n,dni,dnj->ij", wg, centred, centred) / draws.shape[0]
-        n_eff[gi] = wg.sum() ** 2 / (wg**2).sum()
-        counts[gi] = rows.size
-    within /= w.sum()
-    # Sampling covariance of each raw district mean: respondents drawn from
-    # the district, plus the Monte Carlo error of averaging the draws
-    sampling = within[None, :, :] / n_eff[:, None, None] + posterior_var
-    spread = np.atleast_2d(np.cov((raw - national).T, ddof=1))
-    between = spread - sampling.mean(axis=0)
-    values, vectors = np.linalg.eigh(between)
-    between = vectors @ np.diag(np.maximum(values, 0.0)) @ vectors.T
+    mu = np.concatenate([d.group_means for d in draws], axis=0)  # [draw, G, k]
+    within = np.concatenate([d.within_cov for d in draws], axis=0).mean(axis=0)
+    between = np.concatenate([d.between_cov for d in draws], axis=0).mean(axis=0)
     out_districts: dict[str, object] = {}
     for gi, g in enumerate(names):
-        gain = between @ np.linalg.inv(between + sampling[gi])
-        shrunk = national + gain @ (raw[gi] - national)
+        samples = mu[:, gi, :]
         out_districts[g] = {
             "respondents": int(counts[gi]),
-            "effective_respondents": round(float(n_eff[gi]), 1),
-            "mean": [round(float(x), 6) for x in shrunk],
+            "mean": [round(float(x), 6) for x in samples.mean(axis=0)],
+            "cov": np.round(np.atleast_2d(np.cov(samples.T, ddof=1)), 8).tolist(),
         }
+    national = (mu.mean(axis=0) * counts[:, None]).sum(axis=0) / counts.sum()
     return {
         "national_mean": national.tolist(),
         "within_cov": within.tolist(),
@@ -308,24 +318,31 @@ def fit(k: int) -> None:
     survey = load_survey()
     started = time.time()
     items, factors, observed_corr = estimate_items(survey.y, k)
+    names = sorted(set(survey.district))
+    if "" in names:
+        sys.exit("every respondent needs a district for the hierarchical fit")
+    lookup = {g: i for i, g in enumerate(names)}
+    group = np.array([lookup[g] for g in survey.district], dtype=np.int64)
+    counts = np.bincount(group, minlength=len(names))
     chains = [
-        sample_positions(survey.y, items, PositionConfig(seed=100 + c)) for c in (1, 2)
+        sample_grouped_positions(survey.y, items, group, PositionConfig(seed=100 + c))
+        for c in (1, 2)
     ]
     rng = np.random.default_rng(np.random.SeedSequence([HOLDOUT_SEED, 3]))
     probe = rng.choice(survey.y.shape[0], size=2000, replace=False)
     rhat = split_rhat(
-        np.stack([c[:, probe, :] for c in chains]).astype(np.float64)
+        np.stack([c.positions[:, probe, :] for c in chains]).astype(np.float64)
     ).ravel()
-    positions = np.concatenate(chains, axis=0)
+    rhat_means = split_rhat(np.stack([c.group_means for c in chains])).ravel()
     topics, kappa = _topic_distributions(items)
-    population = _districts(positions, survey.weight, survey.district)
+    population = _districts(chains, names, counts)
     implied = implied_correlation(items.loadings)
     upper = np.triu_indices(len(ITEMS), 1)
     observed_rate = np.nanmean(survey.y, axis=0)
     choose_path = OUT_DIR / "choose_k.json"
     choose = json.loads(choose_path.read_text()) if choose_path.exists() else None
     out = {
-        "version": "beliefs.ces2024.v1",
+        "version": "beliefs.ces2024.v2",
         "model": (
             "multidimensional probit item response: support when "
             "a.theta + b + e > 0, theta ~ N(0, I), e ~ N(0, 1)"
@@ -335,7 +352,10 @@ def fit(k: int) -> None:
                 "tetrachoric correlations + unweighted least squares factor "
                 "fit, converted to (a, b)"
             ),
-            "positions": "Gibbs sampling with items fixed",
+            "positions": (
+                "hierarchical Gibbs sampling with items fixed: theta_i ~ "
+                "N(mu_district, W), mu_district ~ N(0, T)"
+            ),
             "position_sampler": {
                 "iterations": 1200,
                 "burn_in": 200,
@@ -344,7 +364,7 @@ def fit(k: int) -> None:
                 "seeds": [101, 102],
             },
             "item_weights": "unweighted",
-            "population_weights": "commonweight",
+            "population_weights": "unweighted (the hierarchical model conditions on district)",
         },
         "source": SOURCE,
         "dimensions": k,
@@ -366,6 +386,11 @@ def fit(k: int) -> None:
                 "max": float(rhat.max()),
                 "probe_respondents": int(probe.size),
             },
+            "district_mean_rhat": {
+                "median": float(np.median(rhat_means)),
+                "p99": float(np.quantile(rhat_means, 0.99)),
+                "max": float(rhat_means.max()),
+            },
         },
         "items": [
             {
@@ -380,6 +405,11 @@ def fit(k: int) -> None:
         ],
         "topics": topics,
         "topic_shrinkage_kappa": kappa,
+        "topic_alignment": (
+            "items aligned to each topic's principal loading direction before "
+            "fitting the topic distribution; new questions get a random wording "
+            "direction"
+        ),
         "population": population,
     }
     BELIEFS_PATH.write_text(json.dumps(out, indent=2) + "\n")
@@ -393,9 +423,12 @@ def main() -> None:
     sub.add_parser("choose-k")
     fit_parser = sub.add_parser("fit")
     fit_parser.add_argument("--k", type=int, required=True)
+    sub.add_parser("retopic", help="recompute topic distributions from the fit's items")
     args = parser.parse_args()
     if args.command == "choose-k":
         choose_k()
+    elif args.command == "retopic":
+        retopic()
     else:
         fit(args.k)
 
