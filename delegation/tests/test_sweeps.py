@@ -93,17 +93,57 @@ def test_structural_base_keeps_the_one_axis_default_draws():
     assert np.array_equal(one_axis.positions, explicit.positions)
 
 
-def test_break_even_interpolates_one_crossing():
-    floors = (0.0, 0.5, 1.0)
+def test_break_even_brackets_one_crossing():
+    floors = (0.3, 0.5, 1.0)
     i = lambda m: Interval(m, m - 0.01, m + 0.01)  # noqa: E731
     result = break_even(floors, (i(-0.04), i(-0.02), i(0.02)))
     assert result.status == "crosses"
-    assert result.estimate == pytest.approx(0.75)
-    assert result.uncertain_floors == ()
-    assert break_even(floors, (i(0.01), i(0.02), i(0.03))).status == "liquid ahead throughout"
+    assert result.bracket == (0.5, 1.0)
+    assert result.interpolated == pytest.approx(0.75)
+    assert len(result.pointwise) == 3
+    ahead = break_even(floors, (i(0.01), i(0.02), i(0.03)))
+    assert ahead.status == "liquid ahead throughout" and ahead.bracket is None
     none = break_even(floors, (i(-0.05), i(-0.03), i(-0.005)))
-    assert none.status == "no crossing in the tested range" and none.estimate is None
-    assert none.uncertain_floors == (1.0,)
-    assert BREAK_EVEN_FLOORS[0] == 0.0 and 0.96 in BREAK_EVEN_FLOORS
+    assert none.status == "no crossing in the tested range" and none.interpolated is None
     with pytest.raises(ValueError):
-        break_even((0.5, 0.0), (i(0.0), i(0.0)))
+        break_even((0.5, 0.3), (i(0.0), i(0.0)))
+
+
+def test_a_tie_at_ordinary_turnout_is_not_a_lead():
+    i = lambda m: Interval(m, m - 0.01, m + 0.01)  # noqa: E731
+    tie = break_even((0.3, 0.5), (i(0.0), i(0.01)))
+    assert tie.status == "equal at ordinary turnout"
+    assert tie.bracket == (0.3, 0.3) and tie.interpolated == 0.3
+
+
+def test_the_grid_starts_where_the_floor_starts_to_matter():
+    from delegation.comparison import ChoicePolicy, liquid
+    from delegation.comparison.beliefs import load_beliefs, simulate_belief_city
+    from delegation.comparison.sweeps import ORDINARY_PLATEAU, break_even_policy
+
+    assert BREAK_EVEN_FLOORS[0] == ORDINARY_PLATEAU == BeliefCityConfig().min_turnout
+    assert 0.96 in BREAK_EVEN_FLOORS and BREAK_EVEN_FLOORS[-1] == 1.0
+    # The reviewer's case: flat from ordinary to 0.30, then positive by 0.40.
+    # With the plateau endpoint on the grid the crossing cannot fall below 0.30
+    i = lambda m: Interval(m, m - 0.002, m + 0.002)  # noqa: E731
+    result = break_even((ORDINARY_PLATEAU, 0.4), (i(-0.001), i(0.004)))
+    assert result.bracket == (ORDINARY_PLATEAU, 0.4)
+    assert result.interpolated is not None and result.interpolated >= ORDINARY_PLATEAU
+    # Every floor up to the plateau is exactly ordinary turnout
+    city = simulate_belief_city(
+        load_beliefs(),
+        BeliefCityConfig(seed=11, districts=2, residents_per_district=40,
+                         history_questions_per_topic=6, evaluation_questions_per_topic=3),
+    )
+    assert city.turnout.min() >= ORDINARY_PLATEAU
+    policy = ChoicePolicy(acceptance=0.3)
+    zero = liquid(city, policy, break_even_policy(0.0))
+    plateau = liquid(city, policy, break_even_policy(ORDINARY_PLATEAU))
+    assert np.array_equal(zero.counted, plateau.counted)
+
+
+def test_rotations_are_complete():
+    assert SWEEP_CITIES % 8 == 0
+    point = next(p for p in SWEEPS if p.family == "evaluation_mix" and "4x" in p.label)
+    heavy = [int(np.argmax(point.config(i).evaluation_topic_weights)) for i in range(1, SWEEP_CITIES + 1)]
+    assert np.bincount(heavy, minlength=8).tolist() == [SWEEP_CITIES // 8] * 8

@@ -4,11 +4,18 @@ The declared robustness sweeps and the break-even turnout grid (declared
 prompts/demo-5-liquid-democracy.md, "Robustness sweeps".
 
 Each sweep point changes one family from the primary settings and runs on
-the first SWEEP_CITIES positions of the primary seed sequence, so every
-point is paired with the primary configuration on the same cities. Every
-point is run under both turnout conditions. Sweeps say where H1 holds; they
-are reported as curves with their intervals and are not tested as
-hypotheses.
+the first SWEEP_CITIES positions of the primary seed sequence, so each
+point is indexed by the same positions as the primary configuration. What
+that pairing holds fixed depends on the family (second sweep review,
+2026-11-18): a history point keeps the same residents and evaluation
+questions; a spread, agenda-mix or stress point keeps the same residents
+and draws new questions; a district-count point draws different districts,
+so it compares generated cities, not one geography; and the structural
+population is a different generator, so its points are compared with its
+own 0.87 point. The arrangement contrasts inside each city are always
+paired. Every point is run under both turnout conditions. Sweeps say where
+H1 holds; they are reported as curves with their intervals and are not
+tested as hypotheses.
 
 Two populations appear:
   fitted       the primary population, drawn from the CES 2024 fit
@@ -29,9 +36,13 @@ from .beliefs import BeliefCityConfig
 from .population import PopulationConfig
 from .protocol import Interval, primary_city_seeds
 
-# Cities per sweep point: positions 1..SWEEP_CITIES of the primary sequence.
-# A fixed count, so an ordinary t-interval over them is exact
-SWEEP_CITIES: Final = 50
+# Cities per sweep point: positions 1..SWEEP_CITIES of the primary sequence,
+# six complete rotations of the eight topics, so a rotating heavy topic is
+# heavy in exactly 6 cities each and the plain city mean weights topics
+# equally. A fixed count removes optional stopping; the t-interval's
+# coverage is still approximate (normal theory), and for rotating points it
+# ignores the design's stratification, which makes it conservative
+SWEEP_CITIES: Final = 48
 TURNOUT_CONDITIONS: Final = {"primary": PRIMARY_TURNOUT, "ordinary": ORDINARY_RESOLVER_TURNOUT}
 TOPICS: Final = 8
 # How much heavier the heavy topic is in an uneven agenda: a stated stress
@@ -133,8 +144,10 @@ SWEEPS: Final = (
     # 100 residents per district throughout: liquid's pool is 199 or 999
     SweepPoint("districts", "2 districts", "fitted", districts=2),
     SweepPoint("districts", "10 districts", "fitted", districts=10),
-    # x0.5 and x1.5 move within-topic |r| by about +0.08 and -0.09 around
-    # the fitted value (x2 would erase the topic structure)
+    # A declared sensitivity range, half to one and a half times the fitted
+    # spread; it is not derived from a diagnostic. (Equal-weight median |r|
+    # within / between topics, W + T covariance: x0.5 0.538 / 0.422, x1
+    # 0.449 / 0.353, x1.5 0.382 / 0.321.)
     SweepPoint("within_topic_spread", "spread x0.5", "fitted", within_topic_spread=0.5),
     SweepPoint("within_topic_spread", "spread x1.5", "fitted", within_topic_spread=1.5),
     # Even history, one heavy topic in evaluation, rotating over cities
@@ -162,10 +175,14 @@ SWEEPS: Final = (
 )
 
 # Amendment A2: resolver-turnout floors for the break-even curve, run on the
-# primary cities with the representative at the office-holder rate. 0 is
-# ordinary turnout (residents' own rates run from 0.3 to 0.9), 0.96 the
-# primary floor, 1 every resolver always voting
-BREAK_EVEN_FLOORS: Final = (0.0, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.96, 1.0)
+# primary cities with the representative at the office-holder rate. A
+# resolver votes at max(own rate, floor) and every own rate is at least
+# ORDINARY_PLATEAU, so every floor up to it is ordinary turnout exactly: the
+# grid starts there (second sweep review: starting at 0 let interpolation
+# place a crossing inside the flat range). 0.96 is the primary floor, 1 every
+# resolver always voting
+ORDINARY_PLATEAU: Final = BeliefCityConfig().min_turnout
+BREAK_EVEN_FLOORS: Final = (ORDINARY_PLATEAU, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.96, 1.0)
 
 
 def break_even_policy(floor: float) -> TurnoutPolicy:
@@ -178,32 +195,43 @@ class BreakEven:
     Where liquid's fidelity reaches the representative's as the resolver
     floor rises. Raising the floor only adds ballots, so the difference
     never falls and crosses zero at most once.
+
+    A2 reports the grid bracket and the pointwise intervals, not an interval
+    for the crossing itself (second sweep review, 2026-11-18): an interval
+    at each floor says whether the difference there could be zero, which is
+    a different question from where the crossing lies.
     """
 
-    # "crosses", "liquid ahead throughout" or "no crossing in the tested range"
+    # "liquid ahead throughout" (strictly ahead at ordinary turnout),
+    # "equal at ordinary turnout", "crosses" or "no crossing in the tested
+    # range"
     status: str
-    # The interpolated floor at which the mean difference reaches zero
-    estimate: float | None
-    # Floors whose 95% interval of the difference includes zero
-    uncertain_floors: tuple[float, ...]
+    # The grid floors between which the mean difference first reaches zero
+    # (both the lowest floor when equal at ordinary turnout)
+    bracket: tuple[float, float] | None
+    # Linear interpolation inside the bracket: a grid approximation
+    interpolated: float | None
+    # The 95% interval of the difference at every floor, in grid order
+    pointwise: tuple[Interval, ...]
 
 
 def break_even(floors: tuple[float, ...], intervals: tuple[Interval, ...]) -> BreakEven:
     """
-    The break-even floor by linear interpolation of the mean paired
-    difference (liquid minus representative) between grid floors.
+    The break-even bracket on the grid, and a linear interpolation inside
+    it, from the mean paired difference (liquid minus representative).
     """
     if len(floors) != len(intervals) or len(floors) < 2:
         raise ValueError("one interval per floor, at least two floors")
     if any(b <= a for a, b in zip(floors, floors[1:])):
         raise ValueError("floors must increase")
     means = [i.estimate for i in intervals]
-    uncertain = tuple(f for f, i in zip(floors, intervals) if i.lower <= 0.0 <= i.upper)
-    if means[0] >= 0.0:
-        return BreakEven("liquid ahead throughout", None, uncertain)
+    if means[0] > 0.0:
+        return BreakEven("liquid ahead throughout", None, None, intervals)
+    if means[0] == 0.0:
+        return BreakEven("equal at ordinary turnout", (floors[0], floors[0]), floors[0], intervals)
     for k in range(1, len(floors)):
         if means[k] >= 0.0:
             low, high = means[k - 1], means[k]
             at = floors[k - 1] + (floors[k] - floors[k - 1]) * (-low) / (high - low)
-            return BreakEven("crosses", float(at), uncertain)
-    return BreakEven("no crossing in the tested range", None, uncertain)
+            return BreakEven("crosses", (floors[k - 1], floors[k]), float(at), intervals)
+    return BreakEven("no crossing in the tested range", None, None, intervals)
