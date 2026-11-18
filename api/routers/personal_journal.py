@@ -3,7 +3,7 @@
 import hmac
 import os
 from ipaddress import ip_address
-from typing import TypeVar
+from typing import Literal, TypeVar
 
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel, ValidationError
@@ -12,10 +12,13 @@ from starlette.concurrency import run_in_threadpool
 from preferences.journal_forecast import (
     Forecast, JournalRequest, ProviderError, local_model_forecast, wording_forecast,
 )
-from preferences.journal_reasoning import (
-    HistoryRequest, PairedForecast, Profile, QuestionRequest, QuestionResult, paired_forecast,
-    profile, question, reasoning_forecast,
-)
+from preferences import journal_reasoning, journal_reasoning_v2
+from preferences.journal_reasoning import HistoryRequest, PairedForecast, Profile, QuestionRequest, QuestionResult
+
+
+class ComparisonRequest(JournalRequest):
+    # Older journal clients only knew v1 and did not send a version.
+    modelVersion: Literal["reasoning-examples-v1", "reasoning-examples-v2"] = "reasoning-examples-v1"
 
 
 def require_local_journal(request: Request) -> None:
@@ -56,7 +59,7 @@ async def forecast(request: Request, response: Response) -> Forecast:
     req = await private_input(request, response, JournalRequest)
     mode = os.getenv("PERSONAL_JOURNAL_MODEL_MODE", "reasoning")
     if mode == "reasoning":
-        return await run_in_threadpool(reasoning_forecast, req)
+        return await run_in_threadpool(journal_reasoning_v2.reasoning_forecast, req)
     if mode == "baseline":
         return await run_in_threadpool(wording_forecast, req)
     if mode != "llm":
@@ -69,9 +72,10 @@ async def forecast(request: Request, response: Response) -> Forecast:
 
 @router.post("/paired", response_model=PairedForecast, include_in_schema=False)
 async def paired(request: Request, response: Response) -> PairedForecast:
-    req = await private_input(request, response, JournalRequest)
+    req = await private_input(request, response, ComparisonRequest)
+    model = journal_reasoning_v2 if req.modelVersion == "reasoning-examples-v2" else journal_reasoning
     try:
-        return await run_in_threadpool(paired_forecast, req)
+        return await run_in_threadpool(model.paired_forecast, req)
     except Exception:
         # A partial comparison is unusable. Model errors can contain private input.
         raise HTTPException(500, "The model comparison could not be computed.") from None
@@ -80,11 +84,11 @@ async def paired(request: Request, response: Response) -> PairedForecast:
 @router.post("/profile", response_model=Profile, include_in_schema=False)
 async def preference_profile(request: Request, response: Response) -> Profile:
     req = await private_input(request, response, HistoryRequest)
-    return await run_in_threadpool(profile, req)
+    return await run_in_threadpool(journal_reasoning_v2.profile, req)
 
 
 @router.post("/question", response_model=QuestionResult, response_model_exclude_unset=True, include_in_schema=False)
 async def follow_up_question(request: Request, response: Response) -> QuestionResult:
     req = await private_input(request, response, QuestionRequest)
     # Omit an empty optional reference while keeping the required question:null.
-    return await run_in_threadpool(question, req)
+    return await run_in_threadpool(journal_reasoning_v2.question, req)

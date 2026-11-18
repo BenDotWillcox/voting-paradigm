@@ -1,4 +1,5 @@
 export type JournalVote = "yes" | "no";
+export type JournalModelVersion = "reasoning-examples-v1" | "reasoning-examples-v2";
 
 export interface JournalMeasure {
   title: string;
@@ -26,6 +27,8 @@ export interface JournalForecastSet {
 export interface JournalCheck {
   id: string;
   startedAt: string;
+  /** Checks created before model versioning used reasoning-examples-v1. */
+  modelVersion?: JournalModelVersion;
   evidenceCount: number;
   clarificationCount: number;
   slotIds: string[];

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { isJournalLoopbackHost } from "@/lib/personal-journal-local";
-import { JournalStoreError } from "@/lib/personal-journal-store";
-import type { JournalEntry, JournalForecastSet, JournalMeasure, JournalPrediction, JournalQuestion } from "@/lib/personal-journal-types";
+import { JournalStoreError, pastDecision } from "@/lib/personal-journal-store";
+import type { JournalEntry, JournalForecastSet, JournalMeasure, JournalModelVersion, JournalPrediction, JournalQuestion } from "@/lib/personal-journal-types";
 
 type Completed = Extract<JournalEntry, { status: "revealed" }>;
 export const nonblank = (limit: number) => z.string().trim().min(1).max(limit);
@@ -26,16 +26,6 @@ export async function requestData(request: Request) {
   } catch {
     throw new JournalStoreError(400, "The journal request contains invalid JSON.");
   }
-}
-
-function pastDecision(entry: Completed) {
-  const { id, measure, vote, reasoning, followUp } = entry;
-  return {
-    id, measure, vote, reasoning,
-    ...(followUp?.status === "answered" && {
-      clarification: { question: followUp.question.prompt, kind: followUp.question.kind, answer: followUp.answer },
-    }),
-  };
 }
 
 async function localModel<T>(operation: "forecast" | "paired" | "profile" | "question", payload: unknown, schema: z.ZodType<T>): Promise<T> {
@@ -70,14 +60,14 @@ const predictionSchema = z.object({
 }).strict();
 
 const pairedSchema = z.object({
-  reasoning: predictionSchema.extend({ model: z.literal("reasoning-examples-v1") }),
-  baseline: predictionSchema.extend({ model: z.literal("outcome-wording-v1") }),
-  withoutReasoning: predictionSchema.extend({ model: z.literal("reasoning-examples-v1-without-reasoning") }),
+  reasoning: predictionSchema, baseline: predictionSchema, withoutReasoning: predictionSchema,
 }).strict();
 
-export function forecast(id: string, measure: JournalMeasure, history: Completed[], paired = false): Promise<JournalPrediction | JournalForecastSet> {
+export function forecast(id: string, measure: JournalMeasure, history: Completed[], modelVersion?: JournalModelVersion): Promise<JournalPrediction | JournalForecastSet> {
   const request = { id, measure, history: history.map(pastDecision) };
-  return paired ? localModel("paired", request, pairedSchema) : localModel("forecast", request, predictionSchema);
+  return modelVersion
+    ? localModel("paired", { ...request, modelVersion }, pairedSchema)
+    : localModel("forecast", request, predictionSchema);
 }
 
 const profileSchema = z.object({

@@ -278,6 +278,17 @@ test("a retrospective question uses the target's frozen history, excluding later
   });
   assert.deepEqual(await store.suggestFollowUp(second, 1, () => assert.fail("Corrected forecast misattributed")), now);
   await assert.rejects(store.respondToFollowUp(second, 0, question.prompt, "Stale"), { status: 409 });
+  const voted = (await store.listEntries()).find(entry => entry.id === target);
+  await store.correctEntry(target, 0, "revealed", { ...measure, title: "Later edit to target" }, frozen);
+  const replay = await store.readRegressionCase(target);
+  assert.deepEqual(replay.request.measure, voted.measure);
+  assert.deepEqual(replay.locked, voted.prediction);
+  assert.equal(replay.vote, voted.vote);
+  assert.deepEqual(Object.keys(replay.request).sort(), ["history", "id", "measure"]);
+  assert.deepEqual(replay.request.history.map(row => row.id), [first, second]);
+  assert.equal(replay.request.history[0].clarification, undefined);
+  assert.equal(replay.request.history[1].measure.title, "Another early measure");
+  assert.equal(replay.request.history[1].clarification.answer, "Only after an inspection.");
 });
 
 test("concurrent answers and skips can only resolve a question once, and no-question decisions persist", async t => {
@@ -306,11 +317,11 @@ test("concurrent answers and skips can only resolve a question once, and no-ques
   assert.deepEqual(await independent.respondToFollowUp(skipped, 0, question.prompt, null), value);
 });
 
-function comparison(count) {
+function comparison(count, version = "reasoning-examples-v2") {
   return {
-    reasoning: { ...prediction(count), model: "reasoning" },
-    baseline: { ...prediction(count, "no"), model: "baseline" },
-    withoutReasoning: { ...prediction(count, "no"), model: "ablated" },
+    reasoning: { ...prediction(count), model: version },
+    baseline: { ...prediction(count, "no"), model: "outcome-wording-v1" },
+    withoutReasoning: { ...prediction(count, "no"), model: version + "-without-reasoning" },
   };
 }
 
@@ -326,13 +337,13 @@ test("five slots share frozen evidence across restarts, votes, late answers and 
   const [check, same] = await Promise.all([store.startCheck(), independent.startCheck()]);
   assert.deepEqual(check, same);
   assert.deepEqual(await independent.getCheck(), check);
-  assert.deepEqual(Object.keys(check).sort(), ["clarificationCount", "evidenceCount", "id", "slotIds", "startedAt"]);
+  assert.equal(check.modelVersion, "reasoning-examples-v2");
   assert.equal(check.evidenceCount, 2);
   assert.equal(check.clarificationCount, 1);
   assert.equal(new Set(check.slotIds).size, 5);
 
-  const predict = async (_packet, history, paired) => {
-    assert.equal(paired, true);
+  const predict = async (_packet, history, version) => {
+    assert.equal(version, check.modelVersion);
     assert.deepEqual(history.map(entry => entry.id).sort(), [early, second].sort());
     assert.deepEqual(history.find(entry => entry.id === early), old);
     assert.equal(history.find(entry => entry.id === second).followUp, undefined);
@@ -395,9 +406,29 @@ test("only unseen entries fill check slots and all three forecasts publish toget
   await assert.rejects(store.lockEntry(first, { ...measure, title: " previously  SEEN measure" }, never, check.id), { status: 409 });
   await assert.rejects(store.lockEntry(first, measure, async () => prediction(1), check.id), { status: 502 });
   await assert.rejects(store.lockEntry(first, measure, async () => ({ ...comparison(1), baseline: undefined }), check.id), { status: 502 });
-  await assert.rejects(store.lockEntry(first, measure, async () => ({ ...comparison(1), baseline: prediction(0) }), check.id), { status: 502 });
+  await assert.rejects(store.lockEntry(first, measure, async () => ({ ...comparison(1), baseline: comparison(0).baseline }), check.id), { status: 502 });
+  await assert.rejects(store.lockEntry(first, measure, async () => comparison(1, "reasoning-examples-v1"), check.id), { status: 502 });
   assert.deepEqual((await store.listEntries()).map(entry => entry.id).sort(), [oldPending.id, prior].sort());
   await store.lockEntry(first, measure, predict, check.id);
   await assert.rejects(store.lockEntry(second, measure, never, check.id), { status: 409 });
   await store.lockEntry(second, { ...measure, title: "Different measure on the same official guide" }, predict, check.id);
+});
+
+test("a check started before versioning completes its remaining slots with v1", async t => {
+  const dir = await privateDirectory(t);
+  const id = randomUUID();
+  const first = randomUUID();
+  const oldCheck = { id, startedAt: new Date().toISOString(), evidenceCount: 0,
+    clarificationCount: 0, slotIds: [first, ...Array.from({ length: 4 }, () => randomUUID())] };
+  await writeFile(join(dir, "five-measure-check.json"), JSON.stringify({
+    check: oldCheck, evidence: { eligibleHistoryIds: [] },
+  }));
+  assert.deepEqual(await store.startCheck(), oldCheck);
+  await store.lockEntry(first, measure, async (_packet, _history, version) => {
+    assert.equal(version, "reasoning-examples-v1");
+    return comparison(0, version);
+  }, id);
+  const result = await store.recordVote(first, "no", "Keep the existing arrangement.");
+  assert.equal(result.prediction.model, "reasoning-examples-v1");
+  assert.equal(result.comparison.withoutReasoning.model, "reasoning-examples-v1-without-reasoning");
 });

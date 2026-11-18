@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api.main import app
-from preferences import journal_forecast, journal_reasoning
+from preferences import journal_forecast, journal_reasoning, journal_reasoning_v2
 
 
 PATH = "/api/preferences/journal/forecast"
@@ -118,7 +118,7 @@ def test_private_route_requires_launcher_loopback_and_token(client, monkeypatch,
 
 
 def pair(client, req):
-    response = client.post(PAIRED, headers=HEADERS, json=req)
+    response = client.post(PAIRED, headers=HEADERS, json={**req, "modelVersion": "reasoning-examples-v2"})
     assert response.status_code == 200
     assert response.headers["cache-control"] == "no-store"
     return response.json()
@@ -142,7 +142,7 @@ def test_pair_pins_the_original_models_and_masks_only_written_evidence(client, m
     result = pair(client, req)
     assert result == {
         "baseline": direct_baseline, "reasoning": direct_reasoning,
-        "withoutReasoning": {**direct_ablation, "model": "reasoning-examples-v1-without-reasoning"},
+        "withoutReasoning": {**direct_ablation, "model": "reasoning-examples-v2-without-reasoning"},
     }
     for field in ("reasoning", "clarification"):
         single_note = deepcopy(masked)
@@ -173,10 +173,20 @@ def test_paired_forecasts_use_one_tie_break_and_reverse_when_labels_flip(client,
 def test_partial_pair_failure_returns_no_predictions_or_private_details(client, monkeypatch):
     def broken_forecast(req):
         raise ValueError("private input caused a failure")
-    monkeypatch.setattr(journal_reasoning, "wording_forecast", broken_forecast)
-    response = client.post(PAIRED, headers=HEADERS, json=packet())
+    monkeypatch.setattr(journal_reasoning_v2, "paired_forecast", broken_forecast)
+    response = client.post(PAIRED, headers=HEADERS, json={**packet(), "modelVersion": "reasoning-examples-v2"})
     assert response.status_code == 500
     assert response.json() == {"detail": "The model comparison could not be computed."}
+
+
+def test_old_frozen_checks_use_the_original_scoring_and_unknown_versions_fail_closed(client):
+    req = {**packet(), "history": [earlier("no")]}
+    expected = journal_reasoning.paired_forecast(journal_forecast.JournalRequest.model_validate(req)).model_dump()
+    for version in ({}, {"modelVersion": "reasoning-examples-v1"}):
+        result = client.post(PAIRED, headers=HEADERS, json={**req, **version})
+        assert result.status_code == 200 and result.json() == expected
+    result = client.post(PAIRED, headers=HEADERS, json={**req, "modelVersion": "unknown"})
+    assert result.status_code == 422
 
 
 def mock_provider(monkeypatch, handler):
@@ -261,7 +271,7 @@ def test_default_forecast_learns_stance_and_answer_without_a_topic_map(client):
     item = evidence(reasoning="I support independent audits.")
     req["history"] = [item]
     positive = forecast(client, req)
-    assert positive["model"] == "reasoning-examples-v1" and positive["probabilityYes"] > .5
+    assert positive["model"] == "reasoning-examples-v2" and positive["probabilityYes"] > .5
     # The ballot and vote are identical. Changing only the reason flips the estimate.
     item["reasoning"] = "I do not support independent audits."
     assert forecast(client, req)["probabilityYes"] < .5
@@ -302,7 +312,7 @@ def test_private_profile_links_actual_quoted_reasons_and_clarification(client):
     response = client.post(PROFILE, headers=HEADERS, json=req)
     assert response.status_code == 200 and response.headers["cache-control"] == "no-store"
     profile = response.json()
-    assert profile["model"] == "reasoning-examples-v1" and profile["evidenceCount"] == 2
+    assert profile["model"] == "reasoning-examples-v2" and profile["evidenceCount"] == 2
     by_label = {f["label"]: set(f["evidenceIds"]) for f in profile["facets"]}
     assert by_label == {reason: {ID_A, ID_B}, clarified: {ID_B}}
     assert client.post(PROFILE, headers=HEADERS, json={"history": []}).json()["facets"] == []

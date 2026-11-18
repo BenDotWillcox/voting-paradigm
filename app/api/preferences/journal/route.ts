@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     const input = lockRequest.safeParse(await requestData(request));
     if (!input.success) return reply({ error: "Enter a title, source URL, measure text, both outcomes and your familiarity with the measure." }, 400);
     const { id, measure, checkId } = input.data;
-    const entry = await lockEntry(id, measure, (packet, history, paired) => forecast(id, packet, history, paired), checkId);
+    const entry = await lockEntry(id, measure, (packet, history, version) => forecast(id, packet, history, version), checkId);
     return reply({ entry });
   } catch (error) {
     return failed(error);
@@ -67,7 +67,7 @@ export async function PATCH(request: Request) {
     if (expectedStatus === "revealed" && !confirmVote) {
       return reply({ error: "Confirm that your saved vote and reasoning apply to the corrected measure." }, 400);
     }
-    const entry = await correctEntry(id, expectedRevision, expectedStatus, measure, (packet, history, paired) => forecast(id, packet, history, paired));
+    const entry = await correctEntry(id, expectedRevision, expectedStatus, measure, (packet, history, version) => forecast(id, packet, history, version));
     return reply({ entry });
   } catch (error) {
     return failed(error);

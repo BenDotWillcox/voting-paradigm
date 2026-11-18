@@ -2,11 +2,11 @@ import { randomUUID } from "node:crypto";
 import { link, mkdir, open, readFile, readdir, unlink } from "node:fs/promises";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { isDeepStrictEqual } from "node:util";
-import type { JournalCheck, JournalEntry, JournalFollowUp, JournalForecastSet, JournalMeasure, JournalPrediction, JournalQuestion } from "./personal-journal-types";
+import type { JournalCheck, JournalEntry, JournalFollowUp, JournalForecastSet, JournalMeasure, JournalModelVersion, JournalPrediction, JournalQuestion } from "./personal-journal-types";
 
 type RevealedEntry = Extract<JournalEntry, { status: "revealed" }>;
 type Vote = RevealedEntry["vote"];
-type Predict = (measure: JournalMeasure, history: RevealedEntry[], paired?: boolean) => Promise<JournalPrediction | JournalForecastSet>;
+type Predict = (measure: JournalMeasure, history: RevealedEntry[], modelVersion?: JournalModelVersion) => Promise<JournalPrediction | JournalForecastSet>;
 type ChooseQuestion = (entry: RevealedEntry, history: RevealedEntry[]) => Promise<JournalQuestion | null>;
 
 interface EvidenceSnapshot {
@@ -250,6 +250,7 @@ export async function startCheck(): Promise<JournalCheck> {
   const evidence = snapshot(completedEvidence(await entriesIn(dir)));
   const check: JournalCheck = {
     id: randomUUID(), startedAt: new Date().toISOString(), slotIds: Array.from({ length: 5 }, () => randomUUID()),
+    modelVersion: "reasoning-examples-v2",
     evidenceCount: evidence.eligibleHistoryIds.length, clarificationCount: evidence.eligibleClarificationIds?.length ?? 0,
   };
   await mkdir(dir, { recursive: true, mode: 0o700 });
@@ -312,7 +313,8 @@ async function makeForecast(
   }
   const history = check ? await readEvidence(dir, check.evidence) : completedEvidence(entries.filter(entry => entry.id !== id));
   const evidence = check?.evidence ?? snapshot(history);
-  const result = await predict(measure, history, !!check);
+  const modelVersion = check ? (check.check.modelVersion ?? "reasoning-examples-v1") : undefined;
+  const result = await predict(measure, history, modelVersion);
   const base = { id, measure, lockedAt: new Date().toISOString(), ...evidence };
   if (!check && !("reasoning" in result)) {
     return { ...base, prediction: checkedPrediction(result, history.length) };
@@ -321,6 +323,10 @@ async function makeForecast(
   const prediction = checkedPrediction(result.reasoning, history.length);
   const baseline = checkedPrediction(result.baseline, history.length);
   const withoutReasoning = checkedPrediction(result.withoutReasoning, history.length);
+  if (prediction.model !== modelVersion || baseline.model !== "outcome-wording-v1" ||
+      withoutReasoning.model !== modelVersion + "-without-reasoning") {
+    throw new JournalStoreError(502, "The forecasts did not match the model versions frozen for this check.");
+  }
   if ([prediction, baseline, withoutReasoning].some(arm => arm.historyCount !== history.length)) {
     throw new JournalStoreError(502, "All three forecasts must use the same frozen decisions.");
   }
@@ -514,4 +520,32 @@ export async function recordVote(
     throw new JournalStoreError(409, "This entry already has a different recorded answer.");
   }
   return entry;
+}
+
+export function pastDecision(entry: RevealedEntry) {
+  const { id, measure, vote, reasoning, followUp } = entry;
+  return {
+    id, measure, vote, reasoning,
+    ...(followUp?.status === "answered" && {
+      clarification: { question: followUp.question.prompt, kind: followUp.question.kind, answer: followUp.answer },
+    }),
+  };
+}
+
+/** Recover the exact forecast packet for a completed local regression case. */
+export async function readRegressionCase(inputId: string) {
+  const id = entryId(inputId);
+  const dir = journalDirectory();
+  const state = await readState(dir, await originalForecast(dir, id));
+  if (!state.ballot) throw new JournalStoreError(409, "Regression cases need a recorded vote.");
+  const { forecast } = state;
+  const history = await readEvidence(dir, forecast);
+  if (new Set(history.map(prior => prior.id)).size !== history.length ||
+      history.some(prior => prior.id === id || prior.votedAt > forecast.lockedAt)) {
+    throw new JournalStoreError(500, "Invalid evidence in the locked regression case.");
+  }
+  return {
+    request: { id, measure: forecast.measure, history: history.map(pastDecision) },
+    locked: forecast.prediction, vote: state.ballot.vote,
+  };
 }
