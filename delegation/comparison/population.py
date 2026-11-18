@@ -60,6 +60,7 @@ _HISTORY: Final = 4
 _EVALUATION: Final = 5
 _CANDIDATES: Final = 6
 _ELECTION: Final = 7
+_BLOCKS: Final = 8
 
 
 @dataclass(frozen=True)
@@ -73,6 +74,13 @@ class PopulationConfig:
     # Weight of the shared left-right factor; dimensions correlate at its
     # square before district leans
     factor_loading: float = 0.6
+    # Blocks of related issues (sweep declared 2026-11-18): dimensions are
+    # split into `blocks` contiguous groups, and each group shares a block
+    # factor with this weight. Dimensions in one block correlate at
+    # factor_loading^2 + block_loading^2, across blocks at factor_loading^2,
+    # before district leans. 0 (the default) is the one-axis model.
+    blocks: int = 1
+    block_loading: float = 0.0
     # Spread of each district's lean on each dimension, in units of the
     # population's spread
     district_lean_sd: float = 0.4
@@ -102,6 +110,12 @@ class PopulationConfig:
             raise ValueError("candidates_per_district exceeds residents_per_district")
         if not 0.0 <= self.factor_loading <= 1.0:
             raise ValueError("factor_loading must be in [0, 1]")
+        if not 1 <= self.blocks <= self.dimensions:
+            raise ValueError("blocks must be between 1 and the number of dimensions")
+        if not 0.0 <= self.block_loading <= 1.0:
+            raise ValueError("block_loading must be in [0, 1]")
+        if self.factor_loading**2 + self.block_loading**2 > 1.0 + 1e-12:
+            raise ValueError("factor_loading^2 + block_loading^2 must be at most 1")
         for name in ("district_lean_sd", "cutpoint_sd", "preference_noise_sd"):
             value = getattr(self, name)
             if not math.isfinite(value) or value < 0.0:
@@ -224,7 +238,14 @@ def _positions(config: PopulationConfig, district: IntArray) -> FloatArray:
     factor = rng.standard_normal(config.size)
     specific = rng.standard_normal((config.size, config.dimensions))
     loading = config.factor_loading
-    positions = loading * factor[:, None] + math.sqrt(1.0 - loading**2) * specific
+    block = config.block_loading
+    unique = math.sqrt(max(0.0, 1.0 - loading**2 - block**2))
+    positions = loading * factor[:, None] + unique * specific
+    if block > 0.0:
+        # A separate stream, so the one-axis model's draws are unchanged
+        block_of = np.arange(config.dimensions) * config.blocks // config.dimensions
+        shared = stream(config.seed, _BLOCKS).standard_normal((config.size, config.blocks))
+        positions = positions + block * shared[:, block_of]
     leans = stream(config.seed, _LEANS).standard_normal(
         (config.districts, config.dimensions)
     )

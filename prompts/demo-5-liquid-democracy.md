@@ -280,18 +280,121 @@ For every arrangement and condition:
   goes to the election winner).
 - **Overhead, lifecycle overhead and delegations maintained.**
 
+### Robustness sweeps (declared 2026-11-18)
+
+Declared before any primary city was simulated, and implemented as data in
+`delegation/comparison/sweeps.py` (tested in
+`delegation/tests/test_sweeps.py`). Each point changes one family from the
+primary settings. The stress case is the one declared combination.
+
+- **Cities (revised 2026-11-18, sweep review).** Each point runs on
+  positions 1 to 48 of the primary seed sequence: six complete rotations of
+  the eight topics, so a rotating heavy topic is heavy in exactly six
+  cities each and the plain mean weights every topic equally. (Fifty
+  cities would have weighted two topics 7/50 and the rest 6/50.) The
+  primary configuration is computed on the same 48 positions if the
+  primary run stopped before 48. The count is fixed in advance, which
+  removes optional stopping. The 95% t-interval's coverage is still
+  approximate (normal theory), and at the rotating-agenda points it ignores
+  the design's stratification by heavy topic, which makes it conservative.
+- **What a shared position holds fixed.** A shared seed position indexes
+  the Monte Carlo comparison; what it holds fixed depends on the family:
+  - *history:* the same residents and the same evaluation questions; only
+    the record changes;
+  - *within-topic spread, evaluation mix, stress:* the same residents, with
+    new questions drawn;
+  - *districts:* different districts are sampled for each count (seed 1's
+    2-, 5- and 10-district cities share none), so these points compare
+    generated cities, not one geography with more districts;
+  - *belief structure:* a different generator, with its own residents,
+    districts, questions and turnout draws. Its points are compared with
+    its own CES-matched 0.87 point, and the gap between that point and the
+    fitted primary is reported as a comparison between generators.
+
+  The arrangement contrasts inside each city, liquid against the
+  representative and so on, are always paired.
+- **Turnout.** Every point is run under both conditions, the 0.96 floor
+  and ordinary resolver turnout. The stress case is declared under
+  ordinary turnout, and its floor-0.96 run is context.
+- **Calibration.** Liquid and the proxy are fixed by the 10% overhead rule
+  at every point, exactly as in the primary run.
+- **What is reported.** At each point:
+  - the H1 contrast and the specialisation contrast with their intervals;
+  - the share of cities meeting the cap, and the joint share for
+    specialisation;
+  - the protocol's direction and size labels.
+
+  Sweeps say where H1 holds. They are curves, not hypothesis tests, so no
+  multiplicity correction is made and no sweep result is stated as a
+  finding about H1.
+
+| Family | Values (primary in bold) | Population | Grounding |
+|---|---|---|---|
+| History per topic | 10, 20, **50**, 100 | fitted | Amendment A4: one Congress is 54 to 90 contested roll calls per topic; 10 and 20 are sparse records, 100 about two Congresses |
+| Districts (100 residents each) | 2, **5**, 10 | fitted | Liquid's candidate pool is then 199, 499 or 999 residents, while each district's representative still serves 100. The cities differ between counts (see above) |
+| Within-topic spread of new questions | ×0.5, **×1**, ×1.5 | fitted | A declared sensitivity range, half to one and a half times the fitted spread, not derived from a diagnostic (revised 2026-11-18: an earlier claim that ×2 erases topics was wrong). The fitted spread matched CES 2022's within-topic correlation (0.523 against 0.528). Descriptively, equal-weight median \|r\| within / between topics under the fitted covariance is 0.538 / 0.422 at ×0.5, 0.449 / 0.353 at ×1, 0.382 / 0.321 at ×1.5 and 0.364 / 0.324 at ×2 |
+| Evaluation topic mix (history even) | **even**, one topic 2× heavier, one topic 4× heavier | fitted | 4× is a stated stress value, not measured (Voteview's roll-call files carry no topic codes); 2× is the milder point. The heavy topic rotates with city position, so each topic is heavy in exactly 6 of the 48 cities |
+| Belief structure: cross-topic correlation of positions | 0, 0.4, 0.87 (CES-matched), 0.95 | structural | 0.87 matches the fitted population's between-topic item correlation (0.379, the same on both). The fitted topic directions alone correlate at a median of 0.77, and one axis carries 82% of their variance |
+| Belief structure: blocks of related issues | two blocks of four topics, 0.87 within, 0.2 across | structural | A less sorted public (Baldassarri and Gelman 2008): as cohesive as the CES within each block, weakly related across. It differs from the CES-matched point only across blocks |
+| Stress case | 10 per topic; one history topic 4× heavier and a different one (four topics on) 4× heavier in evaluation; ordinary resolver turnout | fitted | Declared 2026-11-17: sparse records, a shifting agenda and ordinary delegate turnout plausibly occur together |
+
+**The structural population.** For the belief-structure family the fitted
+model is replaced by the one-factor model of `population.py`, extended
+with an optional block factor. It has eight dimensions standing for the
+eight topics, 50 history and 20 evaluation questions per dimension, five
+districts of 100 residents and three candidates per district. Its other
+parameters are matched to the fitted population on the same simulated
+summaries, so cross-topic structure is the main thing that differs:
+
+| Parameter | Value | Summary matched (structural against fitted) |
+|---|---|---|
+| District lean SD | 0.26 | District SD of support: 0.065 against 0.067 |
+| Cutpoint SD | 1.15 | Item support-rate SD: 0.232 against 0.235 |
+| Preference noise SD | 1.11 | Within-topic median \|r\|: 0.464 against 0.458 |
+
+The noise stands in for the fitted model's within-topic spread of
+questions, but it is unstructured: in the fitted model two questions in a
+topic can differ systematically, and here they differ only by noise. That
+limit is stated with the curve. The 0.87 point is the structural curve's
+own reference: the other structural points are read against it, within
+one generator. Its gap from the fitted primary is a comparison between
+generators, reported first, because a large gap means the structural
+curve says little about the primary population.
+
+**Break-even resolver turnout (A2; revised 2026-11-18, sweep review).**
+This runs on the primary cities (all N), with the representative at the
+office-holder rate. A resolver votes at the larger of their own rate and
+the floor, and every own rate is at least 0.30, so every floor up to 0.30
+is ordinary turnout exactly. The grid therefore starts at that plateau
+endpoint: 0.30 (ordinary), 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.96 (primary)
+and 1.0. (A grid starting at 0 let interpolation place a crossing inside
+the flat range, where liquid is behind by construction.) Raising the floor
+only adds ballots, so liquid minus the representative never falls and
+crosses zero at most once. Reported (`sweeps.break_even`):
+- the *bracket*: the first pair of grid floors between which the mean
+  paired difference becomes non-negative;
+- a linear interpolation inside the bracket, labelled a grid
+  approximation;
+- the two-stage 95% interval of the difference at every floor.
+
+No interval is claimed for the crossing itself: the pointwise intervals
+say whether the difference at a floor could be zero, a different question
+from where the crossing lies. The status is one of *liquid ahead
+throughout* (strictly ahead at ordinary turnout), *equal at ordinary
+turnout*, *crosses* or *no crossing in the tested range*.
+
 ### What everything else is
 
 | Question | Role |
 |---|---|
 | Full turnout; direct at real turnout | Reference points on the headline figure, no claim |
 | Dilution against bundling (the matched three-candidate arms and the personal proxy) | Explanation of why H1 holds or fails, through the declared decomposition and the topic-specialisation margin above (revised 2026-11-17: the proxy step alone changed candidate pool, selection rule, election and onward delegation at once) |
-| Belief structure (correlation across issues, blocks of related issues) | Robustness sweep: where H1 holds, not which structure is true |
-| History length, number of districts, evaluation topic mix | Robustness sweeps, few values, one family at a time from the primary settings |
-| Stress case: sparse records (10 history questions per topic), an uneven agenda (one topic four times as heavy as each other, in history and a different one in evaluation) and ordinary delegate turnout, together | Declared robustness point (2026-11-17): these plausibly occur together, and one-at-a-time sweeps miss how they interact |
+| Belief structure (correlation across issues, blocks of related issues) | Robustness sweep: where H1 holds, not which structure is true (values in "Robustness sweeps") |
+| History length, number of districts, within-topic spread, evaluation topic mix | Robustness sweeps, few values, one family at a time from the primary settings (values in "Robustness sweeps") |
+| Stress case: sparse records (10 history questions per topic), an uneven agenda (one topic four times as heavy as each other, in history and a different one, four topics on, in evaluation) and ordinary delegate turnout, together | Declared robustness point (2026-11-17; topics fixed 2026-11-18): these plausibly occur together, and one-at-a-time sweeps miss how they interact |
 | Outcome agreement with full turnout, concentration, lost votes, loops | Secondary outcomes, reported, no hypothesis |
 | Ordinary resolver turnout (delegates vote like anyone else) | Reported side by side with the primary symmetric condition, with equal prominence (A1, revised 2026-11-17) |
-| Break-even resolver turnout | Secondary outcome (A2): the resolver turnout at which liquid's fidelity equals the representative's; "no crossing in the tested range" is an allowed result |
+| Break-even resolver turnout | Secondary outcome (A2): the resolver turnout at which liquid's fidelity equals the representative's, on a declared grid of floors (see "Robustness sweeps"); "no crossing in the tested range" is an allowed result |
 | Per-voter fidelity distribution | Secondary outcome (A5): share of voters below 0.5 and the 10th percentile, with voters below 0.5 split by no ballot against contrary ballot |
 | Three shares, the paired kept/resolved attribution, loops, resolver attendance, lifecycle overhead | Reported for every arrangement, the attribution for H1 and for specialisation (see "Reporting") |
 | Onward-delegation limits, backup delegates, other ballot types, the account app | Out of scope: design variants, not this test |
@@ -369,8 +472,10 @@ correction or a tuning.
   found the most-delegated LiquidFeedback users among the most active.
 - **A2. Break-even resolver turnout (secondary).** Resolver turnout is
   swept from ordinary turnout up to the office-holder rate, and the rate at
-  which liquid's fidelity equals the representative's is reported with its
-  interval. What matters is the turnout of people holding others' votes,
+  which liquid's fidelity equals the representative's is reported as a
+  bracket on a declared grid, with an interval for the difference at each
+  floor (revised 2026-11-18: no interval for the crossing itself; see
+  "Robustness sweeps"). What matters is the turnout of people holding others' votes,
   not general turnout. If liquid's advantage depends on that rate, the
   conclusion is that liquid democracy needs reliable resolvers; notices,
   deadline reminders and backup delegates are the tools that would supply
@@ -1136,14 +1241,9 @@ check. The gap between exact and measured routing is what the router costs.
 
 ### Sensitivity
 
-Reported as curves, not single numbers. Under the research protocol the
-robustness sweeps for H1 are the first three; one family moves at a time
-from the primary settings:
-
-- belief structure: correlation of positions across issues, and blocks of
-  related issues;
-- history length before delegates are chosen;
-- number of districts.
+Reported as curves, not single numbers. The values, populations and
+seeds of the robustness sweeps for H1 are declared in "Robustness sweeps"
+under the research protocol (2026-11-18).
 
 Later, outside H1: the acceptance level (fixed for H1 by the 10% overhead
 rule), turnout including delegates' turnout, and exact against measured
