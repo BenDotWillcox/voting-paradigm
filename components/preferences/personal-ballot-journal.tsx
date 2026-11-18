@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import { ArrowUpRight, BookOpen, LockKeyhole, Plus } from "lucide-react";
+import { ArrowUpRight, BookOpen, LockKeyhole, Pencil, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,13 +11,20 @@ import type { JournalEntry } from "@/lib/personal-journal-types";
 type Measure = JournalEntry["measure"];
 type Revealed = Extract<JournalEntry, { status: "revealed" }>;
 type Vote = Revealed["vote"];
-type VoteInput = { id: string; vote: Vote; reasoning: string };
+type VoteInput = { id: string; vote: Vote; reasoning: string; expectedRevision: number };
+type CorrectionInput = {
+  id: string; measure: Measure; expectedRevision: number; expectedStatus: JournalEntry["status"]; confirmVote?: true;
+};
 const endpoint = "/api/preferences/journal";
 const labelVote = (vote: Vote) => vote === "yes" ? "Yes" : "No";
 const dateTime = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
 const timestamp = (value: string) => <time dateTime={value}>{dateTime.format(new Date(value))}</time>;
 
-async function requestJournal<T>(method: "GET" | "POST" | "PUT", body?: unknown, signal?: AbortSignal): Promise<T> {
+class JournalRequestError extends Error {
+  constructor(message: string, readonly status: number) { super(message); }
+}
+
+async function requestJournal<T>(method: "GET" | "POST" | "PUT" | "PATCH", body?: unknown, signal?: AbortSignal): Promise<T> {
   const response = await fetch(endpoint, {
     method,
     cache: "no-store",
@@ -27,12 +34,17 @@ async function requestJournal<T>(method: "GET" | "POST" | "PUT", body?: unknown,
   });
   if (!response.ok) {
     const data = await response.json().catch(() => null);
-    throw new Error(typeof data?.error === "string" ? data.error : "The local journal is unavailable. Please try again.");
+    throw new JournalRequestError(typeof data?.error === "string" ? data.error : "The local journal is unavailable. Please try again.", response.status);
   }
   return response.json() as Promise<T>;
 }
 
-function MeasureForm({ busy, onLock }: { busy: boolean; onLock: (measure: Measure) => void }) {
+function MeasureForm({ busy, entry, onSave, onCancel }: {
+  busy: boolean; entry?: JournalEntry; onSave: (measure: Measure, confirmed: boolean) => void; onCancel?: () => void;
+}) {
+  const id = entry ? "edit" : "measure";
+  const current = entry?.measure;
+  const submitLabel = entry?.status === "revealed" ? "Save correction" : entry ? "Save and lock prediction" : "Lock prediction";
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
@@ -49,7 +61,7 @@ function MeasureForm({ busy, onLock }: { busy: boolean; onLock: (measure: Measur
       field.reportValidity();
       return;
     }
-    onLock(measure);
+    onSave(measure, fields.get("confirmVote") === "on");
   }
 
   return (
@@ -59,45 +71,58 @@ function MeasureForm({ busy, onLock }: { busy: boolean; onLock: (measure: Measur
     }}>
       <fieldset disabled={busy} className="space-y-5">
         <div className="space-y-2">
-          <Label htmlFor="measure-title">Measure title</Label>
-          <Input id="measure-title" name="title" required maxLength={300} />
+          <Label htmlFor={id + "-title"}>Measure title</Label>
+          <Input id={id + "-title"} defaultValue={current?.title} name="title" required maxLength={300} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="measure-source">Source URL</Label>
-          <Input id="measure-source" type="url" name="sourceUrl" required maxLength={2048} pattern="https?://.+" title="Enter an http:// or https:// URL." placeholder="https://" />
+          <Label htmlFor={id + "-source"}>Source URL</Label>
+          <Input id={id + "-source"} defaultValue={current?.sourceUrl} type="url" name="sourceUrl" required maxLength={2048} pattern="https?://.+" title="Enter an http:// or https:// URL." placeholder="https://" />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="measure-text">Ballot text</Label>
-          <p id="text-help" className="text-sm text-muted-foreground">Paste the wording you will use to decide. Keep your own opinion for the voting step.</p>
-          <Textarea id="measure-text" name="text" aria-describedby="text-help" required maxLength={30000} className="min-h-32" />
+          <Label htmlFor={id + "-text"}>Ballot text</Label>
+          <p id={id + "-help"} className="text-sm text-muted-foreground">Use the wording of the measure itself. Record your own opinion in the voting step.</p>
+          <Textarea id={id + "-text"} defaultValue={current?.text} name="text" aria-describedby={id + "-help"} required maxLength={30000} className="min-h-32" />
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="measure-yes">What a yes vote means</Label>
-            <Textarea id="measure-yes" name="yesMeaning" required maxLength={3000} />
+            <Label htmlFor={id + "-yes"}>What a yes vote means</Label>
+            <Textarea id={id + "-yes"} defaultValue={current?.yesMeaning} name="yesMeaning" required maxLength={3000} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="measure-no">What a no vote means</Label>
-            <Textarea id="measure-no" name="noMeaning" required maxLength={3000} />
+            <Label htmlFor={id + "-no"}>What a no vote means</Label>
+            <Textarea id={id + "-no"} defaultValue={current?.noMeaning} name="noMeaning" required maxLength={3000} />
           </div>
         </div>
         <fieldset>
           <legend className="mb-2 text-sm font-medium">Had you seen this measure before this entry?</legend>
           <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
-            <label className="flex min-h-8 items-center gap-2"><input required type="radio" name="familiar" value="no" /> New to me</label>
-            <label className="flex min-h-8 items-center gap-2"><input required type="radio" name="familiar" value="yes" /> Familiar to me</label>
+            <label className="flex min-h-8 items-center gap-2"><input required type="radio" name="familiar" value="no" defaultChecked={current?.familiar === false} /> New to me</label>
+            <label className="flex min-h-8 items-center gap-2"><input required type="radio" name="familiar" value="yes" defaultChecked={current?.familiar === true} /> Familiar to me</label>
           </div>
         </fieldset>
-        <Button type="submit" size="lg"><LockKeyhole aria-hidden="true" />{busy ? "Locking prediction…" : "Lock prediction"}</Button>
+        {entry?.status === "revealed" && (
+          <div className="space-y-3 rounded-md border bg-muted/25 p-4">
+            <p className="text-sm font-semibold">Your recorded vote was {labelVote(entry.vote)}.</p>
+            <p className="whitespace-pre-wrap break-words text-sm">{entry.reasoning}</p>
+            <label className="flex items-start gap-2 text-sm font-medium">
+              <input type="checkbox" name="confirmVote" required className="mt-1" />
+              My recorded vote and reasoning still apply to the corrected measure.
+            </label>
+          </div>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <Button type="submit" size="lg">{entry?.status !== "revealed" && <LockKeyhole aria-hidden="true" />}{busy ? "Saving…" : submitLabel}</Button>
+          {onCancel && <Button type="button" size="lg" variant="outline" onClick={onCancel}>Cancel</Button>}
+        </div>
       </fieldset>
     </form>
   );
 }
 
-function BallotPacket({ entry }: { entry: JournalEntry }) {
-  const { measure } = entry;
+function BallotPacket({ measure, showTitle = false }: { measure: Measure; showTitle?: boolean }) {
   return (
     <div className="space-y-4 rounded-lg border bg-muted/25 p-4 sm:p-5">
+      {showTitle && <h4 className="break-words font-semibold">{measure.title}</h4>}
       <p className="whitespace-pre-wrap break-words leading-relaxed">{measure.text}</p>
       <dl className="grid gap-3 border-t pt-3 text-sm sm:grid-cols-2">
         <div><dt className="font-semibold">A yes vote</dt><dd className="mt-1 whitespace-pre-wrap break-words">{measure.yesMeaning}</dd></div>
@@ -126,7 +151,7 @@ function VoteForm({ entry, busy, onVote }: { entry: JournalEntry; busy: boolean;
       field.reportValidity();
       return;
     }
-    if (vote === "yes" || vote === "no") onVote({ id: entry.id, vote, reasoning });
+    if (vote === "yes" || vote === "no") onVote({ id: entry.id, expectedRevision: entry.revision ?? 0, vote, reasoning });
   }
 
   return (
@@ -153,12 +178,14 @@ function VoteForm({ entry, busy, onVote }: { entry: JournalEntry; busy: boolean;
 }
 
 function Comparison({ entry }: { entry: Revealed }) {
-  const { prediction } = entry;
+  const { prediction, forecastMeasure } = entry;
   const probability = new Intl.NumberFormat(undefined, { style: "percent", maximumFractionDigits: 1 }).format(prediction.probabilityYes);
   return (
     <div className="space-y-5">
       <section aria-label="Vote comparison" className="rounded-lg border border-foreground/20 p-4 sm:p-5">
-        <h3 className="font-semibold">{entry.vote === prediction.choice ? "The prediction matched your vote" : "You and the model chose differently"}</h3>
+        <h3 className="font-semibold">{forecastMeasure ? "Prediction for the original wording" :
+          entry.vote === prediction.choice ? "The prediction matched your vote" : "You and the model chose differently"}</h3>
+        {forecastMeasure && <p className="mt-2 text-sm text-muted-foreground">You corrected the measure after revealing this prediction. Future forecasts can use the corrected entry.</p>}
         <dl className="mt-4 grid grid-cols-2 gap-4 border-y py-4">
           <div><dt className="text-sm text-muted-foreground">Your vote</dt><dd className="text-3xl font-serif">{labelVote(entry.vote)}</dd></div>
           <div><dt className="text-sm text-muted-foreground">Locked prediction</dt><dd className="text-3xl font-serif">{labelVote(prediction.choice)}</dd></div>
@@ -169,7 +196,12 @@ function Comparison({ entry }: { entry: Revealed }) {
       <section><h3 className="font-semibold">Your reasoning</h3><p className="mt-2 whitespace-pre-wrap break-words">{entry.reasoning}</p></section>
       <section><h3 className="font-semibold">The model’s explanation</h3><p className="mt-2 whitespace-pre-wrap break-words">{prediction.explanation}</p></section>
       <p className="text-xs text-muted-foreground">Prediction locked {timestamp(entry.lockedAt)}. Vote recorded {timestamp(entry.votedAt)}.</p>
-      <details><summary className="cursor-pointer py-1 text-sm font-medium">Review the measure</summary><div className="mt-2"><BallotPacket entry={entry} /></div></details>
+      <details><summary className="cursor-pointer py-1 text-sm font-medium">{forecastMeasure ? "Review the corrected measure" : "Review the measure"}</summary>
+        <div className="mt-2"><BallotPacket measure={entry.measure} showTitle={!!forecastMeasure} /></div>
+      </details>
+      {forecastMeasure && <details><summary className="cursor-pointer py-1 text-sm font-medium">Review the wording used for the prediction</summary>
+        <div className="mt-2"><BallotPacket measure={forecastMeasure} showTitle /></div>
+      </details>}
     </div>
   );
 }
@@ -181,6 +213,9 @@ export function PersonalBallotJournal() {
   const [busy, setBusy] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [error, setError] = useState("");
+  const [conflict, setConflict] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [savedMessage, setSavedMessage] = useState("");
   const [draftVersion, setDraftVersion] = useState(0);
   const draftId = useRef<string | null>(null);
   const hasRequest = useRef(false);
@@ -217,7 +252,7 @@ export function PersonalBallotJournal() {
       detail.current?.focus();
       focusDetail.current = false;
     }
-  }, [selectedId, selected?.status]);
+  }, [selectedId, selected?.status, editing]);
 
   function navigate(id: string | null) {
     if (id === selectedId) {
@@ -227,23 +262,56 @@ export function PersonalBallotJournal() {
     focusDetail.current = true;
     setSelectedId(id);
     setError("");
+    setConflict(false);
+    setSavedMessage("");
   }
 
-  async function save(method: "POST" | "PUT", body: { id: string; measure: Measure } | VoteInput) {
+  function toggleEditor(open: boolean) {
+    focusDetail.current = true;
+    setEditing(open);
+    setError("");
+    setConflict(false);
+    setSavedMessage("");
+  }
+
+  async function reloadSavedEntry() {
+    if (hasRequest.current) return;
+    hasRequest.current = true;
+    setBusy(true);
+    try {
+      const response = await requestJournal<{ entries: JournalEntry[] }>("GET");
+      setEntries(response.entries);
+      toggleEditor(false);
+    } catch {
+      setError("The latest entry could not be loaded. Your inputs are still here.");
+    } finally {
+      hasRequest.current = false;
+      setBusy(false);
+    }
+  }
+
+  async function save(method: "POST" | "PUT" | "PATCH", body: { id: string; measure: Measure } | VoteInput | CorrectionInput) {
     if (hasRequest.current) return;
     hasRequest.current = true;
     setBusy(true);
     setError("");
+    setSavedMessage("");
+    setConflict(false);
     try {
       const { entry } = await requestJournal<{ entry: JournalEntry }>(method, body);
       setEntries((previous) => [...previous.filter((row) => row.id !== entry.id), entry]);
       focusDetail.current = true;
       setSelectedId(entry.id);
+      if (method === "PATCH") {
+        setEditing(false);
+        setSavedMessage(entry.status === "locked" ? "Correction saved. The prediction is locked." : "Correction saved.");
+      }
       if (method === "POST") {
         draftId.current = null;
         setDraftVersion((previous) => previous + 1);
       }
     } catch (cause) {
+      setConflict(cause instanceof JournalRequestError && cause.status === 409 && method !== "POST");
       setError(cause instanceof Error && !(cause instanceof TypeError)
         ? cause.message
         : "Could not reach the journal. Your inputs are still here. Check the local server and try again.");
@@ -267,14 +335,14 @@ export function PersonalBallotJournal() {
           <BookOpen aria-hidden="true" className="size-4 text-muted-foreground" />
           <h2 id="entries-heading" className="font-semibold">Your entries <span className="ml-1 text-sm font-normal text-muted-foreground">({entries.length})</span></h2>
         </div>
-        <Button variant="outline" disabled={busy} className="w-full justify-start bg-background" onClick={() => navigate(null)}><Plus aria-hidden="true" />New measure</Button>
+        <Button variant="outline" disabled={busy || editing} className="w-full justify-start bg-background" onClick={() => navigate(null)}><Plus aria-hidden="true" />New measure</Button>
         {entries.length === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">Lock your first prediction to create an entry.</p>
         ) : (
           <ul className="mt-3 divide-y">
             {ordered.map((entry) => (
               <li key={entry.id}>
-                <button type="button" disabled={busy} aria-current={selectedId === entry.id ? "true" : undefined}
+                <button type="button" disabled={busy || editing} aria-current={selectedId === entry.id ? "true" : undefined}
                   onClick={() => navigate(entry.id)}
                   className="block w-full rounded-sm px-2 py-3 text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring aria-current:bg-muted">
                   <span className="block break-words text-sm font-medium">{entry.measure.title}</span>
@@ -289,26 +357,43 @@ export function PersonalBallotJournal() {
         <div>
           {selected && <p className="mb-2 text-sm font-medium text-muted-foreground">{selected.status === "locked" ? "Prediction locked · Awaiting your vote" : "Completed entry"}</p>}
           <h2 id="journal-detail" ref={detail} tabIndex={-1} className="break-words font-serif text-3xl tracking-tight">
-            {selected ? selected.measure.title : "Add a measure"}
+            {editing ? "Edit measure" : selected ? selected.measure.title : "Add a measure"}
           </h2>
-          {selected?.status === "locked" && <p className="mt-2 text-sm text-muted-foreground">Locked {timestamp(selected.lockedAt)}. Record your decision to reveal the prediction.</p>}
+          {editing && <p className="mt-2 text-sm text-muted-foreground">{selected?.status === "locked"
+            ? "Saving a correction locks a prediction based on the updated measure. You can then record your vote."
+            : "The prediction you saw belongs to the original wording. Correct this entry if the same vote and reasoning still apply."}</p>}
+          {selected?.status === "locked" && !editing && <p className="mt-2 text-sm text-muted-foreground">Locked {timestamp(selected.lockedAt)}. Record your decision to reveal the prediction.</p>}
           {!selected && <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             The model uses the measure and your earlier completed entries. With no voting history, the default baseline starts at equal odds and breaks the tie.
             A configured local language model can make the prediction instead.
           </p>}
         </div>
-        {error && <p role="alert" className="rounded-md border border-destructive/40 p-3 text-sm text-destructive">{error}</p>}
+        {error && <div role="alert" className="space-y-3 rounded-md border border-destructive/40 p-3 text-sm">
+          <p className="text-destructive">{error}</p>
+          {conflict && <Button type="button" variant="outline" disabled={busy} onClick={() => void reloadSavedEntry()}>Discard draft and load saved entry</Button>}
+        </div>}
+        {savedMessage && <p role="status" className="text-sm font-medium">{savedMessage}</p>}
+        {selected && !editing && <Button type="button" variant="outline" disabled={busy} onClick={() => toggleEditor(true)}>
+          <Pencil aria-hidden="true" /> Edit measure
+        </Button>}
         <div hidden={!!selected}>
-          <MeasureForm key={draftVersion} busy={busy} onLock={(measure) => {
+          <MeasureForm key={draftVersion} busy={busy} onSave={(measure) => {
             draftId.current ??= crypto.randomUUID();
             void save("POST", { id: draftId.current, measure });
           }} />
         </div>
-        {selected?.status === "locked" && <>
-          <BallotPacket entry={selected} />
-          <VoteForm key={selected.id} entry={selected} busy={busy} onVote={(input) => void save("PUT", input)} />
-        </>}
-        {selected?.status === "revealed" && <Comparison entry={selected} />}
+        {selected && editing && (
+          <MeasureForm key={selected.id} entry={selected} busy={busy} onCancel={() => toggleEditor(false)} onSave={(measure, confirmed) =>
+            void save("PATCH", {
+              id: selected.id, measure, expectedRevision: selected.revision ?? 0, expectedStatus: selected.status,
+              ...(confirmed ? { confirmVote: true } : {}),
+            })} />
+        )}
+        {selected?.status === "locked" && <div hidden={editing} className="space-y-5">
+          <BallotPacket measure={selected.measure} />
+          <VoteForm key={selected.id + "-" + (selected.revision ?? 0)} entry={selected} busy={busy} onVote={(input) => void save("PUT", input)} />
+        </div>}
+        {selected?.status === "revealed" && !editing && <Comparison entry={selected} />}
       </section>
     </div>
   );

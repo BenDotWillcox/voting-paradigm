@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { isJournalLoopbackHost, journalRequestAllowed } from "@/lib/personal-journal-local";
-import { JournalStoreError, listEntries, lockEntry, recordVote } from "@/lib/personal-journal-store";
+import { JournalStoreError, correctEntry, listEntries, lockEntry, recordVote } from "@/lib/personal-journal-store";
 import type { JournalEntry, JournalMeasure, JournalPrediction } from "@/lib/personal-journal-types";
 
 export const runtime = "nodejs";
@@ -18,7 +18,13 @@ const measureSchema = z.object({
   familiar: z.boolean(),
 }).strict();
 const lockRequest = z.object({ id: z.string().uuid(), measure: measureSchema }).strict();
-const voteRequest = z.object({ id: z.string().uuid(), vote, reasoning: nonblank(10000) }).strict();
+const revision = z.number().int().nonnegative().safe();
+const voteRequest = z.object({ id: z.string().uuid(), vote, reasoning: nonblank(10000), expectedRevision: revision.default(0) }).strict();
+const correctionRequest = lockRequest.extend({
+  expectedRevision: revision,
+  expectedStatus: z.enum(["locked", "revealed"]),
+  confirmVote: z.literal(true).optional(),
+});
 const predictionSchema = z.object({
   choice: vote,
   probabilityYes: z.number().min(0).max(1),
@@ -105,8 +111,24 @@ export async function PUT(request: Request) {
   try {
     const input = voteRequest.safeParse(await requestData(request));
     if (!input.success) return reply({ error: "Select Yes or No and enter your reasoning before revealing the prediction." }, 400);
-    const { id, vote: choice, reasoning } = input.data;
-    return reply({ entry: await recordVote(id, choice, reasoning) });
+    const { id, vote: choice, reasoning, expectedRevision } = input.data;
+    return reply({ entry: await recordVote(id, choice, reasoning, expectedRevision) });
+  } catch (error) {
+    return failed(error);
+  }
+}
+
+export async function PATCH(request: Request) {
+  if (!journalRequestAllowed(request)) return reply({ error: "Journal unavailable." }, 404);
+  try {
+    const input = correctionRequest.safeParse(await requestData(request));
+    if (!input.success) return reply({ error: "Check the corrected measure fields and try again." }, 400);
+    const { id, measure, expectedRevision, expectedStatus, confirmVote } = input.data;
+    if (expectedStatus === "revealed" && !confirmVote) {
+      return reply({ error: "Confirm that your saved vote and reasoning apply to the corrected measure." }, 400);
+    }
+    const entry = await correctEntry(id, expectedRevision, expectedStatus, measure, (packet, history) => forecast(id, packet, history));
+    return reply({ entry });
   } catch (error) {
     return failed(error);
   }

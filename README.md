@@ -47,6 +47,12 @@ in `eval/private_runs/personal-journal/`. To use a different private directory
 or ports, set `PERSONAL_JOURNAL_DIR`, `PERSONAL_JOURNAL_WEB_PORT`, or
 `PERSONAL_JOURNAL_API_PORT` before starting.
 
+To fix a transcription error, select the entry and choose **Edit measure**.
+Before you vote, saving a correction locks a fresh forecast on the revised wording.
+After you vote, confirm that your recorded vote and reasoning still apply. The
+journal uses the corrected wording for future forecasts and keeps the original
+forecast with the wording it evaluated.
+
 The default local statistical baseline uses previous completed choices and
 the wording of the outcomes. On a first ballot it assigns equal probabilities
 and breaks the tie deterministically. An optional local LLM can instead read

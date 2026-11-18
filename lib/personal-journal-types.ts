@@ -21,6 +21,8 @@ interface BallotRecord {
   id: string;
   measure: JournalMeasure;
   lockedAt: string;
+  /** An original, uncorrected packet has revision zero. */
+  revision?: number;
 }
 
 export type JournalEntry =
@@ -31,4 +33,6 @@ export type JournalEntry =
       reasoning: string;
       votedAt: string;
       prediction: JournalPrediction;
+      /** Actual packet used by the locked prediction if corrected after voting. */
+      forecastMeasure?: JournalMeasure;
     });
