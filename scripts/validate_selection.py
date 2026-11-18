@@ -102,6 +102,46 @@ def _expected(same: np.ndarray, tied: np.ndarray) -> np.ndarray:
     return np.asarray((same & tied).sum(axis=1) / tied.sum(axis=1))
 
 
+def winner_probabilities(choices: np.ndarray) -> np.ndarray:
+    """
+    Exact winner probabilities of a three-candidate plurality election.
+
+    `choices` is [voter, candidate]: the candidates each voter is tied
+    among (one True for a decided voter). Each candidate also votes for
+    themself. A tied voter picks one of their candidates uniformly at
+    random, and a tie for most votes is broken uniformly at random, the
+    expectation of a randomized integer-ballot election (third review,
+    2026-11-18: splitting tied ballots fractionally and then taking the
+    plurality is a different rule and can pick a different winner).
+    """
+    if choices.ndim != 2 or choices.shape[1] != 3 or not choices.any(axis=1).all():
+        raise ValueError("each voter needs at least one of three candidates")
+    sizes = choices.sum(axis=1)
+    base = np.ones(3, dtype=np.int64) + choices[sizes == 1].sum(axis=0)
+    tied = choices[sizes > 1]
+    n = tied.shape[0]
+    # dist[a, b]: probability that tied voters gave a to the first
+    # candidate and b to the second (the rest to the third)
+    dist = np.zeros((n + 1, n + 1))
+    dist[0, 0] = 1.0
+    for row in tied:
+        k = int(row.sum())
+        new = np.zeros_like(dist)
+        if row[0]:
+            new[1:, :] += dist[:-1, :] / k
+        if row[1]:
+            new[:, 1:] += dist[:, :-1] / k
+        if row[2]:
+            new += dist / k
+        dist = new
+    a, b = np.meshgrid(np.arange(n + 1), np.arange(n + 1), indexing="ij")
+    valid = a + b <= n
+    totals = np.stack([base[0] + a, base[1] + b, base[2] + n - a - b])
+    top = totals == totals.max(axis=0)
+    share = np.where(valid, dist, 0.0) / top.sum(axis=0)
+    return np.asarray([(share * top[c]).sum() for c in range(3)])
+
+
 def _city(args: tuple[np.ndarray, np.ndarray, list[np.ndarray], int]) -> dict[str, np.ndarray]:
     """Each method's mean agreement over the scored residents, per held-out item."""
     votes, item_topic, slates, topics = args
@@ -135,18 +175,17 @@ def _city(args: tuple[np.ndarray, np.ndarray, list[np.ndarray], int]) -> dict[st
             "topic_pooled": _expected(same, _tied_best(pooled, others)),
         }
         # The matched pair: three random residents per district. A
-        # candidate prefers themself; a tied resident splits their ballot.
+        # candidate votes for themself; a tied resident picks one of their
+        # tied candidates at random, and the election is scored by its
+        # exact winner probabilities.
         own_tied = _tied_best(whole, slate_pool)
         own = np.full(people, np.nan)
         rep = np.full(people, np.nan)
         for d, slate in enumerate(slates):
             members = np.flatnonzero((district == d) & scored)
-            share = own_tied[np.ix_(members, slate)].astype(float)
-            share /= share.sum(axis=1, keepdims=True)
-            tally = share.sum(axis=0) + 1.0
-            winners = slate[tally == tally.max()]
+            win = winner_probabilities(own_tied[np.ix_(members, slate)])
             own[members] = _expected(same[members], own_tied[members])
-            rep[members] = same[np.ix_(members, winners)].mean(axis=1)
+            rep[members] = same[np.ix_(members, slate)].astype(float) @ win
         result["own_of_three"] = own
         result["representative"] = rep
         for method in METHODS:

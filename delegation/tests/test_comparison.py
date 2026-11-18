@@ -701,3 +701,83 @@ def test_overhead_rule_takes_the_lowest_overhead_when_infeasible():
     assert not fixed.feasible
     # Delegating forms the pair loop (overhead 1); either way overhead is 1
     assert fixed.history_overhead == pytest.approx(1.0)
+
+
+# ---------------------------------------------------------------------------
+# Third review (2026-11-18)
+# ---------------------------------------------------------------------------
+
+
+def test_resolver_attendance_reads_the_resolvers_own_cast():
+    from delegation.comparison import (
+        PRIMARY_TURNOUT,
+        district_choice_voters,
+        record_preferences,
+    )
+    from delegation.comparison.arrangements import _record_election
+
+    pop = simulate_population(POOL)
+    election = elect_representatives(pop)
+    outcome = district_choice_voters(pop, election, PRIMARY_TURNOUT)
+    people, questions = outcome.resolver.shape
+    columns = np.broadcast_to(np.arange(questions), (people, questions))
+    others = outcome.resolver != np.arange(people)[:, None]
+    holds = np.zeros((people, questions), dtype=bool)
+    holds[outcome.resolver[others], columns[others]] = True
+    # Recompute each person's own cast independently of the outcome
+    rate = np.where(holds, np.maximum(pop.turnout[:, None], 0.96), pop.turnout[:, None])
+    cast = pop.evaluation.turnout_draw < rate
+    expected = cast[holds].mean()
+    m = measure(pop, outcome, full_turnout(pop))
+    assert m.resolver_attendance == pytest.approx(expected)
+    # The case that broke the old reading: a candidate who skipped the
+    # election holds followers while their own vote goes to the winner
+    preferred = record_preferences(pop, election)
+    _, voted = _record_election(pop, election, preferred)
+    assigned_away = holds & ~outcome.kept
+    assert assigned_away.any()
+    assert not voted[np.flatnonzero(assigned_away.any(axis=1))].any()
+    # Their own counted ballot is the winner's, which can differ from what
+    # they cast for their followers
+    own_none = outcome.counted == NOT_CAST
+    assert (own_none[assigned_away] != ~cast[assigned_away]).any()
+    # They decide those questions, so they count toward overhead
+    assert m.overhead == pytest.approx((outcome.kept | holds).mean())
+    assert m.overhead > outcome.kept.mean()
+
+
+def test_overhead_is_self_resolution_wherever_holders_resolve_themselves():
+    result = compare(simulate_population(POOL))
+    pop = simulate_population(POOL)
+    from delegation.comparison import liquid_at_overhead, proxy_at_overhead
+
+    for outcome, _ in (liquid_at_overhead(pop), proxy_at_overhead(pop)):
+        assert result.measures[outcome.arrangement].overhead == pytest.approx(outcome.kept.mean())
+
+
+def test_platform_and_record_elections_share_tie_breaks():
+    from delegation.comparison import representative_by_record
+
+    # One candidate per district: both elections are uncontested
+    pop = simulate_population(replace(SMALL, candidates_per_district=1))
+    election = elect_representatives(pop)
+    by_record = representative_by_record(pop, election)
+    assert np.array_equal(by_record.resolver[:, 0], election.elected[pop.district])
+    # With nobody voting, three candidates tie 1-1-1 on their own ballots,
+    # and the two elections must resolve that tie identically
+    base = simulate_population(SMALL)
+    silent = replace(base, turnout=np.zeros_like(base.turnout))
+    platform = elect_representatives(silent)
+    record = representative_by_record(silent, platform)
+    assert np.array_equal(record.resolver[:, 0], platform.elected[silent.district])
+
+
+def test_full_overhead_budget_selects_acceptance_one(small):
+    from delegation.comparison import acceptance_for_overhead
+
+    fixed = acceptance_for_overhead(small, ChoicePolicy(), max_overhead=1.0)
+    assert fixed.acceptance == 1.0
+    assert fixed.history_overhead == pytest.approx(1.0)
+    assert fixed.feasible
+    # The protocol's 10% level is unaffected
+    assert acceptance_for_overhead(small).acceptance < 1.0

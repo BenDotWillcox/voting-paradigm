@@ -10,10 +10,14 @@ a fidelity difference arose.
              the three shares sum to one and fidelity is the first. A voter
              whose resolver never voted and one whose resolver voted against
              them both lose fidelity, for different reasons.
-  Overhead   the share of questions a voter decides themself, whether or
-             not they then vote, counted the same way in every arrangement:
-             whoever resolves a question for themself, an elected resident
-             included. Delegations maintained are reported beside it.
+  Overhead   the share of questions a person decides, whether or not they
+             then vote, counted the same way in every arrangement: they
+             resolve their own vote, or anyone else's vote depends on their
+             ballot (an elected resident included). The two coincide except
+             for a candidate who decides for followers while their own vote
+             goes to an election winner (`district_choice_voters`; third
+             review, 2026-11-18). Delegations maintained are reported beside
+             it.
   Lifecycle  overhead over the history period and the evaluation period
              together, for the arrangements that need a public record
              (everyone decides every history question directly).
@@ -161,9 +165,9 @@ def measure(population: Population, outcome: Outcome, reference: Outcome) -> Mea
     holds = np.zeros((people, questions), dtype=np.bool_)
     others = outcome.resolver != np.arange(people)[:, None]
     holds[outcome.resolver[others], columns[others]] = True
-    # A resolver holding others' votes voted when their own counted ballot
-    # (they resolve for themself) is not empty
-    resolver_voted = holds & ~none
+    # A resolver holding others' votes voted when they cast a ballot
+    # themself; their own counted ballot may be someone else's
+    resolver_voted = holds & outcome.cast
     largest = np.array(
         [np.bincount(outcome.resolver[:, q], minlength=people).max() for q in range(questions)],
         dtype=np.float64,
@@ -171,7 +175,9 @@ def measure(population: Population, outcome: Outcome, reference: Outcome) -> Mea
     agree = [a == b for a, b in zip(outcome.winners, reference.winners, strict=True)]
     per_voter = match.mean(axis=1)
     below = per_voter < 0.5
-    overhead = float(outcome.kept.mean())
+    # A person decides a question when they resolve their own vote or hold
+    # anyone else's
+    overhead = float((outcome.kept | holds).mean())
     history = len(population.history)
     if outcome.arrangement in NEEDS_RECORD:
         lifecycle = (history + overhead * questions) / (history + questions)

@@ -102,9 +102,11 @@ def compare(
     and the proxy each calibrated by the overhead rule on history questions
     only. Outcome agreement is measured against the full-turnout reference.
     The three-candidate chain representative_by_record ->
-    district_choice_voters -> district_choice -> proxy -> liquid changes one
-    thing at each step (sharing, choice by non-voters, a wider pool, topic
-    delegates), so its contrasts sum to liquid minus representative_by_record.
+    district_choice_voters -> district_choice -> proxy -> liquid has
+    contrasts that sum to liquid minus representative_by_record: sharing,
+    choice by non-voters, the city-wide proxy (a combined effect of a wider
+    pool, onward delegation, threshold keeping and, under ordinary turnout,
+    the resolver floor) and topic delegates.
     """
     base = base or ChoicePolicy()
     reference = full_turnout(population)

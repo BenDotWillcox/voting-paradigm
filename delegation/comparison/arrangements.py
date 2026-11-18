@@ -107,6 +107,10 @@ class Outcome:
     resolver: IntArray
     # Whether the voter decided the question themself
     kept: BoolArray
+    # [person, question]: whether the person cast a ballot themself. A
+    # resolver's attendance is read from this, not from their own counted
+    # ballot, which someone else may supply (third review, 2026-11-18)
+    cast: BoolArray
     # The winning option of each question
     winners: tuple[CandidateId, ...]
     # How many delegations each voter maintains
@@ -182,11 +186,14 @@ ORDINARY_RESOLVER_TURNOUT = TurnoutPolicy(resolver_turnout=0.0)
 PILOT_TURNOUT = TurnoutPolicy(office_rate=1.0, resolver_turnout=0.0)
 
 
-def _counted_from(population: Population, resolver: IntArray, floor: float) -> VoteArray:
+def _counted_from(
+    population: Population, resolver: IntArray, floor: float
+) -> tuple[VoteArray, BoolArray]:
     """
     Each voter's counted ballot: their resolver's sincere ballot, if the
     resolver votes. A resolver holding anyone else's vote on a question
-    votes at the larger of their own rate and `floor`.
+    votes at the larger of their own rate and `floor`. Also whether each
+    person cast a ballot themself.
     """
     questions = population.evaluation
     people, count = questions.sincere.shape
@@ -197,9 +204,9 @@ def _counted_from(population: Population, resolver: IntArray, floor: float) -> V
     others = resolver != voters
     holds[resolver[others], np.broadcast_to(columns, resolver.shape)[others]] = True
     rate = np.where(holds, np.maximum(population.turnout[:, None], floor), population.turnout[:, None])
-    casts = questions.turnout_draw < rate
+    casts = np.asarray(questions.turnout_draw < rate, dtype=np.bool_)
     own = np.where(casts, questions.sincere, NOT_CAST)
-    return np.asarray(own[resolver, columns], dtype=np.int8)
+    return np.asarray(own[resolver, columns], dtype=np.int8), casts
 
 
 def full_turnout(population: Population) -> Outcome:
@@ -219,6 +226,7 @@ def full_turnout(population: Population) -> Outcome:
         counted=counted,
         resolver=resolver,
         kept=np.ones((people, questions), dtype=np.bool_),
+        cast=np.ones((people, questions), dtype=np.bool_),
         winners=_winners(population, counted),
         delegations=np.zeros(people, dtype=np.int64),
         looped=_no_loops(people, questions)[0],
@@ -239,6 +247,7 @@ def direct(population: Population) -> Outcome:
         counted=counted,
         resolver=resolver,
         kept=np.ones((people, questions), dtype=np.bool_),
+        cast=np.asarray(population.evaluation.casts, dtype=np.bool_),
         winners=_winners(population, counted),
         delegations=np.zeros(people, dtype=np.int64),
         looped=_no_loops(people, questions)[0],
@@ -315,12 +324,13 @@ def representative(
     people, questions = population.evaluation.sincere.shape
     rep = election.elected[population.district]
     resolver = np.repeat(rep[:, None], questions, axis=1)
-    counted = _counted_from(population, resolver, turnout.office_rate)
+    counted, cast = _counted_from(population, resolver, turnout.office_rate)
     voters = np.arange(people, dtype=np.int64)[:, None]
     return Outcome(
         arrangement=REPRESENTATIVE,
         counted=counted,
         resolver=resolver,
+        cast=cast,
         # The elected resident decides every question themself; everyone
         # else decides none (the same accounting as the delegated arms)
         kept=np.asarray(resolver == voters, dtype=np.bool_),
@@ -372,13 +382,14 @@ def _matched_outcome(
     """
     people, questions = population.evaluation.sincere.shape
     resolver = np.repeat(resolver_of_voter[:, None], questions, axis=1)
-    counted = _counted_from(population, resolver, floor)
+    counted, cast = _counted_from(population, resolver, floor)
     voters = np.arange(people, dtype=np.int64)[:, None]
     looped, loops = _no_loops(people, questions)
     return Outcome(
         arrangement=arrangement,
         counted=counted,
         resolver=resolver,
+        cast=cast,
         kept=np.asarray(resolver == voters, dtype=np.bool_),
         winners=_winners(population, counted),
         delegations=(assigned & (resolver_of_voter != np.arange(people))).astype(np.int64),
@@ -408,7 +419,10 @@ def _record_election(
         result = resolve_plurality(
             [Candidate(population.ids[c], population.ids[c]) for c in drawn],
             ballots,
-            random_tiebreak(_seed(config.seed, "record election", district)),
+            # The same tie-break draw as the platform election, so the
+            # paired "platform against record" contrast cannot differ only
+            # because identical ballots met different tie-breaks
+            random_tiebreak(_seed(config.seed, "election", district)),
         )
         winner_of[district] = population.index_of(result.winners[0])
     return winner_of, voted
@@ -634,12 +648,13 @@ def _delegated_outcome(
     floor: float,
 ) -> Outcome:
     resolver, looped, loops = _resolve_by_category(choice, category_of_question)
-    counted = _counted_from(population, resolver, floor)
+    counted, cast = _counted_from(population, resolver, floor)
     voters = np.arange(population.size, dtype=np.int64)[:, None]
     return Outcome(
         arrangement=arrangement,
         counted=counted,
         resolver=resolver,
+        cast=cast,
         kept=np.asarray(resolver == voters, dtype=np.bool_),
         winners=_winners(population, counted),
         delegations=np.asarray(choice.held().sum(axis=1), dtype=np.int64),
@@ -792,7 +807,9 @@ def _overhead_rule(
             rate[i] = float((resolve_functional(delegate_of) == voters).mean())
         steps.append(values)
         rates.append(rate)
-    levels = np.unique(np.concatenate([[0.0], *steps]))
+    # 0 and 1 are both admissible levels; 1 keeps everything (no lower
+    # bound reaches it), the highest possible threshold
+    levels = np.unique(np.concatenate([[0.0, 1.0], *steps]))
 
     def overhead_at(level: float) -> float:
         total = 0.0

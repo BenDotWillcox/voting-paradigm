@@ -70,8 +70,10 @@ dated and justified here, never made after looking at evaluation results.
   population and the same turnout draws, and the estimate is the mean of
   the paired city differences with a 95% t-interval over seeds.
 - **Decision rule (revised 2026-11-17; overhead gate and separate size
-  categories added 2026-11-18 after the second review).** Applied in this
-  order:
+  categories added 2026-11-18 after the second review; conflicting
+  directions settled after the third).** Applied in this order, and
+  implemented in `delegation/comparison/protocol.py` (`h1_verdict`,
+  `h1_size`) so the verdict is read by code, not by eye:
   1. *The overhead condition.* The 10% cap applies per city: a city meets
      it when liquid's realised evaluation overhead is at most 10% (in the
      primary design this equals the history overhead the configuration was
@@ -84,9 +86,17 @@ dated and justified here, never made after looking at evaluation results.
      wholly above zero; *evidence against H1 in the modelled population*
      when wholly below zero; *inconclusive about the sign* when it includes
      zero. (The earlier wording, "falsified if the interval includes zero",
-     was wrong.) The same interval over only the cities that meet the cap
-     is reported beside it; if the two give different directions, the
-     weaker one is the verdict.
+     was wrong.) The interval over only the cities that meet the cap is
+     computed beside it, and a direction stands only when the two agree.
+     Any disagreement is *inconclusive about the sign*: one directional
+     and one including zero, and also opposite signs (a positive all-city
+     interval carried by a few cities over the cap, say, with a negative
+     interval over the rest). The interval over cities that meet the cap
+     is an ordinary t-interval over those cities: the two-stage rule below
+     fixed N on all cities, and the first stage may hold fewer than 20
+     cities that meet the cap, so its first-stage spread and degrees of
+     freedom do not carry over. Its coverage is therefore approximate; it
+     serves only this agreement check.
   3. *Size*, reported separately from direction, with δ = 0.02 (two
      fidelity points, about three more matching ballots per voter per 160
      evaluation questions): a gain of at least δ is *established* when the
@@ -95,12 +105,14 @@ dated and justified here, never made after looking at evaluation results.
 - **Precision and seed count (revised 2026-11-18).** Stopping when an
   ordinary t-interval looks narrow enough can lower its coverage, because
   the variance that triggers the stop is the one used in the interval. The
-  seed count is therefore fixed by Stein's two-stage procedure:
-  1. Run the first n₀ = 20 city seeds. From them compute only the standard
-     deviation s₀ of the primary outcome (paired differences, primary
-     turnout condition); the runner prints s₀ and N, not the estimate.
-  2. N = max(20, ⌈(t₀.₉₇₅,₁₉ · s₀ / 0.005)²⌉), capped at 200. Run seeds 21
-     to N.
+  seed count is therefore fixed by Stein's two-stage procedure
+  (`protocol.stein_city_count`, `protocol.stein_interval`):
+  1. Run the first n₀ = 20 primary cities. From them compute only the
+     standard deviation s₀ of the primary outcome (paired differences,
+     primary turnout condition); the runner prints s₀ and N, not the
+     estimate.
+  2. N = max(20, ⌈(t₀.₉₇₅,₁₉ · s₀ / 0.005)²⌉), capped at 200. Run primary
+     cities 21 to N.
   3. The interval is x̄_N ± t₀.₉₇₅,₁₉ · s₀ / √N. Because N depends only on
      s₀, which is independent of the first-stage mean, this has exact 95%
      coverage for normally distributed city differences. Every other
@@ -114,12 +126,26 @@ dated and justified here, never made after looking at evaluation results.
   public records and future agendas is carried by the sweeps, not by the
   seed count. No calibration seeds are drawn: the first 20 are part of the
   sample.
+
+  **Primary seeds (pinned 2026-11-18, third review).** "First 20" and "21
+  to N" are positions in a fixed sequence in its own namespace, never
+  literal seed IDs: the primary city at position i has seed
+  1,000,000,000 + i (`protocol.primary_city_seeds`). Development used
+  seeds 1 to 3 (inspected pilot cities), 4 and 5 (history diagnostics),
+  the configuration defaults 20261114 and 20261116, and small test-fixture
+  seeds; none lies in the primary range, which a test checks. Anyone can
+  replay the run from the sequence.
 - **Comparably low overhead.** Liquid's evaluation overhead is at most 10%
   of questions decided by the voter themself. The proxy is held to the same
   bound so the two are compared at matched overhead. Overhead is counted
-  the same way everywhere: whoever resolves a question for themself,
-  including an elected resident (the representative's overhead is then
-  about 1% with districts of 100).
+  the same way everywhere: a person decides a question when they resolve
+  their own vote or anyone else's vote depends on their ballot, an elected
+  resident included (the representative's overhead is then about 1% with
+  districts of 100). In liquid, the proxy and every arm but one, anyone
+  holding others' votes also resolves their own, so this is the share of
+  questions voters keep; the exception is a candidate in the
+  election-voters arm who decides for followers while their own vote goes
+  to the winner (revised 2026-11-18, third review).
 - **Fixing the configuration without evaluation data** (`compare`, the
   protocol's entry point, through `acceptance_for_overhead`; rewritten
   2026-11-17 after the review found a bug). The acceptance level is the
@@ -169,24 +195,31 @@ dated and justified here, never made after looking at evaluation results.
 Each contrast is a paired city difference with its interval, under both
 turnout conditions. They explain H1; none is a second hypothesis. The
 chain representative-by-record → own-of-three among election voters →
-own-of-three for everyone → proxy → liquid changes one thing at each step,
-so its four contrasts sum exactly to liquid minus representative-by-record;
-H1's difference is that sum minus "platform against record".
+own-of-three for everyone → proxy → liquid has four contrasts that sum
+exactly to liquid minus representative-by-record; H1's difference is that
+sum minus "platform against record". Three steps change one thing each;
+the city-wide proxy step changes several at once and is reported as a
+combined effect (third review, 2026-11-18).
 
 | Contrast | Arms (`compare` names) | What changes |
 |---|---|---|
 | Cost of sharing | `district_choice_voters` minus `representative_by_record` | The same three district candidates, records, turnout and participants. Residents who vote in the record election either share its winner or each assign their ballot to their own preferred one of the three; residents who do not vote get the winner in both. Only sharing changes. |
 | Choice by non-voters | `district_choice` minus `district_choice_voters` | Residents who would not vote in the election also choose their own one of the three, instead of receiving the winner. (The second review found the earlier pair mixed this into the cost of sharing: the election counted only voters while own-of-three counted everyone.) |
-| Platform against record | `representative` minus `representative_by_record` | How the shared representative is chosen: closest latent platform, or residents' record-based preference. |
-| Broader choice | `proxy` minus `district_choice` | Choosing from 499 residents city-wide, who may delegate onward, instead of three local ones. |
+| Platform against record | `representative` minus `representative_by_record` | How the shared representative is chosen: closest latent platform, or residents' record-based preference. Both elections use the same tie-break draw per district, so identical ballots cannot produce different winners. |
+| City-wide proxy, combined | `proxy` minus `district_choice` | Several things at once: a pool of 499 residents city-wide instead of three local candidates; onward delegation (proxies follow their own proxies); keeping by acceptance threshold instead of always assigning; and, in the ordinary-turnout condition, resolvers voting at ordinary turnout instead of the office-holder floor. It is reported as their combined effect and says nothing about how much a wider pool alone buys; no matched arm isolates pool size, because no claim rests on it. |
 | Topic specialisation | `liquid` minus `proxy` | Eight topic delegates instead of one, both at matched overhead of at most 10%. |
 
-**Overhead condition for topic specialisation.** The contrast compares two
-arms at matched overhead, so it is assessed only if both arms meet the 10%
-cap in at least 95% of cities (decision rule, step 1, applied to each).
-Otherwise it is *not assessable at matched overhead*, and both arms'
-realised overheads are reported beside the difference. The estimate over
-cities where both arms meet the cap is reported beside the all-city one.
+**Overhead condition for topic specialisation (revised 2026-11-18, third
+review).** The contrast is paired by city, so its claim needs comparable
+overhead within the same cities. It is assessed only if both arms meet the
+10% cap together in at least 95% of cities, the per-city intersection
+(`protocol.joint_share`); gating each arm separately would let both pass
+at 19 of 20 while only 18 cities meet both caps. The two marginal rates
+are reported beside the joint one. Otherwise the contrast is *not
+assessable at matched overhead*, and both arms' realised overheads are
+reported beside the difference. The interval over cities where both arms
+meet the cap is reported beside the all-city one, and the direction rule
+of step 2 applies to the pair.
 
 **Margin for topic specialisation.** Maintaining eight delegations is worth
 it if liquid beats the proxy by at least Δ = 0.02. Declared before the
@@ -225,7 +258,10 @@ For every arrangement and condition:
   proxy). A loop member and a voluntary keeper have the same resolver, so
   loop membership is recorded during resolution.
 - **Resolver attendance:** the share of questions on which a person holding
-  others' votes actually voted.
+  others' votes actually voted, read from their own cast ballot (revised
+  2026-11-18: reading it from their own counted ballot was wrong when
+  someone else supplies that ballot, as for a candidate whose own vote
+  goes to the election winner).
 - **Overhead, lifecycle overhead and delegations maintained.**
 
 ### What everything else is
@@ -454,8 +490,9 @@ Each arrangement decides whose ballot counts for a voter on a question.
 The personal proxy and the three-candidate arms are not real proposals.
 They are the steps between representation and liquid delegation that the
 declared decomposition (research protocol) uses to say why H1 holds or
-fails: sharing, choice by non-voters, a wider pool and topic delegates
-each change at exactly one step. (The first design read the gap from
+fails: sharing, choice by non-voters and topic delegates each change at
+exactly one step, and the step to the city-wide proxy is a combined
+effect of several changes. (The first design read the gap from
 representative to proxy as dilution alone; that step changed the
 candidate pool, the selection rule, the election and onward delegation at
 once.)
@@ -891,7 +928,8 @@ response model.**
     two would need a model or a controlled intervention on attendance. The
     strength is not presented as evidence about ideological bundling.
   - **Real-data selection test (development evidence, 2026-11-17; rerun
-    2026-11-18 after the second review; `scripts/validate_selection.py`).**
+    2026-11-18 after the second and third reviews;
+    `scripts/validate_selection.py`).**
     The simulation's mechanism is that someone chosen for agreeing with
     you on recorded questions agrees with you on the next one. This was
     checked on real CES 2024 respondents rather than the fitted model: 20
@@ -903,9 +941,14 @@ response model.**
     *Corrections in the rerun.* The first run broke ties by row index, and
     rows were grouped by district: the topic-only arm averaged 99 tied
     candidates and sent 96% of its choices to the first district. Every
-    choice now scores the average agreement over its tied best candidates
-    (a resident tied among the three candidates splits their election
-    ballot). Every method is now scored on the same 485 residents who are
+    choice now scores the average agreement over its tied best candidates.
+    In the election, a resident tied among the three picks one of them at
+    random and plurality ties are broken at random, and the election is
+    scored by its exact winner probabilities (third review: an earlier
+    rerun split tied ballots fractionally and took the plurality, a
+    different rule; it gave representative agreement 0.60510 against
+    0.60539 exactly, and differed by up to 5 points on one city and
+    item). Every method is now scored on the same 485 residents who are
     not one of the three candidates; the first run compared means over 485
     and 495 people. Intervals now respect that the same 36 items recur in
     every city: one over cities (average within each city, then a
@@ -917,7 +960,7 @@ response model.**
     | Choice | Mean agreement | 95% over cities | 95% two-way |
     |---|---|---|---|
     | Random resident | 0.576 | 0.573–0.580 | 0.544–0.608 |
-    | Representative, plurality of record preferences among three | 0.605 | 0.595–0.615 | 0.569–0.641 |
+    | Representative, plurality of record preferences among three | 0.605 | 0.596–0.615 | 0.570–0.641 |
     | Own preferred of the same three | 0.664 | 0.652–0.675 | 0.633–0.694 |
     | Topic delegate, that topic's items only | 0.700 | 0.695–0.705 | 0.667–0.733 |
     | Personal proxy, city-wide | 0.738 | 0.733–0.744 | 0.710–0.767 |
@@ -925,8 +968,8 @@ response model.**
 
     | Paired contrast | Mean | 95% over cities | 95% two-way |
     |---|---|---|---|
-    | Own-of-three minus representative (sharing) | +0.058 | +0.050 to +0.067 | +0.041 to +0.076 |
-    | Proxy minus own-of-three (broader choice) | +0.075 | +0.065 to +0.085 | +0.061 to +0.089 |
+    | Own-of-three minus representative (sharing) | +0.058 | +0.049 to +0.067 | +0.041 to +0.075 |
+    | Proxy minus own-of-three (wider pool; one hop, no threshold, no turnout here) | +0.075 | +0.065 to +0.085 | +0.061 to +0.089 |
     | Pooled topic delegate minus proxy (specialisation) | +0.0075 | +0.006 to +0.009 | +0.004 to +0.011 |
     | Unpooled topic delegate minus proxy | −0.039 | −0.042 to −0.035 | −0.053 to −0.024 |
 
