@@ -198,3 +198,110 @@ test("a vote can beat a slow relock without allowing a post-vote reforecast", as
   assert.deepEqual(await store.listEntries(), [revealed]);
   assert.deepEqual(revealed.prediction, prediction(0));
 });
+
+const question = { trigger: "miss", kind: "weight", prompt: "Which condition determined your decision on these repairs?" };
+const ask = async () => question;
+const frozen = async (_, history) => prediction(history.length);
+
+async function completed(title) {
+  const id = randomUUID();
+  await store.lockEntry(id, { ...measure, title }, frozen);
+  await store.recordVote(id, "no", "I want an independent inspection first.");
+  return id;
+}
+
+test("follow-up stays post-vote, freezes once, and one durable answer informs only future forecasts", async t => {
+  const dir = await privateDirectory(t);
+  const id = randomUUID();
+  const locked = await store.lockEntry(id, measure, frozen);
+  const never = () => assert.fail("Unexpected policy call");
+  await assert.rejects(store.suggestFollowUp(id, 0, never), { status: 409 });
+  await assert.rejects(store.respondToFollowUp(id, 0, question.prompt, "inspection"), { status: 409 });
+  assert.deepEqual(await store.listEntries(), [locked]);
+  const voted = await store.recordVote(id, "no", "I want an independent inspection first.");
+  await assert.rejects(store.suggestFollowUp(id, 0, async () => ({ ...question, referenceId: id })), { status: 502 });
+  const pending = await store.suggestFollowUp(id, 0, ask);
+  assert.deepEqual(pending, { ...voted, followUp: { status: "pending", question } });
+  assert.deepEqual(await store.suggestFollowUp(id, 0, never), pending);
+  const early = randomUUID();
+  await store.lockEntry(early, measure, async (_, history) => {
+    assert.deepEqual(history, [voted]);
+    return prediction(1);
+  });
+  const answer = "An independent inspection would change my mind.";
+  await assert.rejects(store.respondToFollowUp(id, 0, question.prompt, " "), { status: 400 });
+  await assert.rejects(store.respondToFollowUp(id, 0, "A stale prompt", answer), { status: 409 });
+  const result = await store.respondToFollowUp(id, 0, question.prompt, answer);
+  assert.deepEqual(result, { ...voted, followUp: { question, status: "answered", answer } });
+  const independent = await import("../lib/personal-journal-store.ts?response-retry");
+  assert.deepEqual(await independent.respondToFollowUp(id, 0, question.prompt, answer), result);
+  await assert.rejects(store.respondToFollowUp(id, 0, question.prompt, null), { status: 409 });
+  const late = randomUUID();
+  await store.lockEntry(late, measure, async (_, history) => {
+    assert.deepEqual(history, [result]);
+    return prediction(1);
+  });
+  const forecastFile = async id => JSON.parse(await readFile(join(dir, id + ".forecast.json"), "utf8"));
+  assert.equal((await forecastFile(early)).eligibleClarificationIds, undefined);
+  assert.deepEqual((await forecastFile(late)).eligibleClarificationIds, [id]);
+  assert.deepEqual((await forecastFile(id)).prediction, voted.prediction);
+});
+
+test("a retrospective question uses the target's frozen history, excluding later answers, edits and votes", async t => {
+  await privateDirectory(t);
+  const first = await completed("Early bridge measure");
+  const second = await completed("Another early measure");
+  await store.suggestFollowUp(second, 0, ask);
+  await store.respondToFollowUp(second, 0, question.prompt, "Only after an inspection.");
+  const target = await completed("Target");
+  await completed("Later proposal");
+  await store.suggestFollowUp(first, 0, ask);
+  await store.respondToFollowUp(first, 0, question.prompt, "An answer given after the target.");
+  await store.correctEntry(second, 0, "revealed", { ...measure, title: "Corrected afterwards" }, frozen);
+  const picked = await store.suggestFollowUp(target, 0, async (voted, history) => {
+    assert.equal(voted.id, target);
+    assert.deepEqual(history.map(entry => entry.id), [first, second]);
+    assert.equal(history[0].followUp, undefined);
+    assert.equal(history[1].measure.title, "Another early measure");
+    assert.equal(history[1].followUp.answer, "Only after an inspection.");
+    return { ...question, referenceId: second };
+  });
+  assert.equal(picked.followUp.question.referenceId, second);
+  const now = (await store.listEntries()).find(entry => entry.id === second);
+  assert.equal(now.followUp, undefined);
+  assert.equal(now.archivedFollowUp.answer, "Only after an inspection.");
+  await store.lockEntry(randomUUID(), measure, async (_, history) => {
+    const corrected = history.find(entry => entry.id === second);
+    assert.equal(corrected.followUp, undefined);
+    assert.equal(corrected.archivedFollowUp, undefined);
+    return prediction(history.length);
+  });
+  assert.deepEqual(await store.suggestFollowUp(second, 1, () => assert.fail("Corrected forecast misattributed")), now);
+  await assert.rejects(store.respondToFollowUp(second, 0, question.prompt, "Stale"), { status: 409 });
+});
+
+test("concurrent answers and skips can only resolve a question once, and no-question decisions persist", async t => {
+  await privateDirectory(t);
+  const id = await completed("An eligible measure");
+  const independent = await import("../lib/personal-journal-store.ts?question-race");
+  const two = await Promise.all([store, independent].map((api, i) =>
+    api.suggestFollowUp(id, 0, async () => ({ ...question, prompt: question.prompt + i }))));
+  assert.deepEqual(two[0], two[1]);
+  const prompt = two[0].followUp.question.prompt;
+  const attempts = await Promise.allSettled([
+    store.respondToFollowUp(id, 0, prompt, null),
+    independent.respondToFollowUp(id, 0, prompt, "Inspection"),
+  ]);
+  assert.equal(attempts.filter(r => r.status === "fulfilled").length, 1);
+  assert.equal(attempts.filter(r => r.status === "rejected" && r.reason.status === 409).length, 1);
+  const unneeded = await completed("No follow-up needed");
+  const reviewed = await store.suggestFollowUp(unneeded, 0, async () => null);
+  assert.equal(reviewed.followUp, undefined);
+  assert.equal(reviewed.followUpReviewed, true);
+  assert.deepEqual(await independent.suggestFollowUp(unneeded, 0, () => assert.fail("Policy reran")), reviewed);
+  const skipped = await completed("Another choice");
+  await store.suggestFollowUp(skipped, 0, ask);
+  const value = await store.respondToFollowUp(skipped, 0, question.prompt, null);
+  assert.equal(value.followUp.status, "skipped");
+  assert.deepEqual(await independent.respondToFollowUp(skipped, 0, question.prompt, null), value);
+});

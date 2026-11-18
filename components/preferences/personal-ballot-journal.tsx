@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { JournalRequestError, requestJournal } from "./personal-journal-client";
+import { JournalFollowUp, JournalLearning, type FollowUpResponse } from "./personal-journal-learning";
 import type { JournalEntry } from "@/lib/personal-journal-types";
 
 type Measure = JournalEntry["measure"];
@@ -15,29 +17,9 @@ type VoteInput = { id: string; vote: Vote; reasoning: string; expectedRevision: 
 type CorrectionInput = {
   id: string; measure: Measure; expectedRevision: number; expectedStatus: JournalEntry["status"]; confirmVote?: true;
 };
-const endpoint = "/api/preferences/journal";
 const labelVote = (vote: Vote) => vote === "yes" ? "Yes" : "No";
 const dateTime = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
 const timestamp = (value: string) => <time dateTime={value}>{dateTime.format(new Date(value))}</time>;
-
-class JournalRequestError extends Error {
-  constructor(message: string, readonly status: number) { super(message); }
-}
-
-async function requestJournal<T>(method: "GET" | "POST" | "PUT" | "PATCH", body?: unknown, signal?: AbortSignal): Promise<T> {
-  const response = await fetch(endpoint, {
-    method,
-    cache: "no-store",
-    signal,
-    headers: body ? { "Content-Type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  if (!response.ok) {
-    const data = await response.json().catch(() => null);
-    throw new JournalRequestError(typeof data?.error === "string" ? data.error : "The local journal is unavailable. Please try again.", response.status);
-  }
-  return response.json() as Promise<T>;
-}
 
 function MeasureForm({ busy, entry, onSave, onCancel }: {
   busy: boolean; entry?: JournalEntry; onSave: (measure: Measure, confirmed: boolean) => void; onCancel?: () => void;
@@ -104,6 +86,9 @@ function MeasureForm({ busy, entry, onSave, onCancel }: {
           <div className="space-y-3 rounded-md border bg-muted/25 p-4">
             <p className="text-sm font-semibold">Your recorded vote was {labelVote(entry.vote)}.</p>
             <p className="whitespace-pre-wrap break-words text-sm">{entry.reasoning}</p>
+            {entry.followUp?.status === "answered" && <p className="text-sm text-muted-foreground">
+              Changing this measure will archive your follow-up answer with the original wording and remove that answer from future forecasts.
+            </p>}
             <label className="flex items-start gap-2 text-sm font-medium">
               <input type="checkbox" name="confirmVote" required className="mt-1" />
               My recorded vote and reasoning still apply to the corrected measure.
@@ -201,6 +186,12 @@ function Comparison({ entry }: { entry: Revealed }) {
       </details>
       {forecastMeasure && <details><summary className="cursor-pointer py-1 text-sm font-medium">Review the wording used for the prediction</summary>
         <div className="mt-2"><BallotPacket measure={forecastMeasure} showTitle /></div>
+        {entry.archivedFollowUp?.status === "answered" && <section className="mt-3 space-y-2 rounded-lg border p-4 text-sm">
+          <h4 className="font-semibold">Archived follow-up for this wording</h4>
+          <p className="break-words">{entry.archivedFollowUp.question.prompt}</p>
+          <p className="whitespace-pre-wrap break-words"><strong>Your answer</strong><br />{entry.archivedFollowUp.answer}</p>
+          <p className="text-muted-foreground">This answer was retired from the preference profile when you corrected the measure.</p>
+        </section>}
       </details>}
     </div>
   );
@@ -217,12 +208,38 @@ export function PersonalBallotJournal() {
   const [editing, setEditing] = useState(false);
   const [savedMessage, setSavedMessage] = useState("");
   const [draftVersion, setDraftVersion] = useState(0);
+  const [answerDrafts, setAnswerDrafts] = useState<Record<string, string>>({});
   const draftId = useRef<string | null>(null);
   const hasRequest = useRef(false);
   const focusDetail = useRef(false);
+  const focusQuestion = useRef(false);
+  const questionSection = useRef<HTMLDivElement>(null);
   const detail = useRef<HTMLHeadingElement>(null);
   const ordered = [...entries].sort((a, b) => b.lockedAt.localeCompare(a.lockedAt) || b.id.localeCompare(a.id));
   const selected = entries.find((entry) => entry.id === selectedId);
+  const answerKey = selected ? selected.id + "/" + (selected.revision ?? 0) : "";
+
+  function updateAnswerDraft(key: string, value: string) {
+    setAnswerDrafts(previous => {
+      const drafts = { ...previous };
+      if (value) drafts[key] = value;
+      else delete drafts[key];
+      return drafts;
+    });
+  }
+  const hasUnsavedAnswer = Object.keys(answerDrafts).length > 0;
+  useEffect(() => {
+    if (!hasUnsavedAnswer) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [hasUnsavedAnswer]);
+
+  const addSuggestion = useCallback((result: Revealed) => {
+    setEntries(previous => previous.map(row =>
+      row.id === result.id && row.status === "revealed" && (row.revision ?? 0) === (result.revision ?? 0) && !row.followUp
+        ? result : row));
+  }, []);
 
   const load = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
@@ -249,16 +266,18 @@ export function PersonalBallotJournal() {
 
   useEffect(() => {
     if (focusDetail.current) {
-      detail.current?.focus();
+      (focusQuestion.current ? questionSection.current : detail.current)?.focus();
+      focusQuestion.current = false;
       focusDetail.current = false;
     }
   }, [selectedId, selected?.status, editing]);
 
-  function navigate(id: string | null) {
+  function navigate(id: string | null, toQuestion = false) {
     if (id === selectedId) {
-      detail.current?.focus();
+      (toQuestion ? questionSection.current : detail.current)?.focus();
       return;
     }
+    focusQuestion.current = toQuestion;
     focusDetail.current = true;
     setSelectedId(id);
     setError("");
@@ -281,6 +300,7 @@ export function PersonalBallotJournal() {
     try {
       const response = await requestJournal<{ entries: JournalEntry[] }>("GET");
       setEntries(response.entries);
+      updateAnswerDraft(answerKey, "");
       toggleEditor(false);
     } catch {
       setError("The latest entry could not be loaded. Your inputs are still here.");
@@ -290,7 +310,7 @@ export function PersonalBallotJournal() {
     }
   }
 
-  async function save(method: "POST" | "PUT" | "PATCH", body: { id: string; measure: Measure } | VoteInput | CorrectionInput) {
+  async function save(method: "POST" | "PUT" | "PATCH" | "FOLLOW_UP", body: { id: string; measure: Measure } | VoteInput | CorrectionInput | FollowUpResponse) {
     if (hasRequest.current) return;
     hasRequest.current = true;
     setBusy(true);
@@ -298,13 +318,21 @@ export function PersonalBallotJournal() {
     setSavedMessage("");
     setConflict(false);
     try {
-      const { entry } = await requestJournal<{ entry: JournalEntry }>(method, body);
+      const { entry } = method === "FOLLOW_UP"
+        ? await requestJournal<{ entry: JournalEntry }>("POST", body, undefined, "/follow-up")
+        : await requestJournal<{ entry: JournalEntry }>(method, body);
       setEntries((previous) => [...previous.filter((row) => row.id !== entry.id), entry]);
       focusDetail.current = true;
       setSelectedId(entry.id);
       if (method === "PATCH") {
+        updateAnswerDraft(answerKey, "");
         setEditing(false);
         setSavedMessage(entry.status === "locked" ? "Correction saved. The prediction is locked." : "Correction saved.");
+      }
+      if (method === "FOLLOW_UP") {
+        updateAnswerDraft(answerKey, "");
+        setSavedMessage(entry.status === "revealed" && entry.followUp?.status === "answered"
+          ? "Answer saved for future forecasts." : "Question skipped.");
       }
       if (method === "POST") {
         draftId.current = null;
@@ -329,7 +357,10 @@ export function PersonalBallotJournal() {
   );
 
   return (
-    <div className="grid items-start gap-6 border-t pt-6 lg:grid-cols-[minmax(14rem,0.7fr)_minmax(0,1.8fr)]">
+    <div className="border-t pt-6">
+    {selected?.status !== "locked" && !editing && <JournalLearning entries={entries} disabled={busy}
+      onSelect={id => navigate(id)} onFollowUp={id => navigate(id, true)} />}
+    <div className="grid items-start gap-6 lg:grid-cols-[minmax(14rem,0.7fr)_minmax(0,1.8fr)]">
       <aside aria-labelledby="entries-heading" className="min-w-0 rounded-lg border bg-muted/20 p-4">
         <div className="mb-3 flex items-center gap-2">
           <BookOpen aria-hidden="true" className="size-4 text-muted-foreground" />
@@ -364,8 +395,7 @@ export function PersonalBallotJournal() {
             : "The prediction you saw belongs to the original wording. Correct this entry if the same vote and reasoning still apply."}</p>}
           {selected?.status === "locked" && !editing && <p className="mt-2 text-sm text-muted-foreground">Locked {timestamp(selected.lockedAt)}. Record your decision to reveal the prediction.</p>}
           {!selected && <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            The model uses the measure and your earlier completed entries. With no voting history, the default baseline starts at equal odds and breaks the tie.
-            A configured local language model can make the prediction instead.
+            Future forecasts can draw on your earlier votes, written reasons, and follow-up answers. Your first forecast starts at equal odds.
           </p>}
         </div>
         {error && <div role="alert" className="space-y-3 rounded-md border border-destructive/40 p-3 text-sm">
@@ -373,7 +403,8 @@ export function PersonalBallotJournal() {
           {conflict && <Button type="button" variant="outline" disabled={busy} onClick={() => void reloadSavedEntry()}>Discard draft and load saved entry</Button>}
         </div>}
         {savedMessage && <p role="status" className="text-sm font-medium">{savedMessage}</p>}
-        {selected && !editing && <Button type="button" variant="outline" disabled={busy} onClick={() => toggleEditor(true)}>
+        {selected && !editing && <Button type="button" variant="outline" disabled={busy || !!answerDrafts[answerKey]}
+          title={answerDrafts[answerKey] ? "Save or clear your follow-up draft before editing the measure" : undefined} onClick={() => toggleEditor(true)}>
           <Pencil aria-hidden="true" /> Edit measure
         </Button>}
         <div hidden={!!selected}>
@@ -393,8 +424,17 @@ export function PersonalBallotJournal() {
           <BallotPacket measure={selected.measure} />
           <VoteForm key={selected.id + "-" + (selected.revision ?? 0)} entry={selected} busy={busy} onVote={(input) => void save("PUT", input)} />
         </div>}
-        {selected?.status === "revealed" && !editing && <Comparison entry={selected} />}
+        {selected?.status === "revealed" && !editing && <>
+          <Comparison entry={selected} />
+          <div ref={questionSection} tabIndex={-1}>
+            <JournalFollowUp key={answerKey} entry={selected} busy={busy} draft={answerDrafts[answerKey] ?? ""}
+              onDraft={text => updateAnswerDraft(answerKey, text)} onSuggested={addSuggestion}
+              reference={entries.find(entry => entry.id === selected.followUp?.question.referenceId)} onSelect={id => navigate(id)}
+              onRespond={response => void save("FOLLOW_UP", response)} onReload={() => void reloadSavedEntry()} />
+          </div>
+        </>}
       </section>
+    </div>
     </div>
   );
 }

@@ -17,6 +17,17 @@ export interface JournalPrediction {
   historyCount: number;
 }
 
+export interface JournalQuestion {
+  prompt: string;
+  trigger: "miss" | "uncertain";
+  kind?: "contrast" | "counterfactual" | "weight";
+  referenceId?: string;
+}
+
+export type JournalFollowUp =
+  | { question: JournalQuestion; status: "pending" | "skipped" }
+  | { question: JournalQuestion; status: "answered"; answer: string };
+
 interface BallotRecord {
   id: string;
   measure: JournalMeasure;
@@ -35,4 +46,9 @@ export type JournalEntry =
       prediction: JournalPrediction;
       /** Actual packet used by the locked prediction if corrected after voting. */
       forecastMeasure?: JournalMeasure;
+      followUp?: JournalFollowUp;
+      /** Saved answer about the original wording, for historical display only. */
+      archivedFollowUp?: Extract<JournalFollowUp, { status: "answered" }>;
+      /** The question policy ran and found no follow-up to ask. */
+      followUpReviewed?: true;
     });

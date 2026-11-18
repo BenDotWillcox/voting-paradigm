@@ -53,14 +53,31 @@ After you vote, confirm that your recorded vote and reasoning still apply. The
 journal uses the corrected wording for future forecasts and keeps the original
 forecast with the wording it evaluated.
 
-The default local statistical baseline uses previous completed choices and
-the wording of the outcomes. On a first ballot it assigns equal probabilities
-and breaks the tie deterministically. An optional local LLM can instead read
-the measure and prior ballot evidence: set `PERSONAL_JOURNAL_MODEL_MODE=llm`
-and point `PREFERENCE_LLM_BASE_URL` and `PREFERENCE_LLM_MODEL` at an installed
-loopback, OpenAI-compatible model. A failed forecast leaves the ballot unlocked
-so you can retry. Personal entries and the journal API are private to the local
-launcher; this feature runs separately from the public replay and blinded study.
+Open **Your preference profile** to read excerpts from completed votes and saved
+clarifications. Each excerpt links to the measure it came from. Existing journal
+entries contribute as soon as you open the updated journal.
+
+The default local model (`reasoning-examples-v1`) compares the proposed Yes
+and No outcomes with the outcomes you chose and declined. Your written reasons
+help it weight those comparisons. It uses wording overlap and simple language
+patterns, with no predefined issue categories or model download. The probability
+is a heuristic estimate. With no matching evidence both outcomes start at 50%.
+
+After revealing a forecast, the journal offers one optional follow-up if the
+forecast missed or its Yes estimate was between 40% and 60%, inclusive.
+**Open follow-up** brings up the highest-priority outstanding entry. A question
+may compare the outcomes of two similar measures or ask which change would have
+affected your vote. Answer or skip it. Saved answers are available to future
+forecasts. Each locked forecast retains the evidence available at the time.
+After a post-vote wording correction, you can review the original forecast and
+any archived follow-up answer alongside the original wording. Future forecasts
+use the confirmed vote and reasoning on the corrected wording.
+
+Set `PERSONAL_JOURNAL_MODEL_MODE=baseline` for the original outcome-wording
+model. For an installed local language model, set `PERSONAL_JOURNAL_MODEL_MODE=llm`,
+`PREFERENCE_LLM_BASE_URL` and `PREFERENCE_LLM_MODEL`. The local LLM receives
+earlier choices, reasons and answered clarifications. A failed forecast leaves
+the ballot available to retry. Personal entries and the journal API stay local.
 
 ### Preference-model evidence
 
