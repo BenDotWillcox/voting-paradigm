@@ -53,14 +53,64 @@ After you vote, confirm that your recorded vote and reasoning still apply. The
 journal uses the corrected wording for future forecasts and keeps the original
 forecast with the wording it evaluated.
 
-The default local statistical baseline uses previous completed choices and
-the wording of the outcomes. On a first ballot it assigns equal probabilities
-and breaks the tie deterministically. An optional local LLM can instead read
-the measure and prior ballot evidence: set `PERSONAL_JOURNAL_MODEL_MODE=llm`
-and point `PREFERENCE_LLM_BASE_URL` and `PREFERENCE_LLM_MODEL` at an installed
-loopback, OpenAI-compatible model. A failed forecast leaves the ballot unlocked
-so you can retry. Personal entries and the journal API are private to the local
-launcher; this feature runs separately from the public replay and blinded study.
+Open **Your preference profile** to read excerpts from completed votes and saved
+clarifications. Each excerpt links to the measure it came from. Existing journal
+entries contribute as soon as you open the updated journal.
+
+The default local model (`reasoning-examples-v2`) reads what each vote would
+adopt, retain or reject. It looks for a distinguishing effect in an earlier
+decision or a preference you stated in a reason or follow-up. For tax measures,
+the tax base, how the proceeds would be used, and whether the measure imposes
+a levy or directs revenue can change which earlier votes apply. On reveal,
+the explanation names the strongest precedent and quotes a reason when it
+contributed. The model uses local wording rules and a heuristic probability.
+When it finds no comparable evidence, it gives Yes and No 50% each.
+
+After revealing a forecast, the journal offers one optional follow-up if the
+forecast missed or its Yes estimate was between 40% and 60%, inclusive.
+**Open follow-up** brings up the highest-priority outstanding entry. A question
+may compare the outcomes of two similar measures or ask which change would have
+affected your vote. Answer or skip it. Saved answers are available to future
+forecasts. Each locked forecast retains the evidence available at the time.
+After a post-vote wording correction, you can review the original forecast and
+any archived follow-up answer alongside the original wording. Future forecasts
+use the confirmed vote and reasoning on the corrected wording.
+
+Set `PERSONAL_JOURNAL_MODEL_MODE=baseline` for the original outcome-wording
+model. For an installed local language model, set `PERSONAL_JOURNAL_MODEL_MODE=llm`,
+`PREFERENCE_LLM_BASE_URL` and `PREFERENCE_LLM_MODEL`. The local LLM receives
+earlier choices, reasons and answered clarifications. A failed forecast leaves
+the ballot available to retry. Personal entries and the journal API stay local.
+
+#### Compare forecasts on five unseen measures
+
+Finish the follow-ups you want to include, then select **Start five-measure
+check**. The journal freezes the completed decisions and saved clarifications
+available at that moment. Pick five measures in advance and mark each **New to
+me**. You can lock them all before voting or complete them one at a time. All
+five use the same frozen evidence and model version. A check already underway
+continues with the version it started with.
+
+For each measure the journal locks three forecasts together, using the same
+ballot text and tie-break. It reveals them after you record your vote and
+reasoning. The original wording model establishes the baseline. Comparing the
+new model with its own text-free run isolates what your written reasons and
+follow-up answers contributed, holding the scoring algorithm and earlier votes
+fixed. The scorecard reports correct votes and mean Brier score across the same
+eligible measures. That score averages the squared error in the Yes probability
+(Yes is 1, No is 0). Lower is better. On five measures, look at individual
+disagreements to see where the extra evidence changed a forecast.
+
+To replay completed development cases locally, run
+`python -X utf8 -m eval.replay_journal_regressions eval/private_runs/journal-regressions.json`
+from the checkout that holds your private manifest, using the project's Python
+environment and Node. The manifest pins the entries and expected precedents.
+It can also pair hypothetical proposals against the same history to test a
+specific distinction. The replay reports those separately from observed votes. It
+recovers the ballot wording, earlier decisions and eligible follow-up answers
+at each original lock. Add `--verbose` to inspect the terms and reasons used.
+These cases diagnose changes to the model. Use fresh unseen measures to test
+how well those changes predict subsequent votes.
 
 ### Preference-model evidence
 

@@ -198,3 +198,237 @@ test("a vote can beat a slow relock without allowing a post-vote reforecast", as
   assert.deepEqual(await store.listEntries(), [revealed]);
   assert.deepEqual(revealed.prediction, prediction(0));
 });
+
+const question = { trigger: "miss", kind: "weight", prompt: "Which condition determined your decision on these repairs?" };
+const ask = async () => question;
+const frozen = async (_, history) => prediction(history.length);
+
+async function completed(title) {
+  const id = randomUUID();
+  await store.lockEntry(id, { ...measure, title }, frozen);
+  await store.recordVote(id, "no", "I want an independent inspection first.");
+  return id;
+}
+
+test("follow-up stays post-vote, freezes once, and one durable answer informs only future forecasts", async t => {
+  const dir = await privateDirectory(t);
+  const id = randomUUID();
+  const locked = await store.lockEntry(id, measure, frozen);
+  const never = () => assert.fail("Unexpected policy call");
+  await assert.rejects(store.suggestFollowUp(id, 0, never), { status: 409 });
+  await assert.rejects(store.respondToFollowUp(id, 0, question.prompt, "inspection"), { status: 409 });
+  assert.deepEqual(await store.listEntries(), [locked]);
+  const voted = await store.recordVote(id, "no", "I want an independent inspection first.");
+  await assert.rejects(store.suggestFollowUp(id, 0, async () => ({ ...question, referenceId: id })), { status: 502 });
+  const pending = await store.suggestFollowUp(id, 0, ask);
+  assert.deepEqual(pending, { ...voted, followUp: { status: "pending", question } });
+  assert.deepEqual(await store.suggestFollowUp(id, 0, never), pending);
+  const early = randomUUID();
+  await store.lockEntry(early, measure, async (_, history) => {
+    assert.deepEqual(history, [voted]);
+    return prediction(1);
+  });
+  const answer = "An independent inspection would change my mind.";
+  await assert.rejects(store.respondToFollowUp(id, 0, question.prompt, " "), { status: 400 });
+  await assert.rejects(store.respondToFollowUp(id, 0, "A stale prompt", answer), { status: 409 });
+  const result = await store.respondToFollowUp(id, 0, question.prompt, answer);
+  assert.deepEqual(result, { ...voted, followUp: { question, status: "answered", answer } });
+  const independent = await import("../lib/personal-journal-store.ts?response-retry");
+  assert.deepEqual(await independent.respondToFollowUp(id, 0, question.prompt, answer), result);
+  await assert.rejects(store.respondToFollowUp(id, 0, question.prompt, null), { status: 409 });
+  const late = randomUUID();
+  await store.lockEntry(late, measure, async (_, history) => {
+    assert.deepEqual(history, [result]);
+    return prediction(1);
+  });
+  const forecastFile = async id => JSON.parse(await readFile(join(dir, id + ".forecast.json"), "utf8"));
+  assert.equal((await forecastFile(early)).eligibleClarificationIds, undefined);
+  assert.deepEqual((await forecastFile(late)).eligibleClarificationIds, [id]);
+  assert.deepEqual((await forecastFile(id)).prediction, voted.prediction);
+});
+
+test("a retrospective question uses the target's frozen history, excluding later answers, edits and votes", async t => {
+  await privateDirectory(t);
+  const first = await completed("Early bridge measure");
+  const second = await completed("Another early measure");
+  await store.suggestFollowUp(second, 0, ask);
+  await store.respondToFollowUp(second, 0, question.prompt, "Only after an inspection.");
+  const target = await completed("Target");
+  await completed("Later proposal");
+  await store.suggestFollowUp(first, 0, ask);
+  await store.respondToFollowUp(first, 0, question.prompt, "An answer given after the target.");
+  await store.correctEntry(second, 0, "revealed", { ...measure, title: "Corrected afterwards" }, frozen);
+  const picked = await store.suggestFollowUp(target, 0, async (voted, history) => {
+    assert.equal(voted.id, target);
+    assert.deepEqual(history.map(entry => entry.id), [first, second]);
+    assert.equal(history[0].followUp, undefined);
+    assert.equal(history[1].measure.title, "Another early measure");
+    assert.equal(history[1].followUp.answer, "Only after an inspection.");
+    return { ...question, referenceId: second };
+  });
+  assert.equal(picked.followUp.question.referenceId, second);
+  const now = (await store.listEntries()).find(entry => entry.id === second);
+  assert.equal(now.followUp, undefined);
+  assert.equal(now.archivedFollowUp.answer, "Only after an inspection.");
+  await store.lockEntry(randomUUID(), measure, async (_, history) => {
+    const corrected = history.find(entry => entry.id === second);
+    assert.equal(corrected.followUp, undefined);
+    assert.equal(corrected.archivedFollowUp, undefined);
+    return prediction(history.length);
+  });
+  assert.deepEqual(await store.suggestFollowUp(second, 1, () => assert.fail("Corrected forecast misattributed")), now);
+  await assert.rejects(store.respondToFollowUp(second, 0, question.prompt, "Stale"), { status: 409 });
+  const voted = (await store.listEntries()).find(entry => entry.id === target);
+  await store.correctEntry(target, 0, "revealed", { ...measure, title: "Later edit to target" }, frozen);
+  const replay = await store.readRegressionCase(target);
+  assert.deepEqual(replay.request.measure, voted.measure);
+  assert.deepEqual(replay.locked, voted.prediction);
+  assert.equal(replay.vote, voted.vote);
+  assert.deepEqual(Object.keys(replay.request).sort(), ["history", "id", "measure"]);
+  assert.deepEqual(replay.request.history.map(row => row.id), [first, second]);
+  assert.equal(replay.request.history[0].clarification, undefined);
+  assert.equal(replay.request.history[1].measure.title, "Another early measure");
+  assert.equal(replay.request.history[1].clarification.answer, "Only after an inspection.");
+});
+
+test("concurrent answers and skips can only resolve a question once, and no-question decisions persist", async t => {
+  await privateDirectory(t);
+  const id = await completed("An eligible measure");
+  const independent = await import("../lib/personal-journal-store.ts?question-race");
+  const two = await Promise.all([store, independent].map((api, i) =>
+    api.suggestFollowUp(id, 0, async () => ({ ...question, prompt: question.prompt + i }))));
+  assert.deepEqual(two[0], two[1]);
+  const prompt = two[0].followUp.question.prompt;
+  const attempts = await Promise.allSettled([
+    store.respondToFollowUp(id, 0, prompt, null),
+    independent.respondToFollowUp(id, 0, prompt, "Inspection"),
+  ]);
+  assert.equal(attempts.filter(r => r.status === "fulfilled").length, 1);
+  assert.equal(attempts.filter(r => r.status === "rejected" && r.reason.status === 409).length, 1);
+  const unneeded = await completed("No follow-up needed");
+  const reviewed = await store.suggestFollowUp(unneeded, 0, async () => null);
+  assert.equal(reviewed.followUp, undefined);
+  assert.equal(reviewed.followUpReviewed, true);
+  assert.deepEqual(await independent.suggestFollowUp(unneeded, 0, () => assert.fail("Policy reran")), reviewed);
+  const skipped = await completed("Another choice");
+  await store.suggestFollowUp(skipped, 0, ask);
+  const value = await store.respondToFollowUp(skipped, 0, question.prompt, null);
+  assert.equal(value.followUp.status, "skipped");
+  assert.deepEqual(await independent.respondToFollowUp(skipped, 0, question.prompt, null), value);
+});
+
+function comparison(count, version = "reasoning-examples-v2") {
+  return {
+    reasoning: { ...prediction(count), model: version },
+    baseline: { ...prediction(count, "no"), model: "outcome-wording-v1" },
+    withoutReasoning: { ...prediction(count, "no"), model: version + "-without-reasoning" },
+  };
+}
+
+test("five slots share frozen evidence across restarts, votes, late answers and corrections", async t => {
+  await privateDirectory(t);
+  const early = await completed("Early measure");
+  const second = await completed("Second measure");
+  await store.suggestFollowUp(early, 0, ask);
+  await store.respondToFollowUp(early, 0, question.prompt, "Include an independent audit.");
+  const old = (await store.listEntries()).find(entry => entry.id === early);
+  const independent = await import("../lib/personal-journal-store.ts?comparison-reload");
+  assert.equal(await store.getCheck(), null);
+  const [check, same] = await Promise.all([store.startCheck(), independent.startCheck()]);
+  assert.deepEqual(check, same);
+  assert.deepEqual(await independent.getCheck(), check);
+  assert.equal(check.modelVersion, "reasoning-examples-v2");
+  assert.equal(check.evidenceCount, 2);
+  assert.equal(check.clarificationCount, 1);
+  assert.equal(new Set(check.slotIds).size, 5);
+
+  const predict = async (_packet, history, version) => {
+    assert.equal(version, check.modelVersion);
+    assert.deepEqual(history.map(entry => entry.id).sort(), [early, second].sort());
+    assert.deepEqual(history.find(entry => entry.id === early), old);
+    assert.equal(history.find(entry => entry.id === second).followUp, undefined);
+    return comparison(history.length);
+  };
+  const first = { ...measure, title: "Unseen A" };
+  const locked = await store.lockEntry(check.slotIds[0], first, predict, check.id);
+  assert.deepEqual(Object.keys(locked).sort(), ["checkId", "id", "lockedAt", "measure", "status"]);
+  assert.deepEqual(await independent.lockEntry(locked.id, first, () => assert.fail("Unexpected re-lock"), check.id), locked);
+  const revealed = await store.recordVote(locked.id, "yes", "Fund the repairs now.");
+  assert.deepEqual(revealed.comparison, { baseline: comparison(2).baseline, withoutReasoning: comparison(2).withoutReasoning });
+  assert.deepEqual(revealed.prediction, comparison(2).reasoning);
+  assert.equal(revealed.checkId, check.id);
+  await store.correctEntry(early, 0, "revealed", { ...old.measure, title: "Corrected after freeze" }, () => assert.fail());
+  await store.suggestFollowUp(second, 0, ask);
+  await store.respondToFollowUp(second, 0, question.prompt, "This answer came too late.");
+  const later = await store.lockEntry(randomUUID(), { ...measure, title: "Familiar later measure", familiar: true }, frozen);
+  await store.recordVote(later.id, "yes", "A later choice.");
+  assert.deepEqual(await store.startCheck(), check);
+  for (const [i, id] of check.slotIds.slice(1).entries()) {
+    const packet = { ...measure, title: "Another unseen measure " + i };
+    const next = await independent.lockEntry(id, packet, predict, check.id);
+    assert.equal(next.status, "locked");
+    assert.equal(next.comparison, undefined);
+    const amended = await store.correctEntry(id, 0, "locked", { ...packet, text: "Corrected text" }, predict);
+    assert.equal(amended.checkId, check.id);
+    assert.equal(amended.comparison, undefined);
+    await assert.rejects(store.recordVote(id, "yes", "Stale"), { status: 409 });
+    const voted = await store.recordVote(id, "yes", "Supports repairs", 1);
+    assert.deepEqual(voted.comparison, revealed.comparison);
+    const post = await store.correctEntry(id, 1, "revealed", { ...packet, title: "Corrected title " + i },
+      () => assert.fail("A post-vote correction reran inference"));
+    assert.deepEqual(post.forecastMeasure, amended.measure);
+    assert.deepEqual(post.comparison, voted.comparison);
+  }
+  assert.deepEqual((await store.listEntries()).find(entry => entry.id === locked.id), revealed);
+  assert.equal((await store.listEntries()).filter(entry => entry.checkId === check.id).length, 5);
+  const after = await store.lockEntry(randomUUID(), { ...measure, title: "After all five" }, frozen);
+  assert.equal(after.checkId, undefined);
+  assert.equal((await store.recordVote(after.id, "no", "Previous system works.")).comparison, undefined);
+});
+
+test("only unseen entries fill check slots and all three forecasts publish together", async t => {
+  await privateDirectory(t);
+  const prior = await completed("Previously seen measure");
+  const oldPending = await store.lockEntry(randomUUID(), { ...measure, title: "Ordinary pending measure" }, frozen);
+  const check = await store.startCheck();
+  const [first, second] = check.slotIds;
+  const predict = async () => comparison(1);
+  const never = () => assert.fail("An ineligible request reached the model");
+  await assert.rejects(store.lockEntry(prior, measure, never, check.id), { status: 409 });
+  await assert.rejects(store.lockEntry(first, measure, never, randomUUID()), { status: 409 });
+  await assert.rejects(store.lockEntry(first, measure, never), { status: 409 });
+  await assert.rejects(store.lockEntry(randomUUID(), measure, never), { status: 409 });
+  assert.deepEqual(await store.lockEntry(oldPending.id, oldPending.measure, never), oldPending);
+  const edited = await store.correctEntry(oldPending.id, 0, "locked", { ...oldPending.measure, title: "Old pending" }, frozen);
+  assert.equal(edited.checkId, undefined);
+  await assert.rejects(store.lockEntry(second, measure, never, check.id), { status: 409 });
+  await assert.rejects(store.lockEntry(first, { ...measure, familiar: true }, never, check.id), { status: 400 });
+  await assert.rejects(store.lockEntry(first, { ...measure, title: " previously  SEEN measure" }, never, check.id), { status: 409 });
+  await assert.rejects(store.lockEntry(first, measure, async () => prediction(1), check.id), { status: 502 });
+  await assert.rejects(store.lockEntry(first, measure, async () => ({ ...comparison(1), baseline: undefined }), check.id), { status: 502 });
+  await assert.rejects(store.lockEntry(first, measure, async () => ({ ...comparison(1), baseline: comparison(0).baseline }), check.id), { status: 502 });
+  await assert.rejects(store.lockEntry(first, measure, async () => comparison(1, "reasoning-examples-v1"), check.id), { status: 502 });
+  assert.deepEqual((await store.listEntries()).map(entry => entry.id).sort(), [oldPending.id, prior].sort());
+  await store.lockEntry(first, measure, predict, check.id);
+  await assert.rejects(store.lockEntry(second, measure, never, check.id), { status: 409 });
+  await store.lockEntry(second, { ...measure, title: "Different measure on the same official guide" }, predict, check.id);
+});
+
+test("a check started before versioning completes its remaining slots with v1", async t => {
+  const dir = await privateDirectory(t);
+  const id = randomUUID();
+  const first = randomUUID();
+  const oldCheck = { id, startedAt: new Date().toISOString(), evidenceCount: 0,
+    clarificationCount: 0, slotIds: [first, ...Array.from({ length: 4 }, () => randomUUID())] };
+  await writeFile(join(dir, "five-measure-check.json"), JSON.stringify({
+    check: oldCheck, evidence: { eligibleHistoryIds: [] },
+  }));
+  assert.deepEqual(await store.startCheck(), oldCheck);
+  await store.lockEntry(first, measure, async (_packet, _history, version) => {
+    assert.equal(version, "reasoning-examples-v1");
+    return comparison(0, version);
+  }, id);
+  const result = await store.recordVote(first, "no", "Keep the existing arrangement.");
+  assert.equal(result.prediction.model, "reasoning-examples-v1");
+  assert.equal(result.comparison.withoutReasoning.model, "reasoning-examples-v1-without-reasoning");
+});
