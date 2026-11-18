@@ -5,16 +5,21 @@ The fit (scripts/fit_ces_beliefs.py) is a multidimensional probit item
 response model of the CES 2024 Common Content: each person has a latent
 position theta in K dimensions and supports a question when
 a . theta + b + e > 0, e ~ N(0, 1). Its aggregates are committed in
-delegation/data/beliefs_ces2024_v1.json. From them a city is drawn:
+delegation/data/beliefs_ces2024_v2.json. From them a city is drawn:
 
-  - Districts. A seeded sample of real congressional districts. Residents
-    of a district are drawn from N(district mean, within-district
-    covariance), with the district means shrunk toward the national mean as
-    the fit estimated them. How much districts differ is therefore measured,
-    not chosen.
+  - Districts. A seeded sample of real congressional districts. Each
+    district's mean is drawn from its posterior in the hierarchical fit
+    (theta_i ~ N(mu_district, W), mu_district ~ N(0, T)), and its residents
+    from N(that mean, W). Drawing the mean, rather than using its posterior
+    mean, keeps the spread between districts at the level the data
+    supports; a point estimate shrunk toward the national mean understated
+    it (version 1 of the fit reproduced only about 0.62 of the observed
+    between-district spread of support rates). How much districts differ
+    is therefore measured, not chosen.
   - Questions. Each question belongs to one of the eight topics. Its
     (a, b) is drawn from that topic's normal distribution, centred on the
-    topic's measured items, with the fitted covariance scaled by
+    topic's measured items aligned to one wording direction, and then
+    worded either way with equal chance, with the fitted covariance scaled by
     `within_topic_spread` squared. How different future questions in a
     topic are from today's is the largest assumption left; the spread
     multiplier is a robustness sweep (1 is the fit).
@@ -48,8 +53,8 @@ from .population import (
     stream,
 )
 
-BELIEFS_PATH: Final = Path(__file__).resolve().parents[1] / "data" / "beliefs_ces2024_v1.json"
-BELIEFS_VERSION: Final = "beliefs.ces2024.v1"
+BELIEFS_PATH: Final = Path(__file__).resolve().parents[1] / "data" / "beliefs_ces2024_v2.json"
+BELIEFS_VERSION: Final = "beliefs.ces2024.v2"
 
 # Streams, distinct from the structural model's
 _DISTRICTS: Final = 21
@@ -57,6 +62,7 @@ _RESIDENTS: Final = 22
 _TURNOUT: Final = 23
 _HISTORY: Final = 24
 _EVALUATION: Final = 25
+_DISTRICT_MEANS: Final = 26
 
 
 @dataclass(frozen=True, eq=False)
@@ -70,8 +76,9 @@ class BeliefModel:
     topic_covs: Mapping[str, FloatArray]
     national_mean: FloatArray
     within_cov: FloatArray
-    # Real district key -> shrunk mean of theta
+    # Real district key -> posterior mean and covariance of its mean
     district_means: Mapping[str, FloatArray]
+    district_covs: Mapping[str, FloatArray]
     district_respondents: Mapping[str, int]
     source_sha256: str
 
@@ -98,6 +105,7 @@ def load_beliefs(path: Path = BELIEFS_PATH) -> BeliefModel:
         national_mean=np.asarray(pop["national_mean"], dtype=np.float64),
         within_cov=np.asarray(pop["within_cov"], dtype=np.float64),
         district_means={g: np.asarray(d["mean"], dtype=np.float64) for g, d in districts.items()},
+        district_covs={g: np.asarray(d["cov"], dtype=np.float64) for g, d in districts.items()},
         district_respondents={g: int(d["respondents"]) for g, d in districts.items()},
         source_sha256=str(raw["source"]["sha256"]),
     )
@@ -122,6 +130,14 @@ class BeliefCityConfig:
     candidates_per_district: int = 3
     # Only districts with at least this many respondents are sampled
     min_district_respondents: int = 50
+    # Topic mix of each period, as weights over the model's topics in their
+    # sorted order; None is an even mix. The total number of questions is
+    # questions-per-topic times the number of topics either way. An uneven
+    # evaluation mix tests whether the overhead cap, set on history, holds
+    # on a different agenda (with an even mix in both periods and exact
+    # routing, evaluation overhead equals history overhead by construction)
+    history_topic_weights: tuple[float, ...] | None = None
+    evaluation_topic_weights: tuple[float, ...] | None = None
 
     def __post_init__(self) -> None:
         for name in (
@@ -139,10 +155,33 @@ class BeliefCityConfig:
             raise ValueError("within_topic_spread must be a non-negative number")
         if not 0.0 <= self.min_turnout <= self.max_turnout <= 1.0:
             raise ValueError("turnout bounds must satisfy 0 <= min <= max <= 1")
+        for name in ("history_topic_weights", "evaluation_topic_weights"):
+            weights = getattr(self, name)
+            if weights is not None and (
+                any(not math.isfinite(w) or w < 0 for w in weights) or sum(weights) <= 0
+            ):
+                raise ValueError(f"{name} must be non-negative with a positive sum")
 
     @property
     def size(self) -> int:
         return self.districts * self.residents_per_district
+
+
+def topic_counts(total: int, topics: int, weights: tuple[float, ...] | None) -> IntArray:
+    """
+    How many of `total` questions each topic gets: equal shares, or shares
+    proportional to `weights` by largest remainder, ties to the lower index.
+    """
+    if weights is None:
+        weights = (1.0,) * topics
+    if len(weights) != topics:
+        raise ValueError(f"expected {topics} topic weights, got {len(weights)}")
+    exact = np.asarray(weights, dtype=np.float64) / sum(weights) * total
+    counts = np.floor(exact).astype(np.int64)
+    remainder = exact - counts
+    order = np.lexsort((np.arange(topics), -remainder))
+    counts[order[: total - int(counts.sum())]] += 1
+    return counts
 
 
 def _questions(
@@ -152,12 +191,15 @@ def _questions(
     turnout: FloatArray,
     *,
     per_topic: int,
+    weights: tuple[float, ...] | None,
     purpose: int,
     prefix: str,
 ) -> QuestionSet:
     rng = stream(config.seed, purpose)
-    count = per_topic * len(model.topics)
-    topic = rng.permutation(np.arange(count) % len(model.topics)).astype(np.int64)
+    topics = len(model.topics)
+    count = per_topic * topics
+    counts = topic_counts(count, topics, weights)
+    topic = rng.permutation(np.repeat(np.arange(topics), counts)).astype(np.int64)
     k = model.dimensions
     params = np.empty((count, k + 1))
     for t, name in enumerate(model.topics):
@@ -166,6 +208,11 @@ def _questions(
         params[rows] = rng.multivariate_normal(
             model.topic_means[name], cov, size=rows.size, method="eigh"
         )
+    # Topic distributions are fitted to items aligned to one wording
+    # direction; each new question is worded either way with equal chance,
+    # which reflects (a, b) and only swaps which answer counts as support
+    flip = np.where(rng.random(count) < 0.5, -1.0, 1.0)
+    params *= flip[:, None]
     loadings, intercepts = params[:, :k], params[:, k]
     noise = rng.standard_normal((positions.shape[0], count))
     utility = positions @ loadings.T + intercepts + noise
@@ -202,9 +249,17 @@ def simulate_belief_city(
     district: IntArray = np.repeat(
         np.arange(config.districts, dtype=np.int64), config.residents_per_district
     )
+    draw_means = stream(config.seed, _DISTRICT_MEANS)
+    means = np.array(
+        [
+            draw_means.multivariate_normal(
+                model.district_means[g], model.district_covs[g], method="eigh"
+            )
+            for g in names
+        ]
+    )
     rng = stream(config.seed, _RESIDENTS)
     chol = np.linalg.cholesky(model.within_cov)
-    means = np.array([model.district_means[g] for g in names])
     positions = means[district] + rng.standard_normal(
         (config.size, model.dimensions)
     ) @ chol.T
@@ -213,11 +268,13 @@ def simulate_belief_city(
     )
     history = _questions(
         model, config, positions, turnout,
-        per_topic=config.history_questions_per_topic, purpose=_HISTORY, prefix="h",
+        per_topic=config.history_questions_per_topic,
+        weights=config.history_topic_weights, purpose=_HISTORY, prefix="h",
     )
     evaluation = _questions(
         model, config, positions, turnout,
-        per_topic=config.evaluation_questions_per_topic, purpose=_EVALUATION, prefix="e",
+        per_topic=config.evaluation_questions_per_topic,
+        weights=config.evaluation_topic_weights, purpose=_EVALUATION, prefix="e",
     )
     return Population(
         config=config,

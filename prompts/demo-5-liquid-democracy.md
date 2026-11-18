@@ -55,43 +55,245 @@ dated and justified here, never made after looking at evaluation results.
 > more faithfully than single-member district representation elected by
 > plurality.
 
-- **Primary outcome.** Per voter, liquid fidelity minus representative
-  fidelity, averaged over evaluation questions; then averaged over voters.
-  Paired across seeds (both arrangements see the same population and the
-  same turnout draws), reported with a confidence interval over seeds.
-- **Comparably low overhead.** Liquid's mean overhead is at most 10% of
-  questions decided by the voter themself (the representative's is 0). The
-  number of delegations each voter maintains is reported beside it.
-- **Fixing the liquid configuration without evaluation data.** The
-  acceptance level is the highest one whose overhead, computed by resolving
-  the chosen network on the *history* questions, is at most 10%. No
-  evaluation outcome is consulted. If the realised evaluation overhead then
-  exceeds 10%, the run is reported as having missed the comparison
-  condition, not re-tuned.
-- **Falsified** if, under the primary population, the confidence interval
-  of the primary outcome includes zero or lies below it.
+- **What H1 can and cannot license.** A positive result shows that this
+  delegation system delivers more matching ballots than district
+  representation in the specified simulated population, under the stated
+  turnout and record assumptions. It does not by itself say why: choosing
+  one's own resolver, broader choice, topic specialisation and resolver
+  attendance can each produce a win (with two disciplined blocs, one
+  well-chosen personal proxy beats a shared representative by forty points
+  and topic delegates add nothing). The decomposition below is declared so
+  the result can be attributed.
+- **Primary outcome.** For each city, liquid fidelity minus representative
+  fidelity (each the mean over voters and evaluation questions). The
+  independent unit is the city seed: both arrangements see the same
+  population and the same turnout draws, and the estimate is the mean of
+  the paired city differences with a 95% t-interval over seeds.
+- **Decision rule (revised 2026-11-17; overhead gate and separate size
+  categories added 2026-11-18 after the second review; conflicting
+  directions settled after the third).** Applied in this order, and
+  implemented in `delegation/comparison/protocol.py` (`h1_verdict`,
+  `h1_size_verdict`, `specialisation_verdict`) so the verdict is read by
+  code, not by eye:
+  1. *The overhead condition.* The 10% cap applies per city: a city meets
+     it when liquid's realised evaluation overhead is at most 10% (in the
+     primary design this equals the history overhead the configuration was
+     fixed on). H1 is assessed only if at least 95% of cities meet the cap.
+     Otherwise the verdict is *overhead condition not met*: H1 is not
+     assessed, and the fidelity difference is reported descriptively
+     beside liquid's mean realised overhead. A fidelity interval can never
+     support H1 by itself.
+  2. *Direction*, from the all-city 95% interval: *supported* when it lies
+     wholly above zero; *evidence against H1 in the modelled population*
+     when wholly below zero; *inconclusive about the sign* when it includes
+     zero. (The earlier wording, "falsified if the interval includes zero",
+     was wrong.) The interval over only the cities that meet the cap is
+     computed beside it, and a direction stands only when the two agree.
+     Any disagreement is *inconclusive about the sign*: one directional
+     and one including zero, and also opposite signs (a positive all-city
+     interval carried by a few cities over the cap, say, with a negative
+     interval over the rest). The interval over cities that meet the cap
+     is an ordinary t-interval over those cities: the two-stage rule below
+     fixed N on all cities, and the first stage may hold fewer than 20
+     cities that meet the cap, so its first-stage spread and degrees of
+     freedom do not carry over. Its coverage is therefore approximate; it
+     serves only this agreement check.
+  3. *Size*, reported separately from direction, with δ = 0.02 (two
+     fidelity points, about three more matching ballots per voter per 160
+     evaluation questions). Each interval gets one of four labels: a gain
+     of at least δ *established* (lower end at least δ); a gain below δ
+     *established* (upper end below δ, so the data rule out δ); and, when
+     the interval still contains δ (an upper end exactly at δ included),
+     *estimate at least δ, size unresolved* or *estimate below δ, size
+     unresolved*, by which side the estimate falls (revised 2026-11-18,
+     fourth review: "below δ" had been returned for an interval such as
+     1.5 to 2.3 points, which still allows δ). Both the all-city interval
+     and the interval over cities that meet the cap are labelled and
+     reported. A size is claimed at low overhead only when the two labels
+     agree; otherwise the size verdict is *size unresolved*. Without that,
+     a few cities over the cap could carry the claim on their own: 190
+     cities meeting the cap at 1.8 points and ten over it at 18 points
+     give an all-city interval of 2.07 to 3.15 points while the cities
+     that meet the cap sit at 1.8 (a test case).
+- **Precision and seed count (revised 2026-11-18).** Stopping when an
+  ordinary t-interval looks narrow enough can lower its coverage, because
+  the variance that triggers the stop is the one used in the interval. The
+  seed count is therefore fixed by Stein's two-stage procedure
+  (`protocol.stein_city_count`, `protocol.stein_interval`):
+  1. Run the first n₀ = 20 primary cities. From them compute only the
+     standard deviation s₀ of the primary outcome (paired differences,
+     primary turnout condition); the runner prints s₀ and N, not the
+     estimate.
+  2. N = max(20, ⌈(t₀.₉₇₅,₁₉ · s₀ / 0.005)²⌉), capped at 200. Run primary
+     cities 21 to N.
+  3. The interval is x̄_N ± t₀.₉₇₅,₁₉ · s₀ / √N. Because N depends only on
+     s₀, which is independent of the first-stage mean, this has exact 95%
+     coverage for normally distributed city differences. Every other
+     contrast and condition uses the same N and the same form, with its
+     own first-stage standard deviation.
+
+  The half-width target is 0.005, a quarter of δ. If the cap binds, the
+  interval is reported at its achieved half-width, the unmet target is
+  stated, and the decision rule is applied unchanged. More seeds buy
+  precision about this generator; uncertainty about citizen turnout,
+  public records and future agendas is carried by the sweeps, not by the
+  seed count. No calibration seeds are drawn: the first 20 are part of the
+  sample.
+
+  **Primary seeds (pinned 2026-11-18, third review).** "First 20" and "21
+  to N" are positions in a fixed sequence in its own namespace, never
+  literal seed IDs: the primary city at position i has seed
+  1,000,000,000 + i (`protocol.primary_city_seeds`). Development used
+  seeds 1 to 3 (inspected pilot cities), 4 and 5 (history diagnostics),
+  the configuration defaults 20261114 and 20261116, and small test-fixture
+  seeds; none lies in the primary range, which a test checks. Anyone can
+  replay the run from the sequence.
+- **Comparably low overhead.** Liquid's evaluation overhead is at most 10%
+  of questions decided by the voter themself. The proxy is held to the same
+  bound so the two are compared at matched overhead. Overhead is counted
+  the same way everywhere: a person decides a question when they resolve
+  their own vote or anyone else's vote depends on their ballot, an elected
+  resident included (the representative's overhead is then about 1% with
+  districts of 100). In liquid, the proxy and every arm but one, anyone
+  holding others' votes also resolves their own, so this is the share of
+  questions voters keep; the exception is a candidate in the
+  election-voters arm who decides for followers while their own vote goes
+  to the winner (revised 2026-11-18, third review).
+- **Fixing the configuration without evaluation data** (`compare`, the
+  protocol's entry point, through `acceptance_for_overhead`; rewritten
+  2026-11-17 after the review found a bug). The acceptance level is the
+  highest at which overhead on the *history* questions is at most 10%. All
+  distinct levels at which any delegation changes are checked (a voter
+  delegates a topic exactly when their best candidate's lower bound reaches
+  the level, so changes happen only at those bounds); there is no early
+  exit or bisection, because overhead need not fall steadily as the level
+  falls: a stricter level can break a mutual pair that the loop rule would
+  otherwise leave both deciding for themselves. The resolver used is an
+  exact per-topic resolution checked against `graph.resolve_question` at
+  the level of each voter's final resolver.
+- **Infeasible cities.** A city where no level reaches 10% is included at
+  its lowest-overhead level, flagged, and counted in the report. Cities are
+  never dropped from the all-city estimate; how many miss the cap decides
+  whether H1 is assessed at all (decision rule, step 1), and the estimate
+  over the cities that meet it is reported beside the all-city one.
+- **The cap on a changing agenda.** With the same topic mix in history and
+  evaluation and exact routing, evaluation overhead equals history overhead
+  by construction, so the 10% check alone tests nothing. An uneven
+  evaluation agenda (`BeliefCityConfig.evaluation_topic_weights`) is
+  therefore a declared sweep, and realised evaluation overhead is reported
+  for every run.
 - **Primary population.** One belief model, fitted to measured data (see
-  "Population model"): `delegation/data/beliefs_ces2024_v1.json`, drawn by
+  "Population model"): `delegation/data/beliefs_ces2024_v2.json`, drawn by
   `delegation/comparison/beliefs.py`. It is a measurement choice, not a
   hypothesis; the one-factor model in `population.py` is the structural
   robustness sweep.
 - **Fixed for the primary run, declared before it:** binary questions;
   three candidates per district and sincere voting; exact routing;
   delegates chosen once from a history of declared length; resolver
-  turnout as in amendment A1 below; the seeds and their count.
+  turnout as in amendment A1 below; the seeds by the two-stage rule above;
+  ties between equally ranked candidates broken by a seeded random key per
+  voter and candidate (`choice.tie_key`), never by row order (revised
+  2026-11-18: rows are grouped by district, so breaking ties by index sent
+  tied choices to the first district).
+- **Scope of the overhead claim.** The 10% describes ongoing operation once
+  a public record exists. Building that record is not free: counting the
+  history period, where everyone decides every question directly, a system
+  starting from scratch has lifecycle overhead of about 71% to 74% over
+  history and evaluation together. Lifecycle overhead is reported beside
+  the headline, and the walkthrough says where such records would come
+  from.
+
+### Decomposition (declared 2026-11-17, participation step added 2026-11-18)
+
+Each contrast is a paired city difference with its interval, under both
+turnout conditions. They explain H1; none is a second hypothesis. The
+chain representative-by-record → own-of-three among election voters →
+own-of-three for everyone → proxy → liquid has four contrasts that sum
+exactly to liquid minus representative-by-record; H1's difference is that
+sum minus "platform against record". Three steps change one thing each;
+the city-wide proxy step changes several at once and is reported as a
+combined effect (third review, 2026-11-18).
+
+| Contrast | Arms (`compare` names) | What changes |
+|---|---|---|
+| Cost of sharing | `district_choice_voters` minus `representative_by_record` | The same three district candidates, records, turnout and participants. Residents who vote in the record election either share its winner or each assign their ballot to their own preferred one of the three; residents who do not vote get the winner in both. Only sharing changes. |
+| Choice by non-voters | `district_choice` minus `district_choice_voters` | Residents who would not vote in the election also choose their own one of the three, instead of receiving the winner. (The second review found the earlier pair mixed this into the cost of sharing: the election counted only voters while own-of-three counted everyone.) |
+| Platform against record | `representative` minus `representative_by_record` | How the shared representative is chosen: closest latent platform, or residents' record-based preference. Both elections use the same tie-break draw per district, so identical ballots cannot produce different winners. |
+| City-wide proxy, combined | `proxy` minus `district_choice` | Several things at once: a pool of 499 residents city-wide instead of three local candidates; onward delegation (proxies follow their own proxies); keeping by acceptance threshold instead of always assigning; and, in the ordinary-turnout condition, resolvers voting at ordinary turnout instead of the office-holder floor. It is reported as their combined effect and says nothing about how much a wider pool alone buys; no matched arm isolates pool size, because no claim rests on it. |
+| Topic specialisation | `liquid` minus `proxy` | Eight topic delegates instead of one, both at matched overhead of at most 10%. |
+
+**Overhead condition for topic specialisation (revised 2026-11-18, third
+review).** The contrast is paired by city, so its claim needs comparable
+overhead within the same cities. It is assessed only if both arms meet the
+10% cap together in at least 95% of cities, the per-city intersection
+(`protocol.joint_share`); gating each arm separately would let both pass
+at 19 of 20 while only 18 cities meet both caps. The two marginal rates
+are reported beside the joint one. Otherwise the contrast is *not
+assessable at matched overhead*, and both arms' realised overheads are
+reported beside the difference. The interval over cities where both arms
+meet the cap is reported beside the all-city one, and, as for H1, a
+direction or a practical size stands only when the two intervals agree
+(`protocol.specialisation_verdict`).
+
+**Margin for topic specialisation.** Maintaining eight delegations is worth
+it if liquid beats the proxy by at least Δ = 0.02. Declared before the
+contrast is seen; direction and practical size are reported separately
+(revised 2026-11-18, because the earlier categories overlapped: an
+interval from −0.015 to −0.005 was both "practically equivalent" and
+"proxy better"):
+- *Direction:* liquid better (interval wholly above zero), proxy better
+  (wholly below zero), or sign inconclusive.
+- *Practical size:* *worthwhile* when the lower end is at least +Δ;
+  *proxy materially better* when the upper end is at most −Δ; *practically
+  equivalent* when the interval lies wholly within (−Δ, +Δ); otherwise
+  *size unresolved*. Labelled for all cities and for cities where both
+  arms meet the cap; the verdict is the shared label, or *size
+  unresolved* when they differ.
+
+A noisy difference near zero is not equivalence.
+
+### Reporting (declared 2026-11-17)
+
+For every arrangement and condition:
+- **Three shares that sum to one:** matching ballot, contrary ballot and no
+  ballot. Fidelity is the first. A voter below one half because nobody
+  voted for them has had a different experience from one whose resolver
+  voted against them, so the per-voter distribution splits voters below
+  one half the same way.
+- **Where a difference arises (revised 2026-11-18):** the H1 difference
+  (liquid minus representative) and the specialisation difference (liquid
+  minus proxy) are split over the same voter-question pairs, both arms
+  scored on each: the pairs liquid's voters kept, and the rest. Weighted by
+  liquid's kept share the two parts sum to the difference
+  (`compare(...).attributions`), so the up-to-10% of kept decisions cannot
+  carry the result unseen. Each arm's own fidelity on its kept and
+  resolved pairs is still reported, descriptively; those conditions differ
+  between arms, so they do not attribute a difference.
+- **Loops:** the share of votes whose owner delegated but decides for
+  themself because the chain loops, and loops per question (liquid and the
+  proxy). A loop member and a voluntary keeper have the same resolver, so
+  loop membership is recorded during resolution.
+- **Resolver attendance:** the share of questions on which a person holding
+  others' votes actually voted, read from their own cast ballot (revised
+  2026-11-18: reading it from their own counted ballot was wrong when
+  someone else supplies that ballot, as for a candidate whose own vote
+  goes to the election winner).
+- **Overhead, lifecycle overhead and delegations maintained.**
 
 ### What everything else is
 
 | Question | Role |
 |---|---|
 | Full turnout; direct at real turnout | Reference points on the headline figure, no claim |
-| Dilution against bundling (the personal proxy) | Explanation of why H1 holds or fails, labelled exploratory (kept, decided 2026-11-16) |
+| Dilution against bundling (the matched three-candidate arms and the personal proxy) | Explanation of why H1 holds or fails, through the declared decomposition and the topic-specialisation margin above (revised 2026-11-17: the proxy step alone changed candidate pool, selection rule, election and onward delegation at once) |
 | Belief structure (correlation across issues, blocks of related issues) | Robustness sweep: where H1 holds, not which structure is true |
-| History length, number of districts | Robustness sweeps, few values, one family at a time from the primary settings |
+| History length, number of districts, evaluation topic mix | Robustness sweeps, few values, one family at a time from the primary settings |
+| Stress case: sparse records (10 history questions per topic), an uneven agenda (one topic four times as heavy as each other, in history and a different one in evaluation) and ordinary delegate turnout, together | Declared robustness point (2026-11-17): these plausibly occur together, and one-at-a-time sweeps miss how they interact |
 | Outcome agreement with full turnout, concentration, lost votes, loops | Secondary outcomes, reported, no hypothesis |
-| Ordinary resolver turnout (delegates vote like anyone else) | Co-reported condition beside the primary symmetric one (A1) |
-| Break-even resolver turnout | Secondary outcome (A2): the resolver turnout at which liquid's fidelity equals the representative's |
-| Per-voter fidelity distribution | Secondary outcome (A5): share of voters below 0.5, and the 10th percentile, under each arrangement |
+| Ordinary resolver turnout (delegates vote like anyone else) | Reported side by side with the primary symmetric condition, with equal prominence (A1, revised 2026-11-17) |
+| Break-even resolver turnout | Secondary outcome (A2): the resolver turnout at which liquid's fidelity equals the representative's; "no crossing in the tested range" is an allowed result |
+| Per-voter fidelity distribution | Secondary outcome (A5): share of voters below 0.5 and the 10th percentile, with voters below 0.5 split by no ballot against contrary ballot |
+| Three shares, the paired kept/resolved attribution, loops, resolver attendance, lifecycle overhead | Reported for every arrangement, the attribution for H1 and for specialisation (see "Reporting") |
 | Onward-delegation limits, backup delegates, other ballot types, the account app | Out of scope: design variants, not this test |
 | Whether party competition produces left-right correlation | Out of scope: a causal claim about real politics and a study of its own. A low-correlation point on the robustness sweep covers "what if beliefs were less sorted" without asserting why |
 | Router error (Jev) | Out of scope for H1; it has its own evaluation. A follow-up may test H1 under measured routing error |
@@ -110,8 +312,9 @@ subtopic, question) whose variance at each level is estimated from data,
 for example by linking several CES years that share items onto one scale
 (concurrent calibration), and the router back in the loop, so that a
 voter's category text picks out a region of that hierarchy. Topic-level H1
-is the conservative case: if finer categories help, H1 understates liquid;
-if not, voters lose nothing by using topics.
+is the simpler case: if finer categories help, topic-level H1 may
+understate liquid; if not, voters lose nothing by using topics. Neither is
+established.
 
 ### Amendments after the pilot (2026-11-16)
 
@@ -140,7 +343,15 @@ correction or a tuning.
   resolver, not from splitting by topic. Caveats: the model fits
   within-topic structure worst, and CES items are more party-sorted than
   local measures.
-- **A1. Symmetric resolver turnout (primary).** Anyone who resolves votes
+- **A1. Symmetric resolver turnout (primary; scope revised 2026-11-17).**
+  The office-holder rate answers how often elected officials vote, not how
+  often a private citizen votes once a neighbour delegates to them; field
+  evidence also separates selection (active voters receive more
+  delegations) from behaviour change (delegates need not then participate
+  more). Turnout is therefore a central variable of the study rather than a
+  settled assumption: the ordinary-turnout condition is reported beside the
+  primary with equal prominence, with the break-even (A2) and realised
+  resolver attendance. Anyone who resolves votes
   for others votes at one office-holder rate, and that includes the
   representative, who no longer votes with certainty. The rate is **0.96**,
   checked against Voteview on 2026-11-16 (replacing a placeholder of 0.98):
@@ -188,10 +399,16 @@ correction or a tuning.
   procedural motions excluded, minority side at least 10%; Voteview, same
   script). Spread over the simulation's eight topics, which stand for the
   whole question space, that is 54 to 90 per topic. The primary value is
-  the lower, rounded down to 50 (400 history questions): a shorter history
-  hurts per-topic delegate choice most, so rounding down is the
-  conservative direction for H1. The sweep reports 10, 20, 50 and 100 per
-  topic. Limit: each voter's own record is their turnout rate times this,
+  the lower, rounded down to 50 (400 history questions). (An earlier
+  claim that rounding down is the conservative direction for H1 is
+  withdrawn, 2026-11-17: a shorter history hurts per-topic choice, but its
+  net effect on liquid against the representative is not established.)
+  The sweep reports 10, 20, 50 and 100 per topic. Voteview is a weak
+  anchor for how much citizens know about each other: of the 720
+  qualifying votes in the 118th House, 525 were amendments, on 194 distinct
+  bills, so the count does not establish 50 independent observations per
+  topic; the stress case below combines sparse records with an uneven
+  agenda. Limit: each voter's own record is their turnout rate times this,
   so a voter at 30% turnout has about 15 trials per topic; how a voter
   would build that record before delegating is the setup overhead already
   reported separately.
@@ -237,8 +454,11 @@ correction or a tuning.
   The estimated strength was 55 to 74 pseudo-questions, against 20 real
   history questions per topic: in this population a pair's agreement on
   one topic is well predicted by their agreement on the others, so thin
-  topic records lean heavily on the whole record. This is the same finding
-  as before from another angle: bundling across topics costs little here.
+  topic records lean heavily on the whole record. (Revised 2026-11-17:
+  this was first read as evidence that bundling across topics costs
+  little. Much of the strength reflects attendance instead, because a
+  candidate's absence counts as a miss on every topic; see "Pooling and
+  attendance" under "Population model".)
   These runs verify the code; they are not the primary run, whose seeds
   are not yet drawn.
 
@@ -277,13 +497,21 @@ Each arrangement decides whose ballot counts for a voter on a question.
 | **Full turnout** (reference) | Yours, on every question, and you always vote | — | — |
 | **Direct** | Yours, on every question, when you turn out | — | — |
 | **District representative** | Your district's representative, elected by plurality, on every question | yes | yes |
+| Representative by record (`representative_by_record`) | The same election, but residents rank the three candidates by public record, as delegates are chosen | yes | yes |
+| Own of three, election voters (`district_choice_voters`) | If you vote in that election, your own preferred one of the three; otherwise its winner | partly | yes |
+| Own of three, everyone (`district_choice`) | Your own preferred one of the three | no | yes |
 | **Personal proxy** | One person you chose by your overall agreement, on every question | no | yes |
 | **Liquid** | Per category, a person you chose by your agreement on that category; yours on everything you keep | no | no |
 
-The personal proxy is not a real proposal. It is the step between the other
-two that separates the cost of dilution from the cost of bundling: the gap
-from representative to proxy is dilution, the gap from proxy to liquid is
-bundling.
+The personal proxy and the three-candidate arms are not real proposals.
+They are the steps between representation and liquid delegation that the
+declared decomposition (research protocol) uses to say why H1 holds or
+fails: sharing, choice by non-voters and topic delegates each change at
+exactly one step, and the step to the city-wide proxy is a combined
+effect of several changes. (The first design read the gap from
+representative to proxy as dilution alone; that step changed the
+candidate pool, the selection rule, the election and onward delegation at
+once.)
 
 Abstention is the same everywhere: a voter whose counted ballot is empty
 (their resolver did not vote) gets no match.
@@ -343,8 +571,13 @@ category's questions with their own (proposed 2026-11-14):
    counts as a miss, because a delegation would not have represented the
    voter there either. Questions the voter skipped are left out.
 3. **Uncertainty.** Agreement is a Beta-binomial posterior with a uniform
-   prior. Candidates are ranked by the lower end of an 80% credible interval,
-   not by the raw rate, so 18 of 20 beats 2 of 2.
+   prior. Candidates are ranked by the lower end of an 80% credible
+   interval. (Corrected 2026-11-17: an earlier "18 of 20 beats 2 of 2" did
+   not describe this ranking. For one voter on one topic every candidate
+   has the same number of trials, the voter's own votes, so among
+   candidates the ranking follows the match count; the interval's width
+   matters across voters and topics, where it decides whether the best
+   candidate clears the acceptance level.)
 4. **Choice.** The voter delegates the category to the top-ranked candidate
    only if that lower bound clears an acceptance level; otherwise they keep
    the category. The acceptance level is a run parameter.
@@ -431,8 +664,9 @@ CSV, a Stata file and a guide).
 - **Known limits.**
   - The items are national and chosen by the study team for being salient
     and divisive, so they are likely *more* party-sorted than typical local
-    ballot measures. That makes the measured population harder for liquid
-    than the city it stands in for, which is the safe direction for H1.
+    ballot measures. Which way that moves H1 is not established (claim
+    withdrawn 2026-11-17): more sorting can favour a shared representative
+    or make a personal match easier to find.
   - The panel is an opt-in online sample matched and weighted to the ACS;
     fits use the guide's recommended common weight (variable name to be
     confirmed in the file).
@@ -504,7 +738,9 @@ response model.**
      augmentation, Albert and Chib 1992): latent utilities from truncated
      normals, θ from its normal conditional, missing and held-out answers
      imputed inside the sampler. 1,200 iterations, 200 burned, every fifth
-     kept, two chains with recorded seeds.
+     kept, two chains with recorded seeds. Since version 2 the positions
+     are conditioned on district (hierarchical; see "Validation and two
+     corrections before the freeze").
 
   The planned fully joint Gibbs sampler over items and respondents
   (Béguin and Glas 2001) was built and recovered known parameters, but
@@ -550,14 +786,17 @@ response model.**
 
   The declared rule chooses K = 6, which is the top of the declared range,
   and the score was still rising (K = 5 to 6 by about 16 standard errors),
-  so the range was binding. K = 6 is used as declared. It is the
-  conservative choice for H1: a model with fewer dimensions than the data
-  supports represents beliefs as more bundled than they are, which favours
-  the representative. Extending the range is a possible dated amendment
+  so the range was binding. K = 6 is used as declared. (An earlier claim
+  that this is the conservative choice for H1 is withdrawn, 2026-11-17:
+  more dimensions can make a shared representative less suitable, make a
+  personal match harder to learn, or change which candidate wins; the
+  balance is an empirical question.) Extending the range is a possible dated amendment
   before the primary run, not a change made here. Clustered and per-cell
   standard errors agree to two significant figures.
 
-  **Final fit (2026-11-16), `delegation/data/beliefs_ces2024_v1.json`.**
+  **First fit (2026-11-16), version 1, since replaced by version 2** (see
+  "Validation and two corrections before the freeze"; the item parameters
+  and fit checks below are unchanged in version 2).
   K = 6 on all 60,000 respondents, 575 s.
   - Tetrachoric residual RMSR 0.028; 7% of the 630 item pairs miss by more
     than 0.05. The largest misses are pairs within one topic that the model
@@ -591,6 +830,185 @@ response model.**
   after them is recorded as such. The diagnostics run on the same three
   cities afterwards, and the amendments they led to, are in "Amendments
   after the pilot" under the research protocol.
+
+  **Validation and two corrections before the freeze (2026-11-16).** The
+  declared patterns were checked (`scripts/validate_beliefs.py`,
+  `scripts/validate_holdout.py`; results in `.cache/ces/validation.json`).
+  Two checks failed on the first model and led to corrections; the fit is
+  now `delegation/data/beliefs_ces2024_v2.json` (version 1 removed). The
+  items, K and the topic assignment are unchanged. The model v2 column is
+  the fit regenerated on 2026-11-18 with the corrected covariance prior
+  (see "Covariance prior" below).
+
+  | Check | Data | Model v1 | Model v2 |
+  |---|---|---|---|
+  | Agreement with one's House member on the three bills with 118th-Congress roll calls (H.R. 7521, 7888, 2), corrected to 118th districts 2026-11-17 | 54.45%, 46.50%, 56.78% | 50.9%, 55.8%, 54.6% | 51.2%, 55.9%, 54.5% |
+  | Between-district spread of item support rates, model over data (median, range) | — | 0.62 (0.43–0.73) | 0.94 (0.59–1.16) |
+  | Moderates (liberal share 0.4–0.6); their spread of liberal share between topics | 20.3%; 0.258 | 22.6%; 0.245 | 21.6%; 0.246 |
+  | CES 2022 items, median absolute correlation within / between topics, topics weighted equally on both sides (corrected 2026-11-17), model under the fitted population covariance (2026-11-18) | 0.528 / 0.469 | — | 0.523 / 0.433 |
+
+  - **Representative (corrected 2026-11-17).** The first version joined
+    119th-Congress district numbers (`cdid119`) to 118th-Congress roll calls;
+    1,973 of 60,000 respondents have different numbers in the two. Joined on
+    `cdid118`, respondents agree with their member 54.45% (TikTok), 46.50%
+    (FISA) and 56.78% (H.R. 2) of the time; the simulated representative,
+    now elected with turnout drawn as in the simulation, 51.2%, 55.9% and
+    54.5%. The mean hides that the model is about nine points too generous
+    on FISA and three points short on the other two. This is a limited
+    check: three bills on two topics, the only CES 2024 bills with a
+    118th-Congress House vote (the contraception, abortion-access and
+    marriage bills were 117th-Congress votes on the old district lines),
+    counting only respondents whose member cast a yea or nay. It does not
+    show that the simulation is fair to representation in general.
+  - **Correction 1, district variation.** Version 1 drew every respondent's
+    position under one N(0, I) prior, which pulls each district toward the
+    national mean (the known bias of plausible values that ignore group
+    membership), and then shrank the district means again. It reproduced
+    only 0.62 of the observed spread. Version 2 samples positions from a
+    hierarchical model, θᵢ ~ N(μ_district, W), μ_district ~ N(0, T), with
+    W and T sampled in the same Gibbs run (`sample_grouped_positions` in
+    `irt.py`, weak inverse-Wishart priors with K + 2 degrees of freedom and
+    prior means 0.9 I and 0.1 I; corrected 2026-11-18, see below), and the
+    simulation draws each district's mean from its posterior. On
+    simulated data with known
+    groups the grouped sampler recovered the between-group variance (0.283
+    against 0.30) where the ungrouped one gave 0.168. Compared like for
+    like (unweighted on both sides, as the model is fitted) the ratio is
+    now 0.94 (0.97 before the prior correction below). District means
+    are fitted unweighted; `commonweight` is no longer used. The first
+    comparison, weighted on the data side only,
+    read 0.77 because weighting adds noise to that side alone.
+  - **Moderates.** Reproduced: about one respondent in five is moderate
+    overall, and moderates are mixed across topics by about the same
+    amount in data and model (Ahler and Broockman's pattern on binary
+    items: liberal on some topics, conservative on others, rather than
+    centrist on each). The model's distribution of liberal share is
+    slightly compressed at the liberal end.
+  - **Correction 2, question polarity.** Items in a topic are worded in
+    both directions, so their loadings point in nearly opposite directions
+    and their average cancels toward zero: version 1 generated questions
+    that correlated far more weakly than CES 2022's real items. Version 2
+    aligns each topic's items to its principal loading direction before
+    fitting the topic distribution (reflecting (a, b), which only swaps
+    which answer counts as support) and words each new question either way
+    with equal chance. (Corrected 2026-11-17.) The first comparison
+    weighted topics differently on the two sides: guns and policing
+    supplied 91 of the 128 observed within-topic pairs while the model side
+    weighted the five topics equally, and the "within-topic too strong"
+    reading (0.53 against 0.47) came from that. (Revised 2026-11-18.) The
+    model side now uses the population the benchmark draws, positions with
+    the fitted within- plus between-district covariance, rather than the
+    identity of the item fit's scale. With every topic weighted equally on
+    both sides the within-topic medians nearly match (model 0.523, data
+    0.528) and between topics the model is weaker (0.433 against 0.469),
+    so the model separates within-topic from between-topic agreement a
+    little more than the data does. Per topic, model against observed
+    median within-topic |r|: environment 0.564 against 0.637, guns and
+    policing 0.456 against 0.422, health care 0.358 against 0.314,
+    immigration 0.639 against 0.621, reproductive rights 0.576 against
+    0.561. No direction of bias is asserted. CES 2022 covers five of the
+    eight topics; some of its items repeat 2024 wording. Because this check
+    motivated version 2, it is development evidence, not independent
+    validation; a later CES wave not yet used is reserved for that.
+  - **Covariance prior (corrected 2026-11-18, second review).** For an
+    inverse-Wishart prior in K dimensions E[Σ] = scale / (df − K − 1). The
+    sampler used df = K + 2 and scale (K + 2) times the guess, so the prior
+    means were 7.2 I and 0.8 I at K = 6 rather than the intended 0.9 I and
+    0.1 I. The scale is now the guess itself and the fit was regenerated.
+    The within-district covariance is unchanged (60,000 respondents swamp
+    the prior); the between-district variance fell on the weakly varying
+    dimensions (diagonal 0.013 to 0.055 before, 0.006 to 0.053 after),
+    which moves the district-spread ratio from 0.97 to 0.94 and the other
+    checks by less than half a point. The item parameters and topic
+    distributions are unchanged.
+  - **Position sampler, version 2.** Split R-hat over 12,000 position
+    coordinates: median 1.002, 99th percentile 1.05, worst 1.18; over the
+    district means: median 1.002, 99th percentile 1.03, worst 1.10.
+    Between-district covariance diagonal 0.006 to 0.053, within-district
+    0.92 to 1.05.
+  - **K was chosen with the ungrouped sampler** (held-out cells, before
+    correction 1). The choice is left as declared; the grouped prior
+    changes held-out predictions little because 36 answers dominate a
+    respondent's prior.
+  - **Pooling and attendance (sensitivity, 2026-11-17; reworded
+    2026-11-18).** Delegate choice counts a candidate's skipped question as
+    a miss, so a reliable attendee looks good on every topic and the
+    per-topic pooling strength may partly reflect attendance. On five
+    fitted cities (history questions only) the strength is 41 to 46
+    pseudo-questions as choice computes it, and 18 to 20 when only
+    questions both people voted on are counted. That is a sensitivity
+    result, not an attribution: counting only jointly cast ballots changes
+    both the outcome being predicted and the number of trials, so the gap
+    between the two fitted strengths does not identify the share due to
+    attendance (an earlier version said "more than half"). Separating the
+    two would need a model or a controlled intervention on attendance. The
+    strength is not presented as evidence about ideological bundling.
+  - **Real-data selection test (development evidence, 2026-11-17; rerun
+    2026-11-18 after the second and third reviews;
+    `scripts/validate_selection.py`).**
+    The simulation's mechanism is that someone chosen for agreeing with
+    you on recorded questions agrees with you on the next one. This was
+    checked on real CES 2024 respondents rather than the fitted model: 20
+    cities, each of 5 real congressional districts with 100 respondents
+    who answered all 36 items; each item is held out in turn, resolvers are
+    chosen from the other 35 answers, and the score is agreement on the
+    held-out item. Agreement only: there is no attendance or turnout here.
+
+    *Corrections in the rerun.* The first run broke ties by row index, and
+    rows were grouped by district: the topic-only arm averaged 99 tied
+    candidates and sent 96% of its choices to the first district. Every
+    choice now scores the average agreement over its tied best candidates.
+    In the election, a resident tied among the three picks one of them at
+    random and plurality ties are broken at random, and the election is
+    scored by its exact winner probabilities (third review: an earlier
+    rerun split tied ballots fractionally and took the plurality, a
+    different rule; it gave representative agreement 0.60510 against
+    0.60539 exactly, and differed by up to 5 points on one city and
+    item). Every method is now scored on the same 485 residents who are
+    not one of the three candidates; the first run compared means over 485
+    and 495 people. Intervals now respect that the same 36 items recur in
+    every city: one over cities (average within each city, then a
+    t-interval over 20; inference to new cities on these items) and one
+    two-way (crossed city and item effects; inference to new items like
+    these too, and the one a margin is read against). The first run's
+    standard errors treated all 720 city-item scores as independent.
+
+    | Choice | Mean agreement | 95% over cities | 95% two-way |
+    |---|---|---|---|
+    | Random resident | 0.576 | 0.573–0.580 | 0.544–0.608 |
+    | Representative, plurality of record preferences among three | 0.605 | 0.596–0.615 | 0.570–0.641 |
+    | Own preferred of the same three | 0.664 | 0.652–0.675 | 0.633–0.694 |
+    | Topic delegate, that topic's items only | 0.700 | 0.695–0.705 | 0.667–0.733 |
+    | Personal proxy, city-wide | 0.738 | 0.733–0.744 | 0.710–0.767 |
+    | Topic delegate, pooled prior (as liquid chooses) | 0.746 | 0.742–0.750 | 0.718–0.774 |
+
+    | Paired contrast | Mean | 95% over cities | 95% two-way |
+    |---|---|---|---|
+    | Own-of-three minus representative (sharing) | +0.058 | +0.049 to +0.067 | +0.041 to +0.075 |
+    | Proxy minus own-of-three (wider pool; one hop, no threshold, no turnout here) | +0.075 | +0.065 to +0.085 | +0.061 to +0.089 |
+    | Pooled topic delegate minus proxy (specialisation) | +0.0075 | +0.006 to +0.009 | +0.004 to +0.011 |
+    | Unpooled topic delegate minus proxy | −0.039 | −0.042 to −0.035 | −0.053 to −0.024 |
+
+    The ordering is not the same in every topic (the first write-up said it
+    was). The pooled topic delegate is at or above the proxy in all eight
+    topics, by 0.0005 (environment) to 0.022 (reproductive rights). The
+    unpooled topic delegate is below the proxy in seven topics and above it
+    in reproductive rights (0.770 against 0.763), and below own-of-three in
+    civil rights and liberties, health care and housing, the topics with
+    two or three items.
+
+    Reading: selection from a record carries to unseen questions in real
+    data; sharing one representative and choosing among three local
+    candidates cost most of the gap; and with only two to six items per
+    topic, topic specialisation adds little beyond a well-chosen single
+    proxy. Under the declared categories the specialisation contrast is
+    *liquid better* in direction and *practically equivalent* in size: its
+    two-way interval lies above zero and wholly within ±Δ = 0.02. Without
+    pooling it is worse. This is a look at the topic-specialisation
+    contrast before the freeze, disclosed here; the margin and the
+    decomposition were declared before it and are not changed by it.
+    Records with 50 questions per topic may differ, and the 36 items are a
+    fixed national grid, not a random sample of questions.
 - **Topics are observed, dimensions are latent.** Delegation categories are
   topics, assigned to items by hand from their wording, not latent
   dimensions. An authored assignment, approved 2026-11-16:
@@ -643,13 +1061,12 @@ response model.**
   - Representative agreement: how often respondents agree with their real
     House member on the `CC24_340` bills (members' votes from Voteview).
     The simulated representative is honest, so it should do at least as
-    well; if it does far better, the simulation favours representation,
-    which is the safe direction for H1, and that is reported.
+    well; how far it departs is reported per bill.
 - **Where the code is.** The estimator, pure, in
   `delegation/comparison/irt.py` (tested in
   `delegation/tests/test_irt.py`). The CES loading and fit, which read the
   cached file, in `scripts/fit_ces_beliefs.py` (`choose-k`, then
-  `fit --k K`), writing `delegation/data/beliefs_ces2024_v1.json`. The city
+  `fit --k K`, `retopic`), writing `delegation/data/beliefs_ces2024_v2.json`. The city
   generator in `delegation/comparison/beliefs.py` (tested in
   `delegation/tests/test_beliefs.py`); the one-factor model in
   `population.py` stays as the structural robustness sweep. A population

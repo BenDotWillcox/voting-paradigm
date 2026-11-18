@@ -41,6 +41,7 @@ def _write_model(path, k=2, topics=("alpha", "beta", "gamma"), districts=12):
                     "respondents": 40 + 10 * d,
                     "effective_respondents": 30.0,
                     "mean": rng.normal(0, 0.3, k).tolist(),
+                    "cov": (np.eye(k) * 0.01).tolist(),
                 }
                 for s in (1, 2)
                 for d in range(districts // 2)
@@ -96,10 +97,18 @@ def test_only_districts_with_enough_respondents(model):
 def test_zero_spread_repeats_the_topic_mean(model):
     city = simulate_belief_city(model, replace(SMALL, within_topic_spread=0.0))
     q = city.evaluation
+    flipped = 0
     for t, name in enumerate(model.topics):
-        rows = q.dimension == t
-        assert np.allclose(q.loadings[rows], model.topic_means[name][:-1])
-        assert np.allclose(q.intercepts[rows], model.topic_means[name][-1])
+        rows = np.flatnonzero(q.dimension == t)
+        mean = model.topic_means[name]
+        for r in rows:
+            # Each question is the topic mean, worded one way or the other
+            params = np.append(q.loadings[r], q.intercepts[r])
+            same, reflected = np.allclose(params, mean), np.allclose(params, -mean)
+            assert same or reflected
+            flipped += reflected
+    # Both wording directions occur
+    assert 0 < flipped < len(q)
 
 
 def test_votes_follow_the_model(model):
@@ -114,7 +123,7 @@ def test_votes_follow_the_model(model):
 
 
 def test_comparison_runs_on_a_fitted_city(model):
-    result = compare(simulate_belief_city(model, SMALL), ChoicePolicy())
+    result = compare(simulate_belief_city(model, SMALL)).measures
     assert result["full_turnout"].fidelity == 1.0
     assert 0.0 <= result["liquid"].overhead <= 1.0
 
@@ -126,3 +135,30 @@ def test_committed_fit_loads():
     assert model.national_mean.shape == (model.dimensions,)
     city = simulate_belief_city(model)
     assert city.size == 500
+
+
+def test_topic_counts():
+    from delegation.comparison.beliefs import topic_counts
+
+    assert topic_counts(12, 3, None).tolist() == [4, 4, 4]
+    assert topic_counts(10, 3, (2.0, 1.0, 1.0)).tolist() == [5, 3, 2]
+    assert topic_counts(10, 2, (0.0, 1.0)).tolist() == [0, 10]
+    with pytest.raises(ValueError):
+        topic_counts(10, 3, (1.0, 1.0))
+
+
+def test_uneven_agenda_changes_evaluation_overhead(model):
+    from delegation.comparison import compare, liquid_at_overhead
+
+    even = simulate_belief_city(model, SMALL)
+    skewed = simulate_belief_city(model, replace(SMALL, evaluation_topic_weights=(6.0, 1.0, 1.0)))
+    assert np.bincount(skewed.evaluation.dimension).tolist() == [9, 2, 1]
+    # The same history, so the same calibrated acceptance
+    assert compare(even).liquid_acceptance == compare(skewed).liquid_acceptance
+    # Evaluation overhead is each topic's self-resolution rate weighted by
+    # the evaluation agenda, so it moves with the agenda
+    outcome, _ = liquid_at_overhead(skewed)
+    topic = skewed.evaluation.dimension
+    rate = np.array([outcome.kept[:, topic == t].mean() for t in range(3)])
+    weights = np.bincount(topic) / len(topic)
+    assert outcome.kept.mean() == pytest.approx(float(rate @ weights))
