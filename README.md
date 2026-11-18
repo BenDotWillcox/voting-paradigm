@@ -31,6 +31,31 @@ its mean-score aggregation and takeaway. It adds no database tables or
 persistence. Budget, spending-package and schedule examples are paused; a
 companion theory blog is separate future work, with no placeholder in the demo.
 
+### Private personal ballot journal
+
+With the repository's Python requirements and Node dependencies installed, run
+`npm run journal` and open [your local journal](http://127.0.0.1:3035/preferences/journal).
+The launcher starts both services on loopback. It uses the repository's
+`venv` or Python on your path. Set `PERSONAL_JOURNAL_PYTHON` to use a different interpreter.
+
+Paste a source link, the measure text, and the meaning of each outcome. Mark
+whether you already knew the measure. **Lock prediction** saves the model's
+forecast privately. Return to the same journal after a restart, choose Yes or
+No, and record your reasoning to reveal the original forecast. The source URL
+is a reference: the journal forecasts from the text you enter. Entries persist
+in `eval/private_runs/personal-journal/`. To use a different private directory
+or ports, set `PERSONAL_JOURNAL_DIR`, `PERSONAL_JOURNAL_WEB_PORT`, or
+`PERSONAL_JOURNAL_API_PORT` before starting.
+
+The default local statistical baseline uses previous completed choices and
+the wording of the outcomes. On a first ballot it assigns equal probabilities
+and breaks the tie deterministically. An optional local LLM can instead read
+the measure and prior ballot evidence: set `PERSONAL_JOURNAL_MODEL_MODE=llm`
+and point `PREFERENCE_LLM_BASE_URL` and `PREFERENCE_LLM_MODEL` at an installed
+loopback, OpenAI-compatible model. A failed forecast leaves the ballot unlocked
+so you can retry. Personal entries and the journal API are private to the local
+launcher; this feature runs separately from the public replay and blinded study.
+
 ### Preference-model evidence
 
 The [synthetic benchmark](eval/benchmarks/synthetic_v1/README.md) compares two
