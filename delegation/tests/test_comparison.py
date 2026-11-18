@@ -781,3 +781,38 @@ def test_full_overhead_budget_selects_acceptance_one(small):
     assert fixed.feasible
     # The protocol's 10% level is unaffected
     assert acceptance_for_overhead(small).acceptance < 1.0
+
+
+def test_only_people_who_decide_cast_ballots(small):
+    from delegation.comparison import (
+        PRIMARY_TURNOUT,
+        district_choice,
+        district_choice_voters,
+        liquid_at_overhead,
+        proxy_at_overhead,
+        representative_by_record,
+    )
+
+    election = elect_representatives(small)
+    outcomes = [
+        direct(small),
+        representative(small, election, PRIMARY_TURNOUT),
+        representative_by_record(small, election, PRIMARY_TURNOUT),
+        district_choice_voters(small, election, PRIMARY_TURNOUT),
+        district_choice(small, election, PRIMARY_TURNOUT),
+        liquid_at_overhead(small)[0],
+        proxy_at_overhead(small)[0],
+    ]
+    for outcome in outcomes:
+        people, questions = outcome.resolver.shape
+        columns = np.broadcast_to(np.arange(questions), (people, questions))
+        others = outcome.resolver != np.arange(people)[:, None]
+        holds = np.zeros((people, questions), dtype=bool)
+        holds[outcome.resolver[others], columns[others]] = True
+        decides = outcome.kept | holds
+        assert not (outcome.cast & ~decides).any(), outcome.arrangement
+        # A counted ballot exists exactly when its resolver cast one
+        rows = outcome.resolver
+        assert np.array_equal(outcome.counted != NOT_CAST, outcome.cast[rows, columns]), outcome.arrangement
+    rep = outcomes[1]
+    assert set(np.flatnonzero(rep.cast.any(axis=1))) <= set(election.elected.tolist())

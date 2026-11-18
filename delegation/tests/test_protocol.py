@@ -10,10 +10,12 @@ from delegation.comparison.protocol import (
     Interval,
     direction,
     h1_size,
+    h1_size_verdict,
     h1_verdict,
     joint_share,
     primary_city_seeds,
     specialisation_size,
+    specialisation_verdict,
     stein_city_count,
     stein_interval,
     t_interval,
@@ -83,8 +85,37 @@ def test_size_categories_do_not_overlap():
     assert specialisation_size(Interval(0.03, 0.02, 0.04)) == "worthwhile"
     assert specialisation_size(Interval(0.015, 0.005, 0.025)) == "size unresolved"
     assert h1_size(Interval(0.03, 0.021, 0.039)) == "gain of at least delta established"
-    assert h1_size(Interval(0.025, 0.015, 0.035)) == "estimated at least delta, not established"
-    assert h1_size(Interval(0.01, 0.005, 0.015)) == "below delta"
+    assert h1_size(Interval(0.03, 0.02, 0.04)) == "gain of at least delta established"
+    assert h1_size(Interval(0.025, 0.015, 0.035)) == "estimate at least delta, size unresolved"
+    assert h1_size(Interval(0.01, 0.005, 0.015)) == "gain below delta established"
+    # An estimate below delta whose interval still allows delta
+    assert h1_size(Interval(0.019, 0.015, 0.023)) == "estimate below delta, size unresolved"
+    # An upper end exactly at delta does not rule delta out
+    assert h1_size(Interval(0.015, 0.01, 0.02)) == "estimate below delta, size unresolved"
+
+
+def test_cities_over_the_cap_cannot_carry_a_size_claim():
+    # The reviewer's case: 190 cities meeting the cap gain 1.8 points, ten
+    # over the cap gain 18 points (one of them in the first stage)
+    values = np.full(200, 0.018)
+    over = np.array([5] + list(range(30, 200, 19)))[:10]
+    values[over] = 0.18
+    meets = np.ones(200, dtype=bool)
+    meets[over] = False
+    assert meets.mean() == 0.95
+    assert stein_city_count(values[:FIRST_STAGE]) == MAX_CITIES
+    all_cities = stein_interval(values)
+    meeting = t_interval(values[meets])
+    assert h1_size(all_cities) == "gain of at least delta established"
+    assert h1_size(meeting) == "gain below delta established"
+    assert h1_verdict(all_cities, meeting, meets.mean()) == "supported"
+    assert h1_size_verdict(all_cities, meeting, meets.mean()) == "size unresolved"
+    # The same for specialisation, read over cities where both arms meet the cap
+    sign, size = specialisation_verdict(all_cities, meeting, meets.mean())
+    assert specialisation_size(all_cities) == "worthwhile"
+    assert (sign, size) == ("liquid better", "size unresolved")
+    assert specialisation_verdict(all_cities, meeting, 0.9) == ("not assessable at matched overhead",) * 2
+    assert h1_size_verdict(meeting, meeting, 0.94) == "overhead condition not met"
 
 
 def test_joint_share_is_the_intersection():

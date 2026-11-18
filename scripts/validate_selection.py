@@ -28,8 +28,11 @@ depend on the fitted belief model at all.
     district (96% for the topic-only arm, which averaged 99 tied
     candidates). Every choice now scores the average agreement over its
     tied best candidates, the expectation under a uniform random
-    tie-break; a resident whose preference among the three is tied splits
-    their election ballot equally among the tied candidates.
+    tie-break. In the election each resident casts one whole ballot: a
+    resident whose preference among the three is tied votes for one of
+    the tied candidates at random, a tie for most votes is broken at
+    random, and the election is scored by its exact winner probabilities
+    (`winner_probabilities`; third review, 2026-11-18).
   - One population for every method: the 485 residents who are not one of
     their district's three candidates, so a contrast never compares means
     over different people.
@@ -274,7 +277,12 @@ def selection() -> dict[str, object]:
         "scored_residents_per_city": DISTRICTS_PER_CITY * (PER_DISTRICT - CANDIDATES),
         "held_out_items": len(ITEMS),
         "evidence": "development: real respondents, agreement only (no attendance)",
-        "ties": "averaged over tied best candidates; tied election ballots split equally",
+        "ties": (
+            "individual choices: agreement averaged over tied best candidates; "
+            "election: one whole ballot per resident, a tied resident votes for one "
+            "tied candidate uniformly at random, plurality ties broken uniformly at "
+            "random, scored by exact winner probabilities"
+        ),
         "by_method": by_method,
         "paired_gaps": gaps,
         "per_topic": per_topic,

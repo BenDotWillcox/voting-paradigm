@@ -73,7 +73,8 @@ dated and justified here, never made after looking at evaluation results.
   categories added 2026-11-18 after the second review; conflicting
   directions settled after the third).** Applied in this order, and
   implemented in `delegation/comparison/protocol.py` (`h1_verdict`,
-  `h1_size`) so the verdict is read by code, not by eye:
+  `h1_size_verdict`, `specialisation_verdict`) so the verdict is read by
+  code, not by eye:
   1. *The overhead condition.* The 10% cap applies per city: a city meets
      it when liquid's realised evaluation overhead is at most 10% (in the
      primary design this equals the history overhead the configuration was
@@ -99,9 +100,21 @@ dated and justified here, never made after looking at evaluation results.
      serves only this agreement check.
   3. *Size*, reported separately from direction, with δ = 0.02 (two
      fidelity points, about three more matching ballots per voter per 160
-     evaluation questions): a gain of at least δ is *established* when the
-     interval's lower end is at least δ; a point estimate of at least δ
-     with a lower end below it is *estimated, not established*.
+     evaluation questions). Each interval gets one of four labels: a gain
+     of at least δ *established* (lower end at least δ); a gain below δ
+     *established* (upper end below δ, so the data rule out δ); and, when
+     the interval still contains δ (an upper end exactly at δ included),
+     *estimate at least δ, size unresolved* or *estimate below δ, size
+     unresolved*, by which side the estimate falls (revised 2026-11-18,
+     fourth review: "below δ" had been returned for an interval such as
+     1.5 to 2.3 points, which still allows δ). Both the all-city interval
+     and the interval over cities that meet the cap are labelled and
+     reported. A size is claimed at low overhead only when the two labels
+     agree; otherwise the size verdict is *size unresolved*. Without that,
+     a few cities over the cap could carry the claim on their own: 190
+     cities meeting the cap at 1.8 points and ten over it at 18 points
+     give an all-city interval of 2.07 to 3.15 points while the cities
+     that meet the cap sit at 1.8 (a test case).
 - **Precision and seed count (revised 2026-11-18).** Stopping when an
   ordinary t-interval looks narrow enough can lower its coverage, because
   the variance that triggers the stop is the one used in the interval. The
@@ -218,8 +231,9 @@ at 19 of 20 while only 18 cities meet both caps. The two marginal rates
 are reported beside the joint one. Otherwise the contrast is *not
 assessable at matched overhead*, and both arms' realised overheads are
 reported beside the difference. The interval over cities where both arms
-meet the cap is reported beside the all-city one, and the direction rule
-of step 2 applies to the pair.
+meet the cap is reported beside the all-city one, and, as for H1, a
+direction or a practical size stands only when the two intervals agree
+(`protocol.specialisation_verdict`).
 
 **Margin for topic specialisation.** Maintaining eight delegations is worth
 it if liquid beats the proxy by at least Δ = 0.02. Declared before the
@@ -232,7 +246,9 @@ interval from −0.015 to −0.005 was both "practically equivalent" and
 - *Practical size:* *worthwhile* when the lower end is at least +Δ;
   *proxy materially better* when the upper end is at most −Δ; *practically
   equivalent* when the interval lies wholly within (−Δ, +Δ); otherwise
-  *size unresolved*.
+  *size unresolved*. Labelled for all cities and for cities where both
+  arms meet the cap; the verdict is the shared label, or *size
+  unresolved* when they differ.
 
 A noisy difference near zero is not equivalence.
 

@@ -138,16 +138,37 @@ def h1_verdict(all_cities: Interval, meeting_cap: Interval, share_meeting_cap: f
 
 
 def h1_size(interval: Interval) -> str:
-    """Practical size against delta, reported separately from direction."""
+    """
+    Practical size of one interval against delta, reported separately from
+    direction. A gain of at least delta is established when the lower end
+    reaches it and ruled out when the upper end is below it; an interval
+    that still contains delta (an upper end exactly at delta included)
+    leaves the size unresolved, labelled by which side the estimate falls.
+    """
     if interval.lower >= DELTA:
         return "gain of at least delta established"
+    if interval.upper < DELTA:
+        return "gain below delta established"
     if interval.estimate >= DELTA:
-        return "estimated at least delta, not established"
-    return "below delta"
+        return "estimate at least delta, size unresolved"
+    return "estimate below delta, size unresolved"
+
+
+def h1_size_verdict(all_cities: Interval, meeting_cap: Interval, share_meeting_cap: float) -> str:
+    """
+    The size verdict for a claim at low overhead. Both intervals are
+    reported with their own `h1_size` label; a size category is the
+    verdict only when the two agree, so cities over the cap can never carry
+    a claim of that size on their own (fourth review, 2026-11-18).
+    """
+    if share_meeting_cap < FEASIBLE_SHARE:
+        return "overhead condition not met"
+    first, second = h1_size(all_cities), h1_size(meeting_cap)
+    return first if first == second else "size unresolved"
 
 
 def specialisation_size(interval: Interval) -> str:
-    """Practical size of liquid minus proxy against Delta."""
+    """Practical size of liquid minus proxy against Delta, for one interval."""
     if interval.lower >= DELTA:
         return "worthwhile"
     if interval.upper <= -DELTA:
@@ -155,6 +176,31 @@ def specialisation_size(interval: Interval) -> str:
     if -DELTA < interval.lower and interval.upper < DELTA:
         return "practically equivalent"
     return "size unresolved"
+
+
+SPECIALISATION_DIRECTIONS: Final = {
+    "positive": "liquid better",
+    "negative": "proxy better",
+    "inconclusive": "sign inconclusive",
+}
+
+
+def specialisation_verdict(
+    all_cities: Interval, both_meet_cap: Interval, joint: float
+) -> tuple[str, str]:
+    """
+    Direction and practical size of liquid minus proxy. Assessed only if
+    both arms meet the cap together in at least FEASIBLE_SHARE of cities
+    (`joint_share`); each verdict stands only when the all-city interval
+    and the interval over cities where both arms meet the cap agree.
+    """
+    if joint < FEASIBLE_SHARE:
+        return ("not assessable at matched overhead",) * 2
+    first, second = direction(all_cities), direction(both_meet_cap)
+    sign = SPECIALISATION_DIRECTIONS[first if first == second else "inconclusive"]
+    size_first, size_second = specialisation_size(all_cities), specialisation_size(both_meet_cap)
+    size = size_first if size_first == size_second else "size unresolved"
+    return sign, size
 
 
 def joint_share(liquid_meets_cap: npt.ArrayLike, proxy_meets_cap: npt.ArrayLike) -> float:

@@ -107,9 +107,12 @@ class Outcome:
     resolver: IntArray
     # Whether the voter decided the question themself
     kept: BoolArray
-    # [person, question]: whether the person cast a ballot themself. A
-    # resolver's attendance is read from this, not from their own counted
-    # ballot, which someone else may supply (third review, 2026-11-18)
+    # [person, question]: whether the person actually cast a ballot: they
+    # decide the question (for themself or for anyone holding through
+    # them) and voted. Someone whose own vote and every follower's vote are
+    # resolved elsewhere casts nothing. A resolver's attendance is read
+    # from this, not from their own counted ballot, which someone else may
+    # supply (third review; masked to deciders in the fourth, 2026-11-18)
     cast: BoolArray
     # The winning option of each question
     winners: tuple[CandidateId, ...]
@@ -193,7 +196,8 @@ def _counted_from(
     Each voter's counted ballot: their resolver's sincere ballot, if the
     resolver votes. A resolver holding anyone else's vote on a question
     votes at the larger of their own rate and `floor`. Also whether each
-    person cast a ballot themself.
+    person actually cast a ballot: only people who decide a question (they
+    resolve their own vote or hold someone else's) can.
     """
     questions = population.evaluation
     people, count = questions.sincere.shape
@@ -204,8 +208,10 @@ def _counted_from(
     others = resolver != voters
     holds[resolver[others], np.broadcast_to(columns, resolver.shape)[others]] = True
     rate = np.where(holds, np.maximum(population.turnout[:, None], floor), population.turnout[:, None])
-    casts = np.asarray(questions.turnout_draw < rate, dtype=np.bool_)
-    own = np.where(casts, questions.sincere, NOT_CAST)
+    would_cast = questions.turnout_draw < rate
+    own = np.where(would_cast, questions.sincere, NOT_CAST)
+    decides = holds | (resolver == voters)
+    casts = np.asarray(would_cast & decides, dtype=np.bool_)
     return np.asarray(own[resolver, columns], dtype=np.int8), casts
 
 
