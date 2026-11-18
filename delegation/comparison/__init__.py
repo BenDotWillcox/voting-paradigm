@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from .arrangements import (
     DIRECT,
     DISTRICT_CHOICE,
+    DISTRICT_CHOICE_VOTERS,
     FULL_TURNOUT,
     LIQUID,
     ORDINARY_RESOLVER_TURNOUT,
@@ -35,18 +36,21 @@ from .arrangements import (
     delegation_network,
     direct,
     district_choice,
+    district_choice_voters,
     elect_representatives,
     full_turnout,
     history_overhead,
     liquid,
     liquid_at_overhead,
     population_categories,
+    population_tie_key,
     proxy,
     proxy_at_overhead,
     record_preferences,
     representative,
     representative_by_record,
     resolve_functional,
+    resolve_with_loops,
 )
 from .choice import (
     DEFAULT_CREDIBLE_MASS,
@@ -60,9 +64,10 @@ from .choice import (
     choose,
     lower_bound,
     pooled_agreements,
+    tie_key,
     top_candidates,
 )
-from .measures import Measures, fidelity_by_voter, measure
+from .measures import Attribution, Measures, attribute, fidelity_by_voter, measure
 from .population import (
     NO,
     NOT_CAST,
@@ -81,6 +86,9 @@ class Comparison:
     measures: dict[str, Measures]
     liquid_acceptance: AcceptanceChoice
     proxy_acceptance: AcceptanceChoice
+    # The headline and specialisation differences split over liquid's kept
+    # and resolved pairs, keyed "liquid_minus_<arrangement>"
+    attributions: dict[str, Attribution]
 
 
 def compare(
@@ -93,6 +101,10 @@ def compare(
     The protocol's entry point: every arrangement on one city, with liquid
     and the proxy each calibrated by the overhead rule on history questions
     only. Outcome agreement is measured against the full-turnout reference.
+    The three-candidate chain representative_by_record ->
+    district_choice_voters -> district_choice -> proxy -> liquid changes one
+    thing at each step (sharing, choice by non-voters, a wider pool, topic
+    delegates), so its contrasts sum to liquid minus representative_by_record.
     """
     base = base or ChoicePolicy()
     reference = full_turnout(population)
@@ -104,14 +116,20 @@ def compare(
         direct(population),
         representative(population, election, turnout),
         representative_by_record(population, election, turnout),
+        district_choice_voters(population, election, turnout),
         district_choice(population, election, turnout),
         proxy_outcome,
         liquid_outcome,
     ]
+    by_name = {o.arrangement: o for o in outcomes}
     return Comparison(
         measures={o.arrangement: measure(population, o, reference) for o in outcomes},
         liquid_acceptance=liquid_fixed,
         proxy_acceptance=proxy_fixed,
+        attributions={
+            f"liquid_minus_{other}": attribute(population, liquid_outcome, by_name[other])
+            for other in (REPRESENTATIVE, PROXY)
+        },
     )
 
 
@@ -139,6 +157,7 @@ __all__ = [
     "DEFAULT_CREDIBLE_MASS",
     "DIRECT",
     "DISTRICT_CHOICE",
+    "DISTRICT_CHOICE_VOTERS",
     "FULL_TURNOUT",
     "KEEP",
     "LIQUID",
@@ -153,6 +172,7 @@ __all__ = [
     "YES",
     "AcceptanceChoice",
     "Agreement",
+    "Attribution",
     "Choice",
     "ChoicePolicy",
     "Comparison",
@@ -167,6 +187,7 @@ __all__ = [
     "acceptance_for_overhead",
     "agreement",
     "agreement_counts",
+    "attribute",
     "choose",
     "choose_liquid",
     "choose_proxies",
@@ -175,6 +196,7 @@ __all__ = [
     "delegation_network",
     "direct",
     "district_choice",
+    "district_choice_voters",
     "elect_representatives",
     "fidelity_by_voter",
     "full_turnout",
@@ -185,12 +207,15 @@ __all__ = [
     "measure",
     "pooled_agreements",
     "population_categories",
+    "population_tie_key",
     "proxy",
     "proxy_at_overhead",
     "record_preferences",
     "representative",
     "representative_by_record",
     "resolve_functional",
+    "resolve_with_loops",
     "simulate_population",
+    "tie_key",
     "top_candidates",
 ]

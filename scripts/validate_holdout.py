@@ -85,6 +85,11 @@ def holdout() -> dict[str, object]:
     observed = np.abs(tetrachoric_matrix(y))
     raw = json.loads((ROOT / "delegation/data/beliefs_ces2024_v2.json").read_text())
     k = int(raw["dimensions"])
+    # The benchmark population's covariance: residents vary around their
+    # district's mean (within) and districts vary around the nation
+    # (between), not the identity of the item fit's scale (second review)
+    population = raw["population"]
+    cov = np.array(population["within_cov"]) + np.array(population["between_cov"])
     rng = np.random.default_rng(SEED)
     names = sorted(TOPICS_2022)
 
@@ -95,7 +100,7 @@ def holdout() -> dict[str, object]:
 
     def model_abs_r(first: str, second: str, n: int) -> np.ndarray:
         a, c = draw(first, n), draw(second, n)
-        return np.abs(np.diag(implied_correlation(np.vstack([a, c]))[:n, n:]))
+        return np.abs(np.diag(implied_correlation(np.vstack([a, c]), cov)[:n, n:]))
 
     topic_of = np.array(topics)
     upper = np.triu_indices(len(ids), 1)
@@ -129,6 +134,7 @@ def holdout() -> dict[str, object]:
         "respondents": int(y.shape[0]),
         "evidence": "development: motivated version 2; not an independent validation",
         "weighting": "each topic (within) and each topic pair (between) weighted equally on both sides",
+        "model_population": "positions with the fitted within- plus between-district covariance",
         "within_topic": {
             "observed_pairs": int(same.sum()),
             "observed_abs_r_quantiles": _weighted_quantiles(values[same], within_obs_w[same]),

@@ -61,6 +61,7 @@ from .choice import (
     agreement,
     choose,
     pooled_agreements,
+    tie_key,
     top_candidates,
 )
 from .population import (
@@ -85,6 +86,7 @@ FULL_TURNOUT = "full_turnout"
 DIRECT = "direct"
 REPRESENTATIVE = "representative"
 REPRESENTATIVE_BY_RECORD = "representative_by_record"
+DISTRICT_CHOICE_VOTERS = "district_choice_voters"
 DISTRICT_CHOICE = "district_choice"
 PROXY = "proxy"
 LIQUID = "liquid"
@@ -109,6 +111,16 @@ class Outcome:
     winners: tuple[CandidateId, ...]
     # How many delegations each voter maintains
     delegations: IntArray
+    # Whether the voter delegated but decides for themself because their
+    # chain loops back through them (the loop rule); all False where
+    # nobody delegates onward
+    looped: BoolArray
+    # How many distinct loops each question's delegation graph has
+    loops: IntArray
+
+
+def _no_loops(people: int, questions: int) -> tuple[BoolArray, IntArray]:
+    return np.zeros((people, questions), dtype=np.bool_), np.zeros(questions, dtype=np.int64)
 
 
 def _seed(*parts: object) -> int:
@@ -209,6 +221,8 @@ def full_turnout(population: Population) -> Outcome:
         kept=np.ones((people, questions), dtype=np.bool_),
         winners=_winners(population, counted),
         delegations=np.zeros(people, dtype=np.int64),
+        looped=_no_loops(people, questions)[0],
+        loops=_no_loops(people, questions)[1],
     )
 
 
@@ -227,6 +241,8 @@ def direct(population: Population) -> Outcome:
         kept=np.ones((people, questions), dtype=np.bool_),
         winners=_winners(population, counted),
         delegations=np.zeros(people, dtype=np.int64),
+        looped=_no_loops(people, questions)[0],
+        loops=_no_loops(people, questions)[1],
     )
 
 
@@ -310,7 +326,14 @@ def representative(
         kept=np.asarray(resolver == voters, dtype=np.bool_),
         winners=_winners(population, counted),
         delegations=np.zeros(people, dtype=np.int64),
+        looped=_no_loops(people, questions)[0],
+        loops=_no_loops(people, questions)[1],
     )
+
+
+def population_tie_key(population: Population) -> FloatArray:
+    """The seeded tie key every record-based choice in a city uses."""
+    return tie_key(population.config.seed, population.size)
 
 
 def record_preferences(population: Population, election: Election) -> IntArray:
@@ -318,9 +341,11 @@ def record_preferences(population: Population, election: Election) -> IntArray:
     Each resident's preferred candidate among their own district's
     candidates, judged the way delegates are: agreement over the whole
     history record, ranked by the lower bound of its credible interval, then
-    the posterior mean, then index. A candidate prefers themself.
+    the posterior mean, then the city's seeded tie key. A candidate prefers
+    themself.
     """
     whole = agreement(population.history.own_votes)
+    ties = population_tie_key(population)
     preferred = np.empty(population.size, dtype=np.int64)
     for district, drawn in enumerate(election.candidates):
         for voter in population.residents_of(district):
@@ -328,27 +353,65 @@ def record_preferences(population: Population, election: Election) -> IntArray:
                 preferred[voter] = voter
                 continue
             order = np.lexsort(
-                (drawn, -whole.mean[voter, drawn], -whole.lower[voter, drawn])
+                (drawn, ties[voter, drawn], -whole.mean[voter, drawn], -whole.lower[voter, drawn])
             )
             preferred[voter] = drawn[order[0]]
     return preferred
 
 
 def _matched_outcome(
-    population: Population, arrangement: str, resolver_of_voter: IntArray, floor: float
+    population: Population,
+    arrangement: str,
+    resolver_of_voter: IntArray,
+    floor: float,
+    assigned: BoolArray,
 ) -> Outcome:
+    """
+    `assigned` marks the residents who maintain a personal assignment of
+    their ballot; residents represented by an election winner maintain none.
+    """
     people, questions = population.evaluation.sincere.shape
     resolver = np.repeat(resolver_of_voter[:, None], questions, axis=1)
     counted = _counted_from(population, resolver, floor)
     voters = np.arange(people, dtype=np.int64)[:, None]
+    looped, loops = _no_loops(people, questions)
     return Outcome(
         arrangement=arrangement,
         counted=counted,
         resolver=resolver,
         kept=np.asarray(resolver == voters, dtype=np.bool_),
         winners=_winners(population, counted),
-        delegations=np.where(resolver_of_voter != np.arange(people), 1, 0).astype(np.int64),
+        delegations=(assigned & (resolver_of_voter != np.arange(people))).astype(np.int64),
+        looped=looped,
+        loops=loops,
     )
+
+
+def _record_election(
+    population: Population, election: Election, preferred: IntArray
+) -> tuple[IntArray, BoolArray]:
+    """
+    Plurality over record-based preferences among the residents who turn
+    out (the election's turnout draws): each district's winner, and whether
+    each resident voted.
+    """
+    config = population.config
+    turn_out = stream(config.seed, ELECTION_STREAM).random(population.size)
+    voted = np.asarray(turn_out < population.turnout, dtype=np.bool_)
+    winner_of = np.empty(config.districts, dtype=np.int64)
+    for district, drawn in enumerate(election.candidates):
+        ballots = [
+            create_single_choice_ballot(population.ids[v], population.ids[preferred[v]])
+            for v in population.residents_of(district)
+            if voted[v]
+        ]
+        result = resolve_plurality(
+            [Candidate(population.ids[c], population.ids[c]) for c in drawn],
+            ballots,
+            random_tiebreak(_seed(config.seed, "record election", district)),
+        )
+        winner_of[district] = population.index_of(result.winners[0])
+    return winner_of, voted
 
 
 def representative_by_record(
@@ -363,29 +426,44 @@ def representative_by_record(
     those who turn out (the election's turnout draws) elects one, who
     decides for the whole district at the office-holder rate.
 
-    Paired with `district_choice`, which differs only in that nobody has to
-    share: the gap between the two is the cost of sharing one
-    representative under matched candidates, records and turnout.
+    Paired with `district_choice_voters`, which differs only in that the
+    same voters need not share: the gap between the two is the cost of
+    sharing one representative under matched candidates, records, turnout
+    and participation. Constituents cast an election ballot and maintain no
+    assignment, so delegations maintained are zero.
     """
     election = election or elect_representatives(population)
     preferred = record_preferences(population, election)
-    config = population.config
-    turn_out = stream(config.seed, ELECTION_STREAM).random(population.size)
-    winner_of = np.empty(config.districts, dtype=np.int64)
-    for district, drawn in enumerate(election.candidates):
-        ballots = [
-            create_single_choice_ballot(population.ids[v], population.ids[preferred[v]])
-            for v in population.residents_of(district)
-            if turn_out[v] < population.turnout[v]
-        ]
-        result = resolve_plurality(
-            [Candidate(population.ids[c], population.ids[c]) for c in drawn],
-            ballots,
-            random_tiebreak(_seed(config.seed, "record election", district)),
-        )
-        winner_of[district] = population.index_of(result.winners[0])
+    winner_of, _ = _record_election(population, election, preferred)
+    nobody = np.zeros(population.size, dtype=np.bool_)
     return _matched_outcome(
-        population, REPRESENTATIVE_BY_RECORD, winner_of[population.district], turnout.office_rate
+        population,
+        REPRESENTATIVE_BY_RECORD,
+        winner_of[population.district],
+        turnout.office_rate,
+        nobody,
+    )
+
+
+def district_choice_voters(
+    population: Population,
+    election: Election | None = None,
+    turnout: TurnoutPolicy = PRIMARY_TURNOUT,
+) -> Outcome:
+    """
+    The residents who voted in the record election each assign their ballot
+    to their own preferred one of the district's three candidates; those
+    who did not vote are represented by that election's winner, as in
+    `representative_by_record` (second review, 2026-11-18). Against
+    `representative_by_record` only sharing changes; against
+    `district_choice` only whether non-voters choose too.
+    """
+    election = election or elect_representatives(population)
+    preferred = record_preferences(population, election)
+    winner_of, voted = _record_election(population, election, preferred)
+    resolver_of = np.where(voted, preferred, winner_of[population.district]).astype(np.int64)
+    return _matched_outcome(
+        population, DISTRICT_CHOICE_VOTERS, resolver_of, turnout.office_rate, voted
     )
 
 
@@ -395,14 +473,15 @@ def district_choice(
     turnout: TurnoutPolicy = PRIMARY_TURNOUT,
 ) -> Outcome:
     """
-    Each resident assigns their ballot to their own preferred one of their
+    Every resident assigns their ballot to their own preferred one of their
     district's three candidates (by public record), who decide at the
-    office-holder rate and do not delegate onward. The matched counterpart
-    of `representative_by_record`.
+    office-holder rate and do not delegate onward. Like the proxy and
+    liquid, everyone chooses, whether or not they would vote in an election.
     """
     election = election or elect_representatives(population)
     preferred = record_preferences(population, election)
-    return _matched_outcome(population, DISTRICT_CHOICE, preferred, turnout.office_rate)
+    everyone = np.ones(population.size, dtype=np.bool_)
+    return _matched_outcome(population, DISTRICT_CHOICE, preferred, turnout.office_rate, everyone)
 
 
 def _people(population: Population) -> list[Person]:
@@ -448,6 +527,11 @@ def _resolve(
 
 
 def resolve_functional(delegate_of: IntArray) -> IntArray:
+    """The resolver of every person under the loop rule (see `resolve_with_loops`)."""
+    return resolve_with_loops(delegate_of)[0]
+
+
+def resolve_with_loops(delegate_of: IntArray) -> tuple[IntArray, BoolArray, int]:
     """
     The resolver of every person when each has at most one next hop
     (`delegate_of[p]`, KEEP for none), under the package's loop rule:
@@ -457,9 +541,15 @@ def resolve_functional(delegate_of: IntArray) -> IntArray:
     With exact routing every question of one category has exactly this
     structure, so this gives the same resolvers as graph.resolve_question
     run on each question (tested against it), in a fraction of the time.
+
+    Returns the resolvers, whether each person is on a loop (they delegated
+    but decide for themself, which a voluntary keep looks like from the
+    resolvers alone), and how many distinct loops there are.
     """
     people = delegate_of.shape[0]
     resolver = np.full(people, KEEP, dtype=np.int64)
+    on_loop = np.zeros(people, dtype=np.bool_)
+    loops = 0
     for start in range(people):
         if resolver[start] != KEEP:
             continue
@@ -474,8 +564,10 @@ def resolve_functional(delegate_of: IntArray) -> IntArray:
                 break
             if current in position:
                 entry = position[current]
+                loops += 1
                 for p in path[entry:]:
                     resolver[p] = p
+                    on_loop[p] = True
                 for p in path[:entry]:
                     resolver[p] = current
                 break
@@ -488,18 +580,26 @@ def resolve_functional(delegate_of: IntArray) -> IntArray:
             position[current] = len(path)
             path.append(current)
             current = nxt
-    return resolver
+    return resolver, on_loop, loops
 
 
-def _resolve_by_category(choice: Choice, category_of_question: IntArray) -> IntArray:
+def _resolve_by_category(
+    choice: Choice, category_of_question: IntArray
+) -> tuple[IntArray, BoolArray, IntArray]:
     """
     Resolvers of every voter on every question under exact routing: one
-    resolution per category, shared by all its questions.
+    resolution per category, shared by all its questions. Also loop
+    membership per voter and question, and the number of loops per question.
     """
-    per_category = np.stack(
-        [resolve_functional(choice.delegate[:, k]) for k in range(choice.categories)], axis=1
+    resolved = [resolve_with_loops(choice.delegate[:, k]) for k in range(choice.categories)]
+    resolver = np.stack([r for r, _, _ in resolved], axis=1)
+    on_loop = np.stack([m for _, m, _ in resolved], axis=1)
+    loops = np.array([n for _, _, n in resolved], dtype=np.int64)
+    return (
+        np.asarray(resolver[:, category_of_question], dtype=np.int64),
+        np.asarray(on_loop[:, category_of_question], dtype=np.bool_),
+        np.asarray(loops[category_of_question], dtype=np.int64),
     )
-    return np.asarray(per_category[:, category_of_question], dtype=np.int64)
 
 
 def reference_resolvers(
@@ -533,7 +633,7 @@ def _delegated_outcome(
     category_of_question: IntArray,
     floor: float,
 ) -> Outcome:
-    resolver = _resolve_by_category(choice, category_of_question)
+    resolver, looped, loops = _resolve_by_category(choice, category_of_question)
     counted = _counted_from(population, resolver, floor)
     voters = np.arange(population.size, dtype=np.int64)[:, None]
     return Outcome(
@@ -543,6 +643,8 @@ def _delegated_outcome(
         kept=np.asarray(resolver == voters, dtype=np.bool_),
         winners=_winners(population, counted),
         delegations=np.asarray(choice.held().sum(axis=1), dtype=np.int64),
+        looped=looped,
+        loops=loops,
     )
 
 
@@ -577,7 +679,7 @@ def _liquid_agreements(population: Population, policy: ChoicePolicy) -> list[Agr
 
 def choose_proxies(population: Population, policy: ChoicePolicy) -> Choice:
     """Each voter's proxy, chosen by agreement over every history question."""
-    return choose(_proxy_agreements(population, policy), policy)
+    return choose(_proxy_agreements(population, policy), policy, population_tie_key(population))
 
 
 def choose_liquid(population: Population, policy: ChoicePolicy) -> Choice:
@@ -586,7 +688,7 @@ def choose_liquid(population: Population, policy: ChoicePolicy) -> Choice:
     `policy.borrow_strength` (the default, amendment A3) each category's
     agreement borrows strength from the rest of the record.
     """
-    return choose(_liquid_agreements(population, policy), policy)
+    return choose(_liquid_agreements(population, policy), policy, population_tie_key(population))
 
 
 def proxy(
@@ -639,7 +741,7 @@ def history_overhead(population: Population, policy: ChoicePolicy) -> float:
     question.
     """
     choice = choose_liquid(population, policy)
-    resolver = _resolve_by_category(choice, population.history.dimension)
+    resolver, _, _ = _resolve_by_category(choice, population.history.dimension)
     voters = np.arange(population.size, dtype=np.int64)[:, None]
     return float((resolver == voters).mean())
 
@@ -735,7 +837,7 @@ def acceptance_for_overhead(
         counts = np.array([len(population.history)])
     else:
         raise ValueError("the overhead rule applies to liquid or the proxy")
-    top, best = top_candidates(agreements)
+    top, best = top_candidates(agreements, population_tie_key(population))
     shares = (counts / counts.sum()).astype(np.float64)
     return _overhead_rule(top, best, shares, max_overhead)
 

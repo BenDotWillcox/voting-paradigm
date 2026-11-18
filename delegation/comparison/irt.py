@@ -231,12 +231,14 @@ def estimate_items(y: FloatArray, dimensions: int) -> tuple[ItemParameters, Fact
 # ---------------------------------------------------------------------------
 
 
-def implied_correlation(loadings: FloatArray) -> FloatArray:
+def implied_correlation(loadings: FloatArray, cov: FloatArray | None = None) -> FloatArray:
     """
-    Correlations between items' latent utilities implied by loadings:
-    a_j . a_k / sqrt((1 + |a_j|^2)(1 + |a_k|^2)). Rotation-free.
+    Correlations between items' latent utilities implied by loadings when
+    positions have covariance `cov` (identity, the fitted scale, by
+    default): a_j' S a_k / sqrt((1 + a_j' S a_j)(1 + a_k' S a_k)).
+    Rotation-free under the identity.
     """
-    gram = loadings @ loadings.T
+    gram = loadings @ loadings.T if cov is None else loadings @ cov @ loadings.T
     scale = np.sqrt(1.0 + np.diag(gram))
     corr = gram / np.outer(scale, scale)
     np.fill_diagonal(corr, 1.0)
@@ -344,12 +346,15 @@ class GroupedDraws:
     between_cov: FloatArray
 
 
-# Weak inverse-Wishart priors for the hierarchical position model: degrees
-# of freedom K + 2 and scale (K + 2) times a guess, so the prior mean of
-# each covariance is near its guess but carries the weight of only a few
-# observations
+# Weak inverse-Wishart priors for the hierarchical position model. For
+# IW(df, scale) in K dimensions E[Sigma] = scale / (df - K - 1); with df =
+# K + 2 the scale equals the prior mean, so the scale is the guess itself
+# and the prior carries the weight of only a few observations. (Corrected
+# 2026-11-18: the scale was (K + 2) times the guess, prior means 7.2 I and
+# 0.8 I at K = 6 instead of 0.9 I and 0.1 I.)
 _WITHIN_GUESS = 0.9
 _BETWEEN_GUESS = 0.1
+_PRIOR_DF_EXCESS = 2.0
 
 
 def sample_grouped_positions(
@@ -388,7 +393,9 @@ def sample_grouped_positions(
     rng = np.random.default_rng(np.random.SeedSequence([config.seed, k, 3]))
     support = np.where(observed, y == 1.0, False)
     missing = ~observed
-    df0 = k + 2.0
+    df0 = k + _PRIOR_DF_EXCESS
+    # Scale so that the prior mean scale / (df0 - k - 1) is the guess
+    prior_scale = df0 - k - 1.0
     within = np.eye(k) * _WITHIN_GUESS
     between = np.eye(k) * _BETWEEN_GUESS
     mu = np.zeros((groups, k))
@@ -424,11 +431,11 @@ def sample_grouped_positions(
         # 4. Within- and between-group covariances
         resid = theta - mu[group]
         within = invwishart.rvs(
-            df=df0 + n, scale=np.eye(k) * df0 * _WITHIN_GUESS + resid.T @ resid,
+            df=df0 + n, scale=np.eye(k) * prior_scale * _WITHIN_GUESS + resid.T @ resid,
             random_state=rng,
         ).reshape(k, k)
         between = invwishart.rvs(
-            df=df0 + groups, scale=np.eye(k) * df0 * _BETWEEN_GUESS + mu.T @ mu,
+            df=df0 + groups, scale=np.eye(k) * prior_scale * _BETWEEN_GUESS + mu.T @ mu,
             random_state=rng,
         ).reshape(k, k)
         if step >= config.burn_in and (step - config.burn_in) % config.thin == 0:

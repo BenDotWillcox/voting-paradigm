@@ -72,18 +72,20 @@ class Agreement:
             return self.posterior_mean
         return np.asarray((self.matches + 1.0) / (self.trials + 2.0))
 
-    def ranking(self, voter: int) -> IntArray:
+    def ranking(self, voter: int, tie_key: FloatArray | None = None) -> IntArray:
         """
         Candidates for one voter, best first: by lower bound, then posterior
-        mean, then index. The voter themself is excluded.
+        mean, then `tie_key[voter]` (ascending), then index. The voter
+        themself is excluded.
+
+        Equal counts give equal bounds, so ties are common with short
+        records. Without a tie key they go to the lowest index, and when
+        rows are grouped by district that means the first district; the
+        simulation passes a seeded random key (`tie_key`) instead.
         """
-        order = np.lexsort(
-            (
-                np.arange(self.lower.shape[1]),
-                -self.mean[voter],
-                -self.lower[voter],
-            )
-        )
+        index = np.arange(self.lower.shape[1])
+        secondary = tie_key[voter] if tie_key is not None else index
+        order = np.lexsort((index, secondary, -self.mean[voter], -self.lower[voter]))
         return np.asarray(order[order != voter], dtype=np.int64)
 
 
@@ -275,19 +277,38 @@ class Choice:
 KEEP = -1
 
 
-def top_candidates(agreements: Sequence[Agreement]) -> tuple[IntArray, FloatArray]:
+def tie_key(seed: int, people: int) -> FloatArray:
+    """
+    A seeded [voter, candidate] key for breaking ties between equally
+    ranked candidates: a uniform random order per voter, independent of
+    row order (rows are grouped by district).
+    """
+    rng = np.random.default_rng(np.random.SeedSequence([seed, _TIE_STREAM]))
+    return np.asarray(rng.random((people, people)))
+
+
+# Seed stream for tie keys, distinct from the population's streams
+_TIE_STREAM = 31
+
+
+def top_candidates(
+    agreements: Sequence[Agreement], tie_key: FloatArray | None = None
+) -> tuple[IntArray, FloatArray]:
     """
     Each voter's top-ranked candidate per category and that candidate's
     lower bound: [voter, category] arrays, KEEP and -inf when there is none.
+    Ties are broken by `tie_key` as in `Agreement.ranking`.
     """
     if not agreements:
         raise ValueError("at least one category is needed")
     people = agreements[0].lower.shape[0]
+    if tie_key is not None and tie_key.shape != (people, people):
+        raise ValueError("the tie key must be [voter, candidate]")
     top = np.full((people, len(agreements)), KEEP, dtype=np.int64)
     best = np.full((people, len(agreements)), -np.inf, dtype=np.float64)
     for k, a in enumerate(agreements):
         for v in range(people):
-            ranked = a.ranking(v)
+            ranked = a.ranking(v, tie_key)
             if len(ranked):
                 top[v, k] = ranked[0]
                 best[v, k] = a.lower[v, ranked[0]]
@@ -297,6 +318,7 @@ def top_candidates(agreements: Sequence[Agreement]) -> tuple[IntArray, FloatArra
 def choose(
     agreements: Sequence[Agreement],
     policy: ChoicePolicy,
+    tie_key: FloatArray | None = None,
 ) -> Choice:
     """
     Choose delegates for every voter and category, all at once.
@@ -318,6 +340,8 @@ def choose(
     Args:
         agreements: One agreement per category, all over the same people
         policy: Acceptance level and category limit
+        tie_key: Breaks ties between equally ranked candidates (see
+            `tie_key`); None breaks them by index
     """
     if not agreements:
         raise ValueError("at least one category is needed")
@@ -326,7 +350,7 @@ def choose(
         raise ValueError("every agreement must cover the same people")
 
     count = len(agreements)
-    top, best = top_candidates(agreements)
+    top, best = top_candidates(agreements, tie_key)
 
     delegate = np.full((people, count), KEEP, dtype=np.int64)
     chosen_lower = np.full((people, count), np.nan, dtype=np.float64)

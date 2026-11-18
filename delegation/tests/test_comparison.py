@@ -227,6 +227,7 @@ def test_compare_measures_outcomes_against_full_turnout(small):
         "direct",
         "representative",
         "representative_by_record",
+        "district_choice_voters",
         "district_choice",
         "proxy",
         "liquid",
@@ -252,7 +253,7 @@ def test_compare_is_the_calibrated_entry_point(small):
 def test_shares_sum_to_one_and_decompose_fidelity(small):
     for m in compare(small).measures.values():
         assert m.fidelity + m.contrary_share + m.none_share == pytest.approx(1.0)
-        if m.arrangement in ("proxy", "liquid", "district_choice"):
+        if m.arrangement in ("proxy", "liquid", "district_choice", "district_choice_voters"):
             assert 0.0 <= m.resolver_attendance <= 1.0
 
 
@@ -493,11 +494,14 @@ def test_pooled_agreement_keeps_counts_and_excludes_self():
 
 
 def test_borrow_strength_can_be_switched_off():
+    from delegation.comparison import population_tie_key
+
     pop = simulate_population(POOL)
     uniform = choose_liquid(pop, ChoicePolicy(borrow_strength=False))
     by_hand = choose(
         [agreement(pop.history.own_votes[:, pop.history.on_dimension(d)]) for d in range(4)],
         ChoicePolicy(),
+        population_tie_key(pop),
     )
     assert np.array_equal(uniform.delegate, by_hand.delegate)
     pooled = choose_liquid(pop, ChoicePolicy())
@@ -567,13 +571,13 @@ def test_fast_resolver_matches_the_graph_machinery():
     pop = simulate_population(POOL)
     liquid_choice = choose_liquid(pop, ChoicePolicy())
     assert np.array_equal(
-        _resolve_by_category(liquid_choice, pop.evaluation.dimension),
+        _resolve_by_category(liquid_choice, pop.evaluation.dimension)[0],
         reference_resolvers(pop, liquid_choice, pop.evaluation, single_category=False),
     )
     proxy_choice = choose_proxies(pop, ChoicePolicy())
     everything = np.zeros(len(pop.evaluation), dtype=np.int64)
     assert np.array_equal(
-        _resolve_by_category(proxy_choice, everything),
+        _resolve_by_category(proxy_choice, everything)[0],
         reference_resolvers(pop, proxy_choice, pop.evaluation, single_category=True),
     )
 
@@ -584,6 +588,93 @@ def test_resolve_functional_on_loops_and_chains():
     # 0 <-> 1 is a loop; 2 -> 0 enters it; 3 -> 2 -> 0; 4 keeps; 5 -> 4
     delegate_of = np.array([1, 0, 0, 2, KEEP, 4])
     assert resolve_functional(delegate_of).tolist() == [0, 1, 0, 0, 4, 4]
+
+
+def test_loop_membership_separates_a_mutual_pair_from_two_keeps():
+    from delegation.comparison import resolve_with_loops
+
+    # The same resolvers, two different stories
+    mutual = np.array([1, 0, KEEP])
+    keeps = np.array([KEEP, KEEP, KEEP])
+    r_mutual, on_loop, loops = resolve_with_loops(mutual)
+    r_keeps, no_loop, none = resolve_with_loops(keeps)
+    assert r_mutual.tolist() == r_keeps.tolist() == [0, 1, 2]
+    assert on_loop.tolist() == [True, True, False] and loops == 1
+    assert not no_loop.any() and none == 0
+    # Two loops and a chain into one of them
+    _, on_loop, loops = resolve_with_loops(np.array([1, 0, 3, 4, 2, 2]))
+    assert loops == 2 and on_loop.tolist() == [True, True, True, True, True, False]
+
+
+def test_compare_reports_loops(small):
+    from delegation.comparison import liquid_at_overhead
+
+    outcome, _ = liquid_at_overhead(small)
+    m = compare(small).measures
+    assert m["liquid"].loop_share == pytest.approx(outcome.looped.mean())
+    assert m["liquid"].mean_loops == pytest.approx(outcome.loops.mean())
+    # Looped voters decide for themselves
+    assert outcome.kept[outcome.looped].all()
+    for name in ("direct", "representative", "district_choice"):
+        assert m[name].loop_share == 0.0 and m[name].mean_loops == 0.0
+
+
+def test_attribution_sums_to_the_fidelity_difference(small):
+    result = compare(small)
+    for key, a in result.attributions.items():
+        other = key.removeprefix("liquid_minus_")
+        expected = result.measures["liquid"].fidelity - result.measures[other].fidelity
+        assert a.difference == pytest.approx(expected)
+        parts = a.kept_share * a.kept_difference + (1 - a.kept_share) * a.resolved_difference
+        assert parts == pytest.approx(a.difference)
+
+
+def test_ties_do_not_follow_row_order():
+    # Everyone agrees equally with everyone: every candidate ties
+    people = 40
+    lower = np.zeros((people, people))
+    np.fill_diagonal(lower, -np.inf)
+    from delegation.comparison import Agreement, tie_key, top_candidates
+
+    flat = Agreement(
+        np.zeros((people, people), dtype=np.int64),
+        np.zeros((people, people), dtype=np.int64),
+        lower,
+        0.8,
+    )
+    by_index, _ = top_candidates([flat])
+    assert set(by_index[:, 0].tolist()) <= {0, 1}
+    key = tie_key(7, people)
+    seeded, _ = top_candidates([flat], key)
+    assert len(set(seeded[:, 0].tolist())) > people // 4
+    assert (seeded[:, 0] != np.arange(people)).all()
+    assert np.array_equal(seeded, top_candidates([flat], tie_key(7, people))[0])
+
+
+def test_matched_participation_arm(small):
+    from delegation.comparison import (
+        district_choice,
+        district_choice_voters,
+        record_preferences,
+        representative_by_record,
+    )
+    from delegation.comparison.arrangements import _record_election
+
+    election = elect_representatives(small)
+    preferred = record_preferences(small, election)
+    winner_of, voted = _record_election(small, election, preferred)
+    assert 0 < voted.mean() < 1
+    voters = district_choice_voters(small, election, PILOT_TURNOUT)
+    elected = representative_by_record(small, election, PILOT_TURNOUT)
+    everyone = district_choice(small, election, PILOT_TURNOUT)
+    # Election voters choose their own candidate; non-voters get the winner
+    assert np.array_equal(voters.resolver[voted, 0], preferred[voted])
+    assert np.array_equal(voters.resolver[~voted, 0], elected.resolver[~voted, 0])
+    assert np.array_equal(everyone.resolver[:, 0], preferred)
+    # Constituents of an elected representative maintain no assignment
+    assert (elected.delegations == 0).all()
+    assert (voters.delegations[~voted] == 0).all()
+    assert np.array_equal(voters.delegations[voted], (preferred[voted] != np.flatnonzero(voted)).astype(int))
 
 
 def test_overhead_rule_finds_the_level_that_breaks_a_mutual_pair():

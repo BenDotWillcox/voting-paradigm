@@ -19,6 +19,13 @@ a fidelity difference arose.
              (everyone decides every history question directly).
   Outcome    whether a question's winner equals the full-turnout winner,
              what the whole city would choose if everyone voted.
+  Loops      the share of votes whose owner delegated but decides for
+             themself because their chain loops (the loop rule), and the
+             number of loops per question.
+  Attribution  a fidelity difference between two arrangements split over
+             the same voter-question pairs: those the first arrangement's
+             voters kept and those someone else resolved. The two
+             share-weighted parts sum to the difference.
 
 These are computed on the evaluation period only, never on the history
 delegates were chosen from, except lifecycle overhead, which counts the
@@ -33,6 +40,7 @@ import numpy as np
 
 from .arrangements import (
     DISTRICT_CHOICE,
+    DISTRICT_CHOICE_VOTERS,
     LIQUID,
     PROXY,
     REPRESENTATIVE_BY_RECORD,
@@ -41,7 +49,9 @@ from .arrangements import (
 from .population import NOT_CAST, Population
 
 # Arrangements whose resolvers are chosen from a public voting record
-NEEDS_RECORD = frozenset({PROXY, LIQUID, REPRESENTATIVE_BY_RECORD, DISTRICT_CHOICE})
+NEEDS_RECORD = frozenset(
+    {PROXY, LIQUID, REPRESENTATIVE_BY_RECORD, DISTRICT_CHOICE_VOTERS, DISTRICT_CHOICE}
+)
 
 
 @dataclass(frozen=True)
@@ -81,6 +91,50 @@ class Measures:
     # averaged over questions and at its worst
     mean_largest_share: float
     max_largest_share: float
+    # Share of (voter, question) pairs on a loop, and loops per question
+    loop_share: float
+    mean_loops: float
+
+
+@dataclass(frozen=True)
+class Attribution:
+    """
+    A fidelity difference, first minus second, split over the same pairs:
+    the pairs the first arrangement's voters kept, and the rest.
+
+    difference = kept_share * kept_difference
+                 + (1 - kept_share) * resolved_difference
+    """
+
+    first: str
+    second: str
+    difference: float
+    kept_share: float
+    # Mean match difference on the first arrangement's kept pairs, and on
+    # its resolved ones; NaN when that set is empty
+    kept_difference: float
+    resolved_difference: float
+
+
+def attribute(population: Population, first: Outcome, second: Outcome) -> Attribution:
+    """
+    Split first's fidelity advantage over second between the pairs first's
+    voters kept and those someone else resolved, scoring both arrangements
+    on the same pairs (second review, 2026-11-18). Each arrangement's own
+    kept/resolved split conditions on a different set of pairs, so it
+    cannot say where a difference arose.
+    """
+    sincere = population.evaluation.sincere
+    diff = (first.counted == sincere).astype(np.float64) - (second.counted == sincere)
+    kept = first.kept
+    return Attribution(
+        first=first.arrangement,
+        second=second.arrangement,
+        difference=float(diff.mean()),
+        kept_share=float(kept.mean()),
+        kept_difference=_mean_where(diff, kept),
+        resolved_difference=_mean_where(diff, ~kept),
+    )
 
 
 def fidelity_by_voter(population: Population, outcome: Outcome) -> np.ndarray:
@@ -145,4 +199,6 @@ def measure(population: Population, outcome: Outcome, reference: Outcome) -> Mea
         below_half_contrary_share=_mean_where(contrary.mean(axis=1), below),
         mean_largest_share=float(largest.mean()),
         max_largest_share=float(largest.max()),
+        loop_share=float(outcome.looped.mean()),
+        mean_loops=float(outcome.loops.mean()),
     )
