@@ -6,10 +6,11 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api.main import app
-from preferences import journal_forecast
+from preferences import journal_forecast, journal_reasoning
 
 
 PATH = "/api/preferences/journal/forecast"
+PAIRED = "/api/preferences/journal/paired"
 HEADERS = {"X-Journal-Token": "local-test-token"}
 MEASURE = {
     "title": "Library extension",
@@ -89,29 +90,93 @@ def test_ballot_label_boilerplate_does_not_supply_preference_evidence(client, mo
     assert forecast(client, req)["probabilityYes"] == 0.5
 
 
+@pytest.mark.parametrize("path", [PATH, PAIRED])
 @pytest.mark.parametrize("level", ["top", "measure", "history"])
-def test_current_vote_is_not_an_input_or_reflected_in_errors(client, level):
+def test_current_vote_is_not_an_input_or_reflected_in_errors(client, level, path):
     req = packet()
     req["history"] = [earlier()]
     target = {"top": req, "measure": req["measure"], "history": req["history"][0]}[level]
     target["actualVote"] = "private-invalid-answer"
-    response = client.post(PATH, headers=HEADERS, json=req)
+    response = client.post(path, headers=HEADERS, json=req)
     assert response.status_code == 422
     assert "private-invalid-answer" not in response.text
 
 
-def test_private_route_requires_launcher_loopback_and_token(client, monkeypatch):
-    assert client.post(PATH, json=packet()).status_code == 403
+@pytest.mark.parametrize("path", [PATH, PAIRED])
+def test_private_route_requires_launcher_loopback_and_token(client, monkeypatch, path):
+    assert client.post(path, json=packet()).status_code == 403
     outside = TestClient(app, client=("192.0.2.123", 7921))
-    assert outside.post(PATH, headers=HEADERS, json=packet()).status_code == 403
+    assert outside.post(path, headers=HEADERS, json=packet()).status_code == 403
     monkeypatch.setenv("NODE_ENV", "production")
-    assert client.post(PATH, headers=HEADERS, content=b"bad-json").status_code == 404
+    assert client.post(path, headers=HEADERS, content=b"bad-json").status_code == 404
     monkeypatch.delenv("NODE_ENV")
     monkeypatch.delenv("PERSONAL_JOURNAL_LOCAL")
-    assert client.post(PATH, headers=HEADERS, json=packet()).status_code == 404
+    assert client.post(path, headers=HEADERS, json=packet()).status_code == 404
     monkeypatch.setenv("PERSONAL_JOURNAL_LOCAL", "1")
     monkeypatch.delenv("PERSONAL_JOURNAL_API_TOKEN")
-    assert client.post(PATH, headers=HEADERS, json=packet()).status_code == 404
+    assert client.post(path, headers=HEADERS, json=packet()).status_code == 404
+
+
+def pair(client, req):
+    response = client.post(PAIRED, headers=HEADERS, json=req)
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-store"
+    return response.json()
+
+
+def test_pair_pins_the_original_models_and_masks_only_written_evidence(client, monkeypatch):
+    req = packet()
+    req["measure"].update(yesMeaning="Require independent audits", noMeaning="Retain internal review")
+    req["history"] = [earlier("no")]
+    req["history"][0].update(reasoning="I prefer independent audits.", clarification={
+        "kind": "weight", "question": "Which safeguard matters?", "answer": "I value independent audits.",
+    })
+    masked = deepcopy(req)
+    masked["history"][0].update(reasoning="", clarification=None)
+    direct_reasoning = forecast(client, req)
+    direct_ablation = forecast(client, masked)
+    monkeypatch.setenv("PERSONAL_JOURNAL_MODEL_MODE", "baseline")
+    direct_baseline = forecast(client, req)
+    monkeypatch.setenv("PERSONAL_JOURNAL_MODEL_MODE", "llm")
+    monkeypatch.setattr(journal_forecast.httpx, "Client", lambda **options: pytest.fail("Unexpected provider"))
+    result = pair(client, req)
+    assert result == {
+        "baseline": direct_baseline, "reasoning": direct_reasoning,
+        "withoutReasoning": {**direct_ablation, "model": "reasoning-examples-v1-without-reasoning"},
+    }
+    for field in ("reasoning", "clarification"):
+        single_note = deepcopy(masked)
+        single_note["history"][0][field] = req["history"][0][field]
+        singly_informed = pair(client, single_note)
+        assert singly_informed["reasoning"]["probabilityYes"] > direct_ablation["probabilityYes"]
+        assert singly_informed["withoutReasoning"] == result["withoutReasoning"]
+        assert singly_informed["baseline"] == result["baseline"]
+
+
+@pytest.mark.parametrize("history", [[], [earlier()]])
+def test_paired_forecasts_use_one_tie_break_and_reverse_when_labels_flip(client, history):
+    req = packet()
+    req["history"] = history
+    before = pair(client, req)
+    if not history:
+        assert {arm["probabilityYes"] for arm in before.values()} == {.5}
+        assert len({arm["choice"] for arm in before.values()}) == 1
+    measure = req["measure"]
+    measure["noMeaning"], measure["yesMeaning"] = measure["yesMeaning"], measure["noMeaning"]
+    after = pair(client, req)
+    for arm, prediction in before.items():
+        assert after[arm]["choice"] != prediction["choice"]
+        assert after[arm]["probabilityYes"] == pytest.approx(1 - prediction["probabilityYes"])
+        assert after[arm]["historyCount"] == len(history)
+
+
+def test_partial_pair_failure_returns_no_predictions_or_private_details(client, monkeypatch):
+    def broken_forecast(req):
+        raise ValueError("private input caused a failure")
+    monkeypatch.setattr(journal_reasoning, "wording_forecast", broken_forecast)
+    response = client.post(PAIRED, headers=HEADERS, json=packet())
+    assert response.status_code == 500
+    assert response.json() == {"detail": "The model comparison could not be computed."}
 
 
 def mock_provider(monkeypatch, handler):

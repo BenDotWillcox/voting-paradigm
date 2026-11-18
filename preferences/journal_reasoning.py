@@ -8,6 +8,7 @@ from uuid import UUID
 
 from .journal_forecast import (
     Forecast, JournalData, JournalMeasure, JournalRequest, PastDecision, QuestionKind, _choice,
+    wording_forecast,
 )
 
 
@@ -216,6 +217,28 @@ def reasoning_forecast(req: JournalRequest) -> Forecast:
         explanation += " A repeatable tie-break supplies the displayed choice."
     return Forecast(choice=_choice(req, probability), probabilityYes=probability, explanation=explanation,
                     model=MODEL, historyCount=len(req.history))
+
+
+class PairedForecast(JournalData):
+    reasoning: Forecast
+    baseline: Forecast
+    withoutReasoning: Forecast
+
+
+def paired_forecast(req: JournalRequest) -> PairedForecast:
+    # Preserve every ballot, vote and tie-break ID. Both text-free arms get the
+    # same inputs and cannot use the participant's reasoning or clarifications.
+    history = [
+        item.model_copy(update={"reasoning": "", "clarification": None})
+        for item in req.history
+    ]
+    votes_only = req.model_copy(update={"history": history})
+    without_reasoning = reasoning_forecast(votes_only)
+    return PairedForecast(
+        reasoning=reasoning_forecast(req),
+        baseline=wording_forecast(votes_only),
+        withoutReasoning=without_reasoning.model_copy(update={"model": MODEL + "-without-reasoning"}),
+    )
 
 
 class Evidence(PastDecision):

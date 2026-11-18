@@ -79,6 +79,24 @@ model. For an installed local language model, set `PERSONAL_JOURNAL_MODEL_MODE=l
 earlier choices, reasons and answered clarifications. A failed forecast leaves
 the ballot available to retry. Personal entries and the journal API stay local.
 
+#### Compare forecasts on five unseen measures
+
+Finish the follow-ups you want to include, then select **Start five-measure
+check**. The journal freezes the completed decisions and saved clarifications
+available at that moment. Pick five measures in advance and mark each **New to
+me**. You can lock them all before voting or complete them one at a time. All
+five use the same frozen evidence.
+
+For each measure the journal locks three forecasts together, using the same
+ballot text and tie-break. It reveals them after you record your vote and
+reasoning. The original wording model establishes the baseline. Comparing the
+new model with its own text-free run isolates what your written reasons and
+follow-up answers contributed, holding the scoring algorithm and earlier votes
+fixed. The scorecard reports correct votes and mean Brier score across the same
+eligible measures. That score averages the squared error in the Yes probability
+(Yes is 1, No is 0). Lower is better. On five measures, look at individual
+disagreements to see where the extra evidence changed a forecast.
+
 ### Preference-model evidence
 
 The [synthetic benchmark](eval/benchmarks/synthetic_v1/README.md) compares two

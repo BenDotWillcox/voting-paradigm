@@ -17,6 +17,20 @@ export interface JournalPrediction {
   historyCount: number;
 }
 
+export interface JournalForecastSet {
+  reasoning: JournalPrediction;
+  baseline: JournalPrediction;
+  withoutReasoning: JournalPrediction;
+}
+
+export interface JournalCheck {
+  id: string;
+  startedAt: string;
+  evidenceCount: number;
+  clarificationCount: number;
+  slotIds: string[];
+}
+
 export interface JournalQuestion {
   prompt: string;
   trigger: "miss" | "uncertain";
@@ -32,6 +46,7 @@ interface BallotRecord {
   id: string;
   measure: JournalMeasure;
   lockedAt: string;
+  checkId?: string;
   /** An original, uncorrected packet has revision zero. */
   revision?: number;
 }
@@ -44,6 +59,7 @@ export type JournalEntry =
       reasoning: string;
       votedAt: string;
       prediction: JournalPrediction;
+      comparison?: Omit<JournalForecastSet, "reasoning">;
       /** Actual packet used by the locked prediction if corrected after voting. */
       forecastMeasure?: JournalMeasure;
       followUp?: JournalFollowUp;

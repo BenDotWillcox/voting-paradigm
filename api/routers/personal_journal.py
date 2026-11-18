@@ -13,7 +13,8 @@ from preferences.journal_forecast import (
     Forecast, JournalRequest, ProviderError, local_model_forecast, wording_forecast,
 )
 from preferences.journal_reasoning import (
-    HistoryRequest, Profile, QuestionRequest, QuestionResult, profile, question, reasoning_forecast,
+    HistoryRequest, PairedForecast, Profile, QuestionRequest, QuestionResult, paired_forecast,
+    profile, question, reasoning_forecast,
 )
 
 
@@ -64,6 +65,16 @@ async def forecast(request: Request, response: Response) -> Forecast:
         return await run_in_threadpool(local_model_forecast, req)
     except ProviderError as error:
         raise HTTPException(502, str(error)) from None
+
+
+@router.post("/paired", response_model=PairedForecast, include_in_schema=False)
+async def paired(request: Request, response: Response) -> PairedForecast:
+    req = await private_input(request, response, JournalRequest)
+    try:
+        return await run_in_threadpool(paired_forecast, req)
+    except Exception:
+        # A partial comparison is unusable. Model errors can contain private input.
+        raise HTTPException(500, "The model comparison could not be computed.") from None
 
 
 @router.post("/profile", response_model=Profile, include_in_schema=False)

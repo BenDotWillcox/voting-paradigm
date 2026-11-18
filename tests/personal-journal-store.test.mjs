@@ -305,3 +305,99 @@ test("concurrent answers and skips can only resolve a question once, and no-ques
   assert.equal(value.followUp.status, "skipped");
   assert.deepEqual(await independent.respondToFollowUp(skipped, 0, question.prompt, null), value);
 });
+
+function comparison(count) {
+  return {
+    reasoning: { ...prediction(count), model: "reasoning" },
+    baseline: { ...prediction(count, "no"), model: "baseline" },
+    withoutReasoning: { ...prediction(count, "no"), model: "ablated" },
+  };
+}
+
+test("five slots share frozen evidence across restarts, votes, late answers and corrections", async t => {
+  await privateDirectory(t);
+  const early = await completed("Early measure");
+  const second = await completed("Second measure");
+  await store.suggestFollowUp(early, 0, ask);
+  await store.respondToFollowUp(early, 0, question.prompt, "Include an independent audit.");
+  const old = (await store.listEntries()).find(entry => entry.id === early);
+  const independent = await import("../lib/personal-journal-store.ts?comparison-reload");
+  assert.equal(await store.getCheck(), null);
+  const [check, same] = await Promise.all([store.startCheck(), independent.startCheck()]);
+  assert.deepEqual(check, same);
+  assert.deepEqual(await independent.getCheck(), check);
+  assert.deepEqual(Object.keys(check).sort(), ["clarificationCount", "evidenceCount", "id", "slotIds", "startedAt"]);
+  assert.equal(check.evidenceCount, 2);
+  assert.equal(check.clarificationCount, 1);
+  assert.equal(new Set(check.slotIds).size, 5);
+
+  const predict = async (_packet, history, paired) => {
+    assert.equal(paired, true);
+    assert.deepEqual(history.map(entry => entry.id).sort(), [early, second].sort());
+    assert.deepEqual(history.find(entry => entry.id === early), old);
+    assert.equal(history.find(entry => entry.id === second).followUp, undefined);
+    return comparison(history.length);
+  };
+  const first = { ...measure, title: "Unseen A" };
+  const locked = await store.lockEntry(check.slotIds[0], first, predict, check.id);
+  assert.deepEqual(Object.keys(locked).sort(), ["checkId", "id", "lockedAt", "measure", "status"]);
+  assert.deepEqual(await independent.lockEntry(locked.id, first, () => assert.fail("Unexpected re-lock"), check.id), locked);
+  const revealed = await store.recordVote(locked.id, "yes", "Fund the repairs now.");
+  assert.deepEqual(revealed.comparison, { baseline: comparison(2).baseline, withoutReasoning: comparison(2).withoutReasoning });
+  assert.deepEqual(revealed.prediction, comparison(2).reasoning);
+  assert.equal(revealed.checkId, check.id);
+  await store.correctEntry(early, 0, "revealed", { ...old.measure, title: "Corrected after freeze" }, () => assert.fail());
+  await store.suggestFollowUp(second, 0, ask);
+  await store.respondToFollowUp(second, 0, question.prompt, "This answer came too late.");
+  const later = await store.lockEntry(randomUUID(), { ...measure, title: "Familiar later measure", familiar: true }, frozen);
+  await store.recordVote(later.id, "yes", "A later choice.");
+  assert.deepEqual(await store.startCheck(), check);
+  for (const [i, id] of check.slotIds.slice(1).entries()) {
+    const packet = { ...measure, title: "Another unseen measure " + i };
+    const next = await independent.lockEntry(id, packet, predict, check.id);
+    assert.equal(next.status, "locked");
+    assert.equal(next.comparison, undefined);
+    const amended = await store.correctEntry(id, 0, "locked", { ...packet, text: "Corrected text" }, predict);
+    assert.equal(amended.checkId, check.id);
+    assert.equal(amended.comparison, undefined);
+    await assert.rejects(store.recordVote(id, "yes", "Stale"), { status: 409 });
+    const voted = await store.recordVote(id, "yes", "Supports repairs", 1);
+    assert.deepEqual(voted.comparison, revealed.comparison);
+    const post = await store.correctEntry(id, 1, "revealed", { ...packet, title: "Corrected title " + i },
+      () => assert.fail("A post-vote correction reran inference"));
+    assert.deepEqual(post.forecastMeasure, amended.measure);
+    assert.deepEqual(post.comparison, voted.comparison);
+  }
+  assert.deepEqual((await store.listEntries()).find(entry => entry.id === locked.id), revealed);
+  assert.equal((await store.listEntries()).filter(entry => entry.checkId === check.id).length, 5);
+  const after = await store.lockEntry(randomUUID(), { ...measure, title: "After all five" }, frozen);
+  assert.equal(after.checkId, undefined);
+  assert.equal((await store.recordVote(after.id, "no", "Previous system works.")).comparison, undefined);
+});
+
+test("only unseen entries fill check slots and all three forecasts publish together", async t => {
+  await privateDirectory(t);
+  const prior = await completed("Previously seen measure");
+  const oldPending = await store.lockEntry(randomUUID(), { ...measure, title: "Ordinary pending measure" }, frozen);
+  const check = await store.startCheck();
+  const [first, second] = check.slotIds;
+  const predict = async () => comparison(1);
+  const never = () => assert.fail("An ineligible request reached the model");
+  await assert.rejects(store.lockEntry(prior, measure, never, check.id), { status: 409 });
+  await assert.rejects(store.lockEntry(first, measure, never, randomUUID()), { status: 409 });
+  await assert.rejects(store.lockEntry(first, measure, never), { status: 409 });
+  await assert.rejects(store.lockEntry(randomUUID(), measure, never), { status: 409 });
+  assert.deepEqual(await store.lockEntry(oldPending.id, oldPending.measure, never), oldPending);
+  const edited = await store.correctEntry(oldPending.id, 0, "locked", { ...oldPending.measure, title: "Old pending" }, frozen);
+  assert.equal(edited.checkId, undefined);
+  await assert.rejects(store.lockEntry(second, measure, never, check.id), { status: 409 });
+  await assert.rejects(store.lockEntry(first, { ...measure, familiar: true }, never, check.id), { status: 400 });
+  await assert.rejects(store.lockEntry(first, { ...measure, title: " previously  SEEN measure" }, never, check.id), { status: 409 });
+  await assert.rejects(store.lockEntry(first, measure, async () => prediction(1), check.id), { status: 502 });
+  await assert.rejects(store.lockEntry(first, measure, async () => ({ ...comparison(1), baseline: undefined }), check.id), { status: 502 });
+  await assert.rejects(store.lockEntry(first, measure, async () => ({ ...comparison(1), baseline: prediction(0) }), check.id), { status: 502 });
+  assert.deepEqual((await store.listEntries()).map(entry => entry.id).sort(), [oldPending.id, prior].sort());
+  await store.lockEntry(first, measure, predict, check.id);
+  await assert.rejects(store.lockEntry(second, measure, never, check.id), { status: 409 });
+  await store.lockEntry(second, { ...measure, title: "Different measure on the same official guide" }, predict, check.id);
+});

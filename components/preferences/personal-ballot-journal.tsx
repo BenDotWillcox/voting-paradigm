@@ -8,12 +8,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { JournalRequestError, requestJournal } from "./personal-journal-client";
 import { JournalFollowUp, JournalLearning, type FollowUpResponse } from "./personal-journal-learning";
-import type { JournalEntry } from "@/lib/personal-journal-types";
+import { FiveMeasureCheck, PairedPredictions, hasPairedForecasts } from "./personal-journal-check";
+import type { JournalCheck, JournalEntry } from "@/lib/personal-journal-types";
 
 type Measure = JournalEntry["measure"];
 type Revealed = Extract<JournalEntry, { status: "revealed" }>;
 type Vote = Revealed["vote"];
 type VoteInput = { id: string; vote: Vote; reasoning: string; expectedRevision: number };
+type LockInput = { id: string; measure: Measure; checkId?: string };
+type JournalState = { entries: JournalEntry[]; check: JournalCheck | null };
 type CorrectionInput = {
   id: string; measure: Measure; expectedRevision: number; expectedStatus: JournalEntry["status"]; confirmVote?: true;
 };
@@ -21,12 +24,15 @@ const labelVote = (vote: Vote) => vote === "yes" ? "Yes" : "No";
 const dateTime = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
 const timestamp = (value: string) => <time dateTime={value}>{dateTime.format(new Date(value))}</time>;
 
-function MeasureForm({ busy, entry, onSave, onCancel }: {
-  busy: boolean; entry?: JournalEntry; onSave: (measure: Measure, confirmed: boolean) => void; onCancel?: () => void;
+function MeasureForm({ busy, entry, nextSlot, onSave, onCancel }: {
+  busy: boolean; entry?: JournalEntry; nextSlot?: number; onSave: (measure: Measure, confirmed: boolean) => void; onCancel?: () => void;
 }) {
   const id = entry ? "edit" : "measure";
   const current = entry?.measure;
-  const submitLabel = entry?.status === "revealed" ? "Save correction" : entry ? "Save and lock prediction" : "Lock prediction";
+  const [familiarity, setFamiliarity] = useState(current?.familiar);
+  const paired = !!entry?.checkId || (!!nextSlot && familiarity === false);
+  const lockLabel = paired ? "Lock comparison forecasts" : "Lock prediction";
+  const submitLabel = entry?.status === "revealed" ? "Save correction" : entry ? (paired ? "Save and lock forecasts" : "Save and lock prediction") : lockLabel;
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
@@ -78,9 +84,12 @@ function MeasureForm({ busy, entry, onSave, onCancel }: {
         <fieldset>
           <legend className="mb-2 text-sm font-medium">Had you seen this measure before this entry?</legend>
           <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
-            <label className="flex min-h-8 items-center gap-2"><input required type="radio" name="familiar" value="no" defaultChecked={current?.familiar === false} /> New to me</label>
-            <label className="flex min-h-8 items-center gap-2"><input required type="radio" name="familiar" value="yes" defaultChecked={current?.familiar === true} /> Familiar to me</label>
+            <label className="flex min-h-8 items-center gap-2"><input required type="radio" name="familiar" value="no" defaultChecked={current?.familiar === false} onChange={() => setFamiliarity(false)} /> New to me</label>
+            <label className="flex min-h-8 items-center gap-2"><input required type="radio" name="familiar" value="yes" defaultChecked={current?.familiar === true} onChange={() => setFamiliarity(true)} /> Familiar to me</label>
           </div>
+          {nextSlot && <p className="mt-2 text-sm text-muted-foreground">{familiarity === true
+            ? "This familiar measure will be saved as a regular journal entry outside the check."
+            : `A measure that is new to you will fill slot ${nextSlot} of 5 in the check.`}</p>}
         </fieldset>
         {entry?.status === "revealed" && (
           <div className="space-y-3 rounded-md border bg-muted/25 p-4">
@@ -156,7 +165,7 @@ function VoteForm({ entry, busy, onVote }: { entry: JournalEntry; busy: boolean;
           <Label htmlFor="vote-reason">Why did you choose this vote?</Label>
           <Textarea id="vote-reason" name="reasoning" required maxLength={10000} className="min-h-24" onInput={(event) => event.currentTarget.setCustomValidity("")} />
         </div>
-        <Button type="submit" size="lg">{busy ? "Recording vote…" : "Record vote and reveal prediction"}</Button>
+        <Button type="submit" size="lg">{busy ? "Recording vote…" : entry.checkId ? "Record vote and reveal forecasts" : "Record vote and reveal prediction"}</Button>
       </fieldset>
     </form>
   );
@@ -167,7 +176,7 @@ function Comparison({ entry }: { entry: Revealed }) {
   const probability = new Intl.NumberFormat(undefined, { style: "percent", maximumFractionDigits: 1 }).format(prediction.probabilityYes);
   return (
     <div className="space-y-5">
-      <section aria-label="Vote comparison" className="rounded-lg border border-foreground/20 p-4 sm:p-5">
+      {hasPairedForecasts(entry) ? <PairedPredictions entry={entry} /> : <section aria-label="Vote comparison" className="rounded-lg border border-foreground/20 p-4 sm:p-5">
         <h3 className="font-semibold">{forecastMeasure ? "Prediction for the original wording" :
           entry.vote === prediction.choice ? "The prediction matched your vote" : "You and the model chose differently"}</h3>
         {forecastMeasure && <p className="mt-2 text-sm text-muted-foreground">You corrected the measure after revealing this prediction. Future forecasts can use the corrected entry.</p>}
@@ -177,10 +186,10 @@ function Comparison({ entry }: { entry: Revealed }) {
         </dl>
         <p className="mt-3 text-sm"><strong>{probability}</strong> estimated chance you would vote yes.</p>
         <p className="mt-1 break-words text-xs text-muted-foreground">{prediction.model} · {prediction.historyCount} prior {prediction.historyCount === 1 ? "entry" : "entries"} used</p>
-      </section>
+      </section>}
       <section><h3 className="font-semibold">Your reasoning</h3><p className="mt-2 whitespace-pre-wrap break-words">{entry.reasoning}</p></section>
-      <section><h3 className="font-semibold">The model’s explanation</h3><p className="mt-2 whitespace-pre-wrap break-words">{prediction.explanation}</p></section>
-      <p className="text-xs text-muted-foreground">Prediction locked {timestamp(entry.lockedAt)}. Vote recorded {timestamp(entry.votedAt)}.</p>
+      {!entry.comparison && <section><h3 className="font-semibold">The model’s explanation</h3><p className="mt-2 whitespace-pre-wrap break-words">{prediction.explanation}</p></section>}
+      <p className="text-xs text-muted-foreground">{entry.comparison ? "Forecasts" : "Prediction"} locked {timestamp(entry.lockedAt)}. Vote recorded {timestamp(entry.votedAt)}.</p>
       <details><summary className="cursor-pointer py-1 text-sm font-medium">{forecastMeasure ? "Review the corrected measure" : "Review the measure"}</summary>
         <div className="mt-2"><BallotPacket measure={entry.measure} showTitle={!!forecastMeasure} /></div>
       </details>
@@ -199,6 +208,9 @@ function Comparison({ entry }: { entry: Revealed }) {
 
 export function PersonalBallotJournal() {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
+  const [check, setCheck] = useState<JournalCheck | null>(null);
+  const [startError, setStartError] = useState("");
+  const [pairedDraft, setPairedDraft] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -217,6 +229,7 @@ export function PersonalBallotJournal() {
   const detail = useRef<HTMLHeadingElement>(null);
   const ordered = [...entries].sort((a, b) => b.lockedAt.localeCompare(a.lockedAt) || b.id.localeCompare(a.id));
   const selected = entries.find((entry) => entry.id === selectedId);
+  const nextSlot = check?.slotIds.find(id => !entries.some(entry => entry.id === id));
   const answerKey = selected ? selected.id + "/" + (selected.revision ?? 0) : "";
 
   function updateAnswerDraft(key: string, value: string) {
@@ -245,9 +258,10 @@ export function PersonalBallotJournal() {
     setLoading(true);
     setLoadError(false);
     try {
-      const response = await requestJournal<{ entries: JournalEntry[] }>("GET", undefined, signal);
+      const response = await requestJournal<JournalState>("GET", undefined, signal);
       if (signal?.aborted) return;
       setEntries(response.entries);
+      setCheck(response.check ?? null);
       const latestPending = response.entries.filter((entry) => entry.status === "locked")
         .sort((a, b) => b.lockedAt.localeCompare(a.lockedAt))[0];
       setSelectedId(latestPending?.id ?? null);
@@ -293,15 +307,39 @@ export function PersonalBallotJournal() {
     setSavedMessage("");
   }
 
+  async function startCheck() {
+    if (hasRequest.current) return;
+    hasRequest.current = true;
+    setBusy(true);
+    setStartError("");
+    try {
+      const result = await requestJournal<{ check: JournalCheck }>("POST", {}, undefined, "/check");
+      setCheck(result.check);
+    } catch (cause) {
+      setStartError(cause instanceof JournalRequestError ? cause.message : "Could not start the check. Please try again.");
+    } finally {
+      hasRequest.current = false;
+      setBusy(false);
+    }
+  }
+
   async function reloadSavedEntry() {
     if (hasRequest.current) return;
     hasRequest.current = true;
     setBusy(true);
     try {
-      const response = await requestJournal<{ entries: JournalEntry[] }>("GET");
+      const response = await requestJournal<JournalState>("GET");
       setEntries(response.entries);
-      updateAnswerDraft(answerKey, "");
-      toggleEditor(false);
+      setCheck(response.check ?? null);
+      if (selectedId === null) {
+        draftId.current = null;
+        setError("");
+        setConflict(false);
+        setSavedMessage("Journal refreshed. Your measure draft is still here.");
+      } else {
+        updateAnswerDraft(answerKey, "");
+        toggleEditor(false);
+      }
     } catch {
       setError("The latest entry could not be loaded. Your inputs are still here.");
     } finally {
@@ -310,7 +348,7 @@ export function PersonalBallotJournal() {
     }
   }
 
-  async function save(method: "POST" | "PUT" | "PATCH" | "FOLLOW_UP", body: { id: string; measure: Measure } | VoteInput | CorrectionInput | FollowUpResponse) {
+  async function save(method: "POST" | "PUT" | "PATCH" | "FOLLOW_UP", body: LockInput | VoteInput | CorrectionInput | FollowUpResponse) {
     if (hasRequest.current) return;
     hasRequest.current = true;
     setBusy(true);
@@ -336,10 +374,11 @@ export function PersonalBallotJournal() {
       }
       if (method === "POST") {
         draftId.current = null;
+        setPairedDraft(false);
         setDraftVersion((previous) => previous + 1);
       }
     } catch (cause) {
-      setConflict(cause instanceof JournalRequestError && cause.status === 409 && method !== "POST");
+      setConflict(cause instanceof JournalRequestError && cause.status === 409);
       setError(cause instanceof Error && !(cause instanceof TypeError)
         ? cause.message
         : "Could not reach the journal. Your inputs are still here. Check the local server and try again.");
@@ -347,6 +386,20 @@ export function PersonalBallotJournal() {
       hasRequest.current = false;
       setBusy(false);
     }
+  }
+
+  function lockMeasure(measure: Measure) {
+    if (!measure.familiar && check && nextSlot) {
+      setPairedDraft(true);
+      void save("POST", { id: nextSlot, checkId: check.id, measure });
+      return;
+    }
+    if (!measure.familiar && pairedDraft) {
+      setError("All five slots have been used. Choose how to save this draft below.");
+      return;
+    }
+    draftId.current ??= crypto.randomUUID();
+    void save("POST", { id: draftId.current, measure });
   }
 
   if (loading) return <p role="status" className="border-t py-6 text-muted-foreground">Opening your journal…</p>;
@@ -360,6 +413,10 @@ export function PersonalBallotJournal() {
     <div className="border-t pt-6">
     {selected?.status !== "locked" && !editing && <JournalLearning entries={entries} disabled={busy}
       onSelect={id => navigate(id)} onFollowUp={id => navigate(id, true)} />}
+    {selected?.status !== "locked" && !editing && <>
+      <FiveMeasureCheck check={check} entries={entries} busy={busy} onStart={() => void startCheck()} />
+      {startError && <p role="alert" className="mb-4 text-sm text-destructive">{startError}</p>}
+    </>}
     <div className="grid items-start gap-6 lg:grid-cols-[minmax(14rem,0.7fr)_minmax(0,1.8fr)]">
       <aside aria-labelledby="entries-heading" className="min-w-0 rounded-lg border bg-muted/20 p-4">
         <div className="mb-3 flex items-center gap-2">
@@ -377,7 +434,7 @@ export function PersonalBallotJournal() {
                   onClick={() => navigate(entry.id)}
                   className="block w-full rounded-sm px-2 py-3 text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring aria-current:bg-muted">
                   <span className="block break-words text-sm font-medium">{entry.measure.title}</span>
-                  <span className="mt-1 block text-xs text-muted-foreground">{entry.status === "locked" ? "Awaiting your vote" : "Vote recorded"} · {timestamp(entry.lockedAt)}</span>
+                  <span className="mt-1 block text-xs text-muted-foreground">{entry.checkId && "Five-measure check · "}{entry.status === "locked" ? "Awaiting your vote" : "Vote recorded"} · {timestamp(entry.lockedAt)}</span>
                 </button>
               </li>
             ))}
@@ -386,21 +443,21 @@ export function PersonalBallotJournal() {
       </aside>
       <section aria-labelledby="journal-detail" aria-busy={busy} className="min-w-0 space-y-5 rounded-lg border bg-card p-5 sm:p-7">
         <div>
-          {selected && <p className="mb-2 text-sm font-medium text-muted-foreground">{selected.status === "locked" ? "Prediction locked · Awaiting your vote" : "Completed entry"}</p>}
+          {selected && <p className="mb-2 text-sm font-medium text-muted-foreground">{selected.checkId && "Five-measure check · "}{selected.status === "locked" ? "Awaiting your vote" : "Completed entry"}</p>}
           <h2 id="journal-detail" ref={detail} tabIndex={-1} className="break-words font-serif text-3xl tracking-tight">
             {editing ? "Edit measure" : selected ? selected.measure.title : "Add a measure"}
           </h2>
           {editing && <p className="mt-2 text-sm text-muted-foreground">{selected?.status === "locked"
             ? "Saving a correction locks a prediction based on the updated measure. You can then record your vote."
             : "The prediction you saw belongs to the original wording. Correct this entry if the same vote and reasoning still apply."}</p>}
-          {selected?.status === "locked" && !editing && <p className="mt-2 text-sm text-muted-foreground">Locked {timestamp(selected.lockedAt)}. Record your decision to reveal the prediction.</p>}
+          {selected?.status === "locked" && !editing && <p className="mt-2 text-sm text-muted-foreground">Locked {timestamp(selected.lockedAt)}. Record your decision to reveal {selected.checkId ? "the comparison forecasts" : "the prediction"}.</p>}
           {!selected && <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             Future forecasts can draw on your earlier votes, written reasons, and follow-up answers. Your first forecast starts at equal odds.
           </p>}
         </div>
         {error && <div role="alert" className="space-y-3 rounded-md border border-destructive/40 p-3 text-sm">
           <p className="text-destructive">{error}</p>
-          {conflict && <Button type="button" variant="outline" disabled={busy} onClick={() => void reloadSavedEntry()}>Discard draft and load saved entry</Button>}
+          {conflict && <Button type="button" variant="outline" disabled={busy} onClick={() => void reloadSavedEntry()}>{selected ? "Discard draft and load saved entry" : "Refresh check and keep draft"}</Button>}
         </div>}
         {savedMessage && <p role="status" className="text-sm font-medium">{savedMessage}</p>}
         {selected && !editing && <Button type="button" variant="outline" disabled={busy || !!answerDrafts[answerKey]}
@@ -408,10 +465,11 @@ export function PersonalBallotJournal() {
           <Pencil aria-hidden="true" /> Edit measure
         </Button>}
         <div hidden={!!selected}>
-          <MeasureForm key={draftVersion} busy={busy} onSave={(measure) => {
-            draftId.current ??= crypto.randomUUID();
-            void save("POST", { id: draftId.current, measure });
-          }} />
+          {pairedDraft && !nextSlot && <div className="mb-4 space-y-2 rounded-md border p-3 text-sm">
+            <p>The check is full. You can still save this measure outside it.</p>
+            <Button variant="outline" disabled={busy} onClick={() => { setPairedDraft(false); setError(""); }}>Use regular journal for this draft</Button>
+          </div>}
+          <MeasureForm key={draftVersion} busy={busy} nextSlot={check && nextSlot ? check.slotIds.indexOf(nextSlot) + 1 : undefined} onSave={lockMeasure} />
         </div>
         {selected && editing && (
           <MeasureForm key={selected.id} entry={selected} busy={busy} onCancel={() => toggleEditor(false)} onSave={(measure, confirmed) =>

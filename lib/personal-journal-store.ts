@@ -2,22 +2,32 @@ import { randomUUID } from "node:crypto";
 import { link, mkdir, open, readFile, readdir, unlink } from "node:fs/promises";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { isDeepStrictEqual } from "node:util";
-import type { JournalEntry, JournalFollowUp, JournalMeasure, JournalPrediction, JournalQuestion } from "./personal-journal-types";
+import type { JournalCheck, JournalEntry, JournalFollowUp, JournalForecastSet, JournalMeasure, JournalPrediction, JournalQuestion } from "./personal-journal-types";
 
 type RevealedEntry = Extract<JournalEntry, { status: "revealed" }>;
 type Vote = RevealedEntry["vote"];
-type Predict = (measure: JournalMeasure, history: RevealedEntry[]) => Promise<JournalPrediction>;
+type Predict = (measure: JournalMeasure, history: RevealedEntry[], paired?: boolean) => Promise<JournalPrediction | JournalForecastSet>;
 type ChooseQuestion = (entry: RevealedEntry, history: RevealedEntry[]) => Promise<JournalQuestion | null>;
 
-interface StoredForecast {
-  id: string;
-  measure: JournalMeasure;
-  lockedAt: string;
-  prediction: JournalPrediction;
+interface EvidenceSnapshot {
   eligibleHistoryIds: string[];
   eligibleHistoryRevisions?: Record<string, number>;
   /** One immutable clarification can be answered per measure revision. */
   eligibleClarificationIds?: string[];
+}
+
+interface StoredForecast extends EvidenceSnapshot {
+  id: string;
+  measure: JournalMeasure;
+  lockedAt: string;
+  prediction: JournalPrediction;
+  checkId?: string;
+  comparison?: RevealedEntry["comparison"];
+}
+
+interface StoredCheck {
+  check: JournalCheck;
+  evidence: EvidenceSnapshot;
 }
 
 interface StoredVote {
@@ -55,7 +65,8 @@ export class JournalStoreError extends Error {
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const forecastSuffix = ".forecast.json";
-const inFlight = new Map<string, { measure: JournalMeasure; result: Promise<JournalEntry> }>();
+const checkFile = "five-measure-check.json";
+const inFlight = new Map<string, { measure: JournalMeasure; checkId?: string; result: Promise<JournalEntry> }>();
 
 function journalDirectory(): string {
   const dir = resolve(process.env.PERSONAL_JOURNAL_DIR || "eval/private_runs/personal-journal");
@@ -88,7 +99,7 @@ async function readRecord<T>(path: string): Promise<T | null> {
 
 // The published name only ever points to a complete, synced file. Hard links
 // never replace an existing entry, including a winner in another process.
-async function publishOnce(path: string, record: StoredForecast | EntryEvent): Promise<void> {
+async function publishOnce(path: string, record: StoredForecast | StoredCheck | EntryEvent): Promise<void> {
   const temp = path + "." + randomUUID() + ".tmp";
   const file = await open(temp, "wx", 0o600);
   try {
@@ -161,12 +172,14 @@ function projectEntry(state: EntryState): JournalEntry {
   const { forecast, ballot, revision, correctedAfterVote } = state;
   const base = {
     id: forecast.id, measure: correctedAfterVote ?? forecast.measure, lockedAt: forecast.lockedAt,
+    ...(forecast.checkId ? { checkId: forecast.checkId } : {}),
     ...(revision ? { revision } : {}),
   };
   if (!ballot) return { ...base, status: "locked" };
   const { vote, reasoning, votedAt } = ballot;
   return {
     ...base, status: "revealed", vote, reasoning, votedAt, prediction: forecast.prediction,
+    ...(forecast.comparison ? { comparison: forecast.comparison } : {}),
     ...(correctedAfterVote ? { forecastMeasure: forecast.measure } : {}),
     ...(state.archivedFollowUp ? { archivedFollowUp: state.archivedFollowUp } : {}),
     ...(state.followUp ? { followUp: state.followUp } : {}),
@@ -204,47 +217,131 @@ function requireSameMeasure(requested: JournalMeasure, stored: JournalMeasure): 
   }
 }
 
-async function makeForecast(
-  dir: string, id: string, measure: JournalMeasure, predict: Predict
-): Promise<StoredForecast> {
-  const history = (await entriesIn(dir))
-    .filter((entry): entry is RevealedEntry => entry.status === "revealed" && entry.id !== id)
+function completedEvidence(entries: JournalEntry[]) {
+  return entries
+    .filter((entry): entry is RevealedEntry => entry.status === "revealed")
     .sort((a, b) => a.votedAt.localeCompare(b.votedAt) || a.id.localeCompare(b.id))
     .map(entry => modelEvidence(entry, true));
+}
+
+function snapshot(history: RevealedEntry[]): EvidenceSnapshot {
   const eligibleHistoryIds = history.map((entry) => entry.id);
   const eligibleClarificationIds = history.filter(entry => entry.followUp?.status === "answered").map(entry => entry.id);
   const eligibleHistoryRevisions: Record<string, number> = {};
   for (const entry of history) {
     if (entry.revision) eligibleHistoryRevisions[entry.id] = entry.revision;
   }
-  const { choice, probabilityYes, model, explanation, historyCount } = await predict(measure, history);
-  if (!Number.isFinite(probabilityYes) || probabilityYes < 0 || probabilityYes > 1 ||
-      !["yes", "no"].includes(choice) || !Number.isInteger(historyCount) ||
-      historyCount < 0 || historyCount > eligibleHistoryIds.length ||
-      typeof model !== "string" || !model.trim() || typeof explanation !== "string") {
-    throw new JournalStoreError(502, "The forecaster returned an invalid prediction.");
-  }
   return {
-    id, measure, lockedAt: new Date().toISOString(),
-    prediction: { choice, probabilityYes, model, explanation, historyCount }, eligibleHistoryIds,
+    eligibleHistoryIds,
     ...(Object.keys(eligibleHistoryRevisions).length ? { eligibleHistoryRevisions } : {}),
     ...(eligibleClarificationIds.length ? { eligibleClarificationIds } : {}),
   };
 }
 
+export async function getCheck(): Promise<JournalCheck | null> {
+  return (await readRecord<StoredCheck>(join(journalDirectory(), checkFile)))?.check ?? null;
+}
+
+export async function startCheck(): Promise<JournalCheck> {
+  const dir = journalDirectory();
+  const path = join(dir, checkFile);
+  const existing = await readRecord<StoredCheck>(path);
+  if (existing) return existing.check;
+  const evidence = snapshot(completedEvidence(await entriesIn(dir)));
+  const check: JournalCheck = {
+    id: randomUUID(), startedAt: new Date().toISOString(), slotIds: Array.from({ length: 5 }, () => randomUUID()),
+    evidenceCount: evidence.eligibleHistoryIds.length, clarificationCount: evidence.eligibleClarificationIds?.length ?? 0,
+  };
+  await mkdir(dir, { recursive: true, mode: 0o700 });
+  await publishOnce(path, { check, evidence });
+  const winner = await readRecord<StoredCheck>(path);
+  if (!winner) throw new Error("Could not read the frozen comparison.");
+  return winner.check;
+}
+
+async function checkForSlot(dir: string, id: string, checkId?: string, newUnseen = false): Promise<StoredCheck | null> {
+  const record = await readRecord<StoredCheck>(join(dir, checkFile));
+  if (record?.check.slotIds.includes(id)) {
+    if (checkId === record.check.id) return record;
+    throw new JournalStoreError(409, "This slot is reserved for the five-measure check. Reload the journal.");
+  }
+  if (checkId) throw new JournalStoreError(409, "Select an available slot in the five-measure check.");
+  if (record && newUnseen) {
+    const names = new Set(await readdir(dir));
+    if (record.check.slotIds.some(slot => !names.has(slot + forecastSuffix))) {
+      throw new JournalStoreError(409, "The five-measure check is active. Reload the journal to use its next slot.");
+    }
+  }
+  return null;
+}
+
+function sameBallot(a: JournalMeasure, b: JournalMeasure): boolean {
+  const normalize = (field: string) => field.trim().replace(/\s+/g, " ").toLowerCase();
+  return normalize(a.title) === normalize(b.title) && normalize(a.text) === normalize(b.text);
+}
+
+function checkedPrediction(prediction: JournalPrediction, evidenceCount: number): JournalPrediction {
+  if (!prediction) throw new JournalStoreError(502, "The forecaster omitted a prediction.");
+  const { choice, probabilityYes, model, explanation, historyCount } = prediction;
+  if (!Number.isFinite(probabilityYes) || probabilityYes < 0 || probabilityYes > 1 ||
+      !["yes", "no"].includes(choice) || !Number.isInteger(historyCount) ||
+      historyCount < 0 || historyCount > evidenceCount ||
+      typeof model !== "string" || !model.trim() || typeof explanation !== "string") {
+    throw new JournalStoreError(502, "The forecaster returned an invalid prediction.");
+  }
+  return { choice, probabilityYes, model, explanation, historyCount };
+}
+
+async function makeForecast(
+  dir: string, id: string, measure: JournalMeasure, predict: Predict, check: StoredCheck | null
+): Promise<StoredForecast> {
+  const entries = await entriesIn(dir);
+  if (check) {
+    if (measure.familiar) throw new JournalStoreError(400, "Choose a measure that is new to you for this check.");
+    const other = entries.filter(entry => entry.id !== id);
+    if (other.some(entry => sameBallot(measure, entry.measure) ||
+      (entry.status === "revealed" && entry.forecastMeasure && sameBallot(measure, entry.forecastMeasure)))) {
+      throw new JournalStoreError(409, "This measure already appears in the journal. Choose a new measure.");
+    }
+    if (!entries.some(entry => entry.id === id)) {
+      const occupied = new Set(other.map(entry => entry.id));
+      if (check.check.slotIds.find(slot => !occupied.has(slot)) !== id) {
+        throw new JournalStoreError(409, "The next comparison slot changed. Reload the journal.");
+      }
+    }
+  }
+  const history = check ? await readEvidence(dir, check.evidence) : completedEvidence(entries.filter(entry => entry.id !== id));
+  const evidence = check?.evidence ?? snapshot(history);
+  const result = await predict(measure, history, !!check);
+  const base = { id, measure, lockedAt: new Date().toISOString(), ...evidence };
+  if (!check && !("reasoning" in result)) {
+    return { ...base, prediction: checkedPrediction(result, history.length) };
+  }
+  if (!check || !("reasoning" in result)) throw new JournalStoreError(502, "The forecaster returned an incomplete comparison.");
+  const prediction = checkedPrediction(result.reasoning, history.length);
+  const baseline = checkedPrediction(result.baseline, history.length);
+  const withoutReasoning = checkedPrediction(result.withoutReasoning, history.length);
+  if ([prediction, baseline, withoutReasoning].some(arm => arm.historyCount !== history.length)) {
+    throw new JournalStoreError(502, "All three forecasts must use the same frozen decisions.");
+  }
+  return { ...base, checkId: check.check.id, prediction, comparison: { baseline, withoutReasoning } };
+}
+
 async function freezeForecast(
-  dir: string, id: string, measure: JournalMeasure, predict: Predict
+  dir: string, id: string, measure: JournalMeasure, predict: Predict, checkId?: string
 ): Promise<JournalEntry> {
   const path = join(dir, id + forecastSuffix);
   let forecast = await readRecord<StoredForecast>(path);
+  const check = await checkForSlot(dir, id, checkId, !forecast && !measure.familiar);
   if (!forecast) {
-    const proposal = await makeForecast(dir, id, measure, predict);
+    const proposal = await makeForecast(dir, id, measure, predict, check);
     await mkdir(dir, { recursive: true, mode: 0o700 });
     await publishOnce(path, proposal);
     // A separate process may have published first. Its snapshot is authoritative.
     forecast = await readRecord<StoredForecast>(path);
     if (!forecast) throw new Error("Could not read the locked forecast.");
   }
+  if (forecast.checkId !== checkId) throw new JournalStoreError(409, "This entry belongs to a different forecast request.");
   requireSameMeasure(measure, forecast.measure);
   return projectEntry(await readState(dir, forecast));
 }
@@ -256,18 +353,19 @@ function ballotFields(input: JournalMeasure): JournalMeasure {
   return { title, sourceUrl, text, yesMeaning, noMeaning, familiar };
 }
 
-export async function lockEntry(inputId: string, input: JournalMeasure, predict: Predict): Promise<JournalEntry> {
+export async function lockEntry(inputId: string, input: JournalMeasure, predict: Predict, checkId?: string): Promise<JournalEntry> {
   const id = entryId(inputId);
   const dir = journalDirectory();
   const key = join(dir, id);
   const measure = ballotFields(input);
   const pending = inFlight.get(key);
   if (pending) {
+    if (pending.checkId !== checkId) throw stale();
     requireSameMeasure(measure, pending.measure);
     return pending.result;
   }
-  const result = freezeForecast(dir, id, measure, predict);
-  inFlight.set(key, { measure, result });
+  const result = freezeForecast(dir, id, measure, predict, checkId);
+  inFlight.set(key, { measure, checkId, result });
   try {
     return await result;
   } finally {
@@ -293,16 +391,18 @@ function modelEvidence(entry: RevealedEntry, includeClarification: boolean): Rev
   return evidence;
 }
 
-async function forecastHistory(dir: string, forecast: StoredForecast, votedAt: string): Promise<RevealedEntry[]> {
+async function readEvidence(dir: string, snapshot: EvidenceSnapshot): Promise<RevealedEntry[]> {
   const history: RevealedEntry[] = [];
-  const clarified = new Set(forecast.eligibleClarificationIds);
-  for (const id of forecast.eligibleHistoryIds) {
-    const revision = forecast.eligibleHistoryRevisions?.[id] ?? 0;
+  const clarified = new Set(snapshot.eligibleClarificationIds);
+  for (const id of snapshot.eligibleHistoryIds) {
+    const revision = snapshot.eligibleHistoryRevisions?.[id] ?? 0;
     const state = await readState(dir, await originalForecast(dir, id), revision);
     const entry = projectEntry(state);
-    if (entry.id !== forecast.id && entry.status === "revealed" && entry.votedAt < votedAt) {
-      history.push(modelEvidence(entry, clarified.has(id)));
+    if (entry.status !== "revealed" || state.revision !== revision ||
+        (clarified.has(id) && entry.followUp?.status !== "answered")) {
+      throw new JournalStoreError(500, "The journal could not reconstruct the frozen evidence.");
     }
+    history.push(modelEvidence(entry, clarified.has(id)));
   }
   return history;
 }
@@ -321,7 +421,7 @@ export async function suggestFollowUp(inputId: string, expectedRevision: number,
   const state = await readState(dir, original);
   const entry = requireRevealed(state, expectedRevision);
   if (entry.forecastMeasure || state.followUp !== undefined) return entry;
-  const history = await forecastHistory(dir, state.forecast, entry.votedAt);
+  const history = (await readEvidence(dir, state.forecast)).filter(prior => prior.id !== id && prior.votedAt < entry.votedAt);
   const question = await choose(entry, history);
   if (question !== null && (
     !question || typeof question.prompt !== "string" || !question.prompt.trim() || question.prompt.length > 2000 ||
@@ -376,7 +476,7 @@ export async function correctEntry(
   if (state.revision !== expectedRevision) throw stale();
 
   const event: EntryEvent = current.status === "locked"
-    ? { kind: "relock", forecast: await makeForecast(dir, id, measure, predict) }
+    ? { kind: "relock", forecast: await makeForecast(dir, id, measure, predict, await checkForSlot(dir, id, current.checkId)) }
     : { kind: "correct", measure, correctedAt: new Date().toISOString() };
   // Both corrections and votes claim the same next slot. This prevents a stale
   // correction from racing a reveal, even in separate server processes.

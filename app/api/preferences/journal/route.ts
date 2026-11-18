@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { journalRequestAllowed } from "@/lib/personal-journal-local";
-import { correctEntry, listEntries, lockEntry, recordVote } from "@/lib/personal-journal-store";
+import { correctEntry, getCheck, listEntries, lockEntry, recordVote } from "@/lib/personal-journal-store";
 import { failed, forecast, nonblank, reply, requestData, revision } from "@/lib/personal-journal-service";
 
 export const runtime = "nodejs";
@@ -15,9 +15,10 @@ const measureSchema = z.object({
   noMeaning: nonblank(3000),
   familiar: z.boolean(),
 }).strict();
-const lockRequest = z.object({ id: z.string().uuid(), measure: measureSchema }).strict();
+const packetRequest = z.object({ id: z.string().uuid(), measure: measureSchema }).strict();
+const lockRequest = packetRequest.extend({ checkId: z.string().uuid().optional() });
 const voteRequest = z.object({ id: z.string().uuid(), vote, reasoning: nonblank(10000), expectedRevision: revision.default(0) }).strict();
-const correctionRequest = lockRequest.extend({
+const correctionRequest = packetRequest.extend({
   expectedRevision: revision,
   expectedStatus: z.enum(["locked", "revealed"]),
   confirmVote: z.literal(true).optional(),
@@ -25,7 +26,8 @@ const correctionRequest = lockRequest.extend({
 export async function GET(request: Request) {
   if (!journalRequestAllowed(request)) return reply({ error: "Journal unavailable." }, 404);
   try {
-    return reply({ entries: await listEntries() });
+    const [entries, check] = await Promise.all([listEntries(), getCheck()]);
+    return reply({ entries, check });
   } catch (error) {
     return failed(error);
   }
@@ -36,8 +38,8 @@ export async function POST(request: Request) {
   try {
     const input = lockRequest.safeParse(await requestData(request));
     if (!input.success) return reply({ error: "Enter a title, source URL, measure text, both outcomes and your familiarity with the measure." }, 400);
-    const { id, measure } = input.data;
-    const entry = await lockEntry(id, measure, (packet, history) => forecast(id, packet, history));
+    const { id, measure, checkId } = input.data;
+    const entry = await lockEntry(id, measure, (packet, history, paired) => forecast(id, packet, history, paired), checkId);
     return reply({ entry });
   } catch (error) {
     return failed(error);
@@ -65,7 +67,7 @@ export async function PATCH(request: Request) {
     if (expectedStatus === "revealed" && !confirmVote) {
       return reply({ error: "Confirm that your saved vote and reasoning apply to the corrected measure." }, 400);
     }
-    const entry = await correctEntry(id, expectedRevision, expectedStatus, measure, (packet, history) => forecast(id, packet, history));
+    const entry = await correctEntry(id, expectedRevision, expectedStatus, measure, (packet, history, paired) => forecast(id, packet, history, paired));
     return reply({ entry });
   } catch (error) {
     return failed(error);
