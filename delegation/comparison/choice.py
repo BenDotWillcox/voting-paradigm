@@ -38,6 +38,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from functools import cached_property
 
 import numpy as np
 import numpy.typing as npt
@@ -65,9 +66,9 @@ class Agreement:
     # The posterior mean when the prior is not uniform (pooled agreement)
     posterior_mean: FloatArray | None = None
 
-    @property
+    @cached_property
     def mean(self) -> FloatArray:
-        """The posterior mean agreement."""
+        """The posterior mean agreement (computed once: ranking reads it per voter)."""
         if self.posterior_mean is not None:
             return self.posterior_mean
         return np.asarray((self.matches + 1.0) / (self.trials + 2.0))

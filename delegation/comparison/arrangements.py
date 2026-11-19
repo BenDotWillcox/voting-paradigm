@@ -33,6 +33,7 @@ Deliberation, agenda-setting and compromise are not modelled.
 from __future__ import annotations
 
 import zlib
+import weakref
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
 
@@ -370,7 +371,7 @@ def record_preferences(population: Population, election: Election) -> IntArray:
     the posterior mean, then the city's seeded tie key. A candidate prefers
     themself.
     """
-    whole = agreement(population.history.own_votes)
+    whole = _proxy_agreements(population, ChoicePolicy())[0]
     ties = population_tie_key(population)
     preferred = np.empty(population.size, dtype=np.int64)
     for district, drawn in enumerate(election.candidates):
@@ -687,25 +688,51 @@ def population_categories(population: Population) -> list[Category]:
     return [create_category(name) for name in population.categories]
 
 
+# Agreement depends only on a population's history and the credible mass
+# (and, for liquid, on borrowing strength), and the overhead rule, the
+# choice and the matched arms all read it. It is computed once per
+# population and reused; the cache holds populations weakly, so it never
+# keeps one alive. Results are identical to recomputing.
+_AGREEMENTS: weakref.WeakKeyDictionary[Population, dict[tuple[object, ...], list[Agreement]]] = (
+    weakref.WeakKeyDictionary()
+)
+
+
+def _cached(population: Population, key: tuple[object, ...], build: object) -> list[Agreement]:
+    store = _AGREEMENTS.setdefault(population, {})
+    if key not in store:
+        assert callable(build)
+        store[key] = build()
+    return store[key]
+
+
 def _proxy_agreements(population: Population, policy: ChoicePolicy) -> list[Agreement]:
-    return [agreement(population.history.own_votes, policy.credible_mass)]
+    return _cached(
+        population,
+        ("proxy", policy.credible_mass),
+        lambda: [agreement(population.history.own_votes, policy.credible_mass)],
+    )
 
 
 def _liquid_agreements(population: Population, policy: ChoicePolicy) -> list[Agreement]:
     votes = population.history.own_votes
-    if policy.borrow_strength:
-        return list(
-            pooled_agreements(
-                votes,
-                population.history.dimension,
-                len(population.categories),
-                policy.credible_mass,
-            ).agreements
-        )
-    return [
-        agreement(votes[:, population.history.on_dimension(d)], policy.credible_mass)
-        for d in range(len(population.categories))
-    ]
+
+    def build() -> list[Agreement]:
+        if policy.borrow_strength:
+            return list(
+                pooled_agreements(
+                    votes,
+                    population.history.dimension,
+                    len(population.categories),
+                    policy.credible_mass,
+                ).agreements
+            )
+        return [
+            agreement(votes[:, population.history.on_dimension(d)], policy.credible_mass)
+            for d in range(len(population.categories))
+        ]
+
+    return _cached(population, ("liquid", policy.credible_mass, policy.borrow_strength), build)
 
 
 def choose_proxies(population: Population, policy: ChoicePolicy) -> Choice:

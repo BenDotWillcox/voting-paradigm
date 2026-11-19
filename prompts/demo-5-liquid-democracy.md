@@ -561,6 +561,66 @@ floor from which liquid *strictly leads* the representative.
     level above it, with the gate holding, Figure 1's threshold has been
     crossed.
 
+### Running the benchmark (runner built 2026-11-19)
+
+`delegation/comparison/runner.py` simulates the declared cities and reads
+every verdict with `protocol.py`. The script is
+`scripts/run_liquid_benchmark.py`, tested in
+`delegation/tests/test_runner.py`. Three runs:
+
+- **`smoke`:** eight small cities on development seeds (3,000,001 onward,
+  never the primary namespace), fitted and structural, at three levels, in
+  a few seconds. It checks the pipeline end to end. Cities this small
+  cannot keep overhead under 10%, so their reading is uninformative by
+  design.
+- **`primary`:** the 200 primary cities, each at every level of the dial,
+  with the attendance frontier recounted at every floor from the same
+  calibration and delegations.
+- **`sweeps`:** every declared sweep point on its 48 cities at every level.
+  `--point` runs one point.
+
+Each run works as follows:
+- **One city per task.** A city's levels run in one task, so the city
+  keeps its residents across the dial.
+- **What a city-level records:**
+  - every arrangement's matching-ballot count, so contrasts are signed
+    counts and ties are exact;
+  - the voter-question pairs;
+  - whether liquid and the proxy meet the overhead cap;
+  - the calibration;
+  - every arrangement's measures;
+  - for primary cities, liquid's matches minus the representative's at each
+    frontier floor.
+- **Checkpoints.** Each city's record is appended to `records.jsonl` and
+  synced to disk, so an interrupted run resumes where it stopped.
+- **The manifest** records:
+  - the commit and whether the checkout was dirty;
+  - the beliefs file's hash;
+  - the protocol constants and the sweep definitions;
+  - the Python and NumPy versions.
+
+  A primary or sweep run refuses a checkout with uncommitted changes, and a
+  resumed run must match its manifest.
+- **The analysis** (`analyse`) writes two files:
+  - `report.json`, with every reading per point: the threshold verdict,
+    bracket, interpolation, first supported level, nominal 95% set, both
+    curves and the gate; the reading at each level and at the Swiss marker;
+    the specialisation contrast with its joint share; the decomposition; the
+    frontier; and the averaged measures;
+  - `report.md`, with the headline line for each point.
+
+  Rotating-agenda points use their heavy-topic strata.
+- **Speed.** Agreement is computed once per city level and reused by the
+  calibration, the choice and the matched arms (`arrangements._AGREEMENTS`,
+  a weak cache; results are unchanged, and the test suite passes as
+  before). That brings a full-size city level to about 18 s, from about
+  41 s. On 14 workers the primary run takes about 45 minutes and the sweeps
+  about 3½–4 hours; the 10-district point costs about four times a
+  five-district one.
+- **Where results go.** Runs write to `.cache/liquid-benchmark/<run>/`,
+  which is Git-ignored. The published benchmark is built from them in step
+  6 below.
+
 ### What everything else is
 
 | Question | Role |
@@ -2233,10 +2293,18 @@ Steps for the revised vision (2026-11-14), each its own PR:
    issues (loading 1) the proxy scored 0.769 against liquid's 0.742,
    because one overall history is a larger sample than six per-issue ones.
    Exploratory, not the benchmark.
-6. **Benchmark.** `eval/benchmarks/delegation_frontier_v1/`: the headline
-   frontier, the ladder, the sensitivity sweeps and the routing condition,
-   rebuilt byte for byte from a runner, as the synthetic preference
-   benchmark is.
+6. **Benchmark.** The runner is built (`delegation/comparison/runner.py`,
+   `scripts/run_liquid_benchmark.py`; see "Running the benchmark"). What
+   remains:
+   1. the freeze commit;
+   2. the primary and sweep runs from that clean commit;
+   3. the published results, `eval/benchmarks/delegation_frontier_v1/`: the
+      threshold (Figure 1), the attendance frontier (Figure 2), the
+      overhead-fidelity plane and the sweeps, with the run manifest. They
+      are rebuilt from the recorded runs, as the synthetic preference
+      benchmark is.
+
+   The routing condition is a follow-up outside H1.
 7. **Walkthrough.** The `/liquid` research page over the benchmark's
    recorded results, with a small live re-run where it is cheap.
 8. **Control center.** Regenerate the account scenario with history-based
