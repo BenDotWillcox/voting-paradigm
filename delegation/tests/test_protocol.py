@@ -345,3 +345,61 @@ def test_the_frontier_uses_the_thresholds_criterion():
 def test_the_grid_contains_the_swiss_marker():
     assert 0.45 in TURNOUT_GRID and TURNOUT_GRID == tuple(sorted(TURNOUT_GRID))
     assert TURNOUT_GRID[0] > 0.0 and TURNOUT_GRID[-1] < 1.0
+
+
+def test_an_exact_tie_in_counts_stays_a_tie_through_the_band():
+    # The reviewer's case: 48 cities in their rotating order, six per topic,
+    # -20 matches at the first nine levels; at 0.9 the eight topics give
+    # [16, -28, 1, 10, 12, -24, 16, -3], identical within each topic. The
+    # top mean is exactly zero on every balanced resample
+    levels = TURNOUT_GRID
+    strata = np.arange(48) % 8
+    top = np.array([16, -28, 1, 10, 12, -24, 16, -3])
+    counts = np.full((48, len(levels)), -20, dtype=np.int64)
+    counts[:, -1] = top[strata]
+    result = threshold(levels, counts, _all(counts), pairs=80_000, strata=strata, resamples=FAST)
+    assert threshold_verdict(result) == "no crossing in the tested range"
+    assert result.confidence[1] == np.inf
+
+
+def test_resamples_are_studentized_by_their_own_spread():
+    # The reviewer's variant: the rare loss is -196 with probability 3/199,
+    # a true top mean of zero. With the original spread, samples holding one
+    # rare city excluded the truth (coverage at most 80.5%)
+    rng = np.random.default_rng(11)
+    covered = 0
+    runs = 200
+    for _ in range(runs):
+        d = np.full((200, 4), -20.0)
+        rare = rng.random(200) < 3 / 199
+        d[:, 3] = np.where(rare, -196.0, 3.0)
+        result = threshold(FOUR, d, _all(d), pairs=80_000, resamples=FAST)
+        covered += result.confidence[1] == np.inf
+    assert covered / runs >= 0.9
+    # One rare city: a resample without it moves the mean and has no spread
+    d = np.full((200, 4), -20.0)
+    d[:, 3] = 3.0
+    d[17, 3] = -196.0
+    assert threshold(FOUR, d, _all(d), pairs=80_000, resamples=FAST).confidence[1] == np.inf
+
+
+def test_identical_samples_are_reported_as_zero_spread():
+    d = np.full((200, 4), -20.0)
+    d[:, 3] = 3.0
+    result = threshold(FOUR, d, _all(d), pairs=80_000, resamples=FAST)
+    assert result.zero_spread_levels == FOUR
+
+
+def test_a_reversal_is_flagged_on_every_verdict():
+    d = np.tile(np.array([1.0, -1.0, 1.0, -1.0]), (100, 1))
+    result = threshold(FOUR, d, _all(d), pairs=1.0, resamples=FAST)
+    assert threshold_verdict(result) == "no crossing in the tested range (curve reverses)"
+
+
+def test_a_frontier_tie_at_the_lowest_floor_is_not_a_lead_there():
+    floors = (0.0, 0.2, 0.4)
+    counts = np.tile(np.array([0, 1, 2]), (100, 1))
+    reading = frontier_reading(floors, counts, np.ones(100, dtype=bool), pairs=80_000)
+    assert reading.status == "crosses"
+    assert reading.bracket == (0.0, 0.2) and reading.interpolated == 0.0
+

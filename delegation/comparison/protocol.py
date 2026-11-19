@@ -314,6 +314,9 @@ class Threshold:
     # The all-city fidelity difference's 95% t-interval at every level, in
     # fidelity units
     pointwise: tuple[Interval, ...]
+    # Levels where every city (on either curve) has the same count: the
+    # confidence set cannot reflect outcomes absent from the sample there
+    zero_spread_levels: tuple[float, ...] = ()
 
 
 def _resample(rng: np.random.Generator, strata: npt.NDArray[np.int64]) -> npt.NDArray[np.int64]:
@@ -328,7 +331,14 @@ def _resample(rng: np.random.Generator, strata: npt.NDArray[np.int64]) -> npt.ND
 def _curves(
     d: npt.NDArray[np.float64], cap: npt.NDArray[np.bool_]
 ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64]]:
-    """Means and standard errors of the all-city and cap-meeting curves."""
+    """
+    Means and standard errors of the all-city and cap-meeting curves. Called
+    on signed match counts (whole numbers held exactly in float64), so a
+    mean whose count total is zero is exactly zero; converting to fidelity
+    first and then summing could turn an exact tie into a tiny lead (fifth
+    A6 review). Every quantity the band uses is a ratio or a sign, so the
+    count unit needs no conversion.
+    """
     n = d.shape[0]
     mean_all = d.mean(axis=0)
     se_all = d.std(axis=0, ddof=1) / math.sqrt(n)
@@ -418,7 +428,8 @@ def threshold(
     if groups.shape != (cities,):
         raise ValueError("one stratum per city")
 
-    mean_all, se_all, mean_cap, se_cap = _curves(d, cap)
+    # All curve arithmetic is on counts; fidelity only for reported intervals
+    mean_all, se_all, mean_cap, se_cap = _curves(raw, cap)
     observed_cap = cap.any(axis=0)
     all_cities = read_curve(levels, mean_all, _positive(raw, np.ones_like(cap)))
     cap_meeting = read_curve(levels, mean_cap, _positive(raw, cap), observed_cap)
@@ -444,9 +455,12 @@ def threshold(
     maxima = np.empty(resamples)
     for b in range(resamples):
         idx = _resample(rng, groups)
-        m_a, _, m_c, _ = _curves(d[idx], cap[idx])
+        # Bootstrap-t: each resample is studentized by its own spread (fifth
+        # A6 review: the original spread let a resample with a moved mean and
+        # no spread of its own count as a finite deviation)
+        m_a, s_a, m_c, s_c = _curves(raw[idx], cap[idx])
         maxima[b] = float(
-            np.concatenate([_deviation(m_a, mean_all, se_all), _deviation(m_c, mean_cap, se_cap)]).max()
+            np.concatenate([_deviation(m_a, mean_all, s_a), _deviation(m_c, mean_cap, s_c)]).max()
         )
     critical = float(np.quantile(maxima, CONFIDENCE, method="higher"))
     lower_a, upper_a = _band(mean_all, se_all, critical)
@@ -462,6 +476,10 @@ def threshold(
     share = cap.mean(axis=0)
     gate_holds = bool((share[index:] >= FEASIBLE_SHARE).all())
     pointwise = tuple(t_interval(d[:, j]) for j in range(n))
+    # Levels where a curve's sample has no spread: a rare outcome absent from
+    # the sample cannot be recovered by resampling it, so the set is not
+    # validated there and these levels are reported
+    flat = (se_all == 0) | ((se_cap == 0) & np.isfinite(mean_cap))
     return Threshold(
         status,
         bracket,
@@ -474,20 +492,26 @@ def threshold(
         tuple(float(x) for x in share),
         critical,
         pointwise,
+        tuple(levels[j] for j in np.flatnonzero(flat)),
     )
 
 
 def threshold_verdict(result: Threshold) -> str:
-    """The primary finding's label, exactly as declared."""
+    """
+    The primary finding's label, exactly as declared. A reversal on either
+    curve is appended to whatever the base verdict is.
+    """
     if result.status == "unobserved at the top of the range":
-        return "overhead condition not met at the top of the range"
-    if result.status == "no crossing in the tested range":
-        return result.status
-    if not result.gate_holds:
-        return "overhead condition not met where liquid is ahead"
+        base = "overhead condition not met at the top of the range"
+    elif result.status == "no crossing in the tested range":
+        base = result.status
+    elif not result.gate_holds:
+        base = "overhead condition not met where liquid is ahead"
+    else:
+        base = result.status
     if max(result.all_cities.reversals, result.cap_meeting.reversals) > 1:
-        return f"{result.status} (curve reverses)"
-    return result.status
+        return f"{base} (curve reverses)"
+    return base
 
 
 # ---------------------------------------------------------------------------
@@ -510,7 +534,10 @@ class FrontierReading:
     status: str
     bracket: tuple[float, float] | None
     # Linear interpolation inside the bracket (a grid approximation), the
-    # later of the two curves'
+    # later of the two curves'. It equals the bracket's lower floor when the
+    # difference there is an exact tie: that marks where the lead begins,
+    # not a lead at that floor. Only status "leads at the lowest floor" is a
+    # lead with delegates at their own rate
     interpolated: float | None
     # The all-city fidelity difference's 95% t-interval at every floor
     pointwise: tuple[Interval, ...]
@@ -539,7 +566,7 @@ def frontier_reading(
         raise ValueError("pairs must be positive")
     cap = np.broadcast_to(flags[:, None], raw.shape)
     d = raw / pairs
-    mean_all, _, mean_cap, _ = _curves(d, cap)
+    mean_all, _, mean_cap, _ = _curves(raw, cap)
     seen = np.full(len(floors), bool(flags.any()))
     a = read_curve(floors, mean_all, _positive(raw, np.ones_like(cap)))
     c = read_curve(floors, mean_cap, _positive(raw, cap), seen)

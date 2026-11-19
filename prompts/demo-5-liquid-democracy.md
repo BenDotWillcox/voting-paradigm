@@ -145,12 +145,23 @@ raise turnout; Germann and Serdült 2017).
 
   Whenever both true curves lie inside the band, the true threshold lies
   inside the set, plateaus included.
-  - **Sparse outcomes.** A resample whose mean moved while its spread is
-    zero counts as an infinite deviation, not zero, as does a level
+  - **Bootstrap-t, on counts.** Each resample is studentized by its *own*
+    standard error, as the rule declares. Every mean is computed from
+    signed-count totals and divided once, so an exact tie in counts stays
+    exactly zero through the band. (Revised 2026-11-19, fifth A6 review.
+    Studentizing by the original sample's spread, and summing fidelities
+    that had already been divided, each produced sets that excluded a
+    correct *no crossing*.)
+  - **Sparse outcomes.** A resample whose mean moved while its own spread
+    is zero counts as an infinite deviation, not zero, as does a level
     observed in the data but missing from the resample. Rare large
     outcomes therefore widen the band rather than vanish from it. Only a
-    deterministic 0/0, mean unchanged and no spread, counts as zero
-    (revised 2026-11-19, fourth A6 review).
+    deterministic 0/0, mean unchanged and no spread, counts as zero.
+  - **The limit.** If a rare outcome is absent from the sample altogether,
+    resampling cannot recover it. Levels where every city has the same
+    count on either curve are reported (`zero_spread_levels`), and the set
+    is not claimed to be validated there. Real fidelity differences vary
+    from city to city, so this is not expected outside constructed cases.
   - **Coverage.** The set replaces the earlier percentile interval of the
     interpolated crossing:
 
@@ -158,16 +169,19 @@ raise turnout; Germann and Serdült 2017).
     |---|---|---|
     | A plateau at zero | 122 of 250 runs | 248 of 250 |
     | A clean crossing | — | 250 of 250, usually a single grid step |
-    | The reviewer's sparse example (a true mean of zero carried by rare large losses) | about 80% | 476 of 500 (95.2%) |
+    | The reviewer's sparse examples: a true mean of zero carried by rare large losses (−199 at probability 3/202, and −196 at 3/199) | about 80% | 472 and 473 of 500 |
+
+    The remaining misses are samples that contain no rare loss at all.
 - **Statuses.** The status is one of:
   - *crosses*;
   - *liquid ahead throughout* (strictly ahead at every level);
   - *no crossing in the tested range*.
 
   A curve that changes between leading and not leading more than once
-  *reverses*. Both curves' reversals are reported, and the verdict is
-  flagged *(curve reverses)* if either reverses, including a cap-meeting
-  curve that reverses while the all-city curve does not. Raising turnout only adds
+  *reverses*. Both curves' reversals are reported. *(curve reverses)* is
+  appended to whatever the verdict is, *no crossing* included, if either
+  curve reverses, including a cap-meeting curve that reverses while the
+  all-city curve does not. Raising turnout only adds
   ballots but also changes records and so delegations, so a single
   crossing is likely but not guaranteed.
 - **The overhead gate.** The 10% cap applies per city and level. The
@@ -494,9 +508,14 @@ floor from which liquid *strictly leads* the representative.
   - *no lead in the tested range*;
   - *no city meets the cap at this level*.
 - **How to read it:** for each level of citizen turnout, Figure 2 shows how
-  reliably delegates must vote for liquid to lead representation. Where it
-  sits at floor 0 at a level and every level above it, with the gate
-  holding, Figure 1's threshold has been crossed.
+  reliably delegates must vote for liquid to lead representation.
+  - A lead with delegates at their own rate is the status *leads at the
+    lowest floor*, not an interpolated point near 0. A bracket starting at
+    0 with an interpolation of exactly 0 marks a tie at floor 0, where the
+    lead only begins above it, and is drawn as such.
+  - Where the status is *leads at the lowest floor* at a level and every
+    level above it, with the gate holding, Figure 1's threshold has been
+    crossed.
 
 ### What everything else is
 

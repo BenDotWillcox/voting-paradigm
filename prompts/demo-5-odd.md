@@ -498,9 +498,10 @@ can be replayed. All of them are declared in the research protocol:
     fidelity by the pairs per city;
   - read on the all-city and cap-meeting curves, the later taken, with
     unobserved cap-meeting levels never claimed;
-  - its confidence set, from a simultaneous bootstrap band over both
-    curves, in which sparse resamples count as infinite deviations, and
-    which is stratified at rotating-agenda points;
+  - its confidence set, from a simultaneous bootstrap-t band over both
+    curves. Each resample is studentized by its own spread, means come
+    from count totals, sparse resamples count as infinite deviations, and
+    resampling is stratified at rotating-agenda points;
   - reversal flags on both curves;
   - the overhead gate where liquid is claimed ahead;
 - the direction and size readings at a single level;
