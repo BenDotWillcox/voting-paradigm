@@ -982,6 +982,46 @@ the seed as an input) comes after H1 is settled, not before.
   liquid wins, so the belief model gets the most scrutiny, and its primary
   form comes from data rather than from what the hypothesis needs.
 
+## Exploratory analyses after the freeze (declared 2026-11-19)
+
+These analyses were made after the frozen results had been seen. None
+changes a frozen reading, and none is a hypothesis test. Each is reported
+with the label *exploratory*, beside the frozen results and never in place
+of them. Each is declared here before it is run.
+
+1. **Liquid's handover curve.** The frozen benchmark holds one calibrated
+   liquid point per turnout level, so the overhead-fidelity plane lacks the
+   curve the design called for (build step 6, first departure).
+   - **What is computed.** Liquid at every handover depth d from 0 to 8.
+     - At depth d every voter hands over their d best topics, in the order
+       of the top candidate's lower bound, each to that candidate. There is
+       no acceptance level.
+     - Voters with fewer candidates hand over what they have, and an empty
+       record hands over nothing.
+     - Depth 0 is direct voting, and depth 8 is liquid at acceptance 0.
+   - **How.** It is the frozen `liquid` arrangement under
+     `ChoicePolicy(max_categories=d)`, whose choice already takes a voter's
+     categories best first (`delegation/comparison/handover.py`). The choice,
+     routing, loop rule, turnout draws and measures are unchanged.
+   - **On what.** The 200 primary cities at every level of the dial, with
+     delegates at their own rate (`DIAL_TURNOUT`) and the frozen beliefs
+     file. It runs from a committed state.
+   - **What is reported.** For each level and depth, the mean over cities
+     of every frozen measure, with 95% t-intervals for fidelity and overhead.
+     No threshold, gate or verdict is computed.
+   - **A check.** Depth 0 must reproduce the frozen benchmark's direct
+     voting exactly.
+   - **Where.** `eval/benchmarks/delegation_handover_v1/`. The city records
+     are kept local, with their hashes, as for the frozen benchmark.
+   - **Seen before this was declared.** One city (primary position 1) at
+     turnout 0.45 was computed to time the run, and its curve was seen.
+2. **How a contrary ballot is scored.** Each arrangement is scored at every
+   level as match − w × contrary, at w = 0 (frozen fidelity) and w = 1, a
+   contrary ballot counted as −1 as it acts on a binary majority. It uses
+   the frozen benchmark's published shares (`measures.csv`) and no new
+   simulation. It is published as `wrong_ballot.csv` beside the handover
+   curve.
+
 ## The comparison
 
 ### Arrangements
