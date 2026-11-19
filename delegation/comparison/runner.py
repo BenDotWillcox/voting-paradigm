@@ -57,9 +57,12 @@ from .population import Population, PopulationConfig, simulate_population
 from .protocol import (
     BOOTSTRAP_RESAMPLES,
     BOOTSTRAP_SEED,
+    CONFIDENCE,
+    DELTA,
     FEASIBLE_SHARE,
     PRIMARY_CITIES,
     PRIMARY_SEED_BASE,
+    PROTOCOL_FROZEN,
     SWISS_MARKER,
     TURNOUT_GRID,
     Interval,
@@ -82,7 +85,8 @@ from .sweeps import (
     SweepPoint,
 )
 
-RUNNER_VERSION: Final = 2
+# 3: the frozen protocol (its date and every declared constant in the manifest)
+RUNNER_VERSION: Final = 3
 # The overhead cap, as in compare's calibration
 CAP: Final = 0.10
 # Small cities on development seeds for the smoke run, disjoint from the
@@ -429,7 +433,9 @@ def manifest(mode: str, state: CodeState) -> dict[str, Any]:
         "diff_sha256": state.diff_sha256,
         "beliefs_sha256": _sha256(BELIEFS_PATH),
         "protocol": {
+            "frozen": PROTOCOL_FROZEN,
             "turnout_grid": list(TURNOUT_GRID),
+            "swiss_marker": SWISS_MARKER,
             "primary_cities": PRIMARY_CITIES,
             "primary_seed_base": PRIMARY_SEED_BASE,
             "sweep_cities": SWEEP_CITIES,
@@ -438,6 +444,8 @@ def manifest(mode: str, state: CodeState) -> dict[str, Any]:
             "bootstrap_seed": BOOTSTRAP_SEED,
             "cap": CAP,
             "feasible_share": FEASIBLE_SHARE,
+            "confidence": CONFIDENCE,
+            "delta": DELTA,
         },
         "sweeps": {point_key(p): asdict(p) for p in SWEEPS},
         "python": platform.python_version(),

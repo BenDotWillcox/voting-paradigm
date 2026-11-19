@@ -48,6 +48,35 @@ explanation, a robustness sweep, a reported secondary outcome, or out of
 scope. This section is fixed before the benchmark is run; a change to it is
 dated and justified here, never made after looking at evaluation results.
 
+**Frozen 2026-11-19.** This section is frozen as of the freeze pull
+request's merge into `main`.
+- **What is frozen:**
+  - H1 as a turnout threshold, with its verdict rules;
+  - the 200 pinned primary cities and the dial they run across;
+  - the decomposition and the reporting;
+  - the 48-city sweep points and their baselines;
+  - the attendance frontier (Figure 2);
+  - the runner and its analysis;
+  - the model as the ODD describes it (`prompts/demo-5-odd.md`), with the
+    fitted beliefs file, whose hash every manifest records. Git checks the
+    file out byte for byte on every platform (`.gitattributes`), so that
+    hash is the committed file's, not a line-ending variant of it.
+- **In code:**
+  - `protocol.PROTOCOL_FROZEN` records the date in every run's manifest
+    (runner version 3), alongside every declared constant;
+  - `test_the_frozen_protocol_is_unchanged` fails if a declared constant,
+    or any primary or sweep city's settings, change.
+- **The runs.** The primary and sweep runs come from that merge commit,
+  which their manifests record.
+- **Before the freeze.** No primary or sweep city was simulated. What was
+  looked at in development is disclosed in this doc: the pilot and
+  diagnostic cities, the CES selection test, and smoke runs on development
+  seeds.
+- **After the freeze.** A change to anything frozen is a dated, justified
+  amendment, made before seeing any result it could affect. If running
+  turns up a fault, the fix is such an amendment: the affected runs are
+  repeated from the fixed commit, and both are reported.
+
 ### Hypothesis
 
 > **H1 (restated as a threshold, amendment A6, 2026-11-18).** At
@@ -634,7 +663,7 @@ Each run works as follows:
   - the commit, whether the checkout was dirty, and a hash of any
     uncommitted difference;
   - the beliefs file's hash;
-  - the protocol constants and the sweep definitions;
+  - the protocol constants, with the freeze date, and the sweep definitions;
   - the Python, NumPy and SciPy versions.
 
   A primary or sweep run refuses a checkout with uncommitted changes. A
@@ -2354,11 +2383,11 @@ Steps for the revised vision (2026-11-14), each its own PR:
    because one overall history is a larger sample than six per-issue ones.
    Exploratory, not the benchmark.
 6. **Benchmark.** The runner is built (`delegation/comparison/runner.py`,
-   `scripts/run_liquid_benchmark.py`; see "Running the benchmark"). What
+   `scripts/run_liquid_benchmark.py`; see "Running the benchmark"), and the
+   protocol was frozen on 2026-11-19 (see "Research protocol"). What
    remains:
-   1. the freeze commit;
-   2. the primary and sweep runs from that clean commit;
-   3. the published results, `eval/benchmarks/delegation_frontier_v1/`: the
+   1. the primary and sweep runs, from the freeze's merge commit;
+   2. the published results, `eval/benchmarks/delegation_frontier_v1/`: the
       threshold (Figure 1), the attendance frontier (Figure 2), the
       overhead-fidelity plane and the sweeps, with the run manifest. They
       are rebuilt from the recorded runs, as the synthetic preference

@@ -9,3 +9,6 @@ data/districting-block-plans/** -text
 data/districting-explainer/** -text
 public/data/districting-explainer/** -text
 prompts/state-block-final-catalog.json -text
+# Demo 5's data, including the fitted beliefs file whose SHA-256 every
+# liquid benchmark manifest records
+delegation/data/** -text

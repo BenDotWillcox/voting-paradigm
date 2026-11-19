@@ -22,6 +22,10 @@ protocol".
   Verdicts   The threshold's status and overhead gate, and, at any one
              level of the dial, the direction and size labels and the
              specialisation categories, exactly as declared.
+
+Frozen on PROTOCOL_FROZEN, before any primary or sweep city was simulated.
+A change to a rule or constant here after that date is a dated amendment in
+the design doc, never an edit made after seeing results.
 """
 
 from __future__ import annotations
@@ -35,6 +39,8 @@ import numpy as np
 import numpy.typing as npt
 from scipy.stats import t as student_t
 
+# The date (UTC) the protocol was frozen; recorded in every run's manifest
+PROTOCOL_FROZEN: Final = "2026-11-19"
 PRIMARY_SEED_BASE: Final = 1_000_000_000
 MAX_CITIES: Final = 200
 # Every primary city is run at every level of the dial
