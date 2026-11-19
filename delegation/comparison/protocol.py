@@ -11,10 +11,11 @@ protocol".
              first 20" and "21 to N" are positions in this sequence, never
              reused development IDs.
   Estimand   H1 is a threshold (amendment A6, 2026-11-18): the mean
-             citizen turnout on the dial above which liquid's fidelity
-             stays at or above the representative's. It is read from the
-             paired difference curve over TURNOUT_GRID on PRIMARY_CITIES
-             cities, with a city-bootstrap interval.
+             citizen turnout on the dial from which liquid's fidelity is
+             strictly above the representative's at every higher level,
+             read on the all-city curve and on the curve of cities meeting
+             the overhead cap, taking the higher. Its confidence set comes
+             from one simultaneous bootstrap band over both curves.
   Count      A fixed PRIMARY_CITIES, so nothing stops on the data. (Stein's
              two-stage rule, declared for the earlier single-difference H1,
              is withdrawn with it.)
@@ -199,114 +200,210 @@ def joint_share(liquid_meets_cap: npt.ArrayLike, proxy_meets_cap: npt.ArrayLike)
 
 
 # ---------------------------------------------------------------------------
-# The threshold (amendment A6)
+# The threshold (amendment A6; interval and cap rules revised after the third
+# A6 review, 2026-11-19)
 # ---------------------------------------------------------------------------
 
 
-def sustained_crossing(
-    levels: tuple[float, ...], means: npt.ArrayLike
-) -> tuple[str, tuple[float, float] | None, float | None]:
+def _positive(d: npt.NDArray[np.float64], use: npt.NDArray[np.bool_]) -> npt.NDArray[np.bool_]:
     """
-    Where the mean difference becomes non-negative and stays so at every
-    higher level: the status, the grid bracket and a linear interpolation
-    inside it (a grid approximation).
+    Whether each level's sum over the cities in `use` is strictly positive,
+    decided with an exactly rounded sum, so float noise cannot turn a tie
+    into a lead.
     """
-    m = np.asarray(means, dtype=np.float64)
-    if m.shape != (len(levels),) or len(levels) < 2:
-        raise ValueError("one mean per level, at least two levels")
+    return np.asarray(
+        [bool(use[:, j].any()) and math.fsum(d[use[:, j], j]) > 0.0 for j in range(d.shape[1])],
+        dtype=np.bool_,
+    )
+
+
+def sustained_index(positive: npt.ArrayLike) -> int:
+    """
+    The lowest level index from which every level is strictly positive:
+    0 when liquid leads at every level, len(positive) when it does not lead
+    at the top of the range.
+    """
+    flags = np.asarray(positive, dtype=np.bool_)
+    not_positive = np.flatnonzero(~flags)
+    return 0 if not_positive.size == 0 else int(not_positive[-1]) + 1
+
+
+@dataclass(frozen=True)
+class CurveReading:
+    """Where one mean curve becomes strictly positive for good."""
+
+    # "crosses", "liquid ahead throughout" or "no crossing in the tested range"
+    status: str
+    index: int
+    bracket: tuple[float, float] | None
+    # Linear interpolation inside the bracket: a grid approximation
+    interpolated: float | None
+
+
+def read_curve(levels: tuple[float, ...], means: npt.ArrayLike, positive: npt.ArrayLike) -> CurveReading:
+    """The sustained strict crossing of a mean curve."""
     if any(b <= a for a, b in zip(levels, levels[1:])):
         raise ValueError("levels must increase")
-    if m[-1] < 0.0:
-        return "no crossing in the tested range", None, None
-    below = np.flatnonzero(m < 0.0)
-    if below.size == 0:
-        return "liquid ahead throughout", None, None
-    k = int(below[-1]) + 1
-    low, high = float(m[k - 1]), float(m[k])
-    at = levels[k - 1] + (levels[k] - levels[k - 1]) * (-low) / (high - low)
-    return "crosses", (levels[k - 1], levels[k]), float(at)
+    m = np.asarray(means, dtype=np.float64)
+    k = sustained_index(positive)
+    if k == len(levels):
+        return CurveReading("no crossing in the tested range", k, None, None)
+    if k == 0:
+        return CurveReading("liquid ahead throughout", 0, None, None)
+    low, high = m[k - 1], m[k]
+    share = 0.0 if not np.isfinite(low) or high == low else float(-low / (high - low))
+    at = levels[k - 1] + (levels[k] - levels[k - 1]) * min(1.0, max(0.0, share))
+    return CurveReading("crosses", k, (levels[k - 1], levels[k]), float(at))
 
 
 @dataclass(frozen=True)
 class Threshold:
     """
-    The break-even turnout: the level of the dial above which liquid's
-    fidelity stays at or above the representative's.
+    The break-even turnout: the level of the dial from which liquid's
+    fidelity is strictly above the representative's at that level and every
+    level above it.
+
+    It is read on two curves, every city and the cities meeting the overhead
+    cap at each level, and the claimed threshold is the higher of the two,
+    so cities over the cap cannot carry it.
     """
 
     status: str
     bracket: tuple[float, float] | None
-    # Linear interpolation inside the bracket: a grid approximation
     interpolated: float | None
-    # 95% city-bootstrap percentile interval of the threshold; -inf means
-    # "below the tested range" (liquid ahead throughout) and +inf "above it"
-    interval: tuple[float, float]
-    # How often the mean curve changes sign; more than one is reported as
-    # a non-monotone curve
+    # 95% confidence set on the grid: the threshold lies above the first
+    # value and at or below the second; -inf and +inf mean beyond the range.
+    # It comes from one simultaneous band over both curves, so it holds
+    # whenever both true curves lie inside the band, plateaus included
+    confidence: tuple[float, float]
+    all_cities: CurveReading
+    cap_meeting: CurveReading
+    # Changes between leading and not leading along the all-city curve;
+    # more than one marks a non-monotone curve
     sign_changes: int
-    # Whether the overhead gate holds at every level from the bracket's
-    # upper end (or the lowest level, when ahead throughout) upward
+    # Whether at least FEASIBLE_SHARE of cities meet the cap at every level
+    # where liquid is claimed ahead (vacuous when it is not ahead anywhere)
     gate_holds: bool
-    # The difference's 95% t-interval at every level, in grid order
+    cap_share: tuple[float, ...]
+    band_critical: float
+    # The all-city difference's 95% t-interval at every level
     pointwise: tuple[Interval, ...]
 
 
-def _threshold_value(levels: tuple[float, ...], means: npt.NDArray[np.float64]) -> float:
-    status, _, at = sustained_crossing(levels, means)
-    if status == "liquid ahead throughout":
-        return -math.inf
-    if status == "no crossing in the tested range":
-        return math.inf
-    assert at is not None
-    return at
+def _resample(rng: np.random.Generator, strata: npt.NDArray[np.int64]) -> npt.NDArray[np.int64]:
+    """City indices resampled with replacement within each stratum."""
+    picks = [
+        rng.choice(members, size=members.size, replace=True)
+        for members in (np.flatnonzero(strata == h) for h in np.unique(strata))
+    ]
+    return np.concatenate(picks)
+
+
+def _curves(
+    d: npt.NDArray[np.float64], cap: npt.NDArray[np.bool_]
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """Means and standard errors of the all-city and cap-meeting curves."""
+    n = d.shape[0]
+    mean_all = d.mean(axis=0)
+    se_all = d.std(axis=0, ddof=1) / math.sqrt(n)
+    counts = cap.sum(axis=0)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        mean_cap = np.where(cap, d, 0.0).sum(axis=0) / counts
+        centred = np.where(cap, d - mean_cap, 0.0)
+        var_cap = (centred**2).sum(axis=0) / (counts - 1)
+        se_cap = np.sqrt(var_cap / counts)
+    mean_cap = np.where(counts > 0, mean_cap, np.nan)
+    se_cap = np.where(counts > 1, se_cap, np.inf)
+    return mean_all, se_all, mean_cap, se_cap
+
+
+def _band_index(lower: npt.NDArray[np.float64], upper: npt.NDArray[np.float64]) -> tuple[int, int]:
+    """
+    Confidence bounds on the sustained index from a band: the earliest index
+    any curve inside the band could cross at, and the latest it must.
+    """
+    earliest = sustained_index(np.nan_to_num(upper, nan=np.inf) > 0.0)
+    latest = sustained_index(np.nan_to_num(lower, nan=-np.inf) > 0.0)
+    return earliest, latest
 
 
 def threshold(
     levels: tuple[float, ...],
     differences: npt.ArrayLike,
     meets_cap: npt.ArrayLike,
+    strata: npt.ArrayLike | None = None,
+    resamples: int = BOOTSTRAP_RESAMPLES,
 ) -> Threshold:
     """
     The threshold from [city, level] paired differences (liquid minus the
-    representative) and [city, level] flags for the overhead cap. The
-    bootstrap resamples whole cities, so each city's curve stays together.
+    representative; signed match counts give exact ties) and [city, level]
+    flags for the overhead cap.
+
+    The bootstrap resamples whole cities with their cap flags, within
+    `strata` when given (the rotating-agenda sweep points: one stratum per
+    heavy topic), and gives one critical value for the maximum studentized
+    deviation over both curves and every level.
     """
     d = np.asarray(differences, dtype=np.float64)
     cap = np.asarray(meets_cap, dtype=np.bool_)
     if d.ndim != 2 or d.shape[1] != len(levels) or cap.shape != d.shape:
         raise ValueError("differences and cap flags must be [city, level]")
-    means = d.mean(axis=0)
-    status, bracket, at = sustained_crossing(levels, means)
-    signs = np.sign(means)
-    nonzero = signs[signs != 0]
-    changes = int((nonzero[1:] != nonzero[:-1]).sum())
-    gate = cap.mean(axis=0) >= FEASIBLE_SHARE
-    if status == "no crossing in the tested range":
-        gate_holds = bool(gate.all())
-    else:
-        start = 0 if bracket is None else levels.index(bracket[1])
-        gate_holds = bool(gate[start:].all())
-    rng = np.random.default_rng(np.random.SeedSequence([BOOTSTRAP_SEED]))
     cities = d.shape[0]
-    draws = np.array(
-        [
-            _threshold_value(levels, d[rng.integers(0, cities, cities)].mean(axis=0))
-            for _ in range(BOOTSTRAP_RESAMPLES)
-        ]
+    groups = np.zeros(cities, dtype=np.int64) if strata is None else np.asarray(strata, dtype=np.int64)
+    if groups.shape != (cities,):
+        raise ValueError("one stratum per city")
+
+    mean_all, se_all, mean_cap, se_cap = _curves(d, cap)
+    positive_all = _positive(d, np.ones_like(cap))
+    positive_cap = _positive(d, cap)
+    all_cities = read_curve(levels, mean_all, positive_all)
+    cap_meeting = read_curve(levels, mean_cap, positive_cap)
+    claimed = all_cities if all_cities.index >= cap_meeting.index else cap_meeting
+
+    rng = np.random.default_rng(np.random.SeedSequence([BOOTSTRAP_SEED]))
+    maxima = np.empty(resamples)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        for b in range(resamples):
+            idx = _resample(rng, groups)
+            m_a, s_a, m_c, s_c = _curves(d[idx], cap[idx])
+            dev = np.concatenate([np.abs(m_a - mean_all) / s_a, np.abs(m_c - mean_cap) / s_c])
+            maxima[b] = float(np.nanmax(np.where(np.isfinite(dev), dev, 0.0)))
+    critical = float(np.quantile(maxima, CONFIDENCE))
+    earliest_a, latest_a = _band_index(mean_all - critical * se_all, mean_all + critical * se_all)
+    earliest_c, latest_c = _band_index(mean_cap - critical * se_cap, mean_cap + critical * se_cap)
+    earliest, latest = max(earliest_a, earliest_c), max(latest_a, latest_c)
+    n = len(levels)
+    confidence = (
+        -math.inf if earliest == 0 else levels[earliest - 1],
+        math.inf if latest == n else levels[latest],
     )
-    alpha = (1.0 - CONFIDENCE) / 2.0
-    interval = (
-        float(np.quantile(draws, alpha, method="inverted_cdf")),
-        float(np.quantile(draws, 1.0 - alpha, method="inverted_cdf")),
+
+    share = cap.mean(axis=0)
+    gate_holds = bool((share[claimed.index :] >= FEASIBLE_SHARE).all())
+    flags = positive_all.astype(np.int8)
+    changes = int((flags[1:] != flags[:-1]).sum())
+    pointwise = tuple(t_interval(d[:, j]) for j in range(n))
+    return Threshold(
+        claimed.status,
+        claimed.bracket,
+        claimed.interpolated,
+        confidence,
+        all_cities,
+        cap_meeting,
+        changes,
+        gate_holds,
+        tuple(float(x) for x in share),
+        critical,
+        pointwise,
     )
-    pointwise = tuple(t_interval(d[:, j]) for j in range(len(levels)))
-    return Threshold(status, bracket, at, interval, changes, gate_holds, pointwise)
 
 
 def threshold_verdict(result: Threshold) -> str:
     """The primary finding's label, exactly as declared."""
+    if result.status == "no crossing in the tested range":
+        return result.status
     if not result.gate_holds:
         return "overhead condition not met where liquid is ahead"
-    if result.status == "crosses":
-        return "crosses" if result.sign_changes <= 1 else "crosses (non-monotone curve)"
+    if result.status == "crosses" and result.sign_changes > 1:
+        return "crosses (non-monotone curve)"
     return result.status

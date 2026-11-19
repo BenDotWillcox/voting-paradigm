@@ -68,11 +68,16 @@ _BLOCKS: Final = 8
 # logistic(location + spread * z), with z ~ N(0, 1) fixed per resident and the
 # location chosen so the population's mean rate is the dial's value. Turning
 # the dial moves everyone's log-odds of voting by the same amount, so the same
-# residents stay ranked the same at every level. The spread is fitted to
-# Geneva's official register at the Swiss mean of 0.45: about 9% of citizens
-# vote in none of 20 successive ballot days (Sciarini et al. 2016; Goldberg and
-# Sciarini 2021).
-TURNOUT_LOGIT_SD: Final = 2.07
+# residents stay ranked the same at every level. The spread is calibrated to
+# one register statistic under this model: Geneva's ten successive federal
+# ballot days, mean participation 0.493, of which 20.2% of citizens took part
+# in none and 15.9% in all (Sciarini et al. 2016, Table 1). Least squares on
+# those two shares at that mean, with ballot days as independent draws, gives
+# 2.81 (18.6% and 17.6%). The register counts ballot days, often several
+# measures each; the model gives each question its own draw unless
+# `attendance_cluster` groups them, so the transfer from days to questions is
+# an assumption with its own sensitivity point.
+TURNOUT_LOGIT_SD: Final = 2.81
 _HERMITE_NODES, _HERMITE_WEIGHTS = np.polynomial.hermite_e.hermegauss(200)
 _HERMITE_WEIGHTS = _HERMITE_WEIGHTS / _HERMITE_WEIGHTS.sum()
 
@@ -109,6 +114,22 @@ def draw_turnout(
         return np.asarray(rng.uniform(low, high, size=size), dtype=np.float64)
     z = rng.standard_normal(size)
     return np.asarray(expit(turnout_location(mean, logit_sd) + logit_sd * z), dtype=np.float64)
+
+
+def attendance_draws(
+    rng: np.random.Generator, people: int, count: int, cluster: int
+) -> FloatArray:
+    """
+    The uniform attendance draw for each person and question. With `cluster`
+    above 1, consecutive questions share one draw, as the measures of one
+    ballot day do; 1 is a fresh draw per question (the same draws as before
+    the option existed).
+    """
+    if cluster == 1:
+        return np.asarray(rng.random((people, count)), dtype=np.float64)
+    groups = -(-count // cluster)
+    shared = rng.random((people, groups))
+    return np.asarray(shared[:, np.arange(count) // cluster], dtype=np.float64)
 
 
 def check_turnout(mean: float | None, logit_sd: float, low: float, high: float) -> None:
@@ -156,6 +177,10 @@ class PopulationConfig:
     # legacy uniform rate, so existing structural cities are unchanged
     turnout_mean: float | None = None
     turnout_logit_sd: float = TURNOUT_LOGIT_SD
+    # Questions per shared attendance draw: 1 gives every question its own
+    # draw; 3 groups consecutive questions like a ballot day of about three
+    # measures, the Swiss average (sensitivity, amendment A6)
+    attendance_cluster: int = 1
     candidates_per_district: int = 3
 
     def __post_init__(self) -> None:
@@ -166,6 +191,7 @@ class PopulationConfig:
             "history_questions_per_dimension",
             "evaluation_questions_per_dimension",
             "candidates_per_district",
+            "attendance_cluster",
         ):
             if getattr(self, name) < 1:
                 raise ValueError(f"{name} must be at least 1")
@@ -332,7 +358,7 @@ def _questions(
     noise = rng.normal(0.0, config.preference_noise_sd, size=(config.size, count))
     utility = direction * (positions[:, dimension] - cutpoint) + noise
     sincere = np.where(utility > 0.0, YES, NO).astype(np.int8)
-    draw = rng.random((config.size, count))
+    draw = attendance_draws(rng, config.size, count, config.attendance_cluster)
     casts = draw < turnout[:, None]
     return QuestionSet(
         ids=tuple(f"{prefix}{i:04d}" for i in range(count)),

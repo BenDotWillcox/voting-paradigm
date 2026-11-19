@@ -45,7 +45,7 @@ the version 2 fit, regenerated 2026-11-18; details are in the design doc,
 
 | Pattern | Source | Data | Model |
 |---|---|---|---|
-| Agreement with one's House member on the three bills with 118th-Congress roll calls | Ansolabehere and Jones (2010); CES 2024, Voteview | 54.45%, 46.50%, 56.78% | 51.2%, 55.9%, 54.5% |
+| Agreement with one's House member on the three bills with 118th-Congress roll calls | Ansolabehere and Jones (2010); CES 2024, Voteview | 54.45%, 46.50%, 56.78% | 51.3%, 56.0%, 54.6% |
 | Between-district spread of item support rates (model over data, median) | CES 2024 | — | 0.94 |
 | Moderates (liberal share 0.4–0.6), and their spread of liberal share between topics | Ahler and Broockman (2018) | 20.3%; 0.258 | 21.6%; 0.246 |
 | Median \|r\| within / between topics on CES 2022 items the fit never saw (development evidence) | Converse (1964); Baldassarri and Gelman (2008) | 0.528 / 0.469 | 0.523 / 0.433 |
@@ -113,9 +113,10 @@ city seed.
    arrangement, every voter's resolver is found. For liquid and the proxy this
    follows delegation chains under the loop rule.
 6. **Counting** (Section 7.7). Each resolver casts their sincere ballot when
-   their turnout draw falls below their rate. A person holding anyone else's
-   vote votes at the larger of their own rate and a floor. Each voter's
-   counted ballot is their resolver's ballot, or none.
+   their turnout draw falls below their rate. An office holder holding
+   anyone else's vote votes at exactly the office-holder rate; a delegate
+   holding anyone else's vote votes at the larger of their own rate and a
+   floor. Each voter's counted ballot is their resolver's ballot, or none.
 7. **Tally.** Each question is decided by plurality over counted ballots, with
    abstentions set aside and a seeded tie-break per question shared by every
    arrangement.
@@ -236,13 +237,14 @@ A city is fully determined by its configuration and seed.
 | Residents per district | 100 | stated (scale) |
 | District mean | Drawn from its posterior N(mean, covariance) in the hierarchical fit | fitted |
 | Resident position | N(district mean, W), with W the fitted within-district covariance | fitted |
-| Own turnout rate | logistic(location + 2.07·z), with z ~ N(0, 1) per resident and the location set so the mean rate equals the dial's level; constant across questions | the dial is swept, not assumed. Levels 0.1 to 0.9 (`protocol.TURNOUT_GRID`), with the Swiss mean of 0.45 as the reference marker (*measured*). The spread 2.07 is *measured*: fitted to Geneva's register, where about 9% vote in none of 20 ballot days at the Swiss mean. It is swept at 1.0 and 3.0 |
+| Own turnout rate | logistic(location + 2.81·z), with z ~ N(0, 1) per resident and the location set so the mean rate equals the dial's level; constant across questions | the dial is swept, not assumed. Levels 0.1 to 0.9 (`protocol.TURNOUT_GRID`), with the Swiss mean of 0.45 as the reference marker (*measured*). The spread 2.81 is *calibrated* to one register statistic under this model: Geneva's ten ballot days at mean 0.493, 20.2% in none and 15.9% in all (Sciarini et al. 2016, Table 1); the model gives 18.6% and 17.6%. It is swept at 1.0, 2.07 and 3.5 |
+| Attendance draws | A fresh uniform draw per resident and question | stated: the register counts ballot days, often several measures each, so the transfer to independent questions is an assumption. A sensitivity point shares one draw per ballot day of three questions |
 | History questions | 50 per topic (400) | measured anchor: one Congress has 54 to 90 contested roll calls per topic (Voteview, 117th and 118th House; amendment A4) |
 | Evaluation questions | 20 per topic (160) | stated |
 | Topic mix | Even in both periods | stated |
 | Within-topic spread of question parameters | ×1 of the fitted spread | fitted |
 | Candidates per district | 3, random residents | stated |
-| Office-holder rate | 0.96 at every level | measured: 118th House members cast a yea or nay on 96% of roll calls while serving (Voteview; amendment A1) |
+| Office-holder rate | Exactly 0.96 at every level, whatever the office holder's own rate (the representative, and the three candidates in the matched arms) | measured: 118th House members cast a yea or nay on 96% of roll calls while serving (Voteview; amendment A1) |
 | Resolver floor | 0: delegates vote at their own rate on the dial. Floors from 0 to 1 form the frontier's second axis | declared (amendment A6) |
 | Credible mass for lower bounds | 0.8 | stated |
 | Acceptance level | Highest level whose history overhead is at most 10%, per city and arrangement | calibrated by the protocol |
@@ -302,7 +304,7 @@ data cached in the Git-ignored `.cache/`.
 ### 7.2 Turnout
 
 Each resident has an engagement score z ~ N(0, 1), drawn once. Their own
-rate is *p* = logistic(location + σ·z), with σ = 2.07. The location is
+rate is *p* = logistic(location + σ·z), with σ = 2.81. The location is
 solved numerically so that the mean of *p* over z ~ N(0, 1) equals the
 dial's level (`population.turnout_location`).
 
@@ -312,12 +314,21 @@ positions, questions and turnout draws at every level. Raising the dial
 only ever adds ballots.
 
 For every question there is a uniform draw *u* per resident, and they cast
-their own ballot when *u* < their rate. A person holding anyone else's vote on that
-question uses the rate max(*p*, floor). The floor is the office-holder rate
-for an elected representative and the resolver floor for delegates. The
-draws are stored, so all arrangements in a city share them. Only people who
-decide a question (they resolve their own vote or hold someone else's) can
-cast a ballot on it.
+their own ballot when *u* < their rate. With attendance clustering (a
+sensitivity point), consecutive questions in groups of three share one draw,
+as the measures of one ballot day do.
+
+A person holding anyone else's vote on a question uses a different rate:
+- an *office holder* (the elected representative, or one of the three
+  candidates in a matched arm) votes at exactly the office-holder rate,
+  0.96. Their own rate plays no part, so the comparator is the same at
+  every level of the dial;
+- a *delegate* votes at max(*p*, floor). The floor is 0 on the dial and
+  rises to 1 on the frontier.
+
+The draws are stored, so all arrangements in a city share them. Only people
+who decide a question (they resolve their own vote or hold someone else's)
+can cast a ballot on it.
 
 ### 7.3 Elections
 
@@ -371,6 +382,10 @@ ranked in this order:
 
 The random key exists because rows are grouped by district: breaking ties by
 index would send tied choices to the first district.
+
+**Empty records.** A resident with no recorded ballot at all keeps every
+topic. Every candidate would tie on the prior alone, so any delegate would
+be chosen by the tie-break, not from the record.
 
 **Choice.** The voter delegates the topic to their top-ranked candidate when
 that candidate's lower bound reaches the acceptance level, and keeps it
@@ -473,8 +488,11 @@ limit.
 These are part of the analysis plan rather than the model, listed so the run
 can be replayed. All of them are declared in the research protocol:
 - the turnout grid and the fixed 200 primary cities;
-- the sustained-crossing threshold, its city bootstrap and the overhead
-  gate where liquid is claimed ahead;
+- the threshold: the sustained strict crossing, read on the all-city and
+  cap-meeting curves with the higher taken; its confidence set from a
+  simultaneous bootstrap band over both curves (stratified at
+  rotating-agenda points); and the overhead gate where liquid is claimed
+  ahead;
 - the direction and size readings at a single level;
 - the specialisation gate on the joint share;
 - the 48-city robustness sweeps, each run across the dial;

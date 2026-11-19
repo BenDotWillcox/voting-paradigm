@@ -54,6 +54,7 @@ def test_each_point_changes_one_family_from_the_primary():
             "within_topic_spread": {"within_topic_spread"},
             "evaluation_mix": {"evaluation_topic_weights"},
             "turnout_spread": {"turnout_logit_sd"},
+            "attendance": {"attendance_cluster"},
         }[point.family]
         assert changed == allowed, point.label
 
@@ -151,3 +152,35 @@ def test_break_even_brackets_one_crossing():
     assert tie.status == "equal at the lowest floor" and tie.bracket == (0.0, 0.0)
     with pytest.raises(ValueError):
         break_even((0.5, 0.0), (i(0.0), i(0.0)))
+
+
+def test_rotating_points_carry_heavy_topic_strata():
+    positions = np.arange(1, SWEEP_CITIES + 1)
+    for point in SWEEPS:
+        strata = point.strata(positions)
+        if point.family in ("evaluation_mix", "stress"):
+            assert strata is not None
+            assert np.bincount(strata).tolist() == [SWEEP_CITIES // 8] * 8
+            heavy = [
+                int(np.argmax(point.config(i, 0.5).evaluation_topic_weights))
+                for i in (1, 2, 9)
+            ]
+            assert heavy[0] == heavy[2] != heavy[1] or point.family == "stress"
+        else:
+            assert strata is None
+    assert PRIMARY_POINT.strata(positions) is None
+
+
+def test_ballot_day_attendance_shares_draws():
+    from delegation.comparison.beliefs import load_beliefs, simulate_belief_city
+
+    point = next(p for p in SWEEPS if p.family == "attendance")
+    config = point.config(2, 0.45)
+    small = dict(districts=2, residents_per_district=20, history_questions_per_topic=3,
+                 evaluation_questions_per_topic=3)
+    from dataclasses import replace as _replace
+    city = simulate_belief_city(load_beliefs(), _replace(config, **small))
+    draws = city.history.turnout_draw
+    assert np.array_equal(draws[:, 0], draws[:, 1]) and np.array_equal(draws[:, 1], draws[:, 2])
+    assert not np.array_equal(draws[:, 2], draws[:, 3])
+

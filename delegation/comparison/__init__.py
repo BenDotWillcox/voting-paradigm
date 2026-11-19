@@ -20,9 +20,10 @@ from .arrangements import (
     DISTRICT_CHOICE_VOTERS,
     FULL_TURNOUT,
     LIQUID,
+    DIAL_TURNOUT,
     ORDINARY_RESOLVER_TURNOUT,
     PILOT_TURNOUT,
-    PRIMARY_TURNOUT,
+    SYMMETRIC_TURNOUT,
     PROXY,
     REPRESENTATIVE,
     REPRESENTATIVE_BY_RECORD,
@@ -93,14 +94,16 @@ class Comparison:
 
 def compare(
     population: Population,
-    turnout: TurnoutPolicy = PRIMARY_TURNOUT,
+    turnout: TurnoutPolicy = DIAL_TURNOUT,
     max_overhead: float = 0.10,
     base: ChoicePolicy | None = None,
 ) -> Comparison:
     """
     The protocol's entry point: every arrangement on one city, with liquid
     and the proxy each calibrated by the overhead rule on history questions
-    only. Outcome agreement is measured against the full-turnout reference.
+    only, under the protocol's turnout condition (DIAL_TURNOUT: delegates at
+    their own rate, office holders at the office-holder rate) unless another
+    is given. Outcome agreement is measured against the full-turnout reference.
     The three-candidate chain representative_by_record ->
     district_choice_voters -> district_choice -> proxy -> liquid has
     contrasts that sum to liquid minus representative_by_record: sharing,
@@ -138,7 +141,7 @@ def compare(
 def compare_fixed(
     population: Population,
     policy: ChoicePolicy | None = None,
-    turnout: TurnoutPolicy = PRIMARY_TURNOUT,
+    turnout: TurnoutPolicy = DIAL_TURNOUT,
 ) -> dict[str, Measures]:
     """
     Exploration only, not the protocol: the original five arrangements with
@@ -165,9 +168,10 @@ __all__ = [
     "LIQUID",
     "NO",
     "NOT_CAST",
+    "DIAL_TURNOUT",
     "ORDINARY_RESOLVER_TURNOUT",
     "PILOT_TURNOUT",
-    "PRIMARY_TURNOUT",
+    "SYMMETRIC_TURNOUT",
     "PROXY",
     "REPRESENTATIVE",
     "REPRESENTATIVE_BY_RECORD",

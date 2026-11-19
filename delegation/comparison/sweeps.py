@@ -43,7 +43,11 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Final
 
-from .arrangements import ORDINARY_RESOLVER_TURNOUT, PRIMARY_TURNOUT, TurnoutPolicy
+import numpy as np
+import numpy.typing as npt
+
+from .arrangements import DIAL_TURNOUT as _DIAL_TURNOUT
+from .arrangements import TurnoutPolicy
 from .beliefs import BeliefCityConfig
 from .population import TURNOUT_LOGIT_SD, PopulationConfig
 from .protocol import MAX_CITIES, TURNOUT_GRID, Interval, primary_city_seeds
@@ -57,7 +61,7 @@ from .protocol import MAX_CITIES, TURNOUT_GRID, Interval, primary_city_seeds
 SWEEP_CITIES: Final = 48
 # The policy every point of the dial is run under: delegates at their own
 # rate, the representative at the office-holder rate (amendment A6)
-DIAL_TURNOUT: Final = ORDINARY_RESOLVER_TURNOUT
+DIAL_TURNOUT: Final = _DIAL_TURNOUT
 TOPICS: Final = 8
 # How much heavier the heavy topic is in an uneven agenda: a stated stress
 # value, not measured (decided 2026-11-18; Voteview's roll-call files carry
@@ -112,6 +116,8 @@ class SweepPoint:
     evaluation_offset: int = 0
     # Spread of engagement on the logit scale (both populations)
     turnout_logit_sd: float = TURNOUT_LOGIT_SD
+    # Questions per shared attendance draw (1: every question its own)
+    attendance_cluster: int = 1
     # Structural-population structure
     correlation: float = CES_MATCHED_CORRELATION
     blocks: int = 1
@@ -133,6 +139,7 @@ class SweepPoint:
                 factor_loading=self.correlation**0.5,
                 turnout_mean=turnout,
                 turnout_logit_sd=self.turnout_logit_sd,
+                attendance_cluster=self.attendance_cluster,
             )
             if self.within_block_correlation is None:
                 return base
@@ -153,7 +160,23 @@ class SweepPoint:
             evaluation_topic_weights=evaluation,
             turnout_mean=turnout,
             turnout_logit_sd=self.turnout_logit_sd,
+            attendance_cluster=self.attendance_cluster,
         )
+
+    @property
+    def rotates(self) -> bool:
+        """Whether a heavy topic rotates with city position."""
+        return bool(self.history_heavy or self.evaluation_heavy)
+
+    def strata(self, positions: npt.ArrayLike) -> npt.NDArray[np.int64] | None:
+        """
+        The bootstrap strata for cities at `positions`: one per heavy topic at
+        a rotating point (six cities each over 48 positions), so resampling
+        keeps the balanced design (third A6 review); None elsewhere.
+        """
+        if not self.rotates:
+            return None
+        return np.asarray((np.asarray(positions) - 1) % TOPICS, dtype=np.int64)
 
 
 PRIMARY_POINT: Final = SweepPoint("primary", "primary settings", "fitted")
@@ -175,13 +198,19 @@ SWEEPS: Final = (
     # Even history, one heavy topic in evaluation, rotating over cities
     SweepPoint("evaluation_mix", "one topic 2x in evaluation", "fitted", evaluation_heavy=2.0),
     SweepPoint("evaluation_mix", "one topic 4x in evaluation", "fitted", evaluation_heavy=HEAVY),
-    # Spread of engagement (amendment A6). The fitted 2.07 matches Geneva's
-    # never-voters (about 9% across 20 ballot days at the Swiss mean) but
-    # gives only 3-5% always-voters against about 10% reported; 3.0 matches
-    # the always-voters (and gives 17% never-voters); 1.0 is a fairly even
-    # electorate in which nearly everyone votes sometimes
+    # Spread of engagement (amendment A6). The primary 2.81 is calibrated to
+    # Geneva's ten-ballot table (20.2% never, 15.9% always at mean 0.493;
+    # the model gives 18.6% and 17.6%). 2.07 fits only the never-voter figure
+    # of a 20-ballot report; 3.5 is a more polarized electorate, as on online
+    # platforms where activity is power-law distributed; 1.0 is a fairly
+    # even electorate in which nearly everyone votes sometimes
     SweepPoint("turnout_spread", "engagement spread 1.0", "fitted", turnout_logit_sd=1.0),
-    SweepPoint("turnout_spread", "engagement spread 3.0", "fitted", turnout_logit_sd=3.0),
+    SweepPoint("turnout_spread", "engagement spread 2.07", "fitted", turnout_logit_sd=2.07),
+    SweepPoint("turnout_spread", "engagement spread 3.5", "fitted", turnout_logit_sd=3.5),
+    # Attendance shared by groups of three questions, like a Swiss ballot
+    # day of about 2.8 measures: the register counts ballot days, the model
+    # questions, so this tests that transfer (third A6 review)
+    SweepPoint("attendance", "ballot days of three questions", "fitted", attendance_cluster=3),
     # Belief structure on the matched structural population
     SweepPoint("belief_structure", "correlation 0", "structural", correlation=0.0),
     SweepPoint("belief_structure", "correlation 0.4", "structural", correlation=0.4),
@@ -212,7 +241,7 @@ FRONTIER_LEVELS: Final = TURNOUT_GRID
 
 
 def break_even_policy(floor: float) -> TurnoutPolicy:
-    return TurnoutPolicy(office_rate=PRIMARY_TURNOUT.office_rate, resolver_turnout=floor)
+    return TurnoutPolicy(office_rate=DIAL_TURNOUT.office_rate, resolver_turnout=floor)
 
 
 @dataclass(frozen=True)

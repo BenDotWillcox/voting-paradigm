@@ -156,22 +156,25 @@ def _winners(population: Population, counted: VoteArray) -> tuple[CandidateId, .
 @dataclass(frozen=True)
 class TurnoutPolicy:
     """
-    How often people who decide for others vote (amendment A1).
+    How often people who decide for others vote (amendments A1 and A6).
 
-    A person who resolves at least one other voter's vote on a question
-    casts their ballot when their turnout draw for that question falls
-    below the larger of their own turnout rate and a floor: `office_rate`
-    for an elected representative, `resolver_turnout` for anyone holding
-    delegated votes. Everyone else votes at their own rate. Draws are
-    shared, so raising a floor only ever adds ballots.
+    An office holder (an elected representative, or one of the three
+    candidates in a matched arm) who holds anyone else's vote on a question
+    votes at exactly `office_rate`: their own turnout rate plays no part, so
+    the comparator is the same at every level of the turnout dial (fixed,
+    not a floor; third A6 review, 2026-11-19). A delegate holding anyone
+    else's vote votes at the larger of their own rate and
+    `resolver_turnout`, a floor. Everyone else votes at their own rate.
+    Draws are shared, so raising the floor only ever adds ballots.
 
-    The primary condition is symmetric: both floors are the office-holder
-    rate, 0.96, the share of roll calls on which members of the 118th House
-    cast a yea or nay while serving (Voteview; scripts/voteview_house_rates.py).
-    The 117th House reached 0.98 under its pandemic proxy-voting rule, itself
-    a form of delegation, so it is not used. Setting `resolver_turnout` to 0
-    gives the co-reported condition, delegates at ordinary turnout;
-    `office_rate` 1 with `resolver_turnout` 0 reproduces the pilot.
+    `office_rate` is 0.96, the share of roll calls on which members of the
+    118th House cast a yea or nay while serving (Voteview;
+    scripts/voteview_house_rates.py). The 117th House reached 0.98 under its
+    pandemic proxy-voting rule, itself a form of delegation, so it is not
+    used. DIAL_TURNOUT (delegates at their own rate) is the protocol's
+    condition under amendment A6; SYMMETRIC_TURNOUT, with a 0.96 delegate
+    floor, was the primary condition before it and is now one row of the
+    frontier; PILOT_TURNOUT reproduces the pilot.
     """
 
     office_rate: float = 0.96
@@ -184,18 +187,24 @@ class TurnoutPolicy:
                 raise ValueError(f"{name} must be in [0, 1]")
 
 
-PRIMARY_TURNOUT = TurnoutPolicy()
-ORDINARY_RESOLVER_TURNOUT = TurnoutPolicy(resolver_turnout=0.0)
+# The protocol's condition (amendment A6): delegates at their own rate,
+# office holders at the office-holder rate
+DIAL_TURNOUT = TurnoutPolicy(resolver_turnout=0.0)
+# Before A6 this was the primary condition; now one row of the frontier
+SYMMETRIC_TURNOUT = TurnoutPolicy()
+# The pre-A6 name of DIAL_TURNOUT, kept for development scripts
+ORDINARY_RESOLVER_TURNOUT = DIAL_TURNOUT
 PILOT_TURNOUT = TurnoutPolicy(office_rate=1.0, resolver_turnout=0.0)
 
 
 def _counted_from(
-    population: Population, resolver: IntArray, floor: float
+    population: Population, resolver: IntArray, rate: float, fixed: bool
 ) -> tuple[VoteArray, BoolArray]:
     """
     Each voter's counted ballot: their resolver's sincere ballot, if the
     resolver votes. A resolver holding anyone else's vote on a question
-    votes at the larger of their own rate and `floor`. Also whether each
+    votes at exactly `rate` when `fixed` (office holders), and at the larger
+    of their own rate and `rate` otherwise (delegates). Also whether each
     person actually cast a ballot: only people who decide a question (they
     resolve their own vote or hold someone else's) can.
     """
@@ -207,8 +216,9 @@ def _counted_from(
     holds = np.zeros((people, count), dtype=np.bool_)
     others = resolver != voters
     holds[resolver[others], np.broadcast_to(columns, resolver.shape)[others]] = True
-    rate = np.where(holds, np.maximum(population.turnout[:, None], floor), population.turnout[:, None])
-    would_cast = questions.turnout_draw < rate
+    own_rate = population.turnout[:, None]
+    holder_rate = np.full_like(own_rate, rate) if fixed else np.maximum(own_rate, rate)
+    would_cast = questions.turnout_draw < np.where(holds, holder_rate, own_rate)
     own = np.where(would_cast, questions.sincere, NOT_CAST)
     decides = holds | (resolver == voters)
     casts = np.asarray(would_cast & decides, dtype=np.bool_)
@@ -317,7 +327,7 @@ def elect_representatives(population: Population) -> Election:
 def representative(
     population: Population,
     election: Election | None = None,
-    turnout: TurnoutPolicy = PRIMARY_TURNOUT,
+    turnout: TurnoutPolicy = DIAL_TURNOUT,
 ) -> Outcome:
     """
     Each voter's district representative decides every question, voting at
@@ -330,7 +340,7 @@ def representative(
     people, questions = population.evaluation.sincere.shape
     rep = election.elected[population.district]
     resolver = np.repeat(rep[:, None], questions, axis=1)
-    counted, cast = _counted_from(population, resolver, turnout.office_rate)
+    counted, cast = _counted_from(population, resolver, turnout.office_rate, fixed=True)
     voters = np.arange(people, dtype=np.int64)[:, None]
     return Outcome(
         arrangement=REPRESENTATIVE,
@@ -388,7 +398,7 @@ def _matched_outcome(
     """
     people, questions = population.evaluation.sincere.shape
     resolver = np.repeat(resolver_of_voter[:, None], questions, axis=1)
-    counted, cast = _counted_from(population, resolver, floor)
+    counted, cast = _counted_from(population, resolver, floor, fixed=True)
     voters = np.arange(people, dtype=np.int64)[:, None]
     looped, loops = _no_loops(people, questions)
     return Outcome(
@@ -437,7 +447,7 @@ def _record_election(
 def representative_by_record(
     population: Population,
     election: Election | None = None,
-    turnout: TurnoutPolicy = PRIMARY_TURNOUT,
+    turnout: TurnoutPolicy = DIAL_TURNOUT,
 ) -> Outcome:
     """
     The matched representative (pre-freeze review): the same three
@@ -468,7 +478,7 @@ def representative_by_record(
 def district_choice_voters(
     population: Population,
     election: Election | None = None,
-    turnout: TurnoutPolicy = PRIMARY_TURNOUT,
+    turnout: TurnoutPolicy = DIAL_TURNOUT,
 ) -> Outcome:
     """
     The residents who voted in the record election each assign their ballot
@@ -490,7 +500,7 @@ def district_choice_voters(
 def district_choice(
     population: Population,
     election: Election | None = None,
-    turnout: TurnoutPolicy = PRIMARY_TURNOUT,
+    turnout: TurnoutPolicy = DIAL_TURNOUT,
 ) -> Outcome:
     """
     Every resident assigns their ballot to their own preferred one of their
@@ -654,7 +664,7 @@ def _delegated_outcome(
     floor: float,
 ) -> Outcome:
     resolver, looped, loops = _resolve_by_category(choice, category_of_question)
-    counted, cast = _counted_from(population, resolver, floor)
+    counted, cast = _counted_from(population, resolver, floor, fixed=False)
     voters = np.arange(population.size, dtype=np.int64)[:, None]
     return Outcome(
         arrangement=arrangement,
@@ -715,7 +725,7 @@ def choose_liquid(population: Population, policy: ChoicePolicy) -> Choice:
 def proxy(
     population: Population,
     policy: ChoicePolicy | None = None,
-    turnout: TurnoutPolicy = PRIMARY_TURNOUT,
+    turnout: TurnoutPolicy = DIAL_TURNOUT,
 ) -> Outcome:
     """
     Each voter's proxy decides every question; a voter with no acceptable
@@ -730,7 +740,7 @@ def proxy(
 def liquid(
     population: Population,
     policy: ChoicePolicy | None = None,
-    turnout: TurnoutPolicy = PRIMARY_TURNOUT,
+    turnout: TurnoutPolicy = DIAL_TURNOUT,
 ) -> Outcome:
     """
     Each voter's delegate for a question's category decides it; the voter
@@ -868,7 +878,7 @@ def acceptance_for_overhead(
 def liquid_at_overhead(
     population: Population,
     base: ChoicePolicy | None = None,
-    turnout: TurnoutPolicy = PRIMARY_TURNOUT,
+    turnout: TurnoutPolicy = DIAL_TURNOUT,
     max_overhead: float = 0.10,
 ) -> tuple[Outcome, AcceptanceChoice]:
     """Liquid under the protocol's comparison condition: acceptance fixed by the overhead rule."""
@@ -880,7 +890,7 @@ def liquid_at_overhead(
 def proxy_at_overhead(
     population: Population,
     base: ChoicePolicy | None = None,
-    turnout: TurnoutPolicy = PRIMARY_TURNOUT,
+    turnout: TurnoutPolicy = DIAL_TURNOUT,
     max_overhead: float = 0.10,
 ) -> tuple[Outcome, AcceptanceChoice]:
     """The proxy under the same overhead rule, so it is compared with liquid at matched overhead."""

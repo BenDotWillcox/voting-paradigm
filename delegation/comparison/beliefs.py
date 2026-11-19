@@ -50,6 +50,7 @@ from .population import (
     IntArray,
     Population,
     QuestionSet,
+    attendance_draws,
     check_turnout,
     draw_turnout,
     person_id,
@@ -141,6 +142,8 @@ class BeliefCityConfig:
     # the default is the Swiss reference marker
     turnout_mean: float | None = SWISS_TURNOUT
     turnout_logit_sd: float = TURNOUT_LOGIT_SD
+    # Questions per shared attendance draw (see population.attendance_draws)
+    attendance_cluster: int = 1
     candidates_per_district: int = 3
     # Only districts with at least this many respondents are sampled
     min_district_respondents: int = 50
@@ -160,6 +163,7 @@ class BeliefCityConfig:
             "history_questions_per_topic",
             "evaluation_questions_per_topic",
             "candidates_per_district",
+            "attendance_cluster",
         ):
             if getattr(self, name) < 1:
                 raise ValueError(f"{name} must be at least 1")
@@ -230,7 +234,7 @@ def _questions(
     noise = rng.standard_normal((positions.shape[0], count))
     utility = positions @ loadings.T + intercepts + noise
     sincere = np.where(utility > 0.0, YES, NO).astype(np.int8)
-    draw = rng.random(utility.shape)
+    draw = attendance_draws(rng, utility.shape[0], count, config.attendance_cluster)
     casts = draw < turnout[:, None]
     return QuestionSet(
         ids=tuple(f"{prefix}{i:04d}" for i in range(count)),

@@ -298,16 +298,26 @@ def top_candidates(
     Each voter's top-ranked candidate per category and that candidate's
     lower bound: [voter, category] arrays, KEEP and -inf when there is none.
     Ties are broken by `tie_key` as in `Agreement.ranking`.
+
+    A voter with an empty record (no ballot of their own in any of the
+    categories given) has no evidence to rank anyone: every candidate ties
+    on the prior alone. They get no candidate and keep everything, rather
+    than delegating by the tie-break lottery (third A6 review, 2026-11-19).
     """
     if not agreements:
         raise ValueError("at least one category is needed")
     people = agreements[0].lower.shape[0]
     if tie_key is not None and tie_key.shape != (people, people):
         raise ValueError("the tie key must be [voter, candidate]")
+    # Each voter's own ballots in each category: trials[v, c] counts the
+    # questions v voted on, the same for every candidate c
+    record = np.sum([a.trials.max(axis=1) for a in agreements], axis=0)
     top = np.full((people, len(agreements)), KEEP, dtype=np.int64)
     best = np.full((people, len(agreements)), -np.inf, dtype=np.float64)
     for k, a in enumerate(agreements):
         for v in range(people):
+            if record[v] == 0:
+                continue
             ranked = a.ranking(v, tie_key)
             if len(ranked):
                 top[v, k] = ranked[0]

@@ -390,10 +390,35 @@ def test_representative_votes_at_the_office_rate(small):
     election = elect_representatives(small)
     always = representative(small, election, TurnoutPolicy(office_rate=1.0))
     assert (always.counted != NOT_CAST).all()
+    # The office-holder rate is fixed, not a floor: at 0 the representative
+    # never votes, whatever their own turnout rate
     never = representative(small, election, TurnoutPolicy(office_rate=0.0))
-    # With no floor the representative votes at their own turnout rate
-    rep = election.elected[small.district]
-    assert np.array_equal(never.counted, small.evaluation.own_votes[rep])
+    assert (never.counted == NOT_CAST).all()
+
+
+def test_a_keen_representative_still_votes_at_exactly_the_office_rate():
+    from delegation.comparison.beliefs import BeliefCityConfig, load_beliefs, simulate_belief_city
+
+    city = simulate_belief_city(
+        load_beliefs(),
+        BeliefCityConfig(seed=12, districts=4, residents_per_district=50,
+                         history_questions_per_topic=4, evaluation_questions_per_topic=6,
+                         turnout_mean=0.9),
+    )
+    election = elect_representatives(city)
+    outcome = representative(city, election)
+    draws = city.evaluation.turnout_draw
+    found = 0
+    for district, rep in enumerate(election.elected):
+        between = (draws[rep] >= 0.96) & (draws[rep] < city.turnout[rep])
+        members = city.residents_of(district)
+        # A draw between 0.96 and their own higher rate: no ballot
+        assert (outcome.counted[np.ix_(members, np.flatnonzero(between))] == NOT_CAST).all()
+        # A draw below 0.96: a ballot
+        below = draws[rep] < 0.96
+        assert (outcome.counted[np.ix_(members, np.flatnonzero(below))] != NOT_CAST).all()
+        found += int(between.sum())
+    assert found > 0, "the fixture should contain a draw between the two rates"
 
 
 def test_resolvers_vote_at_the_floor_and_keepers_at_their_own_rate(small):
@@ -637,8 +662,8 @@ def test_ties_do_not_follow_row_order():
     from delegation.comparison import Agreement, tie_key, top_candidates
 
     flat = Agreement(
-        np.zeros((people, people), dtype=np.int64),
-        np.zeros((people, people), dtype=np.int64),
+        np.ones((people, people), dtype=np.int64),
+        np.ones((people, people), dtype=np.int64),
         lower,
         0.8,
     )
@@ -710,7 +735,7 @@ def test_overhead_rule_takes_the_lowest_overhead_when_infeasible():
 
 def test_resolver_attendance_reads_the_resolvers_own_cast():
     from delegation.comparison import (
-        PRIMARY_TURNOUT,
+        SYMMETRIC_TURNOUT,
         district_choice_voters,
         record_preferences,
     )
@@ -718,14 +743,14 @@ def test_resolver_attendance_reads_the_resolvers_own_cast():
 
     pop = simulate_population(POOL)
     election = elect_representatives(pop)
-    outcome = district_choice_voters(pop, election, PRIMARY_TURNOUT)
+    outcome = district_choice_voters(pop, election, SYMMETRIC_TURNOUT)
     people, questions = outcome.resolver.shape
     columns = np.broadcast_to(np.arange(questions), (people, questions))
     others = outcome.resolver != np.arange(people)[:, None]
     holds = np.zeros((people, questions), dtype=bool)
     holds[outcome.resolver[others], columns[others]] = True
     # Recompute each person's own cast independently of the outcome
-    rate = np.where(holds, np.maximum(pop.turnout[:, None], 0.96), pop.turnout[:, None])
+    rate = np.where(holds, 0.96, pop.turnout[:, None])
     cast = pop.evaluation.turnout_draw < rate
     expected = cast[holds].mean()
     m = measure(pop, outcome, full_turnout(pop))
@@ -785,7 +810,7 @@ def test_full_overhead_budget_selects_acceptance_one(small):
 
 def test_only_people_who_decide_cast_ballots(small):
     from delegation.comparison import (
-        PRIMARY_TURNOUT,
+        SYMMETRIC_TURNOUT,
         district_choice,
         district_choice_voters,
         liquid_at_overhead,
@@ -796,10 +821,10 @@ def test_only_people_who_decide_cast_ballots(small):
     election = elect_representatives(small)
     outcomes = [
         direct(small),
-        representative(small, election, PRIMARY_TURNOUT),
-        representative_by_record(small, election, PRIMARY_TURNOUT),
-        district_choice_voters(small, election, PRIMARY_TURNOUT),
-        district_choice(small, election, PRIMARY_TURNOUT),
+        representative(small, election, SYMMETRIC_TURNOUT),
+        representative_by_record(small, election, SYMMETRIC_TURNOUT),
+        district_choice_voters(small, election, SYMMETRIC_TURNOUT),
+        district_choice(small, election, SYMMETRIC_TURNOUT),
         liquid_at_overhead(small)[0],
         proxy_at_overhead(small)[0],
     ]
@@ -834,3 +859,32 @@ def test_light_records_are_reported_apart():
     assert 0.0 < m.light_record_share == pytest.approx(light.mean())
     per_voter = (outcome.counted == city.evaluation.sincere).mean(axis=1)
     assert m.light_record_fidelity == pytest.approx(per_voter[light].mean())
+
+
+def test_compare_defaults_to_the_dial_condition(small):
+    from delegation.comparison import DIAL_TURNOUT, SYMMETRIC_TURNOUT
+
+    default = compare(small)
+    explicit = compare(small, DIAL_TURNOUT)
+    assert repr(default.measures) == repr(explicit.measures)
+    assert repr(default.measures) != repr(compare(small, SYMMETRIC_TURNOUT).measures)
+
+
+def test_an_empty_record_keeps_everything():
+    from delegation.comparison import choose_liquid, choose_proxies
+    from delegation.comparison.beliefs import BeliefCityConfig, load_beliefs, simulate_belief_city
+
+    city = simulate_belief_city(
+        load_beliefs(),
+        BeliefCityConfig(seed=9, districts=2, residents_per_district=35,
+                         history_questions_per_topic=10, evaluation_questions_per_topic=2,
+                         turnout_mean=0.1),
+    )
+    empty = ~city.history.casts.any(axis=1)
+    assert empty.any(), "the fixture should contain residents with no record"
+    # Even at the lowest acceptance, nobody with an empty record delegates
+    for choice in (choose_liquid(city, ChoicePolicy(acceptance=0.0)),
+                   choose_proxies(city, ChoicePolicy(acceptance=0.0))):
+        assert (choice.delegate[empty] == KEEP).all()
+        assert (choice.delegate[~empty] != KEEP).any()
+

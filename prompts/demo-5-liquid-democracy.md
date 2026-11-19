@@ -77,46 +77,80 @@ raise turnout; Germann and Serdült 2017).
   delegates add nothing). The decomposition below is declared so the
   result can be attributed.
 - **The turnout dial.** One dial moves everyone's participation: each
-  resident's own rate is logistic(location + 2.07·z). Here z ~ N(0, 1) is
+  resident's own rate is logistic(location + 2.81·z). Here z ~ N(0, 1) is
   fixed per resident, and the location is set so that the mean rate is the
   dial's value. Turning it shifts everyone's log-odds of voting by the same
   amount, so the same residents stay ranked the same and each city keeps
-  its residents, questions and turnout draws at every level. Delegates vote
-  at their own rate (no floor), and the representative votes at the
-  measured office-holder rate of 0.96. The spread 2.07 is fitted to
-  Geneva's official register (see amendment A6). The dial's levels are
-  0.1, 0.2, 0.3, 0.4, 0.45 (the Swiss marker), 0.5, 0.6, 0.7, 0.8 and 0.9
-  (`protocol.TURNOUT_GRID`).
+  its residents, questions and turnout draws at every level.
+  - Delegates vote at their own rate (no floor).
+  - Office holders vote at *exactly* the measured office-holder rate of
+    0.96, whatever their own rate, so the comparator is the same at every
+    level. This means the representative, and the three candidates in the
+    matched arms. (Revised 2026-11-19, third A6 review: a 0.96 floor would
+    have let keen representatives vote more often at high turnout.)
+  - The spread 2.81 is calibrated to one register statistic under this
+    model (see amendment A6).
+  - The dial's levels are 0.1, 0.2, 0.3, 0.4, 0.45 (the Swiss marker),
+    0.5, 0.6, 0.7, 0.8 and 0.9 (`protocol.TURNOUT_GRID`).
+  - `compare` runs under this condition by default (`DIAL_TURNOUT`).
 - **Primary outcome.** For each city and level, liquid fidelity minus
   representative fidelity (each the mean over voters and evaluation
   questions). The independent unit is the city seed, and each city
   contributes a whole curve over the dial.
-- **The threshold.** It is the lowest level from which the mean difference
-  is non-negative at that level and every level above it: a *sustained*
-  crossing (`protocol.sustained_crossing`). Reported:
-  - the grid bracket containing it, and a linear interpolation inside the
-    bracket, labelled a grid approximation;
-  - a 95% city-bootstrap percentile interval (2,000 resamples of whole
-    cities, seeded), so each city's curve stays together. An endpoint below
-    or above the tested range is reported as such;
+- **The threshold (revised 2026-11-19, third A6 review).** It is the
+  lowest level from which liquid is *strictly* ahead at that level and
+  every level above it (`protocol.read_curve`). A tie is not a lead: an
+  all-zero curve is *no crossing*. Signs are decided from exactly rounded
+  sums, and the runner passes signed match counts, so ties are exact.
+- **Two curves, the higher threshold.** The threshold is read on two
+  curves, and the claimed threshold is the higher of the two:
+  - every city;
+  - the cities meeting the overhead cap at each level.
+
+  Cities over the cap therefore cannot carry it. In the reviewer's case,
+  ten over-cap cities gaining ten points made the all-city curve cross
+  while every compliant city lost, and that is now *no crossing*.
+- **Reported:**
+  - the grid bracket and a linear interpolation inside it, labelled a grid
+    approximation;
+  - a **95% confidence set** on the grid: the threshold lies above one
+    grid level and at or below another, either end possibly beyond the
+    range;
+  - both curves' own readings;
   - the 95% t-interval of the difference at every level.
+- **How the confidence set is built.** It comes from one *simultaneous*
+  band over both curves and all levels (`protocol.threshold`):
+  - the band uses a bootstrap critical value for the maximum studentized
+    deviation, resampling 2,000 sets of whole cities with their cap flags,
+    seeded;
+  - its earliest end is the first level from which a curve inside the band
+    could lead; its latest end is the first level from which every curve
+    inside the band must lead.
 
-  The status is one of:
+  Whenever both true curves lie inside the band, the true threshold lies
+  inside the set, plateaus included. That is why it replaces the earlier
+  percentile interval of the interpolated crossing, which covered a plateau
+  at zero in only 122 of 250 runs. On the same 250 runs the set covers 248;
+  on a clean crossing it covers 250 of 250 and is usually a single grid
+  step.
+- **Statuses.** The status is one of:
   - *crosses*;
-  - *liquid ahead throughout* (the threshold is below 0.1);
-  - *no crossing in the tested range* (above 0.9).
+  - *liquid ahead throughout* (strictly ahead at every level);
+  - *no crossing in the tested range*.
 
-  A curve whose mean changes sign more than once is flagged *non-monotone*
-  and reported in full. Raising turnout only adds ballots but also changes
-  records and so delegations, so a single crossing is likely but not
-  guaranteed.
+  A curve that changes between leading and not leading more than once is
+  flagged *non-monotone* and reported in full. Raising turnout only adds
+  ballots but also changes records and so delegations, so a single
+  crossing is likely but not guaranteed.
 - **The overhead gate.** The 10% cap applies per city and level. The
   threshold claim requires the cap to hold, in at least 95% of cities, at
   every level from the bracket's upper end upward, where liquid is claimed
   ahead. If it fails there, the verdict is *overhead condition not met
   where liquid is ahead*: the curve is reported, but no threshold is
   claimed at comparably low overhead. Levels below the crossing may fail the
-  cap; that is reported and changes nothing. The full rule is
+  cap; that is reported and changes nothing. With no crossing there is no
+  claimed level, so the verdict stays *no crossing in the tested range*,
+  and feasibility is reported beside it. The full rule is
   `protocol.threshold` and `protocol.threshold_verdict`.
 - **Cities.** A fixed 200 primary cities, each run at every level, so
   nothing stops on the data. Stein's two-stage rule, declared on
@@ -180,9 +214,15 @@ raise turnout; Germann and Serdült 2017).
 - **Infeasible cities.** A city where no acceptance level reaches 10% at a
   dial level is included there at its lowest-overhead acceptance, flagged,
   and counted in the report. Cities are never dropped from the curve; how
-  many miss the cap at each level feeds the overhead gate above. At low
-  turnout this is expected: residents with almost no record cannot rank
-  candidates and keep their questions.
+  many miss the cap at each level feeds the overhead gate and the
+  cap-meeting curve above. At low turnout this is expected:
+  - a resident with **no recorded ballot at all** keeps every question,
+    because every candidate would tie on the prior alone (revised
+    2026-11-19; before, the seeded tie-break could hand them a delegate by
+    lottery);
+  - at the primary history length, about 23% of residents have no record
+    at dial 0.1, and 2.1% at the Swiss marker (35% and 4.9% with attendance
+    clustered by ballot days of three).
 - **The cap on a changing agenda.** With the same topic mix in history and
   evaluation and exact routing, evaluation overhead equals history overhead
   by construction, so the 10% check alone tests nothing. An uneven
@@ -292,9 +332,9 @@ For every arrangement, at every level of the dial:
 - **Light records (amendment A6):** residents who cast fewer than 10% of
   the history questions themselves can barely rank candidates. Their share
   and their fidelity are reported apart, so the averages cannot hide them.
-  At low turnout they keep their questions or, if the calibrated level
-  falls far enough, delegate to an almost arbitrary resident; both are
-  visible here.
+  Those with no record at all keep everything. Those with a few ballots
+  can delegate, on wide intervals, if the calibrated level is low enough.
+  Both are visible here.
 
 ### Robustness sweeps (declared 2026-11-18)
 
@@ -340,9 +380,11 @@ sweep shows is how the threshold moves.
 - **Calibration.** Liquid and the proxy are fixed by the 10% overhead rule
   at every point, exactly as in the primary run.
 - **What is reported.** At each point:
-  - the threshold, its bracket, bootstrap interval and status, computed
-    exactly as for the primary (`protocol.threshold`) on the point's 48
-    cities;
+  - the threshold, its bracket, confidence set and status, computed exactly
+    as for the primary (`protocol.threshold`) on the point's 48 cities;
+    at the rotating-agenda points (both evaluation mixes and the stress
+    case), the bootstrap resamples six cities within each heavy topic,
+    keeping the balanced design (`SweepPoint.strata`);
   - the difference curve with its pointwise intervals, and the
     specialisation contrast along the dial;
   - the share of cities meeting the cap at each level, and the joint share
@@ -358,7 +400,8 @@ sweep shows is how the threshold moves.
 | Districts (100 residents each) | 2, **5**, 10 | fitted | Liquid's candidate pool is then 199, 499 or 999 residents, while each district's representative still serves 100. The cities differ between counts (see above) |
 | Within-topic spread of new questions | ×0.5, **×1**, ×1.5 | fitted | A declared sensitivity range, half to one and a half times the fitted spread, not derived from a diagnostic (revised 2026-11-18: an earlier claim that ×2 erases topics was wrong). The fitted spread matched CES 2022's within-topic correlation (0.523 against 0.528). Descriptively, equal-weight median \|r\| within / between topics under the fitted covariance is 0.538 / 0.422 at ×0.5, 0.449 / 0.353 at ×1, 0.382 / 0.321 at ×1.5 and 0.364 / 0.324 at ×2 |
 | Evaluation topic mix (history even) | **even**, one topic 2× heavier, one topic 4× heavier | fitted | 4× is a stated stress value, not measured (Voteview's roll-call files carry no topic codes); 2× is the milder point. The heavy topic rotates with city position, so each topic is heavy in exactly 6 of the 48 cities |
-| Spread of engagement (logit SD of turnout rates) | 1.0, **2.07**, 3.0 | fitted | Amendment A6. 2.07 matches Geneva's never-voters (about 9% across 20 ballot days at the Swiss mean) but gives only 3–5% always-voters against about 10% reported; 3.0 matches the always-voters and gives 17% never-voters; 1.0 is a fairly even electorate in which nearly everyone votes sometimes |
+| Spread of engagement (logit SD of turnout rates) | 1.0, 2.07, **2.81**, 3.5 | fitted | Amendment A6. 2.81 is calibrated to Geneva's ten-ballot table (Sciarini et al. 2016, Table 1: 20.2% never and 15.9% always at mean 0.493; the model gives 18.6% and 17.6%). 2.07 fits only the never-voter figure of a 20-ballot report; 3.5 is more polarized, as on online platforms where activity is power-law distributed; 1.0 is a fairly even electorate in which nearly everyone votes sometimes |
+| Attendance clustering | **a fresh draw per question**, one draw per ballot day of three questions | fitted | The register counts ballot days, often several measures each (the Swiss average is about 2.8); the model counts questions. Clustering three consecutive questions per draw tests that transfer, at the same mean turnout |
 | Belief structure: cross-topic correlation of positions | 0, 0.4, 0.87 (CES-matched), 0.95 | structural | 0.87 matches the fitted population's between-topic item correlation (0.379, the same on both). The fitted topic directions alone correlate at a median of 0.77, and one axis carries 82% of their variance |
 | Belief structure: blocks of related issues | two blocks of four topics, 0.87 within, 0.2 across | structural | A less sorted public (Baldassarri and Gelman 2008): as cohesive as the CES within each block, weakly related across. It differs from the CES-matched point only across blocks |
 | Stress case | 10 per topic; one history topic 4× heavier and a different one (four topics on) 4× heavier in evaluation | fitted | Declared 2026-11-17: sparse records and a shifting agenda plausibly occur together. Its third element, ordinary delegate turnout, is now the dial's condition everywhere |
@@ -591,14 +634,23 @@ correction or a tuning.
     a mean of 0.60.
   - *The change.*
     - Turnout becomes a dial. Each resident's rate is
-      logistic(location + 2.07·z), with z fixed per resident and the
+      logistic(location + 2.81·z), with z fixed per resident and the
       location set by the dial's mean.
-    - The spread 2.07 fits the register's never-voters at the Swiss mean.
-      It then gives 3% to 5% always-voters, below the reported 10%, so
-      spreads 1.0 and 3.0 are a sweep family.
+    - The spread is calibrated to one register statistic under this
+      model: Geneva's ten successive ballot days, mean participation 0.493,
+      with 20.2% taking part in none and 15.9% in all (Sciarini et al.
+      2016, Table 1). Least squares on those two shares gives 2.81, which
+      yields 18.6% and 17.6%. A symmetric logit spread cannot match the
+      small asymmetry. (Revised 2026-11-19, third A6 review: the first
+      calibration, 2.07, matched a 20-ballot never-voter figure but gave
+      12.5% and 11.7% on the table.)
+    - The register counts ballot days and the model counts questions.
+      Transferring the spread to independent questions is an assumption,
+      so attendance clustered by ballot days of three is a sensitivity
+      point. Spreads 1.0, 2.07 and 3.5 are a sweep family.
     - H1 is restated as the threshold on that dial (see "Hypothesis").
-    - Delegates vote at their own rate on the dial, and the representative
-      at the office-holder rate.
+    - Delegates vote at their own rate on the dial, and office holders at
+      exactly the office-holder rate.
     - A2's single break-even becomes the frontier.
     - The seed count becomes a fixed 200 cities, and light records are
       reported apart.
@@ -744,8 +796,9 @@ never misses a vote (about 0.67) and read as the worse arrangement.
 **The threshold and the frontier (amendment A6).** The study's result is
 read from two figures:
 - *The threshold:* liquid minus representative fidelity, plotted against
-  mean turnout on the dial, with pointwise intervals. The sustained
-  crossing and its bootstrap interval are marked, and so is the Swiss
+  mean turnout on the dial, with pointwise intervals and the simultaneous
+  band. The threshold and its confidence set are marked, and so is the
+  Swiss
   reference at 0.45.
 - *The frontier:* for each turnout level, the delegate attendance needed
   for liquid to match representation.
@@ -1048,7 +1101,7 @@ response model.**
 
   | Check | Data | Model v1 | Model v2 |
   |---|---|---|---|
-  | Agreement with one's House member on the three bills with 118th-Congress roll calls (H.R. 7521, 7888, 2), corrected to 118th districts 2026-11-17 | 54.45%, 46.50%, 56.78% | 50.9%, 55.8%, 54.6% | 51.2%, 55.9%, 54.5% |
+  | Agreement with one's House member on the three bills with 118th-Congress roll calls (H.R. 7521, 7888, 2), corrected to 118th districts 2026-11-17 | 54.45%, 46.50%, 56.78% | 50.9%, 55.8%, 54.6% | 51.3%, 56.0%, 54.6% |
   | Between-district spread of item support rates, model over data (median, range) | — | 0.62 (0.43–0.73) | 0.94 (0.59–1.16) |
   | Moderates (liberal share 0.4–0.6); their spread of liberal share between topics | 20.3%; 0.258 | 22.6%; 0.245 | 21.6%; 0.246 |
   | CES 2022 items, median absolute correlation within / between topics, topics weighted equally on both sides (corrected 2026-11-17), model under the fitted population covariance (2026-11-18) | 0.528 / 0.469 | — | 0.523 / 0.433 |
@@ -1058,8 +1111,8 @@ response model.**
     1,973 of 60,000 respondents have different numbers in the two. Joined on
     `cdid118`, respondents agree with their member 54.45% (TikTok), 46.50%
     (FISA) and 56.78% (H.R. 2) of the time; the simulated representative,
-    now elected with turnout drawn as in the simulation, 51.2%, 55.9% and
-    54.5%. The mean hides that the model is about nine points too generous
+    now elected with turnout drawn as in the simulation (the turnout dial
+    at the Swiss marker, spread 2.81), 51.3%, 56.0% and 54.6%. The mean hides that the model is about nine points too generous
     on FISA and three points short on the other two. This is a limited
     check: three bills on two topics, the only CES 2024 bills with a
     118th-Congress House vote (the contraception, abortion-access and
@@ -1141,10 +1194,10 @@ response model.**
     a miss, so a reliable attendee looks good on every topic and the
     per-topic pooling strength may partly reflect attendance. On five
     fitted cities (history questions only, turnout dial at the Swiss
-    marker) the strength is 48 to 56 pseudo-questions as choice computes it,
-    and 18 to 21 when only questions both people voted on are counted. (41
-    to 46 under the earlier uniform turnout: more varied attendance makes
-    attendance count for more.) That is a sensitivity
+    marker, spread 2.81) the strength is 44 to 52 pseudo-questions as choice
+    computes it, and 18 to 22 when only questions both people voted on are
+    counted. (41 to 46 under the earlier uniform turnout: more varied
+    attendance makes attendance count for more.) That is a sensitivity
     result, not an attribution: counting only jointly cast ballots changes
     both the outcome being predicted and the number of trials, so the gap
     between the two fitted strengths does not identify the share due to
