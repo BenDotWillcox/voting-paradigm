@@ -1,0 +1,41 @@
+{
+  "benchmark_id": "delegation_handover_v1",
+  "label": "exploratory",
+  "handover_version": 1,
+  "commit": "1d92e08e2e553a96f9ffdce2fccfeb3e0fbcd173",
+  "dirty": false,
+  "diff_sha256": null,
+  "beliefs_sha256": "2c7fa2202ebf4d5a78d1c94a465a446885063ecd98033ca72ca025d2c11f9c86",
+  "declared": "2026-11-19",
+  "frozen_protocol": "2026-11-19",
+  "turnout_grid": [
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.45,
+    0.5,
+    0.6,
+    0.7,
+    0.8,
+    0.9
+  ],
+  "primary_cities": 200,
+  "primary_seed_base": 1000000000,
+  "depths": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "turnout_policy": "delegates at their own rate (DIAL_TURNOUT)",
+  "python": "3.11.3",
+  "numpy": "2.4.6",
+  "scipy": "1.17.1",
+  "started": "2026-11-19T21:44:33.530944+00:00"
+}
