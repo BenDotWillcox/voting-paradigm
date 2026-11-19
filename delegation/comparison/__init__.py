@@ -90,6 +90,9 @@ class Comparison:
     # The headline and specialisation differences split over liquid's kept
     # and resolved pairs, keyed "liquid_minus_<arrangement>"
     attributions: dict[str, Attribution]
+    # Every arrangement's outcome, in the order of `measures`, for callers
+    # that need ballots rather than summaries (the benchmark runner)
+    outcomes: dict[str, Outcome]
 
 
 def compare(
@@ -135,6 +138,7 @@ def compare(
             f"liquid_minus_{other}": attribute(population, liquid_outcome, by_name[other])
             for other in (REPRESENTATIVE, PROXY)
         },
+        outcomes=by_name,
     )
 
 

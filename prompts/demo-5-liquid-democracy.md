@@ -561,6 +561,126 @@ floor from which liquid *strictly leads* the representative.
     level above it, with the gate holding, Figure 1's threshold has been
     crossed.
 
+### Running the benchmark (runner built 2026-11-19)
+
+`delegation/comparison/runner.py` simulates the declared cities and reads
+every verdict with `protocol.py`. The script is
+`scripts/run_liquid_benchmark.py`, tested in
+`delegation/tests/test_runner.py`. Three runs:
+
+- **`smoke`:** eight small cities on development seeds (3,000,001 onward,
+  never the primary namespace), fitted and structural, at three levels, in
+  a few seconds. It checks the pipeline end to end. Cities this small
+  cannot keep overhead under 10%, so their reading is uninformative by
+  design.
+- **`primary`:** the 200 primary cities, each at every level of the dial,
+  with the attendance frontier recounted at every floor from the same
+  calibration and delegations.
+- **`sweeps`:** every declared sweep point on its 48 cities at every level.
+  `--point` runs one point. Its analysis reads the primary run's first 48
+  positions as the fitted reference: no extra simulation, but the primary
+  run must come from the same commit and environment.
+  - **Baselines.** Each sweep point's curve is set against its declared
+    baseline, level by level (revised 2026-11-19, second runner review):
+    - fitted points against the fitted reference;
+    - structural points against the structural CES-matched (0.87) point,
+      within one generator;
+    - that point against the fitted reference, the gap between generators,
+      reported first.
+  - **The interval** is the mean of the differences between cities at the
+    same seed position, with a paired interval (stratified by heavy topic
+    where the point rotates). Matching positions is valid whether or not
+    two configurations share draws, and it uses the shared draws where they
+    do: the history and spread families keep residents and questions.
+    - The differences are whole-number numerators over a common
+      denominator, scaled once at the end, so an exact zero stays zero.
+    - At rotating points the degrees of freedom are Satterthwaite's, from
+      the topics that actually supply variance, not 40 (third runner
+      review).
+
+Each run works as follows:
+- **One city per task.** A city's levels run in one task, so the city
+  keeps its residents across the dial.
+- **What a city-level records:**
+  - every arrangement's matching-ballot count, so contrasts are signed
+    counts and ties are exact;
+  - the voter-question pairs;
+  - whether liquid and the proxy meet the overhead cap;
+  - the calibration;
+  - every arrangement's measures;
+  - the H1 and specialisation differences split over liquid's kept and
+    resolved pairs, as signed counts that add back to each difference;
+  - for primary cities, liquid's matches minus the representative's at each
+    frontier floor.
+- **Checkpoints (revised 2026-11-19, runner review).**
+  - Each finished city is written to its own file atomically (a temporary
+    file, synced, then renamed), as strict JSON with missing values as
+    null. An interrupted run loses only the cities in flight, and resumes
+    where it stopped.
+  - A city's file is never replaced, and a lock on the directory stops two
+    launches from writing to it at once. The lock is taken before the
+    manifest is read or created, and no manifest is ever created beside
+    existing city records.
+  - A failed city does not stop the others: every success is written, and
+    the failures are reported together, so a retry repeats only unfinished
+    cities.
+  - An interrupted run (Ctrl-C) stops promptly: it cancels queued cities,
+    writes the ones already finished or in flight, and then stops, so a
+    rerun repeats only what never ran. This holds whenever the interrupt
+    comes, including during submission or just before a file is renamed
+    into place, because what counts as saved is the city's file existing,
+    not an in-memory mark.
+- **The manifest** records:
+  - the commit, whether the checkout was dirty, and a hash of any
+    uncommitted difference;
+  - the beliefs file's hash;
+  - the protocol constants and the sweep definitions;
+  - the Python, NumPy and SciPy versions.
+
+  A primary or sweep run refuses a checkout with uncommitted changes. A
+  resumed run must match every one of these, so development records
+  cannot enter a frozen run, nor a frozen run's records a development one.
+- **The analysis** (`analyse`) checks before it reads:
+  - the run's manifest must name the same mode;
+  - every record must be a declared city of that mode, recorded once, with
+    the declared levels, seed and turnout at each;
+  - a point gets a verdict only when its exact declared positions are all
+    present;
+  - the analysis must run on the code and numerical environment (Python,
+    NumPy, SciPy) that ran the simulation, or it records both
+    (`--allow-reanalysis`).
+
+  It writes two files:
+  - `report.json`, with every reading per point:
+    - the threshold verdict, bracket, interpolation, first supported level,
+      nominal 95% set, both curves and the gate;
+    - the reading at each level and at the Swiss marker, always with the
+      all-city interval and an explicit label (*overhead condition not
+      met*, *not assessable at matched overhead*) when too few cities meet
+      the cap, with the counts of cities that do;
+    - the specialisation contrast with its joint and marginal shares;
+    - the decomposition;
+    - the paired kept/resolved attribution of H1 and of specialisation, as
+      contributions that add back to each difference;
+    - the frontier;
+    - every measure averaged over cities, including lifecycle overhead,
+      delegations, outcome agreement, lost votes, loops and the lower-tail
+      split;
+  - `report.md`, with the headline line for each point and the fitted
+    reference.
+
+  Rotating-agenda points use their heavy-topic strata.
+- **Speed.** Agreement is computed once per city level and reused by the
+  calibration, the choice and the matched arms (`arrangements._AGREEMENTS`,
+  a weak cache; results are unchanged, and the test suite passes as
+  before). That brings a full-size city level to about 18 s, from about
+  41 s. On 14 workers the primary run takes about 45 minutes and the sweeps
+  about 3½–4 hours; the 10-district point costs about four times a
+  five-district one.
+- **Where results go.** Runs write to `.cache/liquid-benchmark/<run>/`,
+  which is Git-ignored. The published benchmark is built from them in step
+  6 below.
+
 ### What everything else is
 
 | Question | Role |
@@ -2233,10 +2353,18 @@ Steps for the revised vision (2026-11-14), each its own PR:
    issues (loading 1) the proxy scored 0.769 against liquid's 0.742,
    because one overall history is a larger sample than six per-issue ones.
    Exploratory, not the benchmark.
-6. **Benchmark.** `eval/benchmarks/delegation_frontier_v1/`: the headline
-   frontier, the ladder, the sensitivity sweeps and the routing condition,
-   rebuilt byte for byte from a runner, as the synthetic preference
-   benchmark is.
+6. **Benchmark.** The runner is built (`delegation/comparison/runner.py`,
+   `scripts/run_liquid_benchmark.py`; see "Running the benchmark"). What
+   remains:
+   1. the freeze commit;
+   2. the primary and sweep runs from that clean commit;
+   3. the published results, `eval/benchmarks/delegation_frontier_v1/`: the
+      threshold (Figure 1), the attendance frontier (Figure 2), the
+      overhead-fidelity plane and the sweeps, with the run manifest. They
+      are rebuilt from the recorded runs, as the synthetic preference
+      benchmark is.
+
+   The routing condition is a follow-up outside H1.
 7. **Walkthrough.** The `/liquid` research page over the benchmark's
    recorded results, with a small live re-run where it is cheap.
 8. **Control center.** Regenerate the account scenario with history-based

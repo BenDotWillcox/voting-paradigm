@@ -491,7 +491,9 @@ limit.
 ### 7.10 Inference and sweeps (`protocol.py`, `sweeps.py`)
 
 These are part of the analysis plan rather than the model, listed so the run
-can be replayed. All of them are declared in the research protocol:
+can be replayed. `runner.py` executes them (`scripts/run_liquid_benchmark.py`
+`primary`, `sweeps`, `analyse`), and its manifest binds each run to one
+commit. All of them are declared in the research protocol:
 - the turnout grid and the fixed 200 primary cities;
 - the threshold:
   - the sustained strict crossing, on signed match counts converted to
