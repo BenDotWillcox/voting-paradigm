@@ -1,0 +1,23 @@
+{
+  "environment": {
+    "matplotlib": "3.10.8",
+    "numpy": "2.4.6",
+    "python": "3.11.3"
+  },
+  "figure_manifest_version": 1,
+  "input_sha256": {
+    "frontier.csv": "12c1926b8d5cbc90e36c7b7df0465ff969586f79aaa2dc105035c966a6ff00be",
+    "levels.csv": "cb1b868fc4f7ac37c3280612f9e45ae481469d5adaa48f17606ed05fef203e32",
+    "measures.csv": "df65e3fa06c376f8379fe4431cade1c9fcecdcf2d1cbf14016e34263b3c0d3ca",
+    "thresholds.csv": "0add76fbe2d7780fdc699f9534d9e46f318444d83d920310335513578634418d"
+  },
+  "png_sha256": {
+    "figure1_threshold.png": "bfe93e1477d8171c4413aa09d82a8eef7bd53403f3a674875a64316bd46ed613",
+    "figure2_frontier.png": "b334e5170e61319580fbe05b858d054e5cc08e715e0f81d590f608982f042cfb",
+    "overhead_fidelity_plane.png": "5909f1ee434935c253844661e58e1be53dea2704e0ae96bc3a299d8b65506653",
+    "sweeps.png": "e9e857e0cdd21d5016e4ef16c5d243184ac2fca64012776de73fb606988c7fe7"
+  },
+  "source_sha256_lf_normalized": {
+    "eval/plot_delegation_frontier.py": "0cc73d51cc6a6e27a08a9348117b2c637e96ab1ccfa2a5efd210caef574602c9"
+  }
+}

@@ -2384,14 +2384,30 @@ Steps for the revised vision (2026-11-14), each its own PR:
    Exploratory, not the benchmark.
 6. **Benchmark.** The runner is built (`delegation/comparison/runner.py`,
    `scripts/run_liquid_benchmark.py`; see "Running the benchmark"), and the
-   protocol was frozen on 2026-11-19 (see "Research protocol"). What
-   remains:
-   1. the primary and sweep runs, from the freeze's merge commit;
+   protocol was frozen on 2026-11-19 (see "Research protocol"). Done
+   (2026-11-19):
+   1. the primary and sweep runs, from the freeze's merge commit `a50ebcc`
+      on a clean checkout, analysed on the same commit;
    2. the published results, `eval/benchmarks/delegation_frontier_v1/`: the
       threshold (Figure 1), the attendance frontier (Figure 2), the
-      overhead-fidelity plane and the sweeps, with the run manifest. They
-      are rebuilt from the recorded runs, as the synthetic preference
-      benchmark is.
+      overhead-fidelity plane and the sweeps, with both run manifests and
+      both reports. The city records (about 7 MB) stay local, with their
+      hashes in `metadata.json`; `python -m eval.delegation_frontier
+      verify` checks every committed hash and, where the records are
+      present, re-reads every verdict from them. Results and limits are in
+      its README.
+
+   The frozen H1 verdict is *overhead condition not met where liquid is
+   ahead*: the fidelity crossing lies between 0.1 and 0.2, but the gate
+   fails at 0.2 (empty records) and 0.9 (delegation loops). Two departures
+   from this plan are reported there, not repaired:
+   - the overhead-fidelity plane shows the calibrated arrangements only;
+     liquid's handover curve is not in the recorded runs and is left to
+     the walkthrough;
+   - at 48 cities the frozen band's critical value is often infinite,
+     because sparse cap-meeting levels meet its studentisation rule, so
+     12 of 19 sweep threshold sets are unbounded. Any change to the band
+     is a dated exploratory amendment beside these results.
 
    The routing condition is a follow-up outside H1.
 7. **Walkthrough.** The `/liquid` research page over the benchmark's

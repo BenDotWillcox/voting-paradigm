@@ -1,0 +1,4 @@
+# The city records (about 7 MB) stay local. metadata.json keeps their hashes,
+# and `python -m eval.delegation_frontier publish` regenerates them byte for
+# byte from the recorded runs (see README.md, "Reproduce").
+*_cities.jsonl.gz
