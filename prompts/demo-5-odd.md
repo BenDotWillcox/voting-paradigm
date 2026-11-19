@@ -8,12 +8,13 @@ design doc's research protocol is the analysis plan; this document says what
 the model is. Where the two overlap, the design doc gives the reasons and the
 history of each decision, and this document gives the model as it stands.
 
-It describes the code at `main` after PR #106 (2026-11-18), with amendment
-A6 (H1 as a turnout threshold) applied:
+It describes the code frozen with the research protocol on 2026-11-19,
+after amendment A6 (H1 as a turnout threshold) and the benchmark runner:
 `delegation/comparison/` (population, beliefs, choice, arrangements, measures,
-protocol, sweeps) and `delegation/graph.py` for the resolution rule. Values
-marked *measured* come from data, *fitted* from the CES model, and *stated*
-are chosen and declared. A stated value is an assumption and is labelled as
+protocol, sweeps) and `delegation/graph.py` for the resolution rule. A later
+change to the model is a dated amendment in the design doc. Values marked
+*measured* come from data, *fitted* from the CES model, and *stated* are
+chosen and declared. A stated value is an assumption and is labelled as
 one.
 
 ---

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import json
-
-
-
+from dataclasses import asdict
 
 import pytest
 
@@ -24,11 +23,11 @@ from delegation.comparison.runner import (
     CityTask,
     CodeState,
     analyse,
-
     city_path,
     done,
     evaluate_level,
     load_records,
+    manifest,
     point_key,
     primary_tasks,
     run,
@@ -429,3 +428,39 @@ def test_an_interrupt_before_the_rename_keeps_that_city(tmp_path, monkeypatch):
     assert not list((tmp_path / CITIES).glob("*/*.tmp"))
     monkeypatch.setattr(runner.os, "replace", real_replace)
     assert run(tasks, tmp_path, "smoke", state=CLEAN) == len(tasks) - len(recorded)
+
+
+def test_the_frozen_protocol_is_unchanged():
+    # A tripwire for the freeze (2026-11-19): the declared constants and
+    # every primary and sweep city's exact settings. A change here must come
+    # with a dated amendment in the design doc, made before any result it
+    # could affect is seen
+    protocol = manifest("primary", CLEAN)["protocol"]
+    assert protocol == {
+        "frozen": "2026-11-19",
+        "turnout_grid": [0.1, 0.2, 0.3, 0.4, 0.45, 0.5, 0.6, 0.7, 0.8, 0.9],
+        "swiss_marker": 0.45,
+        "primary_cities": 200,
+        "primary_seed_base": 1_000_000_000,
+        "sweep_cities": 48,
+        "frontier_floors": [0.0, 0.2, 0.4, 0.6, 0.8, 0.9, 0.96, 1.0],
+        "bootstrap_resamples": 2000,
+        "bootstrap_seed": 20261118,
+        "cap": 0.1,
+        "feasible_share": 0.95,
+        "confidence": 0.95,
+        "delta": 0.02,
+    }
+    tasks = primary_tasks() + sweep_tasks()
+    declared = [
+        {
+            "point": t.point,
+            "position": t.position,
+            "frontier": t.frontier,
+            "levels": [[level, type(config).__name__, asdict(config)] for level, config in t.levels],
+        }
+        for t in tasks
+    ]
+    digest = hashlib.sha256(runner._dumps(declared, sort_keys=True).encode()).hexdigest()
+    assert len(tasks) == PRIMARY_CITIES + len(SWEEPS) * SWEEP_CITIES
+    assert digest == "f2a8671602e6311f91f8ea907a889139f0a50d79a24c37dc9693060f87eac857"
