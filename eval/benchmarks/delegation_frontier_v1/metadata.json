@@ -1,0 +1,40 @@
+{
+  "beliefs_sha256": "2c7fa2202ebf4d5a78d1c94a465a446885063ecd98033ca72ca025d2c11f9c86",
+  "benchmark_id": "delegation_frontier_v1",
+  "environment": {
+    "numpy": "2.4.6",
+    "python": "3.11.3",
+    "scipy": "1.17.1"
+  },
+  "freeze_commit": "a50ebcc51ca6df466881db610ea0693f9b48b4d1",
+  "generator": "python -m eval.delegation_frontier publish",
+  "inference_provider_calls": 0,
+  "outputs": {
+    "decomposition.csv": "196aafca176b1ee5f6c26a8206cbc962c7d4b7d3a6849dedad2702b1dac49dc8",
+    "frontier.csv": "12c1926b8d5cbc90e36c7b7df0465ff969586f79aaa2dc105035c966a6ff00be",
+    "levels.csv": "cb1b868fc4f7ac37c3280612f9e45ae481469d5adaa48f17606ed05fef203e32",
+    "manifest.json": "96f2d57c84a02cce2b89633dcacaa127badc462b1b407a42999a6e22f072199f",
+    "measures.csv": "df65e3fa06c376f8379fe4431cade1c9fcecdcf2d1cbf14016e34263b3c0d3ca",
+    "primary_cities.jsonl.gz": "eeefcad3d800ec6105be2ce0f02ed22e9b5250b712f633e143698aa9a5be1d50",
+    "primary_report.json.gz": "f8ced2cd84bdf481cb6255f5555ac7561f450d2f24449502cc4b8e1caca64880",
+    "sweeps_cities.jsonl.gz": "9c5173f3a0e5129cb6a6e61fb323c69d46639b568644b6326924affe0cae6842",
+    "sweeps_report.json.gz": "6aeac76bbc3ec2c465a32e26d06ec98699ca6d3ee612512c0f49feaecce701f2",
+    "thresholds.csv": "0add76fbe2d7780fdc699f9534d9e46f318444d83d920310335513578634418d"
+  },
+  "participant_data": false,
+  "protocol_frozen": "2026-11-19",
+  "runner_version": 3,
+  "runs": {
+    "primary": {
+      "cities": 200,
+      "points": 1
+    },
+    "sweeps": {
+      "cities": 912,
+      "points": 19
+    }
+  },
+  "source_sha256_lf_normalized": {
+    "eval/delegation_frontier.py": "0b3a97b40f872845d1ad672cad776b4abf9d9be47e17278971e0ec1ca080b794"
+  }
+}
