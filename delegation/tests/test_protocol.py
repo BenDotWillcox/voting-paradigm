@@ -403,3 +403,34 @@ def test_a_frontier_tie_at_the_lowest_floor_is_not_a_lead_there():
     assert reading.status == "crosses"
     assert reading.bracket == (0.0, 0.2) and reading.interpolated == 0.0
 
+
+
+def test_balanced_sweeps_use_within_topic_spread():
+    # Four topics offset +1000 matches and four -1000, six cities each in
+    # rotating order. Nine levels at offset - 20; the top at offset + 4 with
+    # one city losing a further 60. Pooled spread made the set (0.8, 0.9]
+    # for every loss position; within-topic spread leaves it unbounded
+    levels = TURNOUT_GRID
+    strata = np.arange(48) % 8
+    offset = np.where(strata < 4, 1000, -1000)
+    for position in (0, 7, 23, 47):
+        counts = np.repeat((offset - 20)[:, None], len(levels), axis=1).astype(float)
+        counts[:, -1] = offset + 4
+        counts[position, -1] -= 60
+        result = threshold(levels, counts, _all(counts), pairs=80_000, strata=strata, resamples=FAST)
+        assert result.gate_holds
+        assert result.confidence[1] == np.inf
+
+
+def test_a_lone_cap_meeting_city_is_not_zero_spread():
+    # Five compliant cities at 0.8, every city at 0.9: a resample holding one
+    # compliant city at 0.8 has an undefined spread, and a moved mean there
+    # must widen the band
+    i = np.arange(200)
+    counts = np.stack([100 + i % 2, 200 + i % 2], axis=1).astype(float)
+    counts[:5, 0] = [-106, -104, -103, -102, -101]
+    cap = np.ones(counts.shape, dtype=bool)
+    cap[5:, 0] = False
+    result = threshold((0.8, 0.9), counts, cap, pairs=80_000, resamples=FAST)
+    assert result.gate_holds
+    assert result.confidence == (-np.inf, np.inf)

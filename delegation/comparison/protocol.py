@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from fractions import Fraction
 from typing import Final
 
 import numpy as np
@@ -205,16 +206,34 @@ def joint_share(liquid_meets_cap: npt.ArrayLike, proxy_meets_cap: npt.ArrayLike)
 # ---------------------------------------------------------------------------
 
 
-def _positive(counts: npt.NDArray[np.float64], use: npt.NDArray[np.bool_]) -> npt.NDArray[np.bool_]:
+def _positive(
+    counts: npt.NDArray[np.float64],
+    use: npt.NDArray[np.bool_],
+    strata: npt.NDArray[np.int64] | None = None,
+) -> npt.NDArray[np.bool_]:
     """
-    Whether each column's sum over the cities in `use` is strictly positive,
-    decided with an exactly rounded sum of signed match counts, so float
-    noise cannot turn a tie into a lead.
+    Whether each level's mean over the cities in `use` is strictly positive,
+    decided exactly on signed match counts, so float noise cannot turn a tie
+    into a lead. With strata, the mean is the fixed-weight stratified mean
+    and its sign is decided in exact rational arithmetic; a level where a
+    stratum has no city in `use` is not positive (it is unobserved).
     """
-    return np.asarray(
-        [bool(use[:, j].any()) and math.fsum(counts[use[:, j], j]) > 0.0 for j in range(counts.shape[1])],
-        dtype=np.bool_,
-    )
+    cities, levels = counts.shape
+    groups = np.zeros(cities, dtype=np.int64) if strata is None else strata
+    sizes = np.bincount(groups)
+    out = np.zeros(levels, dtype=np.bool_)
+    for j in range(levels):
+        total = Fraction(0)
+        seen = True
+        for h, n_h in enumerate(sizes):
+            rows = (groups == h) & use[:, j]
+            if not rows.any():
+                seen = False
+                break
+            stratum_sum = Fraction(math.fsum(counts[rows, j]))
+            total += Fraction(int(n_h), cities) * stratum_sum / int(rows.sum())
+        out[j] = seen and total > 0
+    return out
 
 
 def sustained_index(positive: npt.ArrayLike) -> int:
@@ -300,9 +319,11 @@ class Threshold:
     # level are then the reading)
     interpolated: float | None
     first_supported: float | None
-    # 95% confidence set on the grid: the threshold lies above the first
-    # value and at or below the second; -inf and +inf mean beyond the range.
-    # It comes from one simultaneous band over both curves
+    # Nominal 95% confidence set on the grid: the threshold lies above the
+    # first value and at or below the second; -inf and +inf mean beyond the
+    # range. It comes from one simultaneous bootstrap-t band over both
+    # curves. Coverage is approximate: a rare outcome absent from the sample
+    # cannot be recovered by resampling, whatever the sample's spread
     confidence: tuple[float, float]
     all_cities: CurveReading
     cap_meeting: CurveReading
@@ -314,8 +335,9 @@ class Threshold:
     # The all-city fidelity difference's 95% t-interval at every level, in
     # fidelity units
     pointwise: tuple[Interval, ...]
-    # Levels where every city (on either curve) has the same count: the
-    # confidence set cannot reflect outcomes absent from the sample there
+    # Levels where every city (on either curve) has the same count. This
+    # flags only that degenerate case; its absence says nothing about rare
+    # outcomes missing from a sample that otherwise varies
     zero_spread_levels: tuple[float, ...] = ()
 
 
@@ -328,8 +350,50 @@ def _resample(rng: np.random.Generator, strata: npt.NDArray[np.int64]) -> npt.ND
     return np.concatenate(picks)
 
 
+def _group_curve(
+    d: npt.NDArray[np.float64],
+    use: npt.NDArray[np.bool_],
+    strata: npt.NDArray[np.int64],
+    weights: npt.NDArray[np.float64],
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """
+    The mean and standard error of one curve over the cities in `use`, with
+    fixed stratum weights: mean = sum_h w_h * mean_h and
+    se^2 = sum_h w_h^2 * var_h / n_h, var_h the within-stratum sample
+    variance. One stratum is the unstratified case.
+
+    A level is unobserved (mean NaN) when any stratum has no city there. The
+    standard error is undefined (NaN) when any stratum has a single city,
+    since its variance cannot be estimated: a lone cap-meeting city is not
+    a zero-variance one (sixth A6 review).
+    """
+    levels = d.shape[1]
+    mean = np.zeros(levels)
+    var = np.zeros(levels)
+    observed = np.ones(levels, dtype=np.bool_)
+    estimable = np.ones(levels, dtype=np.bool_)
+    for h, w in enumerate(weights):
+        rows = strata == h
+        mask = use[rows]
+        vals = d[rows]
+        n_h = mask.sum(axis=0)
+        observed &= n_h > 0
+        estimable &= n_h > 1
+        with np.errstate(invalid="ignore", divide="ignore"):
+            m_h = np.where(mask, vals, 0.0).sum(axis=0) / n_h
+            ss = (np.where(mask, vals - m_h, 0.0) ** 2).sum(axis=0)
+            v_h = ss / (n_h - 1)
+            mean += w * np.where(n_h > 0, m_h, 0.0)
+            var += np.where(n_h > 1, w * w * v_h / n_h, 0.0)
+    mean = np.where(observed, mean, np.nan)
+    se = np.where(observed & estimable, np.sqrt(var), np.nan)
+    return np.asarray(mean, dtype=np.float64), np.asarray(se, dtype=np.float64)
+
+
 def _curves(
-    d: npt.NDArray[np.float64], cap: npt.NDArray[np.bool_]
+    d: npt.NDArray[np.float64],
+    cap: npt.NDArray[np.bool_],
+    strata: npt.NDArray[np.int64] | None = None,
 ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     """
     Means and standard errors of the all-city and cap-meeting curves. Called
@@ -338,18 +402,21 @@ def _curves(
     first and then summing could turn an exact tie into a tiny lead (fifth
     A6 review). Every quantity the band uses is a ratio or a sign, so the
     count unit needs no conversion.
+
+    With `strata` (the rotating-agenda sweep points, a fixed number of
+    cities per heavy topic), both curves use the fixed stratum weights and
+    within-stratum variance; pooling the spread between topic means into
+    the standard error is wrong for a design that fixes them (sixth A6
+    review). The cap-meeting curve is the same weighted mean over the cities
+    meeting the cap within each stratum.
     """
-    n = d.shape[0]
-    mean_all = d.mean(axis=0)
-    se_all = d.std(axis=0, ddof=1) / math.sqrt(n)
-    counts = cap.sum(axis=0)
-    with np.errstate(invalid="ignore", divide="ignore"):
-        mean_cap = np.where(cap, d, 0.0).sum(axis=0) / counts
-        centred = np.where(cap, d - mean_cap, 0.0)
-        var_cap = (centred**2).sum(axis=0) / (counts - 1)
-        se_cap = np.sqrt(var_cap / counts)
-    mean_cap = np.where(counts > 0, mean_cap, np.nan)
-    se_cap = np.where(counts > 1, se_cap, np.inf)
+    cities = d.shape[0]
+    groups = np.zeros(cities, dtype=np.int64) if strata is None else strata
+    sizes = np.bincount(groups).astype(np.float64)
+    weights = sizes / sizes.sum()
+    everyone = np.ones_like(cap)
+    mean_all, se_all = _group_curve(d, everyone, groups, weights)
+    mean_cap, se_cap = _group_curve(d, cap, groups, weights)
     return mean_all, se_all, mean_cap, se_cap
 
 
@@ -357,18 +424,20 @@ def _deviation(
     resampled: npt.NDArray[np.float64], original: npt.NDArray[np.float64], se: npt.NDArray[np.float64]
 ) -> npt.NDArray[np.float64]:
     """
-    Studentized deviations of a resampled curve. A deterministic 0/0 (the
-    mean unchanged, no spread) is 0; a changed mean with no spread, or a
-    level observed in the data but not in the resample, is infinite, so
-    sparse outcomes widen the band instead of vanishing from it (fourth A6
-    review). Levels unobserved in the data are left out.
+    Studentized deviations of a resampled curve, by the resample's own
+    standard error. A deterministic 0/0 (the mean unchanged, no spread) is
+    0. A changed mean is infinite when the resample's spread is zero or
+    undefined (a lone city in a stratum), and so is a level observed in the
+    data but missing from the resample: sparse outcomes widen the band
+    instead of vanishing from it. Levels unobserved in the data are left
+    out.
     """
-    out = np.zeros_like(original)
     known = np.isfinite(original)
     missing = known & ~np.isfinite(resampled)
     delta = np.abs(np.where(known & np.isfinite(resampled), resampled - original, 0.0))
+    usable = np.isfinite(se) & (se > 0)
     with np.errstate(invalid="ignore", divide="ignore"):
-        ratio = np.where(se > 0, delta / se, np.where(delta > 0, np.inf, 0.0))
+        ratio = np.where(usable, delta / np.where(usable, se, 1.0), np.where(delta > 0, np.inf, 0.0))
     out = np.where(known, ratio, 0.0)
     return np.asarray(np.where(missing, np.inf, out), dtype=np.float64)
 
@@ -376,9 +445,16 @@ def _deviation(
 def _band(
     mean: npt.NDArray[np.float64], se: npt.NDArray[np.float64], critical: float
 ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
-    """Lower and upper band; unbounded where the half-width is undefined."""
-    with np.errstate(invalid="ignore"):
-        half = np.where(se > 0, critical * se, 0.0 if math.isfinite(critical) else np.inf)
+    """
+    Lower and upper band. The half-width is unbounded where it is undefined:
+    an undefined standard error, or zero spread under an infinite critical
+    value.
+    """
+    usable = np.isfinite(se) & (se > 0)
+    zero = np.isfinite(se) & (se == 0)
+    finite = math.isfinite(critical)
+    half = np.where(usable, critical * np.where(usable, se, 0.0) if finite else np.inf, np.inf)
+    half = np.where(zero, 0.0 if finite else np.inf, half)
     lower = np.where(np.isfinite(mean), mean - half, -np.inf)
     upper = np.where(np.isfinite(mean), mean + half, np.inf)
     return np.asarray(np.nan_to_num(lower, nan=-np.inf)), np.asarray(np.nan_to_num(upper, nan=np.inf))
@@ -429,10 +505,11 @@ def threshold(
         raise ValueError("one stratum per city")
 
     # All curve arithmetic is on counts; fidelity only for reported intervals
-    mean_all, se_all, mean_cap, se_cap = _curves(raw, cap)
-    observed_cap = cap.any(axis=0)
-    all_cities = read_curve(levels, mean_all, _positive(raw, np.ones_like(cap)))
-    cap_meeting = read_curve(levels, mean_cap, _positive(raw, cap), observed_cap)
+    layered = None if strata is None else groups
+    mean_all, se_all, mean_cap, se_cap = _curves(raw, cap, layered)
+    observed_cap = np.isfinite(mean_cap)
+    all_cities = read_curve(levels, mean_all, _positive(raw, np.ones_like(cap), layered))
+    cap_meeting = read_curve(levels, mean_cap, _positive(raw, cap, layered), observed_cap)
 
     n = len(levels)
     readings = (all_cities, cap_meeting)
@@ -458,7 +535,7 @@ def threshold(
         # Bootstrap-t: each resample is studentized by its own spread (fifth
         # A6 review: the original spread let a resample with a moved mean and
         # no spread of its own count as a finite deviation)
-        m_a, s_a, m_c, s_c = _curves(raw[idx], cap[idx])
+        m_a, s_a, m_c, s_c = _curves(raw[idx], cap[idx], None if layered is None else groups[idx])
         maxima[b] = float(
             np.concatenate([_deviation(m_a, mean_all, s_a), _deviation(m_c, mean_cap, s_c)]).max()
         )

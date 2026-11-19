@@ -129,9 +129,10 @@ raise turnout; Germann and Serdült 2017).
 - **Reported:**
   - the grid bracket, the first level where the lead is observed, and a
     linear interpolation inside the bracket, labelled a grid approximation;
-  - a **95% confidence set** on the grid: the threshold lies above one
-    grid level and at or below another, either end possibly beyond the
-    range;
+  - a **nominal 95% confidence set** on the grid: the threshold lies
+    above one grid level and at or below another, either end possibly
+    beyond the range. Its coverage is approximate, not guaranteed in finite
+    samples; see "The limit" below;
   - both curves' own readings;
   - the 95% t-interval of the difference at every level.
 - **How the confidence set is built.** It comes from one *simultaneous*
@@ -157,11 +158,30 @@ raise turnout; Germann and Serdült 2017).
     observed in the data but missing from the resample. Rare large
     outcomes therefore widen the band rather than vanish from it. Only a
     deterministic 0/0, mean unchanged and no spread, counts as zero.
-  - **The limit.** If a rare outcome is absent from the sample altogether,
-    resampling cannot recover it. Levels where every city has the same
-    count on either curve are reported (`zero_spread_levels`), and the set
-    is not claimed to be validated there. Real fidelity differences vary
-    from city to city, so this is not expected outside constructed cases.
+  - **Standard errors at the balanced sweep points.** The rotating-agenda
+    sweep points fix six cities per heavy topic. Both curves there use the
+    fixed topic weights and the variance *within* each topic, in the sample
+    and in every resample. Pooling the spread between topic means is wrong
+    for a design that fixes them; it held coverage on the reviewer's
+    example to at most 84% (revised 2026-11-19, sixth A6 review).
+  - **A lone city.** A stratum, or the whole cap-meeting curve, with a
+    single city at a level has an *undefined* spread, not a zero or an
+    infinite one. A moved mean there counts as an infinite deviation, and
+    an undefined spread in the data leaves the band unbounded at that
+    level.
+  - **The limit.** The set is a *nominal* 95% set with approximate
+    coverage. The checks below were run on designed cases; they are not a
+    guarantee:
+    - A rare outcome that does not appear in the sample cannot be
+      recovered by any resampling method. That holds whether or not the
+      ordinary outcomes in the sample vary. In the reviewer's example a
+      0.5% chance of a large loss is missed by a third of 200-city samples,
+      which still vary in their ordinary counts.
+    - `zero_spread_levels` flags only the degenerate case where every city
+      at a level has the same count. Its absence is no reassurance about
+      unseen tails.
+    - The study reports the set as nominal and makes no finite-sample
+      coverage claim.
   - **Coverage.** The set replaces the earlier percentile interval of the
     interpolated crossing:
 
@@ -170,8 +190,9 @@ raise turnout; Germann and Serdült 2017).
     | A plateau at zero | 122 of 250 runs | 248 of 250 |
     | A clean crossing | — | 250 of 250, usually a single grid step |
     | The reviewer's sparse examples: a true mean of zero carried by rare large losses (−199 at probability 3/202, and −196 at 3/199) | about 80% | 472 and 473 of 500 |
+    | The reviewer's balanced-sweep example: 48 cities, topics offset ±1,000, a loss of 60 with probability 1/15 at the top | at most 84% | 288 of 300 |
 
-    The remaining misses are samples that contain no rare loss at all.
+    The remaining misses are samples in which the rare loss never appears.
 - **Statuses.** The status is one of:
   - *crosses*;
   - *liquid ahead throughout* (strictly ahead at every level);
@@ -429,7 +450,8 @@ sweep shows is how the threshold moves.
     as for the primary (`protocol.threshold`) on the point's 48 cities;
     at the rotating-agenda points (both evaluation mixes and the stress
     case), the bootstrap resamples six cities within each heavy topic,
-    keeping the balanced design (`SweepPoint.strata`);
+    and both curves are studentized by within-topic variance with fixed
+    topic weights, keeping the balanced design (`SweepPoint.strata`);
   - the difference curve with its pointwise intervals, and the
     specialisation contrast along the dial;
   - the share of cities meeting the cap at each level, and the joint share
