@@ -50,106 +50,229 @@ dated and justified here, never made after looking at evaluation results.
 
 ### Hypothesis
 
-> **H1.** At comparably low civic overhead, liquid delegation, with
-> delegates chosen per category from public vote history, represents voters
-> more faithfully than single-member district representation elected by
-> plurality.
+> **H1 (restated as a threshold, amendment A6, 2026-11-18).** At
+> comparably low civic overhead, there is a level of citizen turnout above
+> which liquid delegation, with delegates chosen per category from public
+> vote history, represents voters more faithfully than single-member
+> district representation elected by plurality. The study estimates that
+> level.
 
-- **What H1 can and cannot license.** A positive result shows that this
-  delegation system delivers more matching ballots than district
-  representation in the specified simulated population, under the stated
-  turnout and record assumptions. It does not by itself say why: choosing
-  one's own resolver, broader choice, topic specialisation and resolver
-  attendance can each produce a win (with two disciplined blocs, one
-  well-chosen personal proxy beats a shared representative by forty points
-  and topic delegates add nothing). The decomposition below is declared so
-  the result can be attributed.
-- **Primary outcome.** For each city, liquid fidelity minus representative
-  fidelity (each the mean over voters and evaluation questions). The
-  independent unit is the city seed: both arrangements see the same
-  population and the same turnout draws, and the estimate is the mean of
-  the paired city differences with a 95% t-interval over seeds.
-- **Decision rule (revised 2026-11-17; overhead gate and separate size
-  categories added 2026-11-18 after the second review; conflicting
-  directions settled after the third).** Applied in this order, and
-  implemented in `delegation/comparison/protocol.py` (`h1_verdict`,
-  `h1_size_verdict`, `specialisation_verdict`) so the verdict is read by
-  code, not by eye:
-  1. *The overhead condition.* The 10% cap applies per city: a city meets
-     it when liquid's realised evaluation overhead is at most 10% (in the
-     primary design this equals the history overhead the configuration was
-     fixed on). H1 is assessed only if at least 95% of cities meet the cap.
-     Otherwise the verdict is *overhead condition not met*: H1 is not
-     assessed, and the fidelity difference is reported descriptively
-     beside liquid's mean realised overhead. A fidelity interval can never
-     support H1 by itself.
-  2. *Direction*, from the all-city 95% interval: *supported* when it lies
-     wholly above zero; *evidence against H1 in the modelled population*
-     when wholly below zero; *inconclusive about the sign* when it includes
-     zero. (The earlier wording, "falsified if the interval includes zero",
-     was wrong.) The interval over only the cities that meet the cap is
-     computed beside it, and a direction stands only when the two agree.
-     Any disagreement is *inconclusive about the sign*: one directional
-     and one including zero, and also opposite signs (a positive all-city
-     interval carried by a few cities over the cap, say, with a negative
-     interval over the rest). The interval over cities that meet the cap
-     is an ordinary t-interval over those cities: the two-stage rule below
-     fixed N on all cities, and the first stage may hold fewer than 20
-     cities that meet the cap, so its first-stage spread and degrees of
-     freedom do not carry over. Its coverage is therefore approximate; it
-     serves only this agreement check.
-  3. *Size*, reported separately from direction, with δ = 0.02 (two
-     fidelity points, about three more matching ballots per voter per 160
-     evaluation questions). Each interval gets one of four labels: a gain
-     of at least δ *established* (lower end at least δ); a gain below δ
-     *established* (upper end below δ, so the data rule out δ); and, when
-     the interval still contains δ (an upper end exactly at δ included),
-     *estimate at least δ, size unresolved* or *estimate below δ, size
-     unresolved*, by which side the estimate falls (revised 2026-11-18,
-     fourth review: "below δ" had been returned for an interval such as
-     1.5 to 2.3 points, which still allows δ). Both the all-city interval
-     and the interval over cities that meet the cap are labelled and
-     reported. A size is claimed at low overhead only when the two labels
-     agree; otherwise the size verdict is *size unresolved*. Without that,
-     a few cities over the cap could carry the claim on their own: 190
-     cities meeting the cap at 1.8 points and ten over it at 18 points
-     give an all-city interval of 2.07 to 3.15 points while the cities
-     that meet the cap sit at 1.8 (a test case).
-- **Precision and seed count (revised 2026-11-18).** Stopping when an
-  ordinary t-interval looks narrow enough can lower its coverage, because
-  the variance that triggers the stop is the one used in the interval. The
-  seed count is therefore fixed by Stein's two-stage procedure
-  (`protocol.stein_city_count`, `protocol.stein_interval`):
-  1. Run the first n₀ = 20 primary cities. From them compute only the
-     standard deviation s₀ of the primary outcome (paired differences,
-     primary turnout condition); the runner prints s₀ and N, not the
-     estimate.
-  2. N = max(20, ⌈(t₀.₉₇₅,₁₉ · s₀ / 0.005)²⌉), capped at 200. Run primary
-     cities 21 to N.
-  3. The interval is x̄_N ± t₀.₉₇₅,₁₉ · s₀ / √N. Because N depends only on
-     s₀, which is independent of the first-stage mean, this has exact 95%
-     coverage for normally distributed city differences. Every other
-     contrast and condition uses the same N and the same form, with its
-     own first-stage standard deviation.
+How much people would take part in an app-based liquid democracy is not
+known. A yes/no verdict at an assumed turnout would stand or fall with that
+assumption, so the study instead estimates where the answer changes. A
+reader can then compare the threshold with the turnout they expect. Real
+turnout enters only as a reference marker on the curve: the Swiss mean per
+federal vote, about 0.45, from a direct democracy where voting is already
+low-cost (postal voting is the norm, and adding internet voting did not
+raise turnout; Germann and Serdült 2017).
 
-  The half-width target is 0.005, a quarter of δ. If the cap binds, the
-  interval is reported at its achieved half-width, the unmet target is
-  stated, and the decision rule is applied unchanged. More seeds buy
-  precision about this generator; uncertainty about citizen turnout,
-  public records and future agendas is carried by the sweeps, not by the
-  seed count. No calibration seeds are drawn: the first 20 are part of the
-  sample.
+- **What H1 can and cannot license.** The finding is a level, with its
+  uncertainty, in the specified simulated population under the stated
+  record assumptions: "liquid represents voters more faithfully once mean
+  turnout reaches X". It is not a forecast that any real system would reach
+  X. It does not by itself say why liquid wins above X: choosing one's own
+  resolver, broader choice, topic specialisation and resolver attendance
+  can each produce a win (with two disciplined blocs, one well-chosen
+  personal proxy beats a shared representative by forty points and topic
+  delegates add nothing). The decomposition below is declared so the
+  result can be attributed.
+- **The turnout dial.** One dial moves everyone's participation: each
+  resident's own rate is logistic(location + 2.81·z). Here z ~ N(0, 1) is
+  fixed per resident, and the location is set so that the mean rate is the
+  dial's value. Turning it shifts everyone's log-odds of voting by the same
+  amount, so the same residents stay ranked the same and each city keeps
+  its residents, questions and turnout draws at every level.
+  - Delegates vote at their own rate (no floor).
+  - Office holders vote at *exactly* the measured office-holder rate of
+    0.96, whatever their own rate, so the comparator is the same at every
+    level. This means the representative, and the three candidates in the
+    matched arms. (Revised 2026-11-19, third A6 review: a 0.96 floor would
+    have let keen representatives vote more often at high turnout.)
+  - The spread 2.81 is calibrated to one register statistic under this
+    model (see amendment A6).
+  - The dial's levels are 0.1, 0.2, 0.3, 0.4, 0.45 (the Swiss marker),
+    0.5, 0.6, 0.7, 0.8 and 0.9 (`protocol.TURNOUT_GRID`).
+  - `compare` runs under this condition by default (`DIAL_TURNOUT`).
+- **Primary outcome.** For each city and level, liquid fidelity minus
+  representative fidelity (each the mean over voters and evaluation
+  questions). The independent unit is the city seed, and each city
+  contributes a whole curve over the dial.
+- **The threshold (revised 2026-11-19, third A6 review).** It is the
+  lowest level from which liquid is *strictly* ahead at that level and
+  every level above it (`protocol.read_curve`). A tie is not a lead: an
+  all-zero curve is *no crossing*.
+  - The runner passes *signed match counts*: liquid's matching ballots
+    minus the representative's, over the same voter-question pairs.
+  - It also passes the number of pairs per city (voters times evaluation
+    questions; it changes in the district-count sweep).
+  - Signs, and so ties, are decided exactly on the counts. Means,
+    intervals and the band are in fidelity units, so 800 extra matches
+    among 500 × 160 pairs reads as one point, not 800 (fourth A6 review).
+- **Two curves, the later threshold.** The threshold is read on two
+  curves, and the claimed threshold is the later of the two:
+  - every city;
+  - the cities meeting the overhead cap at each level.
 
-  **Primary seeds (pinned 2026-11-18, third review).** "First 20" and "21
-  to N" are positions in a fixed sequence in its own namespace, never
-  literal seed IDs: the primary city at position i has seed
-  1,000,000,000 + i (`protocol.primary_city_seeds`). Development used
-  seeds 1 to 3 (inspected pilot cities), 4 and 5 (history diagnostics),
-  the configuration defaults 20261114 and 20261116, and small test-fixture
-  seeds; none lies in the primary range, which a test checks. Anyone can
+  Cities over the cap therefore cannot carry it. In the reviewer's case,
+  ten over-cap cities gaining ten points made the all-city curve cross
+  while every compliant city lost, and that is now *no crossing*.
+  - When both curves cross in the same bracket, the later of their two
+    interpolations is reported.
+  - A level where no city meets the cap is *unobserved* on the
+    cap-meeting curve and cannot be claimed (revised 2026-11-19, fourth
+    A6 review):
+    - if the bracket's lower level is unobserved, no interpolation is
+      reported, only the bracket and the first level where the lead is
+      observed;
+    - if the top level is unobserved, the verdict is *overhead condition
+      not met at the top of the range*, not a crossing or a no-crossing.
+- **Reported:**
+  - the grid bracket, the first level where the lead is observed, and a
+    linear interpolation inside the bracket, labelled a grid approximation;
+  - a **nominal 95% confidence set** on the grid: the threshold lies
+    above one grid level and at or below another, either end possibly
+    beyond the range. Its coverage is approximate, not guaranteed in finite
+    samples; see "The limit" below;
+  - both curves' own readings;
+  - the 95% t-interval of the difference at every level.
+- **How the confidence set is built.** It comes from one *simultaneous*
+  band over both curves and all levels (`protocol.threshold`):
+  - the band uses a bootstrap critical value for the maximum studentized
+    deviation, resampling 2,000 sets of whole cities with their cap flags,
+    seeded;
+  - its earliest end is the first level from which a curve inside the band
+    could lead; its latest end is the first level from which every curve
+    inside the band must lead.
+
+  Whenever both true curves lie inside the band, the true threshold lies
+  inside the set, plateaus included.
+  - **Bootstrap-t, on counts.** Each resample is studentized by its *own*
+    standard error, as the rule declares. Every mean is computed from
+    signed-count totals and divided once, so an exact tie in counts stays
+    exactly zero through the band. (Revised 2026-11-19, fifth A6 review.
+    Studentizing by the original sample's spread, and summing fidelities
+    that had already been divided, each produced sets that excluded a
+    correct *no crossing*.)
+  - **Sparse outcomes.** A resample whose mean moved while its own spread
+    is zero counts as an infinite deviation, not zero, as does a level
+    observed in the data but missing from the resample. Rare large
+    outcomes therefore widen the band rather than vanish from it. Only a
+    deterministic 0/0, mean unchanged and no spread, counts as zero.
+    Whether the mean moved is decided exactly on count totals, so rounding
+    cannot fake a move. (Seventh A6 review: a mean of exactly 4 summed to
+    3.9999999999999996 and made unmoved resamples infinite.)
+  - **Both curves are ratios of exact totals.** Each curve is a city
+    total of signed counts divided once by a city count:
+    - the all-city curve divides by every city;
+    - the cap-meeting curve divides the compliant cities' total by their
+      number.
+
+    This is the same quantity at every sweep point as in the primary, so a
+    compliant city never counts for more because its topic lost others to
+    the cap. An exact tie stays exactly zero. (Revised 2026-11-19, seventh
+    A6 review: reweighting topics after cap filtering had let 47 compliant
+    cities that lost 90 matches in total show a lead.)
+  - **Standard errors at the balanced sweep points.** The rotating-agenda
+    sweep points fix six cities per heavy topic, so standard errors there
+    use variance *within* each topic, in the sample and in every resample.
+    Pooling the spread between topic means is wrong for a design that fixes
+    them; it held coverage on the reviewer's example to at most 84% (sixth
+    A6 review). The cap-meeting curve's error is the stratified ratio
+    estimator's, from each city's residual: its cap flag times its count's
+    distance from the ratio. A topic whose residuals are all identical has
+    exactly zero variance, set explicitly rather than left to floating-point
+    centring, which can return about 1e-17 and hide a moved mean from the
+    exact check (eighth A6 review).
+  - **A lone city.** A stratum, or the whole cap-meeting curve, with a
+    single city at a level has an *undefined* spread, not a zero or an
+    infinite one. A moved mean there counts as an infinite deviation, and
+    an undefined spread in the data leaves the band unbounded at that
+    level.
+  - **The limit.** The set is a *nominal* 95% set with approximate
+    coverage. The checks below were run on designed cases; they are not a
+    guarantee:
+    - A rare outcome that does not appear in the sample cannot be
+      recovered by any resampling method. That holds whether or not the
+      ordinary outcomes in the sample vary. In the reviewer's example a
+      0.5% chance of a large loss is missed by a third of 200-city samples,
+      which still vary in their ordinary counts.
+    - `zero_spread_levels` flags only the degenerate case where every city
+      at a level has the same count. Its absence is no reassurance about
+      unseen tails.
+    - The study reports the set as nominal and makes no finite-sample
+      coverage claim.
+  - **Coverage.** The set replaces the earlier percentile interval of the
+    interpolated crossing:
+
+    | Case | Old interval | Set (current code, 2026-11-19) |
+    |---|---|---|
+    | A plateau at zero | 122 of 250 runs | 149 of 150 |
+    | A clean crossing | — | 150 of 150, usually a single grid step |
+    | The same clean crossing with 4% of city-levels over the cap | — | 150 of 150 |
+    | The reviewer's sparse example: a true mean of zero carried by a rare loss of 196 matches at probability 3/199 | about 80% | 280 of 300 |
+    | The reviewer's balanced-sweep example: 48 cities, topics offset ±1,000, a loss of 60 with probability 1/15 at the top | at most 84% | 288 of 300 |
+
+    The remaining misses are samples in which the rare loss never appears.
+- **Statuses.** The status is one of:
+  - *crosses*;
+  - *liquid ahead throughout* (strictly ahead at every level);
+  - *no crossing in the tested range*.
+
+  A curve that changes between leading and not leading more than once
+  *reverses*. Both curves' reversals are reported. *(curve reverses)* is
+  appended to whatever the verdict is, *no crossing* included, if either
+  curve reverses, including a cap-meeting curve that reverses while the
+  all-city curve does not. Raising turnout only adds
+  ballots but also changes records and so delegations, so a single
+  crossing is likely but not guaranteed.
+- **The overhead gate.** The 10% cap applies per city and level. The
+  threshold claim requires the cap to hold, in at least 95% of cities, at
+  every level from the bracket's upper end upward, where liquid is claimed
+  ahead. If it fails there, the verdict is *overhead condition not met
+  where liquid is ahead*: the curve is reported, but no threshold is
+  claimed at comparably low overhead. Levels below the crossing may fail the
+  cap; that is reported and changes nothing. With no crossing there is no
+  claimed level, so the verdict stays *no crossing in the tested range*,
+  and feasibility is reported beside it. The full rule is
+  `protocol.threshold` and `protocol.threshold_verdict`.
+- **Cities.** A fixed 200 primary cities, each run at every level, so
+  nothing stops on the data. Stein's two-stage rule, declared on
+  2026-11-18 for the earlier single-difference H1, is withdrawn with that
+  H1. More cities buy precision about this generator; uncertainty about
+  records and future agendas is carried by the sweeps.
+- **Reading at one level of the dial.** At any level, and always at the
+  Swiss marker, the difference is also labelled with the rules declared for
+  the earlier H1 (revised 2026-11-17 and 2026-11-18, kept as secondary
+  readings):
+  - *Direction*, from the all-city 95% interval: *supported* when wholly
+    above zero, *evidence against* when wholly below, otherwise
+    *inconclusive about the sign*. It stands only when the interval over
+    cities meeting the cap agrees; any disagreement, opposite signs
+    included, is inconclusive. The latter is an ordinary t-interval over
+    those cities, with approximate coverage.
+  - *Size*, against δ = 0.02 (two fidelity points, about three more
+    matching ballots per voter per 160 evaluation questions):
+    - *gain of at least δ established* (lower end at least δ);
+    - *gain below δ established* (upper end below δ);
+    - *estimate at least δ, size unresolved* or *estimate below δ, size
+      unresolved*, when the interval still contains δ.
+
+    A size is claimed only when the all-city and cap-meeting labels agree.
+  - Gate: neither reading applies unless at least 95% of cities meet the
+    cap at that level (`protocol.h1_verdict`, `protocol.h1_size_verdict`).
+- **Primary seeds (pinned 2026-11-18, third review).** The primary city at
+  position i has seed 1,000,000,000 + i (`protocol.primary_city_seeds`),
+  positions 1 to 200. Development used:
+  - seeds 1 to 3 (inspected pilot cities);
+  - seeds 4 and 5 (history diagnostics);
+  - the configuration defaults 20261114 and 20261116;
+  - small test-fixture seeds.
+
+  None of these lies in the primary range, which a test checks. Anyone can
   replay the run from the sequence.
-- **Comparably low overhead.** Liquid's evaluation overhead is at most 10%
-  of questions decided by the voter themself. The proxy is held to the same
+- **Comparably low overhead.** At every level of the dial, liquid's
+  evaluation overhead is at most 10% of questions decided by the voter
+  themself. The proxy is held to the same
   bound so the two are compared at matched overhead. Overhead is counted
   the same way everywhere: a person decides a question when they resolve
   their own vote or anyone else's vote depends on their ballot, an elected
@@ -171,11 +294,18 @@ dated and justified here, never made after looking at evaluation results.
   otherwise leave both deciding for themselves. The resolver used is an
   exact per-topic resolution checked against `graph.resolve_question` at
   the level of each voter's final resolver.
-- **Infeasible cities.** A city where no level reaches 10% is included at
-  its lowest-overhead level, flagged, and counted in the report. Cities are
-  never dropped from the all-city estimate; how many miss the cap decides
-  whether H1 is assessed at all (decision rule, step 1), and the estimate
-  over the cities that meet it is reported beside the all-city one.
+- **Infeasible cities.** A city where no acceptance level reaches 10% at a
+  dial level is included there at its lowest-overhead acceptance, flagged,
+  and counted in the report. Cities are never dropped from the curve; how
+  many miss the cap at each level feeds the overhead gate and the
+  cap-meeting curve above. At low turnout this is expected:
+  - a resident with **no recorded ballot at all** keeps every question,
+    because every candidate would tie on the prior alone (revised
+    2026-11-19; before, the seeded tie-break could hand them a delegate by
+    lottery);
+  - at the primary history length, about 23% of residents have no record
+    at dial 0.1, and 2.1% at the Swiss marker (35% and 4.9% with attendance
+    clustered by ballot days of three).
 - **The cap on a changing agenda.** With the same topic mix in history and
   evaluation and exact routing, evaluation overhead equals history overhead
   by construction, so the 10% check alone tests nothing. An uneven
@@ -184,13 +314,15 @@ dated and justified here, never made after looking at evaluation results.
   for every run.
 - **Primary population.** One belief model, fitted to measured data (see
   "Population model"): `delegation/data/beliefs_ces2024_v2.json`, drawn by
-  `delegation/comparison/beliefs.py`. It is a measurement choice, not a
-  hypothesis; the one-factor model in `population.py` is the structural
-  robustness sweep.
+  `delegation/comparison/beliefs.py`, with turnout on the dial. It is a
+  measurement choice, not a hypothesis; the one-factor model in
+  `population.py` is the structural robustness sweep.
 - **Fixed for the primary run, declared before it:** binary questions;
   three candidates per district and sincere voting; exact routing;
-  delegates chosen once from a history of declared length; resolver
-  turnout as in amendment A1 below; the seeds by the two-stage rule above;
+  delegates chosen once from a history of declared length; turnout on the
+  dial, with delegates at their own rate and the representative at the
+  office-holder rate (amendment A6, which moves A1's floors to the
+  frontier); 200 primary cities;
   ties between equally ranked candidates broken by a seeded random key per
   voter and candidate (`choice.tie_key`), never by row order (revised
   2026-11-18: rows are grouped by district, so breaking ties by index sent
@@ -205,8 +337,9 @@ dated and justified here, never made after looking at evaluation results.
 
 ### Decomposition (declared 2026-11-17, participation step added 2026-11-18)
 
-Each contrast is a paired city difference with its interval, under both
-turnout conditions. They explain H1; none is a second hypothesis. The
+Each contrast is a paired city difference with its interval, at every
+level of the dial and tabulated at the Swiss marker and at the threshold's
+bracket. They explain H1; none is a second hypothesis. The
 chain representative-by-record → own-of-three among election voters →
 own-of-three for everyone → proxy → liquid has four contrasts that sum
 exactly to liquid minus representative-by-record; H1's difference is that
@@ -219,7 +352,7 @@ combined effect (third review, 2026-11-18).
 | Cost of sharing | `district_choice_voters` minus `representative_by_record` | The same three district candidates, records, turnout and participants. Residents who vote in the record election either share its winner or each assign their ballot to their own preferred one of the three; residents who do not vote get the winner in both. Only sharing changes. |
 | Choice by non-voters | `district_choice` minus `district_choice_voters` | Residents who would not vote in the election also choose their own one of the three, instead of receiving the winner. (The second review found the earlier pair mixed this into the cost of sharing: the election counted only voters while own-of-three counted everyone.) |
 | Platform against record | `representative` minus `representative_by_record` | How the shared representative is chosen: closest latent platform, or residents' record-based preference. Both elections use the same tie-break draw per district, so identical ballots cannot produce different winners. |
-| City-wide proxy, combined | `proxy` minus `district_choice` | Several things at once: a pool of 499 residents city-wide instead of three local candidates; onward delegation (proxies follow their own proxies); keeping by acceptance threshold instead of always assigning; and, in the ordinary-turnout condition, resolvers voting at ordinary turnout instead of the office-holder floor. It is reported as their combined effect and says nothing about how much a wider pool alone buys; no matched arm isolates pool size, because no claim rests on it. |
+| City-wide proxy, combined | `proxy` minus `district_choice` | Several things at once: a pool of 499 residents city-wide instead of three local candidates; onward delegation (proxies follow their own proxies); keeping by acceptance threshold instead of always assigning; and resolvers voting at their own rate (on the dial) instead of the office-holder rate. It is reported as their combined effect and says nothing about how much a wider pool alone buys; no matched arm isolates pool size, because no claim rests on it. |
 | Topic specialisation | `liquid` minus `proxy` | Eight topic delegates instead of one, both at matched overhead of at most 10%. |
 
 **Overhead condition for topic specialisation (revised 2026-11-18, third
@@ -254,7 +387,7 @@ A noisy difference near zero is not equivalence.
 
 ### Reporting (declared 2026-11-17)
 
-For every arrangement and condition:
+For every arrangement, at every level of the dial:
 - **Three shares that sum to one:** matching ballot, contrary ballot and no
   ballot. Fidelity is the first. A voter below one half because nobody
   voted for them has had a different experience from one whose resolver
@@ -279,21 +412,32 @@ For every arrangement and condition:
   someone else supplies that ballot, as for a candidate whose own vote
   goes to the election winner).
 - **Overhead, lifecycle overhead and delegations maintained.**
+- **Light and empty records (amendment A6).** These are reported as two
+  rows, each with its share and its fidelity, so the averages cannot hide
+  either:
+  - *Light records:* residents who cast fewer than 10% of the history
+    questions themselves can barely rank candidates.
+  - *Empty records:* the subset with no recorded ballot at all keep
+    everything. The light-record row pools them with residents holding a
+    few ballots, who can delegate on wide intervals if the calibrated
+    level is low enough, so they are reported separately too.
 
 ### Robustness sweeps (declared 2026-11-18)
 
 Declared before any primary city was simulated, and implemented as data in
 `delegation/comparison/sweeps.py` (tested in
 `delegation/tests/test_sweeps.py`). Each point changes one family from the
-primary settings. The stress case is the one declared combination.
+primary settings. The stress case is the one declared combination. Under
+amendment A6 every point is run across the whole turnout dial, and what a
+sweep shows is how the threshold moves.
 
 - **Cities (revised 2026-11-18, sweep review).** Each point runs on
   positions 1 to 48 of the primary seed sequence: six complete rotations of
   the eight topics, so a rotating heavy topic is heavy in exactly six
   cities each and the plain mean weights every topic equally. (Fifty
   cities would have weighted two topics 7/50 and the rest 6/50.) The
-  primary configuration is computed on the same 48 positions if the
-  primary run stopped before 48. The count is fixed in advance, which
+  primary configuration's first 48 cities give the matching reference.
+  The count is fixed in advance, which
   removes optional stopping. The 95% t-interval's coverage is still
   approximate (normal theory), and at the rotating-agenda points it ignores
   the design's stratification by heavy topic, which makes it conservative.
@@ -303,6 +447,8 @@ primary settings. The stress case is the one declared combination.
     the record changes;
   - *within-topic spread, evaluation mix, stress:* the same residents, with
     new questions drawn;
+  - *turnout spread:* the same residents' positions and questions, with
+    turnout rates drawn on a different spread;
   - *districts:* different districts are sampled for each count (seed 1's
     2-, 5- and 10-district cities share none), so these points compare
     generated cities, not one geography with more districts;
@@ -312,17 +458,26 @@ primary settings. The stress case is the one declared combination.
     fitted primary is reported as a comparison between generators.
 
   The arrangement contrasts inside each city, liquid against the
-  representative and so on, are always paired.
-- **Turnout.** Every point is run under both conditions, the 0.96 floor
-  and ordinary resolver turnout. The stress case is declared under
-  ordinary turnout, and its floor-0.96 run is context.
+  representative and so on, are always paired, and each city keeps its
+  residents across the dial.
+- **Turnout.** Every point is run at every level of the dial, with
+  delegates at their own rate and the representative at the office-holder
+  rate, as in the primary.
 - **Calibration.** Liquid and the proxy are fixed by the 10% overhead rule
   at every point, exactly as in the primary run.
 - **What is reported.** At each point:
-  - the H1 contrast and the specialisation contrast with their intervals;
-  - the share of cities meeting the cap, and the joint share for
-    specialisation;
-  - the protocol's direction and size labels.
+  - the threshold, its bracket, confidence set and status, computed exactly
+    as for the primary (`protocol.threshold`) on the point's 48 cities;
+    at the rotating-agenda points (both evaluation mixes and the stress
+    case), the bootstrap resamples six cities within each heavy topic, and
+    both curves are studentized by within-topic variance, keeping the
+    balanced design (`SweepPoint.strata`). The curves themselves are the
+    primary's: all cities, and the compliant cities' total over their
+    number;
+  - the difference curve with its pointwise intervals, and the
+    specialisation contrast along the dial;
+  - the share of cities meeting the cap at each level, and the joint share
+    for specialisation.
 
   Sweeps say where H1 holds. They are curves, not hypothesis tests, so no
   multiplicity correction is made and no sweep result is stated as a
@@ -334,9 +489,11 @@ primary settings. The stress case is the one declared combination.
 | Districts (100 residents each) | 2, **5**, 10 | fitted | Liquid's candidate pool is then 199, 499 or 999 residents, while each district's representative still serves 100. The cities differ between counts (see above) |
 | Within-topic spread of new questions | ×0.5, **×1**, ×1.5 | fitted | A declared sensitivity range, half to one and a half times the fitted spread, not derived from a diagnostic (revised 2026-11-18: an earlier claim that ×2 erases topics was wrong). The fitted spread matched CES 2022's within-topic correlation (0.523 against 0.528). Descriptively, equal-weight median \|r\| within / between topics under the fitted covariance is 0.538 / 0.422 at ×0.5, 0.449 / 0.353 at ×1, 0.382 / 0.321 at ×1.5 and 0.364 / 0.324 at ×2 |
 | Evaluation topic mix (history even) | **even**, one topic 2× heavier, one topic 4× heavier | fitted | 4× is a stated stress value, not measured (Voteview's roll-call files carry no topic codes); 2× is the milder point. The heavy topic rotates with city position, so each topic is heavy in exactly 6 of the 48 cities |
+| Spread of engagement (logit SD of turnout rates) | 1.0, 2.07, **2.81**, 3.5 | fitted | Amendment A6. 2.81 is calibrated to Geneva's ten-ballot table (Sciarini et al. 2016, Table 1: 20.2% never and 15.9% always at mean 0.493; the model gives 18.6% and 17.6%). 2.07 fits only the never-voter figure of a 20-ballot report; 3.5 is more polarized, as on online platforms where activity is power-law distributed; 1.0 is a fairly even electorate in which nearly everyone votes sometimes |
+| Attendance clustering | **a fresh draw per question**, one draw per ballot day of three questions | fitted | The register counts ballot days, often several measures each (the Swiss average is about 2.8); the model counts questions. Clustering three consecutive questions per draw tests that transfer, at the same mean turnout |
 | Belief structure: cross-topic correlation of positions | 0, 0.4, 0.87 (CES-matched), 0.95 | structural | 0.87 matches the fitted population's between-topic item correlation (0.379, the same on both). The fitted topic directions alone correlate at a median of 0.77, and one axis carries 82% of their variance |
 | Belief structure: blocks of related issues | two blocks of four topics, 0.87 within, 0.2 across | structural | A less sorted public (Baldassarri and Gelman 2008): as cohesive as the CES within each block, weakly related across. It differs from the CES-matched point only across blocks |
-| Stress case | 10 per topic; one history topic 4× heavier and a different one (four topics on) 4× heavier in evaluation; ordinary resolver turnout | fitted | Declared 2026-11-17: sparse records, a shifting agenda and ordinary delegate turnout plausibly occur together |
+| Stress case | 10 per topic; one history topic 4× heavier and a different one (four topics on) 4× heavier in evaluation | fitted | Declared 2026-11-17: sparse records and a shifting agenda plausibly occur together. Its third element, ordinary delegate turnout, is now the dial's condition everywhere |
 
 **The structural population.** For the belief-structure family the fitted
 model is replaced by the one-factor model of `population.py`, extended
@@ -361,27 +518,48 @@ one generator. Its gap from the fitted primary is a comparison between
 generators, reported first, because a large gap means the structural
 curve says little about the primary population.
 
-**Break-even resolver turnout (A2; revised 2026-11-18, sweep review).**
-This runs on the primary cities (all N), with the representative at the
-office-holder rate. A resolver votes at the larger of their own rate and
-the floor, and every own rate is at least 0.30, so every floor up to 0.30
-is ordinary turnout exactly. The grid therefore starts at that plateau
-endpoint: 0.30 (ordinary), 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.96 (primary)
-and 1.0. (A grid starting at 0 let interpolation place a crossing inside
-the flat range, where liquid is behind by construction.) Raising the floor
-only adds ballots, so liquid minus the representative never falls and
-crosses zero at most once. Reported (`sweeps.break_even`):
-- the *bracket*: the first pair of grid floors between which the mean
-  paired difference becomes non-negative;
-- a linear interpolation inside the bracket, labelled a grid
-  approximation;
-- the two-stage 95% interval of the difference at every floor.
+**Figure 2, the attendance frontier (amendment A6, replacing the single
+break-even of A2; criterion aligned with H1, 2026-11-19).** On the 200
+primary cities, at every level of the dial, the lowest delegate attendance
+floor from which liquid *strictly leads* the representative.
+- **The criterion** is H1's: a strict lead decided on signed counts, on
+  both the all-city and the cap-meeting curve, the later taken
+  (`protocol.frontier_reading`). Ties at every floor therefore give *no
+  lead*, not floor 0.
+- **Rates:** a delegate votes at the larger of their own rate and the
+  floor; office holders stay at exactly the office-holder rate.
+- **How it differs from H1.** It is a separate figure, not a restatement
+  of H1. Its result at each level is a floor; H1 is Figure 1, the
+  threshold on the dial. H1 additionally requires the lead to be
+  sustained at every higher level and the overhead gate to hold.
+- **Floors:** 0 (delegates at their own rate, the dial's condition), 0.2,
+  0.4, 0.6, 0.8, 0.9, 0.96 and 1.0 (`sweeps.FRONTIER_FLOORS`). Own rates
+  now run down to about 0, so every floor changes some ballots and the
+  grid starts at 0. (A2's earlier grid started at the 0.30 plateau of the
+  retired uniform turnout.)
+- **Why there is one crossing:** raising the floor only adds ballots and
+  leaves delegations, and so the cap flags, unchanged. At each level both
+  curves therefore never fall, and the first lead is sustained.
+- **What is reported, per level:**
+  - the grid bracket where liquid first leads on both curves;
+  - the later of the two curves' interpolations inside it, labelled a grid
+    approximation;
+  - the 95% t-interval of the difference at every floor.
 
-No interval is claimed for the crossing itself: the pointwise intervals
-say whether the difference at a floor could be zero, a different question
-from where the crossing lies. The status is one of *liquid ahead
-throughout* (strictly ahead at ordinary turnout), *equal at ordinary
-turnout*, *crosses* or *no crossing in the tested range*.
+  No interval is claimed for a crossing itself. The status is one of:
+  - *leads at the lowest floor*, with delegates at their own rate;
+  - *crosses*;
+  - *no lead in the tested range*;
+  - *no city meets the cap at this level*.
+- **How to read it:** for each level of citizen turnout, Figure 2 shows how
+  reliably delegates must vote for liquid to lead representation.
+  - A lead with delegates at their own rate is the status *leads at the
+    lowest floor*, not an interpolated point near 0. A bracket starting at
+    0 with an interpolation of exactly 0 marks a tie at floor 0, where the
+    lead only begins above it, and is drawn as such.
+  - Where the status is *leads at the lowest floor* at a level and every
+    level above it, with the gate holding, Figure 1's threshold has been
+    crossed.
 
 ### What everything else is
 
@@ -393,8 +571,9 @@ turnout*, *crosses* or *no crossing in the tested range*.
 | History length, number of districts, within-topic spread, evaluation topic mix | Robustness sweeps, few values, one family at a time from the primary settings (values in "Robustness sweeps") |
 | Stress case: sparse records (10 history questions per topic), an uneven agenda (one topic four times as heavy as each other, in history and a different one, four topics on, in evaluation) and ordinary delegate turnout, together | Declared robustness point (2026-11-17; topics fixed 2026-11-18): these plausibly occur together, and one-at-a-time sweeps miss how they interact |
 | Outcome agreement with full turnout, concentration, lost votes, loops | Secondary outcomes, reported, no hypothesis |
-| Ordinary resolver turnout (delegates vote like anyone else) | Reported side by side with the primary symmetric condition, with equal prominence (A1, revised 2026-11-17) |
-| Break-even resolver turnout | Secondary outcome (A2): the resolver turnout at which liquid's fidelity equals the representative's, on a declared grid of floors (see "Robustness sweeps"); "no crossing in the tested range" is an allowed result |
+| Ordinary resolver turnout (delegates vote like anyone else) | The dial's condition for H1 (amendment A6). The symmetric 0.96 floor of A1 is one row of the frontier |
+| Frontier: delegate attendance needed at each turnout level | The main figure (amendment A6, replacing A2's single break-even): at every level of the dial, the attendance floor at which liquid matches the representative (see "Robustness sweeps") |
+| Turnout at a real direct democracy | Reference marker on the dial, not an assumption: the Swiss mean per federal vote, about 0.45 |
 | Per-voter fidelity distribution | Secondary outcome (A5): share of voters below 0.5 and the 10th percentile, with voters below 0.5 split by no ballot against contrary ballot |
 | Three shares, the paired kept/resolved attribution, loops, resolver attendance, lifecycle overhead | Reported for every arrangement, the attribution for H1 and for specialisation (see "Reporting") |
 | Onward-delegation limits, backup delegates, other ballot types, the account app | Out of scope: design variants, not this test |
@@ -446,7 +625,10 @@ correction or a tuning.
   resolver, not from splitting by topic. Caveats: the model fits
   within-topic structure worst, and CES items are more party-sorted than
   local measures.
-- **A1. Symmetric resolver turnout (primary; scope revised 2026-11-17).**
+- **A1. Symmetric resolver turnout (primary until amendment A6; scope
+  revised 2026-11-17).** Under A6 the symmetric 0.96 floor is no longer the
+  primary condition but one row of the frontier; the office-holder rate
+  still sets the representative's turnout.
   The office-holder rate answers how often elected officials vote, not how
   often a private citizen votes once a neighbour delegates to them; field
   evidence also separates selection (active voters receive more
@@ -470,7 +652,9 @@ correction or a tuning.
   misses with delegates who miss as often as anyone, an asymmetry that
   favours representation and is not part of either mechanism. Kling et al.
   found the most-delegated LiquidFeedback users among the most active.
-- **A2. Break-even resolver turnout (secondary).** Resolver turnout is
+- **A2. Break-even resolver turnout (secondary; superseded by the
+  frontier under amendment A6, which computes this break-even at every
+  level of the dial).** Resolver turnout is
   swept from ordinary turnout up to the office-holder rate, and the rate at
   which liquid's fidelity equals the representative's is reported as a
   bracket on a declared grid, with an interval for the difference at each
@@ -524,6 +708,62 @@ correction or a tuning.
   0% to 1% under the proxy and 0% under liquid (10th percentiles 0.45 to
   0.52 against 0.61 to 0.64). The share below 0.5 and the 10th percentile
   are reported for every arrangement.
+- **A6. H1 as a turnout threshold, on a turnout dial grounded in register
+  data (2026-11-18).** Made while writing the ODD description, when an
+  audit of ungrounded parameters found that citizens' own turnout was
+  uniform on [0.3, 0.9] with nothing behind it. It was not prompted by
+  any outcome: no primary city had been simulated. The pilot outcomes in
+  "Pilot runs, disclosed" were seen under that turnout and are recorded
+  there.
+  - *The evidence.*
+    - Geneva's official register tracks individual participation for
+      about 210,000 citizens. About 10% vote in none of 20 successive
+      federal ballot days, occasional voters are two thirds to four
+      fifths of the electorate, and mean turnout per vote is about 0.43
+      to 0.49 (Sciarini, Cappelletti, Goldberg and Lanz 2016; Goldberg and
+      Sciarini 2021). A secondary report puts always-voters near 10%; the
+      paper's figures bound them at 10% to 25%.
+    - People choose ballot days, not individual measures: turnout across
+      one day's measures rarely differs by a point.
+    - Postal voting is already the norm, and adding internet voting in
+      Geneva and Zurich did not raise turnout (Germann and Serdült 2017),
+      so a lower physical cost does not lift participation much.
+    - On an app-based liquid democracy platform, the German Pirate Party's
+      LiquidFeedback (13,836 users, 3,565 issues), the median user voted
+      on 8 issues and activity was power-law distributed (Kling et al.
+      2015).
+
+    The uniform rate implied no never-voters, almost no always-voters and
+    a mean of 0.60.
+  - *The change.*
+    - Turnout becomes a dial. Each resident's rate is
+      logistic(location + 2.81·z), with z fixed per resident and the
+      location set by the dial's mean.
+    - The spread is calibrated to one register statistic under this
+      model: Geneva's ten successive ballot days, mean participation 0.493,
+      with 20.2% taking part in none and 15.9% in all (Sciarini et al.
+      2016, Table 1). Least squares on those two shares gives 2.81, which
+      yields 18.6% and 17.6%. A symmetric logit spread cannot match the
+      small asymmetry. (Revised 2026-11-19, third A6 review: the first
+      calibration, 2.07, matched a 20-ballot never-voter figure but gave
+      12.5% and 11.7% on the table.)
+    - The register counts ballot days and the model counts questions.
+      Transferring the spread to independent questions is an assumption,
+      so attendance clustered by ballot days of three is a sensitivity
+      point. Spreads 1.0, 2.07 and 3.5 are a sweep family.
+    - H1 is restated as the threshold on that dial (see "Hypothesis").
+    - Delegates vote at their own rate on the dial, and office holders at
+      exactly the office-holder rate.
+    - A2's single break-even becomes the frontier.
+    - The seed count becomes a fixed 200 cities, and light records are
+      reported apart.
+  - *Why a threshold.* How many people would take part in an app-based
+    system is unknown, and the evidence above suggests no assumed value
+    would be secure. A threshold makes that uncertainty the result: "liquid
+    needs turnout of at least X", with real direct democracy's turnout
+    marked on the curve.
+  - *Uniform turnout* remains available in code (`turnout_mean=None`) so
+    that development results reproduce. It is not part of the study.
 - **Ruled out.** Tuning the acceptance level or the turnout values until
   liquid wins; dropping the proxy arm because it complicates the story;
   adding backup delegates to H1 (a design variant, a possible later study).
@@ -574,7 +814,9 @@ the seed as an input) comes after H1 is settled, not before.
 
 - **Documentation.** The model is described in the ODD form (Overview,
   Design concepts, Details) before the benchmark runs, with this protocol
-  as its analysis plan.
+  as its analysis plan: [`demo-5-odd.md`](demo-5-odd.md) (written
+  2026-11-18, following Grimm et al. 2020). It labels every parameter as
+  measured, fitted or stated.
 - **Verification.** Unit tests, invariants and analytic special cases; any
   faster reimplementation (such as a vectorised resolver for sweeps) is
   checked against `graph.resolve_question` on the same inputs.
@@ -652,13 +894,30 @@ never misses a vote (about 0.67) and read as the worse arrangement.
 - Fidelity is always measured on questions that come *after* the history the
   delegates were chosen from (see below), never on the same questions.
 
-### The headline figure
+### The headline figures
 
-Overhead on the horizontal axis, fidelity on the vertical: the full-turnout
-corner at (1, 1), direct at real turnout below it, the
-district representative, the personal proxy, and the liquid curve traced by
-letting voters hand over zero, one, two, ... of their categories (best-scoring
-first). Every other figure is a sensitivity or a breakdown of this one.
+**The threshold and the frontier (amendment A6).** The study's result is
+read from two figures with separate labels:
+- *Figure 1, the H1 threshold:* liquid minus representative fidelity
+  against mean turnout on the dial, all-city and cap-meeting curves, with
+  pointwise intervals and the simultaneous band. The threshold, its
+  confidence set and the Swiss reference at 0.45 are marked. This is the
+  finding.
+- *Figure 2, the attendance frontier:* for each turnout level, the lowest
+  delegate attendance floor from which liquid strictly leads, on the same
+  two-curve criterion. It shows how far better delegate attendance could
+  move Figure 1's result; it is not itself the H1 reading.
+
+**The overhead-fidelity plane.** This is the demo's framing figure.
+Overhead is on the horizontal axis and fidelity on the vertical:
+- the full-turnout corner at (1, 1);
+- direct at a given turnout below it;
+- the district representative and the personal proxy;
+- the liquid curve, traced by letting voters hand over zero, one, two and
+  more of their categories, best-scoring first.
+
+It is drawn at the Swiss marker, and the walkthrough can move it along the
+dial.
 
 ### Choosing delegates from vote history
 
@@ -947,7 +1206,7 @@ response model.**
 
   | Check | Data | Model v1 | Model v2 |
   |---|---|---|---|
-  | Agreement with one's House member on the three bills with 118th-Congress roll calls (H.R. 7521, 7888, 2), corrected to 118th districts 2026-11-17 | 54.45%, 46.50%, 56.78% | 50.9%, 55.8%, 54.6% | 51.2%, 55.9%, 54.5% |
+  | Agreement with one's House member on the three bills with 118th-Congress roll calls (H.R. 7521, 7888, 2), corrected to 118th districts 2026-11-17 | 54.45%, 46.50%, 56.78% | 50.9%, 55.8%, 54.6% | 51.3%, 56.0%, 54.6% |
   | Between-district spread of item support rates, model over data (median, range) | — | 0.62 (0.43–0.73) | 0.94 (0.59–1.16) |
   | Moderates (liberal share 0.4–0.6); their spread of liberal share between topics | 20.3%; 0.258 | 22.6%; 0.245 | 21.6%; 0.246 |
   | CES 2022 items, median absolute correlation within / between topics, topics weighted equally on both sides (corrected 2026-11-17), model under the fitted population covariance (2026-11-18) | 0.528 / 0.469 | — | 0.523 / 0.433 |
@@ -957,8 +1216,8 @@ response model.**
     1,973 of 60,000 respondents have different numbers in the two. Joined on
     `cdid118`, respondents agree with their member 54.45% (TikTok), 46.50%
     (FISA) and 56.78% (H.R. 2) of the time; the simulated representative,
-    now elected with turnout drawn as in the simulation, 51.2%, 55.9% and
-    54.5%. The mean hides that the model is about nine points too generous
+    now elected with turnout drawn as in the simulation (the turnout dial
+    at the Swiss marker, spread 2.81), 51.3%, 56.0% and 54.6%. The mean hides that the model is about nine points too generous
     on FISA and three points short on the other two. This is a limited
     check: three bills on two topics, the only CES 2024 bills with a
     118th-Congress House vote (the contraception, abortion-access and
@@ -1039,9 +1298,11 @@ response model.**
     2026-11-18).** Delegate choice counts a candidate's skipped question as
     a miss, so a reliable attendee looks good on every topic and the
     per-topic pooling strength may partly reflect attendance. On five
-    fitted cities (history questions only) the strength is 41 to 46
-    pseudo-questions as choice computes it, and 18 to 20 when only
-    questions both people voted on are counted. That is a sensitivity
+    fitted cities (history questions only, turnout dial at the Swiss
+    marker, spread 2.81) the strength is 44 to 52 pseudo-questions as choice
+    computes it, and 18 to 22 when only questions both people voted on are
+    counted. (41 to 46 under the earlier uniform turnout: more varied
+    attendance makes attendance count for more.) That is a sensitivity
     result, not an attribution: counting only jointly cast ballots changes
     both the outcome being predicted and the number of trials, so the gap
     between the two fitted strengths does not identify the share due to
@@ -2090,6 +2351,15 @@ apportionment demo; it was not part of this update.
   — https://jair.org/index.php/jair/article/view/12261
 - Gölz, Kahng, Mackenzie, Procaccia, *The Fluid Mechanics of Liquid
   Democracy* — https://arxiv.org/abs/1808.01906
+- Germann and Serdült, *Internet voting and turnout: Evidence from
+  Switzerland*, Electoral Studies 47 (2017) —
+  https://michagermann.github.io/publication/germannserduelt2017
+- Goldberg and Sciarini, *Voter turnout in direct democracy: A joint
+  analysis of individual, referendum and community factors*, European
+  Journal of Political Research (2021) — doi:10.1111/1475-6765.12493
+- Sciarini, Cappelletti, Goldberg and Lanz, *The Underexplored Species:
+  Selective Participation in Direct Democratic Votes*, Swiss Political
+  Science Review 22(1) (2016) — doi:10.1111/spsr.12178
 - Kling et al., *Voting Behaviour and Power in Online Democracy* —
   https://arxiv.org/abs/1503.07723
 - TypeSafe, *Introducing System One Models & Jev* —

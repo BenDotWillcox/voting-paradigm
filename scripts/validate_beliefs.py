@@ -126,9 +126,15 @@ def representative() -> dict[str, object]:
     A limited check: three bills on two topics, the only CES 2024 bills with
     a House roll call in the 118th Congress. The data side counts only
     respondents whose member cast a yea or nay. The model side runs a
-    district election with turnout drawn as in the simulation (uniform
-    between 0.3 and 0.9 per resident).
+    district election with turnout drawn as in the simulation: the turnout
+    dial at the Swiss marker (amendment A6; uniform between 0.3 and 0.9
+    before it).
     """
+    from delegation.comparison.beliefs import SWISS_TURNOUT
+    from delegation.comparison.population import TURNOUT_LOGIT_SD, turnout_location
+    from scipy.special import expit
+
+    location = turnout_location(SWISS_TURNOUT, TURNOUT_LOGIT_SD)
     survey = load_survey()
     district_118 = _districts_118()
     votes = _member_votes()
@@ -169,7 +175,8 @@ def representative() -> dict[str, object]:
                 distance = np.linalg.norm(
                     theta[:, None, :] - theta[candidates][None, :, :], axis=2
                 )
-                turns_out = rng.random(100) < rng.uniform(0.3, 0.9, size=100)
+                rates = expit(location + TURNOUT_LOGIT_SD * rng.standard_normal(100))
+                turns_out = rng.random(100) < rates
                 tally = np.bincount(np.argmin(distance[turns_out], axis=1), minlength=3)
                 rep = candidates[int(np.argmax(tally))]
                 eta = theta @ a[j] + b[j]

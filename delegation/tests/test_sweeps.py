@@ -6,36 +6,43 @@ import numpy as np
 import pytest
 
 from delegation.comparison import simulate_population
-from delegation.comparison.beliefs import BeliefCityConfig
-from delegation.comparison.population import PopulationConfig
-from delegation.comparison.protocol import Interval, primary_city_seeds
+from delegation.comparison.beliefs import SWISS_TURNOUT, BeliefCityConfig
+from delegation.comparison.population import TURNOUT_LOGIT_SD, PopulationConfig
+from delegation.comparison.protocol import TURNOUT_GRID, primary_city_seeds
 from delegation.comparison.sweeps import (
-    BREAK_EVEN_FLOORS,
     CES_MATCHED_CORRELATION,
+    DIAL_TURNOUT,
+    FRONTIER_FLOORS,
     PRIMARY_POINT,
     STRUCTURAL_BASE,
     SWEEP_CITIES,
     SWEEPS,
-    break_even,
+    frontier_policy,
 )
 
 
-def test_every_point_builds_a_valid_city_config():
+def test_every_point_builds_a_valid_city_config_at_every_level():
     for point in (PRIMARY_POINT, *SWEEPS):
-        for position in (1, 2, 9, SWEEP_CITIES):
-            config = point.config(position)
-            assert config.seed == primary_city_seeds(position)[-1]
-            expected = PopulationConfig if point.population == "structural" else BeliefCityConfig
-            assert isinstance(config, expected)
+        for position in (1, 9, SWEEP_CITIES):
+            for level in (TURNOUT_GRID[0], SWISS_TURNOUT, TURNOUT_GRID[-1]):
+                config = point.config(position, level)
+                assert config.seed == primary_city_seeds(position)[-1]
+                assert config.turnout_mean == level
+                expected = PopulationConfig if point.population == "structural" else BeliefCityConfig
+                assert isinstance(config, expected)
+    # The primary runs on all 200 cities, a sweep point on 48
+    assert PRIMARY_POINT.config(200, 0.5).seed == primary_city_seeds(200)[-1]
+    with pytest.raises(ValueError):
+        SWEEPS[0].config(SWEEP_CITIES + 1, 0.5)
 
 
 def test_each_point_changes_one_family_from_the_primary():
-    primary = PRIMARY_POINT.config(3)
+    primary = PRIMARY_POINT.config(3, SWISS_TURNOUT)
     assert primary == BeliefCityConfig(seed=primary.seed)
     for point in SWEEPS:
         if point.population != "fitted" or point.family == "stress":
             continue
-        config = point.config(3)
+        config = point.config(3, SWISS_TURNOUT)
         changed = {
             f.name
             for f in fields(BeliefCityConfig)
@@ -46,28 +53,58 @@ def test_each_point_changes_one_family_from_the_primary():
             "districts": {"districts"},
             "within_topic_spread": {"within_topic_spread"},
             "evaluation_mix": {"evaluation_topic_weights"},
+            "turnout_spread": {"turnout_logit_sd"},
+            "attendance": {"attendance_cluster"},
         }[point.family]
         assert changed == allowed, point.label
 
 
+def test_the_dial_moves_only_turnout_and_keeps_residents():
+    from delegation.comparison.beliefs import load_beliefs, simulate_belief_city
+
+    model = load_beliefs()
+    small = dict(districts=2, residents_per_district=60, history_questions_per_topic=5,
+                 evaluation_questions_per_topic=2)
+    low = simulate_belief_city(model, BeliefCityConfig(seed=4, turnout_mean=0.2, **small))
+    high = simulate_belief_city(model, BeliefCityConfig(seed=4, turnout_mean=0.8, **small))
+    assert np.array_equal(low.positions, high.positions)
+    assert np.array_equal(low.evaluation.sincere, high.evaluation.sincere)
+    assert np.array_equal(low.evaluation.turnout_draw, high.evaluation.turnout_draw)
+    # Everyone's log-odds move together, so ranks are kept and ballots only added
+    assert np.array_equal(np.argsort(low.turnout), np.argsort(high.turnout))
+    assert (high.turnout > low.turnout).all()
+    assert not (low.history.casts & ~high.history.casts).any()
+
+
 def test_heavy_topics_rotate_over_cities():
     point = next(p for p in SWEEPS if p.family == "evaluation_mix" and "4x" in p.label)
-    heavy = [int(np.argmax(point.config(i).evaluation_topic_weights)) for i in range(1, 17)]
+    heavy = [int(np.argmax(point.config(i, 0.5).evaluation_topic_weights)) for i in range(1, 17)]
     assert heavy == list(range(8)) * 2
     stress = next(p for p in SWEEPS if p.family == "stress")
-    config = stress.config(3)
+    config = stress.config(3, 0.5)
     assert config.history_questions_per_topic == 10
     assert int(np.argmax(config.history_topic_weights)) == 2
     assert int(np.argmax(config.evaluation_topic_weights)) == 6
+
+
+def test_rotations_are_complete():
+    assert SWEEP_CITIES % 8 == 0
+    point = next(p for p in SWEEPS if p.family == "evaluation_mix" and "4x" in p.label)
+    heavy = [
+        int(np.argmax(point.config(i, 0.5).evaluation_topic_weights))
+        for i in range(1, SWEEP_CITIES + 1)
+    ]
+    assert np.bincount(heavy, minlength=8).tolist() == [SWEEP_CITIES // 8] * 8
 
 
 def test_structural_points_have_the_declared_correlations():
     for point in SWEEPS:
         if point.population != "structural":
             continue
-        config = point.config(1)
+        config = point.config(1, 0.5)
         assert isinstance(config, PopulationConfig)
         assert config.factor_loading**2 == pytest.approx(point.correlation)
+        assert config.turnout_logit_sd == TURNOUT_LOGIT_SD
         if point.within_block_correlation is not None:
             within = config.factor_loading**2 + config.block_loading**2
             assert within == pytest.approx(CES_MATCHED_CORRELATION)
@@ -93,57 +130,41 @@ def test_structural_base_keeps_the_one_axis_default_draws():
     assert np.array_equal(one_axis.positions, explicit.positions)
 
 
-def test_break_even_brackets_one_crossing():
-    floors = (0.3, 0.5, 1.0)
-    i = lambda m: Interval(m, m - 0.01, m + 0.01)  # noqa: E731
-    result = break_even(floors, (i(-0.04), i(-0.02), i(0.02)))
-    assert result.status == "crosses"
-    assert result.bracket == (0.5, 1.0)
-    assert result.interpolated == pytest.approx(0.75)
-    assert len(result.pointwise) == 3
-    ahead = break_even(floors, (i(0.01), i(0.02), i(0.03)))
-    assert ahead.status == "liquid ahead throughout" and ahead.bracket is None
-    none = break_even(floors, (i(-0.05), i(-0.03), i(-0.005)))
-    assert none.status == "no crossing in the tested range" and none.interpolated is None
-    with pytest.raises(ValueError):
-        break_even((0.5, 0.3), (i(0.0), i(0.0)))
+def test_the_dial_condition_is_delegates_at_their_own_rate():
+    assert DIAL_TURNOUT.resolver_turnout == 0.0
+    assert DIAL_TURNOUT.office_rate == 0.96
+    assert frontier_policy(0.6).resolver_turnout == 0.6
+    assert frontier_policy(0.6).office_rate == 0.96
+    assert FRONTIER_FLOORS[0] == 0.0 and 0.96 in FRONTIER_FLOORS and FRONTIER_FLOORS[-1] == 1.0
 
 
-def test_a_tie_at_ordinary_turnout_is_not_a_lead():
-    i = lambda m: Interval(m, m - 0.01, m + 0.01)  # noqa: E731
-    tie = break_even((0.3, 0.5), (i(0.0), i(0.01)))
-    assert tie.status == "equal at ordinary turnout"
-    assert tie.bracket == (0.3, 0.3) and tie.interpolated == 0.3
+def test_rotating_points_carry_heavy_topic_strata():
+    positions = np.arange(1, SWEEP_CITIES + 1)
+    for point in SWEEPS:
+        strata = point.strata(positions)
+        if point.family in ("evaluation_mix", "stress"):
+            assert strata is not None
+            assert np.bincount(strata).tolist() == [SWEEP_CITIES // 8] * 8
+            heavy = [
+                int(np.argmax(point.config(i, 0.5).evaluation_topic_weights))
+                for i in (1, 2, 9)
+            ]
+            assert heavy[0] == heavy[2] != heavy[1] or point.family == "stress"
+        else:
+            assert strata is None
+    assert PRIMARY_POINT.strata(positions) is None
 
 
-def test_the_grid_starts_where_the_floor_starts_to_matter():
-    from delegation.comparison import ChoicePolicy, liquid
+def test_ballot_day_attendance_shares_draws():
     from delegation.comparison.beliefs import load_beliefs, simulate_belief_city
-    from delegation.comparison.sweeps import ORDINARY_PLATEAU, break_even_policy
 
-    assert BREAK_EVEN_FLOORS[0] == ORDINARY_PLATEAU == BeliefCityConfig().min_turnout
-    assert 0.96 in BREAK_EVEN_FLOORS and BREAK_EVEN_FLOORS[-1] == 1.0
-    # The reviewer's case: flat from ordinary to 0.30, then positive by 0.40.
-    # With the plateau endpoint on the grid the crossing cannot fall below 0.30
-    i = lambda m: Interval(m, m - 0.002, m + 0.002)  # noqa: E731
-    result = break_even((ORDINARY_PLATEAU, 0.4), (i(-0.001), i(0.004)))
-    assert result.bracket == (ORDINARY_PLATEAU, 0.4)
-    assert result.interpolated is not None and result.interpolated >= ORDINARY_PLATEAU
-    # Every floor up to the plateau is exactly ordinary turnout
-    city = simulate_belief_city(
-        load_beliefs(),
-        BeliefCityConfig(seed=11, districts=2, residents_per_district=40,
-                         history_questions_per_topic=6, evaluation_questions_per_topic=3),
-    )
-    assert city.turnout.min() >= ORDINARY_PLATEAU
-    policy = ChoicePolicy(acceptance=0.3)
-    zero = liquid(city, policy, break_even_policy(0.0))
-    plateau = liquid(city, policy, break_even_policy(ORDINARY_PLATEAU))
-    assert np.array_equal(zero.counted, plateau.counted)
+    point = next(p for p in SWEEPS if p.family == "attendance")
+    config = point.config(2, 0.45)
+    small = dict(districts=2, residents_per_district=20, history_questions_per_topic=3,
+                 evaluation_questions_per_topic=3)
+    from dataclasses import replace as _replace
+    city = simulate_belief_city(load_beliefs(), _replace(config, **small))
+    draws = city.history.turnout_draw
+    assert np.array_equal(draws[:, 0], draws[:, 1]) and np.array_equal(draws[:, 1], draws[:, 2])
+    assert not np.array_equal(draws[:, 2], draws[:, 3])
 
-
-def test_rotations_are_complete():
-    assert SWEEP_CITIES % 8 == 0
-    point = next(p for p in SWEEPS if p.family == "evaluation_mix" and "4x" in p.label)
-    heavy = [int(np.argmax(point.config(i).evaluation_topic_weights)) for i in range(1, SWEEP_CITIES + 1)]
-    assert np.bincount(heavy, minlength=8).tolist() == [SWEEP_CITIES // 8] * 8
