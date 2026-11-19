@@ -205,7 +205,7 @@ def test_analysis_is_bound_to_its_mode_and_code(tmp_path):
     with pytest.raises(ValueError, match="holds a smoke run"):
         analyse(tmp_path, "primary", state=CLEAN)
     other = CodeState("9" * 40, False, None)
-    with pytest.raises(RuntimeError, match="analysis code differs"):
+    with pytest.raises(RuntimeError, match="differs from the simulation in commit"):
         analyse(tmp_path, "smoke", state=other)
     report = analyse(tmp_path, "smoke", state=other, allow_reanalysis=True)
     assert report["reanalysis"] is True
@@ -247,7 +247,7 @@ def test_a_complete_point_reports_every_reading(tmp_path):
             "mean_loops", "below_half_none_share", "below_half_contrary_share"} <= set(liquid)
 
 
-def test_sweeps_are_read_against_the_primary_on_positions_1_to_48(tmp_path, monkeypatch):
+def test_sweeps_are_read_against_their_declared_baselines(tmp_path, monkeypatch):
     # Stand-in declared runs with small cities so the test stays quick
     small = dict(districts=2, residents_per_district=20, history_questions_per_topic=3,
                  evaluation_questions_per_topic=2)
@@ -262,20 +262,95 @@ def test_sweeps_are_read_against_the_primary_on_positions_1_to_48(tmp_path, monk
         ]
 
     primary_key = point_key(runner.PRIMARY_POINT)
-    structural_key = next(k for k, p in runner.POINTS.items() if p.population == "structural"
-                          and p.within_block_correlation is None
-                          and p.correlation == runner.CES_MATCHED_CORRELATION)
+    structural_key = runner._structural_baseline_key()
+    variant_key = next(k for k, p in runner.POINTS.items()
+                       if p.population == "structural" and k != structural_key)
+    history_key = next(k for k, p in runner.POINTS.items() if p.family == "history")
     monkeypatch.setattr(runner, "SWEEP_CITIES", 3)
     monkeypatch.setitem(runner.TASKS, "primary", lambda: fitted_tasks(primary_key, 4, 0))
-    monkeypatch.setitem(runner.TASKS, "sweeps", lambda: fitted_tasks(structural_key, 3, 100))
+    monkeypatch.setitem(
+        runner.TASKS,
+        "sweeps",
+        lambda: fitted_tasks(structural_key, 3, 100) + fitted_tasks(variant_key, 3, 200)
+        + fitted_tasks(history_key, 3, 300),
+    )
     primary_out, sweeps_out = tmp_path / "primary", tmp_path / "sweeps"
     run(runner.TASKS["primary"](), primary_out, "primary", state=CLEAN)
     run(runner.TASKS["sweeps"](), sweeps_out, "sweeps", state=CLEAN)
     report = analyse(sweeps_out, "sweeps", primary_out=primary_out, state=CLEAN)
     reference = report["reference"]
-    assert reference["status"] == "ok"
-    assert reference["reading"]["cities"] == 3
-    assert "generator_gap" in reference and reference["generator_gap"]["point"] == structural_key
-    assert not report["missing_points"] or structural_key not in report["missing_points"]
+    assert reference["status"] == "ok" and reference["reading"]["cities"] == 3
+    # Fitted points against the fitted reference
+    assert reference["fitted_gaps"][history_key]["baseline"] == runner.REFERENCE_KEY
+    # Structural points against the structural 0.87 point, within one generator
+    assert reference["structural_gaps"][variant_key]["baseline"] == structural_key
+    # And the structural 0.87 point against the fitted reference
+    assert reference["generator_gap"]["baseline"] == runner.REFERENCE_KEY
     write_report(sweeps_out, report)
     assert runner.REFERENCE_KEY in (sweeps_out / "report.md").read_text()
+
+
+def test_sweep_gaps_are_paired_by_position():
+    # The reviewer's case: 48 positions, the fitted H1 difference alternating
+    # +2 and -2 (in matches over 100 pairs), the history difference 1 minus
+    # the fitted one. Unpaired, the gap's interval excluded zero; paired it
+    # is about [-0.17, +2.17] points
+    history_key = next(k for k, p in runner.POINTS.items() if p.family == "history")
+
+    def point(key: str, h1: list[int]) -> runner._Point:
+        rows = [{"0.5": {"matches": {"liquid": d, "representative": 0}}} for d in h1]
+        return runner._Point(key, list(range(1, len(h1) + 1)), rows)
+
+    fitted = [2 if p % 2 else -2 for p in range(1, 49)]
+    history = [1 - f for f in fitted]
+    gap = runner._gap(point(history_key, history), point(runner.REFERENCE_KEY, fitted), 100, 100)
+    interval = gap["by_level"]["0.5"]
+    assert interval["estimate"] == pytest.approx(0.01)
+    assert interval["lower"] < 0 < interval["upper"]
+    assert interval["lower"] == pytest.approx(-0.0017, abs=0.0005)
+
+
+def test_the_lock_comes_before_the_manifest(tmp_path):
+    tmp_path.mkdir(exist_ok=True)
+    (tmp_path / LOCK).write_text("12345")
+    with pytest.raises(RuntimeError, match="another run"):
+        run([], tmp_path, "smoke", state=CLEAN)
+    assert not (tmp_path / MANIFEST).exists()
+
+
+def test_no_manifest_is_created_beside_unknown_cities(tmp_path):
+    row = runner.run_task(_fitted(1)[0])
+    runner._write_city(tmp_path, row)
+    with pytest.raises(RuntimeError, match="provenance is unknown"):
+        run([], tmp_path, "smoke", state=CLEAN)
+
+
+def test_analysis_is_bound_to_its_numerical_environment(tmp_path):
+    run(_fitted(2), tmp_path, "smoke", state=CLEAN)
+    recorded = json.loads((tmp_path / MANIFEST).read_text())
+    recorded["scipy"] = "0.0"
+    (tmp_path / MANIFEST).write_text(json.dumps(recorded))
+    with pytest.raises(RuntimeError, match="scipy"):
+        analyse(tmp_path, "smoke", state=CLEAN)
+    report = analyse(tmp_path, "smoke", state=CLEAN, allow_reanalysis=True)
+    assert report["reanalysis"] is True
+    assert report["manifest"]["scipy"] == "0.0"
+    assert report["analysis_revision"]["scipy"] != "0.0"
+
+
+def test_an_interrupted_parent_keeps_finished_cities(tmp_path):
+    tasks = smoke_tasks()
+    calls = []
+
+    def interrupt(count: int, total: int) -> None:
+        calls.append(count)
+        raise KeyboardInterrupt
+
+    with pytest.raises(KeyboardInterrupt):
+        run(tasks, tmp_path, "smoke", workers=2, state=CLEAN, progress=interrupt)
+    recorded = done(tmp_path)
+    # The first city and whatever was in flight are kept; queued cities never ran
+    assert 1 <= len(recorded) < len(tasks)
+    assert not (tmp_path / LOCK).exists()
+    # A rerun repeats only what is missing
+    assert run(tasks, tmp_path, "smoke", state=CLEAN) == len(tasks) - len(recorded)

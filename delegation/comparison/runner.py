@@ -400,6 +400,9 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+# The code and environment an analysis must share with its simulation
+ANALYSIS_BOUND: Final = ("commit", "dirty", "diff_sha256", "python", "numpy", "scipy")
+
 # Every field a resumed run must match exactly
 BOUND: Final = (
     "runner_version",
@@ -444,12 +447,17 @@ def manifest(mode: str, state: CodeState) -> dict[str, Any]:
 
 
 def _prepare(out: Path, mode: str, allow_dirty: bool, state: CodeState) -> None:
+    """
+    Validate the run's manifest, or create it. Called with the directory's
+    lock held, so two first launches cannot both create one (second runner
+    review). A manifest is never created beside existing city records,
+    whose provenance would then be unknown; it is written atomically.
+    """
     if state.dirty and mode != "smoke" and not allow_dirty:
         raise RuntimeError(
             "the checkout has uncommitted changes; primary and sweep runs must come from a "
             "committed state (pass allow_dirty only for development)"
         )
-    out.mkdir(parents=True, exist_ok=True)
     path = out / MANIFEST
     current = manifest(mode, state)
     if path.exists():
@@ -461,8 +469,12 @@ def _prepare(out: Path, mode: str, allow_dirty: bool, state: CodeState) -> None:
                     f"({recorded.get(key)!r} against {current[key]!r}); use another directory"
                 )
         return
+    if (out / CITIES).exists() and any((out / CITIES).glob("*/*.json")):
+        raise RuntimeError(f"{out} holds city records but no manifest; their provenance is unknown")
     current["started"] = datetime.now(timezone.utc).isoformat()
-    path.write_text(_dumps(current, indent=2) + "\n", encoding="utf-8")
+    temporary = path.with_suffix(".tmp")
+    temporary.write_text(_dumps(current, indent=2) + "\n", encoding="utf-8")
+    os.replace(temporary, path)
 
 
 class _Lock:
@@ -510,8 +522,9 @@ def run(
     `state` overrides the git check (tests).
     """
     state = state or code_state()
-    _prepare(out, mode, allow_dirty, state)
+    out.mkdir(parents=True, exist_ok=True)
     with _Lock(out):
+        _prepare(out, mode, allow_dirty, state)
         if (out / CITIES).exists():
             for stray in (out / CITIES).glob("*/*.tmp"):
                 stray.unlink()
@@ -539,12 +552,35 @@ def run(
         else:
             os.environ.setdefault("OMP_NUM_THREADS", "1")
             os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
-            with ProcessPoolExecutor(max_workers=workers, initializer=_init_worker) as pool:
-                futures: dict[Future[dict[str, Any]], CityTask] = {
-                    pool.submit(run_task, task): task for task in todo
-                }
+            pool = ProcessPoolExecutor(max_workers=workers, initializer=_init_worker)
+            futures: dict[Future[dict[str, Any]], CityTask] = {
+                pool.submit(run_task, task): task for task in todo
+            }
+            handled: set[Future[dict[str, Any]]] = set()
+            try:
                 for future in as_completed(futures):
+                    handled.add(future)
                     record(futures[future], future.result)
+            except BaseException:
+                # Interrupted (Ctrl-C, say): cancel the queued cities, keep the
+                # ones in flight, and write every success before stopping, so
+                # an interrupted sweep repeats only what never ran (second
+                # runner review)
+                for future in futures:
+                    if not future.running() and not future.done():
+                        future.cancel()
+                for future in futures:
+                    if future in handled or future.cancelled():
+                        continue
+                    try:
+                        row = future.result()
+                    except BaseException:  # noqa: BLE001 - interrupted or failed: not written
+                        continue
+                    if not city_path(out, row["point"], int(row["position"])).exists():
+                        _write_city(out, row)
+                pool.shutdown(wait=False, cancel_futures=True)
+                raise
+            pool.shutdown()
         if failures:
             raise RuntimeError(
                 f"{len(failures)} cities failed; rerun to retry them:\n" + "\n".join(failures)
@@ -767,31 +803,55 @@ def analyse_point(point: _Point, expected: set[int]) -> dict[str, Any]:
     return out
 
 
-def _gap(point: dict[str, Any], reference: dict[str, Any]) -> dict[str, Any]:
+def _paired_interval(diff: np.ndarray, strata: np.ndarray | None) -> Interval:
     """
-    A point's H1 curve against the reference's, level by level: the
-    difference of their means with an unpaired (Welch) 95% interval. Cities
-    are generated anew in each configuration, so pairing by position is not
-    relied on.
+    A 95% interval for the mean of position-matched differences: an ordinary
+    t-interval, or with strata (a fixed number of positions per heavy topic)
+    the stratified one, with within-stratum variance.
     """
     from scipy.stats import t as student_t
 
+    if strata is None:
+        return t_interval(diff)
+    groups = np.unique(strata)
+    n = diff.size
+    var = 0.0
+    for h in groups:
+        part = diff[strata == h]
+        if part.size > 1:
+            var += (part.size / n) ** 2 * float(part.var(ddof=1)) / part.size
+    mean = float(diff.mean())
+    half = float(student_t.ppf(0.975, max(n - groups.size, 1))) * math.sqrt(var)
+    return Interval(mean, mean - half, mean + half)
+
+
+def _gap(point: _Point, baseline: _Point, pairs: int, baseline_pairs: int) -> dict[str, Any]:
+    """
+    A point's H1 curve against a baseline's, level by level: the mean of the
+    differences between cities at the same seed position, with a paired
+    interval (stratified by heavy topic where the point rotates). Matching
+    positions is valid whether or not the two configurations share draws,
+    and it uses the shared draws where they do (the history and spread
+    families keep residents and questions; second runner review).
+    """
+    by_position = dict(zip(baseline.positions, baseline.rows, strict=True))
+    common = [p for p in point.positions if p in by_position]
+    rows = dict(zip(point.positions, point.rows, strict=True))
+    sweep = POINTS.get(point.key)
+    strata = None if sweep is None else sweep.strata(common)
     gaps: dict[str, Any] = {}
-    for level, reading in point.get("by_level", {}).items():
-        mine = reading["h1"]["all_cities"]
-        theirs = reference.get("by_level", {}).get(level, {}).get("h1", {}).get("all_cities")
-        if mine is None or theirs is None:
+    for level in sorted(float(level) for level in point.rows[0]):
+        name = repr(level)
+        if name not in baseline.rows[0]:
             continue
-        n_a, n_b = point["cities"], reference["cities"]
-        se_a = (mine["upper"] - mine["lower"]) / (2 * float(student_t.ppf(0.975, n_a - 1)))
-        se_b = (theirs["upper"] - theirs["lower"]) / (2 * float(student_t.ppf(0.975, n_b - 1)))
-        se = math.sqrt(se_a**2 + se_b**2)
-        denominator = se_a**4 / (n_a - 1) + se_b**4 / (n_b - 1)
-        df = se**4 / denominator if denominator > 0 else float(n_a + n_b - 2)
-        half = float(student_t.ppf(0.975, max(df, 1.0))) * se
-        diff = mine["estimate"] - theirs["estimate"]
-        gaps[level] = {"estimate": diff, "lower": diff - half, "upper": diff + half}
-    return gaps
+        mine = np.array([_contrast(rows[p][name], "h1") for p in common], dtype=np.float64) / pairs
+        theirs = np.array(
+            [_contrast(by_position[p][name], "h1") for p in common], dtype=np.float64
+        ) / baseline_pairs
+        if len(common) < 2:
+            continue
+        gaps[name] = _interval(_paired_interval(mine - theirs, strata))
+    return {"baseline": baseline.key, "cities": len(common), "by_level": gaps}
 
 
 def analyse(
@@ -813,12 +873,14 @@ def analyse(
     if recorded["mode"] != mode:
         raise ValueError(f"{out} holds a {recorded['mode']} run, not {mode}")
     state = state or code_state()
-    analysis = {"commit": state.commit, "dirty": state.dirty, "diff_sha256": state.diff_sha256}
-    same = all(recorded[k] == analysis[k] for k in ("commit", "dirty", "diff_sha256"))
+    environment = manifest(mode, state)
+    analysis = {k: environment[k] for k in ANALYSIS_BOUND}
+    differs = [k for k in ANALYSIS_BOUND if recorded.get(k) != analysis[k]]
+    same = not differs
     if not same and not allow_reanalysis:
         raise RuntimeError(
-            "the analysis code differs from the code that ran the simulation; check out the run's "
-            "commit, or pass allow_reanalysis to record both revisions"
+            f"the analysis differs from the simulation in {', '.join(differs)}; use the run's "
+            "commit and environment, or pass allow_reanalysis to record both"
         )
     rows = load_records(out)
     declared = validate(rows, mode)
@@ -835,44 +897,84 @@ def analyse(
         "missing_points": sorted(set(expected) - set(points)),
     }
     if mode == "sweeps":
-        report["reference"] = _reference(primary_out, recorded, report["points"])
+        report["reference"] = _reference(primary_out, recorded, points, report["points"])
     return report
 
 
+def _structural_baseline_key() -> str | None:
+    return next(
+        (
+            key
+            for key, p in POINTS.items()
+            if p.population == "structural"
+            and p.within_block_correlation is None
+            and p.correlation == CES_MATCHED_CORRELATION
+        ),
+        None,
+    )
+
+
 def _reference(
-    primary_out: Path | None, sweeps_manifest: dict[str, Any], points: dict[str, Any]
+    primary_out: Path | None,
+    sweeps_manifest: dict[str, Any],
+    points: dict[str, _Point],
+    readings: dict[str, Any],
 ) -> dict[str, Any]:
-    """The fitted primary configuration on positions 1-48, and the gaps to it."""
+    """
+    The fitted primary configuration on positions 1-48, and each sweep
+    point's gap to its declared baseline (second runner review):
+      - fitted points against the fitted reference;
+      - structural points against the structural CES-matched (0.87) point,
+        within one generator;
+      - the structural 0.87 point against the fitted reference, the gap
+        between generators, reported first.
+    """
+    out: dict[str, Any] = {}
+    structural = _structural_baseline_key()
+
+    def complete(key: str) -> bool:
+        return bool(readings.get(key, {}).get("complete"))
+
+    if structural is not None and complete(structural):
+        base = points[structural]
+        out["structural_gaps"] = {
+            key: _gap(points[key], base, readings[key]["pairs"], readings[structural]["pairs"])
+            for key, sweep in POINTS.items()
+            if sweep.population == "structural" and key != structural and complete(key)
+        }
+    else:
+        out["structural_gaps"] = {"status": "structural 0.87 baseline not available"}
+
     if primary_out is None or not (primary_out / MANIFEST).exists():
-        return {"status": "primary run not available"}
+        out["status"] = "primary run not available"
+        return out
     primary_manifest = json.loads((primary_out / MANIFEST).read_text(encoding="utf-8"))
     for key in ("commit", "dirty", "diff_sha256", "beliefs_sha256", "protocol", "python", "numpy", "scipy"):
         if primary_manifest.get(key) != sweeps_manifest.get(key):
-            return {"status": f"primary run has a different {key}"}
+            out["status"] = f"primary run has a different {key}"
+            return out
     rows = load_records(primary_out)
     validate(rows, "primary")
     group = _group(r for r in rows if int(r["position"]) <= SWEEP_CITIES)
     if not group:
-        return {"status": "primary run has no cities in positions 1-48"}
+        out["status"] = "primary run has no cities in positions 1-48"
+        return out
     primary = next(iter(group.values()))
     primary.key = REFERENCE_KEY
     reading = analyse_point(primary, set(range(1, SWEEP_CITIES + 1)))
-    out: dict[str, Any] = {"status": "ok" if reading["complete"] else "incomplete", "reading": reading}
-    if reading["complete"]:
-        out["gaps"] = {key: _gap(point, reading) for key, point in points.items() if point.get("complete")}
-        structural = next(
-            (
-                key
-                for key, p in POINTS.items()
-                if p.population == "structural"
-                and p.within_block_correlation is None
-                and p.correlation == CES_MATCHED_CORRELATION
-            ),
-            None,
-        )
-        if structural is not None and structural in out["gaps"]:
-            # Reported first: a comparison between generators
-            out["generator_gap"] = {"point": structural, "gaps": out["gaps"][structural]}
+    out["status"] = "ok" if reading["complete"] else "incomplete"
+    out["reading"] = reading
+    if not reading["complete"]:
+        return out
+    out["fitted_gaps"] = {
+        key: _gap(points[key], primary, readings[key]["pairs"], reading["pairs"])
+        for key, sweep in POINTS.items()
+        if sweep.population == "fitted" and key in points and complete(key)
+    }
+    if structural is not None and complete(structural):
+        out["generator_gap"] = _gap(points[structural], primary, readings[structural]["pairs"], reading["pairs"])
+    else:
+        out["generator_gap"] = {"status": "structural 0.87 point not available"}
     return out
 
 

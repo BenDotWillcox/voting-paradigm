@@ -579,10 +579,19 @@ every verdict with `protocol.py`. The script is
 - **`sweeps`:** every declared sweep point on its 48 cities at every level.
   `--point` runs one point. Its analysis reads the primary run's first 48
   positions as the fitted reference: no extra simulation, but the primary
-  run must come from the same commit and environment. Each sweep point's
-  curve is set against it level by level, as a difference of means with an
-  unpaired (Welch) 95% interval. The CES-matched structural point's gap is
-  reported first, as the comparison between generators.
+  run must come from the same commit and environment.
+  - **Baselines.** Each sweep point's curve is set against its declared
+    baseline, level by level (revised 2026-11-19, second runner review):
+    - fitted points against the fitted reference;
+    - structural points against the structural CES-matched (0.87) point,
+      within one generator;
+    - that point against the fitted reference, the gap between generators,
+      reported first.
+  - **The interval** is the mean of the differences between cities at the
+    same seed position, with a paired interval (stratified by heavy topic
+    where the point rotates). Matching positions is valid whether or not
+    two configurations share draws, and it uses the shared draws where they
+    do: the history and spread families keep residents and questions.
 
 Each run works as follows:
 - **One city per task.** A city's levels run in one task, so the city
@@ -604,10 +613,15 @@ Each run works as follows:
     null. An interrupted run loses only the cities in flight, and resumes
     where it stopped.
   - A city's file is never replaced, and a lock on the directory stops two
-    launches from writing to it at once.
+    launches from writing to it at once. The lock is taken before the
+    manifest is read or created, and no manifest is ever created beside
+    existing city records.
   - A failed city does not stop the others: every success is written, and
     the failures are reported together, so a retry repeats only unfinished
     cities.
+  - An interrupted run (Ctrl-C) stops promptly: it cancels queued cities,
+    writes the ones already finished or in flight, and then stops, so a
+    rerun repeats only what never ran.
 - **The manifest** records:
   - the commit, whether the checkout was dirty, and a hash of any
     uncommitted difference;
@@ -624,8 +638,9 @@ Each run works as follows:
     the declared levels, seed and turnout at each;
   - a point gets a verdict only when its exact declared positions are all
     present;
-  - the analysis must run on the code that ran the simulation, or it
-    records both revisions (`--allow-reanalysis`).
+  - the analysis must run on the code and numerical environment (Python,
+    NumPy, SciPy) that ran the simulation, or it records both
+    (`--allow-reanalysis`).
 
   It writes two files:
   - `report.json`, with every reading per point:
