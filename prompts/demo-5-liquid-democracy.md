@@ -1022,6 +1022,12 @@ of them. Each is declared here before it is run.
    simulation. It is published as `wrong_ballot.csv` beside the handover
    curve.
 
+**Run and published (2026-11-19).** Both analyses were run as declared,
+from commit `1d92e08` on a clean checkout (200 cities in 64 minutes on 14
+workers). Depth 0 reproduces the frozen direct voting at every level. The
+results, figure and limits are in
+`eval/benchmarks/delegation_handover_v1/README.md`.
+
 ## The comparison
 
 ### Arrangements

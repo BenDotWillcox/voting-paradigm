@@ -383,6 +383,15 @@ data, and neither touches the verdict.
   `eval/benchmarks/delegation_handover_v1/`, in its own PR.
   - It is built by a new module that calls the frozen functions unchanged.
   - A dated exploratory note goes in the design doc.
+- **What it showed (run 2026-11-19, slice A).** The expectation held. See
+  the benchmark's README for the numbers.
+  - Fidelity rises with every topic handed over up to 0.7. At 0.8 it peaks
+    at depth 2. At 0.9 it falls with every topic.
+  - The turn sits where a delegated pair's fidelity (0.75 to 0.76) drops
+    below turnout.
+  - The curve is close to a straight line, and the calibrated point lies on
+    it, short of its end. At 0.3 to 0.5, handing over everything beats the
+    calibrated point on both measures.
 
 **b. How bad is a wrong ballot?** Each arrangement is scored as match − w ×
 contrary.
