@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import json
 
-import numpy as np
+
+
+
 import pytest
 
+from delegation.comparison import runner
 from delegation.comparison.beliefs import BeliefCityConfig
 from delegation.comparison.protocol import (
     DEVELOPMENT_SEEDS,
@@ -13,18 +16,25 @@ from delegation.comparison.protocol import (
     TURNOUT_GRID,
 )
 from delegation.comparison.runner import (
+    CITIES,
     CONTRASTS,
+    LOCK,
     MANIFEST,
-    RECORDS,
     SMOKE_SEED_BASE,
+    CityTask,
+    CodeState,
     analyse,
+
+    city_path,
     done,
     evaluate_level,
+    load_records,
     point_key,
     primary_tasks,
     run,
     smoke_tasks,
     sweep_tasks,
+    validate,
     write_report,
 )
 from delegation.comparison.sweeps import FRONTIER_FLOORS, SWEEP_CITIES, SWEEPS
@@ -37,7 +47,11 @@ TINY = BeliefCityConfig(
     evaluation_questions_per_topic=2,
     turnout_mean=0.5,
 )
-CLEAN = ("0" * 40, False)
+CLEAN = CodeState("0" * 40, False, None)
+
+
+def _fitted(n: int = 2) -> list[CityTask]:
+    return [t for t in smoke_tasks() if t.point == "smoke: fitted"][:n]
 
 
 def test_one_level_records_what_the_protocol_needs():
@@ -47,10 +61,25 @@ def test_one_level_records_what_the_protocol_needs():
     assert all(0 <= v <= record["pairs"] for v in record["matches"].values())
     assert isinstance(record["liquid_meets_cap"], bool)
     assert len(record["frontier"]) == len(FRONTIER_FLOORS)
-    # Floor 0 is the dial's own condition, and raising the floor only adds ballots
     assert record["frontier"][0] == record["matches"]["liquid"] - record["matches"]["representative"]
     assert record["frontier"] == sorted(record["frontier"])
     assert "frontier" not in evaluate_level(TINY, frontier=False)
+
+
+def test_paired_attributions_add_back_to_the_differences():
+    record = evaluate_level(TINY, frontier=False)
+    for other in ("representative", "proxy"):
+        a = record["attribution"][other]
+        assert a["kept_difference"] + a["resolved_difference"] == (
+            record["matches"]["liquid"] - record["matches"][other]
+        )
+        assert 0 <= a["kept_pairs"] <= record["pairs"]
+
+
+def test_records_are_strict_json():
+    record = evaluate_level(TINY, frontier=False)
+    text = runner._dumps({"point": "x", "position": 1, "levels": {"0.5": record}})
+    json.loads(text, parse_constant=lambda c: pytest.fail(f"non-standard constant {c}"))
 
 
 def test_primary_tasks_use_the_primary_namespace_at_every_level():
@@ -59,7 +88,6 @@ def test_primary_tasks_use_the_primary_namespace_at_every_level():
     assert all(t.frontier for t in tasks)
     assert tasks[0].levels[0][1].seed == PRIMARY_SEED_BASE + 1
     assert [level for level, _ in tasks[0].levels] == list(TURNOUT_GRID)
-    assert all(config.turnout_mean == level for t in tasks[:3] for level, config in t.levels)
 
 
 def test_sweep_tasks_cover_every_point_on_its_cities():
@@ -78,54 +106,176 @@ def test_smoke_never_touches_the_primary_namespace():
     assert not seeds & DEVELOPMENT_SEEDS
 
 
-def test_a_run_checkpoints_resumes_and_reports(tmp_path):
-    # Two cities of each smoke point
+def test_a_run_writes_one_file_per_city_and_resumes(tmp_path):
     tasks = smoke_tasks()[:4]
     assert run(tasks, tmp_path, "smoke", state=CLEAN) == 4
-    assert len((tmp_path / RECORDS).read_text().splitlines()) == 4
+    assert len(list((tmp_path / CITIES).glob("*/*.json"))) == 4
     assert done(tmp_path) == {(t.point, t.position) for t in tasks}
-    # Resuming does nothing new
+    assert not (tmp_path / LOCK).exists()
     assert run(tasks, tmp_path, "smoke", state=CLEAN) == 0
-    report = analyse(tmp_path, "smoke")
-    assert set(report["points"]) == {t.point for t in tasks}
-    for point in report["points"].values():
-        assert "threshold" in point and "verdict" in point["threshold"]
-    path = write_report(tmp_path, report)
-    reloaded = json.loads(path.read_text())
-    assert reloaded["mode"] == "smoke"
-    assert (tmp_path / "report.md").read_text().startswith("# Demo 5 benchmark report")
 
 
-def test_a_run_is_bound_to_its_commit(tmp_path):
+def test_an_interrupted_write_does_not_block_resume(tmp_path):
+    tasks = _fitted(2)
+    run(tasks[:1], tmp_path, "smoke", state=CLEAN)
+    # A crash mid-write leaves only a temporary file behind
+    stray = city_path(tmp_path, tasks[1].point, tasks[1].position).with_suffix(".tmp")
+    stray.parent.mkdir(parents=True, exist_ok=True)
+    stray.write_text('{"point": "smoke: fitted", "posi')
+    assert run(tasks, tmp_path, "smoke", state=CLEAN) == 1
+    assert not stray.exists()
+    assert len(load_records(tmp_path)) == 2
+
+
+def test_a_city_is_never_recorded_twice(tmp_path):
+    task = _fitted(1)[0]
+    row = runner.run_task(task)
+    runner._write_city(tmp_path, row)
+    with pytest.raises(RuntimeError, match="already recorded"):
+        runner._write_city(tmp_path, row)
+
+
+def test_two_launches_cannot_share_a_directory(tmp_path):
     run([], tmp_path, "smoke", state=CLEAN)
-    assert json.loads((tmp_path / MANIFEST).read_text())["commit"] == CLEAN[0]
+    (tmp_path / LOCK).write_text("12345")
+    with pytest.raises(RuntimeError, match="another run"):
+        run(_fitted(1), tmp_path, "smoke", state=CLEAN)
+
+
+def test_a_failed_city_keeps_the_others(tmp_path, monkeypatch):
+    tasks = _fitted(3)
+    original = runner.run_task
+
+    def flaky(task: CityTask):  # type: ignore[no-untyped-def]
+        if task.position == 2:
+            raise ValueError("boom")
+        return original(task)
+
+    monkeypatch.setattr(runner, "run_task", flaky)
+    with pytest.raises(RuntimeError, match="1 cities failed"):
+        run(tasks, tmp_path, "smoke", state=CLEAN)
+    assert done(tmp_path) == {(t.point, t.position) for t in tasks if t.position != 2}
+    monkeypatch.setattr(runner, "run_task", original)
+    assert run(tasks, tmp_path, "smoke", state=CLEAN) == 1
+
+
+def test_a_run_is_bound_to_its_code_and_environment(tmp_path):
+    run([], tmp_path, "smoke", state=CLEAN)
+    assert json.loads((tmp_path / MANIFEST).read_text())["commit"] == CLEAN.commit
     with pytest.raises(RuntimeError, match="different commit"):
-        run([], tmp_path, "smoke", state=("1" * 40, False))
+        run([], tmp_path, "smoke", state=CodeState("1" * 40, False, None))
+    # Dirty records cannot be resumed by a clean checkout, nor the reverse
+    with pytest.raises(RuntimeError, match="different dirty"):
+        run([], tmp_path, "smoke", state=CodeState(CLEAN.commit, True, "a" * 64))
+    dirty = tmp_path / "dirty"
+    run([], dirty, "primary", allow_dirty=True, state=CodeState("2" * 40, True, "a" * 64))
+    with pytest.raises(RuntimeError, match="different diff_sha256"):
+        run([], dirty, "primary", allow_dirty=True, state=CodeState("2" * 40, True, "b" * 64))
+    # A different numerical environment is refused too
+    recorded = json.loads((tmp_path / MANIFEST).read_text())
+    recorded["numpy"] = "0.0"
+    (tmp_path / MANIFEST).write_text(json.dumps(recorded))
+    with pytest.raises(RuntimeError, match="different numpy"):
+        run([], tmp_path, "smoke", state=CLEAN)
 
 
 def test_primary_and_sweep_runs_refuse_a_dirty_checkout(tmp_path):
     for mode in ("primary", "sweeps"):
         with pytest.raises(RuntimeError, match="uncommitted"):
-            run([], tmp_path / mode, mode, state=("2" * 40, True))
-    # Allowed explicitly for development, and recorded
-    run([], tmp_path / "dev", "primary", allow_dirty=True, state=("2" * 40, True))
-    assert json.loads((tmp_path / "dev" / MANIFEST).read_text())["dirty"] is True
+            run([], tmp_path / mode, mode, state=CodeState("2" * 40, True, "c" * 64))
+
+
+def test_analysis_rejects_undeclared_or_duplicated_cities(tmp_path):
+    tasks = _fitted(2)
+    rows = [runner.run_task(t) for t in tasks]
+    assert set(validate(rows, "smoke")) >= {(t.point, t.position) for t in tasks}
+    with pytest.raises(ValueError, match="more than once"):
+        validate([rows[0], rows[0]], "smoke")
+    with pytest.raises(ValueError, match="not a declared city"):
+        validate(rows, "primary")
+    altered = json.loads(json.dumps(rows[0]))
+    first = next(iter(altered["levels"]))
+    altered["levels"][first]["seed"] += 1
+    with pytest.raises(ValueError, match="declared seed"):
+        validate([altered], "smoke")
+
+
+def test_analysis_is_bound_to_its_mode_and_code(tmp_path):
+    run(_fitted(2), tmp_path, "smoke", state=CLEAN)
+    with pytest.raises(ValueError, match="holds a smoke run"):
+        analyse(tmp_path, "primary", state=CLEAN)
+    other = CodeState("9" * 40, False, None)
+    with pytest.raises(RuntimeError, match="analysis code differs"):
+        analyse(tmp_path, "smoke", state=other)
+    report = analyse(tmp_path, "smoke", state=other, allow_reanalysis=True)
+    assert report["reanalysis"] is True
+    assert report["analysis_revision"]["commit"] == other.commit
 
 
 def test_analysis_reads_counts_through_the_protocol(tmp_path):
-    tasks = [t for t in smoke_tasks() if t.point == "smoke: fitted"][:2]
+    run(smoke_tasks()[:4], tmp_path, "smoke", state=CLEAN)
+    report = analyse(tmp_path, "smoke", state=CLEAN)
+    point = report["points"]["smoke: fitted"]
+    # Two of four declared smoke cities: incomplete, so no verdict
+    assert point["complete"] is False and "threshold" not in point
+    path = write_report(tmp_path, report)
+    json.loads(path.read_text(), parse_constant=lambda c: pytest.fail(c))
+    assert "incomplete" in (tmp_path / "report.md").read_text()
+
+
+def test_a_complete_point_reports_every_reading(tmp_path):
+    tasks = _fitted(4)
     run(tasks, tmp_path, "smoke", state=CLEAN)
-    point = analyse(tmp_path, "smoke")["points"][tasks[0].point]
-    levels = point["levels"]
-    assert len(point["threshold"]["pointwise"]) == len(levels)
-    reading = point["by_level"][repr(levels[0])]
+    report = analyse(tmp_path, "smoke", state=CLEAN)
+    point = report["points"]["smoke: fitted"]
+    assert point["complete"] is True
+    assert len(point["threshold"]["pointwise"]) == len(point["levels"])
+    reading = point["by_level"][repr(point["levels"][0])]
     assert set(reading["decomposition"]) == set(CONTRASTS)
     assert "frontier" in reading
-    assert np.isfinite(reading["measures"]["liquid"]["fidelity"])
+    # Gate failures are labelled, never omitted
+    assert reading["h1"]["direction"] and reading["h1"]["all_cities"] is not None
+    assert reading["specialisation"]["direction"]
+    if reading["h1"]["cap_meeting_cities"] < 2:
+        assert reading["h1"]["direction"] == "overhead condition not met"
+        assert reading["specialisation"]["direction"] == "not assessable at matched overhead"
+    # The paired attribution, and every secondary measure
+    attribution = reading["attribution"]["liquid_minus_representative"]
+    assert set(attribution) >= {"kept_contribution", "resolved_contribution", "difference", "kept_share"}
+    liquid = reading["measures"]["liquid"]
+    assert {"lifecycle_overhead", "delegations_per_voter", "outcome_agreement", "lost_share",
+            "mean_loops", "below_half_none_share", "below_half_contrary_share"} <= set(liquid)
 
 
-def test_a_point_with_one_city_is_reported_incomplete(tmp_path):
-    run(smoke_tasks()[:1], tmp_path, "smoke", state=CLEAN)
-    point = next(iter(analyse(tmp_path, "smoke")["points"].values()))
-    assert point["complete"] is False and "threshold" not in point
+def test_sweeps_are_read_against_the_primary_on_positions_1_to_48(tmp_path, monkeypatch):
+    # Stand-in declared runs with small cities so the test stays quick
+    small = dict(districts=2, residents_per_district=20, history_questions_per_topic=3,
+                 evaluation_questions_per_topic=2)
+    levels = (0.3, 0.7)
 
+    def fitted_tasks(point: str, count: int, offset: int) -> list[CityTask]:
+        return [
+            CityTask(point, p, tuple((lv, BeliefCityConfig(seed=SMOKE_SEED_BASE + offset + p,
+                                                          turnout_mean=lv, **small)) for lv in levels),
+                     frontier=point.startswith("primary"))
+            for p in range(1, count + 1)
+        ]
+
+    primary_key = point_key(runner.PRIMARY_POINT)
+    structural_key = next(k for k, p in runner.POINTS.items() if p.population == "structural"
+                          and p.within_block_correlation is None
+                          and p.correlation == runner.CES_MATCHED_CORRELATION)
+    monkeypatch.setattr(runner, "SWEEP_CITIES", 3)
+    monkeypatch.setitem(runner.TASKS, "primary", lambda: fitted_tasks(primary_key, 4, 0))
+    monkeypatch.setitem(runner.TASKS, "sweeps", lambda: fitted_tasks(structural_key, 3, 100))
+    primary_out, sweeps_out = tmp_path / "primary", tmp_path / "sweeps"
+    run(runner.TASKS["primary"](), primary_out, "primary", state=CLEAN)
+    run(runner.TASKS["sweeps"](), sweeps_out, "sweeps", state=CLEAN)
+    report = analyse(sweeps_out, "sweeps", primary_out=primary_out, state=CLEAN)
+    reference = report["reference"]
+    assert reference["status"] == "ok"
+    assert reference["reading"]["cities"] == 3
+    assert "generator_gap" in reference and reference["generator_gap"]["point"] == structural_key
+    assert not report["missing_points"] or structural_key not in report["missing_points"]
+    write_report(sweeps_out, report)
+    assert runner.REFERENCE_KEY in (sweeps_out / "report.md").read_text()

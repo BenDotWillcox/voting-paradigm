@@ -577,7 +577,12 @@ every verdict with `protocol.py`. The script is
   with the attendance frontier recounted at every floor from the same
   calibration and delegations.
 - **`sweeps`:** every declared sweep point on its 48 cities at every level.
-  `--point` runs one point.
+  `--point` runs one point. Its analysis reads the primary run's first 48
+  positions as the fitted reference: no extra simulation, but the primary
+  run must come from the same commit and environment. Each sweep point's
+  curve is set against it level by level, as a difference of means with an
+  unpaired (Welch) 95% interval. The CES-matched structural point's gap is
+  reported first, as the comparison between generators.
 
 Each run works as follows:
 - **One city per task.** A city's levels run in one task, so the city
@@ -589,25 +594,57 @@ Each run works as follows:
   - whether liquid and the proxy meet the overhead cap;
   - the calibration;
   - every arrangement's measures;
+  - the H1 and specialisation differences split over liquid's kept and
+    resolved pairs, as signed counts that add back to each difference;
   - for primary cities, liquid's matches minus the representative's at each
     frontier floor.
-- **Checkpoints.** Each city's record is appended to `records.jsonl` and
-  synced to disk, so an interrupted run resumes where it stopped.
+- **Checkpoints (revised 2026-11-19, runner review).**
+  - Each finished city is written to its own file atomically (a temporary
+    file, synced, then renamed), as strict JSON with missing values as
+    null. An interrupted run loses only the cities in flight, and resumes
+    where it stopped.
+  - A city's file is never replaced, and a lock on the directory stops two
+    launches from writing to it at once.
+  - A failed city does not stop the others: every success is written, and
+    the failures are reported together, so a retry repeats only unfinished
+    cities.
 - **The manifest** records:
-  - the commit and whether the checkout was dirty;
+  - the commit, whether the checkout was dirty, and a hash of any
+    uncommitted difference;
   - the beliefs file's hash;
   - the protocol constants and the sweep definitions;
-  - the Python and NumPy versions.
+  - the Python, NumPy and SciPy versions.
 
-  A primary or sweep run refuses a checkout with uncommitted changes, and a
-  resumed run must match its manifest.
-- **The analysis** (`analyse`) writes two files:
-  - `report.json`, with every reading per point: the threshold verdict,
-    bracket, interpolation, first supported level, nominal 95% set, both
-    curves and the gate; the reading at each level and at the Swiss marker;
-    the specialisation contrast with its joint share; the decomposition; the
-    frontier; and the averaged measures;
-  - `report.md`, with the headline line for each point.
+  A primary or sweep run refuses a checkout with uncommitted changes. A
+  resumed run must match every one of these, so development records
+  cannot enter a frozen run, nor a frozen run's records a development one.
+- **The analysis** (`analyse`) checks before it reads:
+  - the run's manifest must name the same mode;
+  - every record must be a declared city of that mode, recorded once, with
+    the declared levels, seed and turnout at each;
+  - a point gets a verdict only when its exact declared positions are all
+    present;
+  - the analysis must run on the code that ran the simulation, or it
+    records both revisions (`--allow-reanalysis`).
+
+  It writes two files:
+  - `report.json`, with every reading per point:
+    - the threshold verdict, bracket, interpolation, first supported level,
+      nominal 95% set, both curves and the gate;
+    - the reading at each level and at the Swiss marker, always with the
+      all-city interval and an explicit label (*overhead condition not
+      met*, *not assessable at matched overhead*) when too few cities meet
+      the cap, with the counts of cities that do;
+    - the specialisation contrast with its joint and marginal shares;
+    - the decomposition;
+    - the paired kept/resolved attribution of H1 and of specialisation, as
+      contributions that add back to each difference;
+    - the frontier;
+    - every measure averaged over cities, including lifecycle overhead,
+      delegations, outcome agreement, lost votes, loops and the lower-tail
+      split;
+  - `report.md`, with the headline line for each point and the fitted
+    reference.
 
   Rotating-agenda points use their heavy-topic strata.
 - **Speed.** Agreement is computed once per city level and reused by the

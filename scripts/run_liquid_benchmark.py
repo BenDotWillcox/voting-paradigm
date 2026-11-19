@@ -10,12 +10,15 @@ Run demo 5's benchmark and read its verdicts.
   python -m scripts.run_liquid_benchmark sweeps [--point "history: 10 per topic"]
       Every declared sweep point on its 48 cities at every level.
   python -m scripts.run_liquid_benchmark analyse primary
-      Write report.json and report.md for a finished (or partial) run.
+      Write report.json and report.md for a finished (or partial) run. A
+      sweeps analysis reads the primary run's positions 1-48 as its fitted
+      reference (--primary-out, default .cache/liquid-benchmark/primary).
 
-Runs checkpoint after every city and resume where they stopped; the
-manifest binds a run directory to one commit. Output defaults to
-.cache/liquid-benchmark/<mode>/ (Git-ignored). Design:
-prompts/demo-5-liquid-democracy.md, "Research protocol".
+Each finished city is written atomically to its own file, so runs resume
+where they stopped; a lock stops two launches sharing a directory, and the
+manifest binds a run to one commit, its diff and its numerical environment.
+Output defaults to .cache/liquid-benchmark/<mode>/ (Git-ignored). Design:
+prompts/demo-5-liquid-democracy.md, "Running the benchmark".
 """
 
 from __future__ import annotations
@@ -62,11 +65,21 @@ def main() -> None:
     report = sub.add_parser("analyse")
     report.add_argument("mode", choices=["smoke", "primary", "sweeps"])
     report.add_argument("--out", type=Path, default=None)
+    report.add_argument("--primary-out", type=Path, default=DEFAULT_OUT / "primary")
+    report.add_argument(
+        "--allow-reanalysis", action="store_true", help="analyse with different code, recording both"
+    )
     args = parser.parse_args()
 
     if args.command == "analyse":
         out = args.out or DEFAULT_OUT / args.mode
-        path = write_report(out, analyse(out, args.mode))
+        try:
+            result = analyse(
+                out, args.mode, primary_out=args.primary_out, allow_reanalysis=args.allow_reanalysis
+            )
+        except (RuntimeError, ValueError) as error:
+            sys.exit(str(error))
+        path = write_report(out, result)
         print(f"wrote {path} and {path.with_suffix('.md')}")
         return
 
@@ -91,7 +104,11 @@ def main() -> None:
     except RuntimeError as error:
         sys.exit(str(error))
     print(f"ran {ran} cities in {(time.time() - started) / 60:.1f} min", flush=True)
-    path = write_report(out, analyse(out, args.command))
+    try:
+        result = analyse(out, args.command, primary_out=DEFAULT_OUT / "primary")
+    except (RuntimeError, ValueError) as error:
+        sys.exit(str(error))
+    path = write_report(out, result)
     print(f"wrote {path} and {path.with_suffix('.md')}")
 
 
