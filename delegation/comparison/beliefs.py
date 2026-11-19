@@ -44,14 +44,22 @@ import numpy as np
 
 from .population import (
     NO,
+    TURNOUT_LOGIT_SD,
     YES,
     FloatArray,
     IntArray,
     Population,
     QuestionSet,
+    check_turnout,
+    draw_turnout,
     person_id,
     stream,
 )
+
+# Mean turnout per vote in Swiss federal ballots, the reference marker on the
+# turnout dial (amendment A6): 43% to 49% in recent years, Geneva close to the
+# national average (Goldberg and Sciarini 2021)
+SWISS_TURNOUT: Final = 0.45
 
 BELIEFS_PATH: Final = Path(__file__).resolve().parents[1] / "data" / "beliefs_ces2024_v2.json"
 BELIEFS_VERSION: Final = "beliefs.ces2024.v2"
@@ -125,8 +133,14 @@ class BeliefCityConfig:
     evaluation_questions_per_topic: int = 20
     # Multiplier on the fitted within-topic spread of question parameters
     within_topic_spread: float = 1.0
+    # Legacy uniform turnout bounds, used only when turnout_mean is None
     min_turnout: float = 0.3
     max_turnout: float = 0.9
+    # The turnout dial (amendment A6): the population's mean own rate, spread
+    # on the logit scale as fitted to Geneva's register. The study sweeps it;
+    # the default is the Swiss reference marker
+    turnout_mean: float | None = SWISS_TURNOUT
+    turnout_logit_sd: float = TURNOUT_LOGIT_SD
     candidates_per_district: int = 3
     # Only districts with at least this many respondents are sampled
     min_district_respondents: int = 50
@@ -153,8 +167,7 @@ class BeliefCityConfig:
             raise ValueError("candidates_per_district exceeds residents_per_district")
         if not math.isfinite(self.within_topic_spread) or self.within_topic_spread < 0:
             raise ValueError("within_topic_spread must be a non-negative number")
-        if not 0.0 <= self.min_turnout <= self.max_turnout <= 1.0:
-            raise ValueError("turnout bounds must satisfy 0 <= min <= max <= 1")
+        check_turnout(self.turnout_mean, self.turnout_logit_sd, self.min_turnout, self.max_turnout)
         for name in ("history_topic_weights", "evaluation_topic_weights"):
             weights = getattr(self, name)
             if weights is not None and (
@@ -263,8 +276,10 @@ def simulate_belief_city(
     positions = means[district] + rng.standard_normal(
         (config.size, model.dimensions)
     ) @ chol.T
-    turnout = stream(config.seed, _TURNOUT).uniform(
-        config.min_turnout, config.max_turnout, size=config.size
+    turnout = draw_turnout(
+        config.seed, _TURNOUT, config.size,
+        mean=config.turnout_mean, logit_sd=config.turnout_logit_sd,
+        low=config.min_turnout, high=config.max_turnout,
     )
     history = _questions(
         model, config, positions, turnout,

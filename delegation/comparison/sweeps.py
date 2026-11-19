@@ -1,21 +1,29 @@
 """
-The declared robustness sweeps and the break-even turnout grid (declared
-2026-11-18, before any primary city was simulated). Design:
-prompts/demo-5-liquid-democracy.md, "Robustness sweeps".
+The declared robustness sweeps and the frontier grid (declared 2026-11-18,
+before any primary city was simulated; restated for the threshold H1 under
+amendment A6). Design: prompts/demo-5-liquid-democracy.md, "Robustness
+sweeps".
 
-Each sweep point changes one family from the primary settings and runs on
-the first SWEEP_CITIES positions of the primary seed sequence, so each
-point is indexed by the same positions as the primary configuration. What
-that pairing holds fixed depends on the family (second sweep review,
-2026-11-18): a history point keeps the same residents and evaluation
-questions; a spread, agenda-mix or stress point keeps the same residents
-and draws new questions; a district-count point draws different districts,
-so it compares generated cities, not one geography; and the structural
-population is a different generator, so its points are compared with its
-own 0.87 point. The arrangement contrasts inside each city are always
-paired. Every point is run under both turnout conditions. Sweeps say where
-H1 holds; they are reported as curves with their intervals and are not
-tested as hypotheses.
+H1 is a threshold on the turnout dial, so every sweep point is run across
+the whole dial (protocol.TURNOUT_GRID) and reports how the threshold moves.
+Turnout follows the dial for everyone, delegates included (they vote at
+their own rate); the representative votes at the measured office-holder
+rate. Each point changes one family from the primary settings and runs on
+the first SWEEP_CITIES positions of the primary seed sequence, so each point
+is indexed by the same positions as the primary configuration. What that
+pairing holds fixed depends on the family (second sweep review,
+2026-11-18):
+  - a history point keeps the same residents and evaluation questions;
+  - a spread, agenda-mix, stress or turnout-spread point keeps the same
+    residents' positions and draws new questions or turnout rates;
+  - a district-count point draws different districts, so it compares
+    generated cities, not one geography;
+  - the structural population is a different generator, so its points are
+    compared with its own 0.87 point.
+The arrangement contrasts inside each city are always paired, and every
+city's curve keeps its residents across the dial. Sweeps say where H1
+holds; they are reported as curves with their intervals and are not tested
+as hypotheses.
 
 Two populations appear:
   fitted       the primary population, drawn from the CES 2024 fit
@@ -24,6 +32,10 @@ Two populations appear:
                dimensions standing for the eight topics and its other
                parameters matched to the fitted population, so that cross-
                topic structure is the main thing that differs
+
+The frontier (the study's main figure) is computed on the primary cities
+only: at every level of the dial, the delegate attendance floor at which
+liquid matches the representative.
 """
 
 from __future__ import annotations
@@ -33,8 +45,8 @@ from typing import Final
 
 from .arrangements import ORDINARY_RESOLVER_TURNOUT, PRIMARY_TURNOUT, TurnoutPolicy
 from .beliefs import BeliefCityConfig
-from .population import PopulationConfig
-from .protocol import Interval, primary_city_seeds
+from .population import TURNOUT_LOGIT_SD, PopulationConfig
+from .protocol import MAX_CITIES, TURNOUT_GRID, Interval, primary_city_seeds
 
 # Cities per sweep point: positions 1..SWEEP_CITIES of the primary sequence,
 # six complete rotations of the eight topics, so a rotating heavy topic is
@@ -43,7 +55,9 @@ from .protocol import Interval, primary_city_seeds
 # coverage is still approximate (normal theory), and for rotating points it
 # ignores the design's stratification, which makes it conservative
 SWEEP_CITIES: Final = 48
-TURNOUT_CONDITIONS: Final = {"primary": PRIMARY_TURNOUT, "ordinary": ORDINARY_RESOLVER_TURNOUT}
+# The policy every point of the dial is run under: delegates at their own
+# rate, the representative at the office-holder rate (amendment A6)
+DIAL_TURNOUT: Final = ORDINARY_RESOLVER_TURNOUT
 TOPICS: Final = 8
 # How much heavier the heavy topic is in an uneven agenda: a stated stress
 # value, not measured (decided 2026-11-18; Voteview's roll-call files carry
@@ -65,6 +79,7 @@ STRUCTURAL_BASE: Final = PopulationConfig(
     evaluation_questions_per_dimension=20,
     cutpoint_sd=1.15,
     preference_noise_sd=1.11,
+    turnout_logit_sd=TURNOUT_LOGIT_SD,
 )
 # Cross-topic correlation of positions matching the CES fit on between-
 # topic item correlation (0.77 from the fitted topic directions alone)
@@ -95,29 +110,34 @@ class SweepPoint:
     history_heavy: float | None = None
     evaluation_heavy: float | None = None
     evaluation_offset: int = 0
+    # Spread of engagement on the logit scale (both populations)
+    turnout_logit_sd: float = TURNOUT_LOGIT_SD
     # Structural-population structure
     correlation: float = CES_MATCHED_CORRELATION
     blocks: int = 1
     within_block_correlation: float | None = None
-    # The turnout condition the point is declared under; both are run
-    declared_turnout: str = "both"
 
-    def config(self, position: int) -> BeliefCityConfig | PopulationConfig:
-        """The configuration of the city at `position` (1-based) of the sequence."""
-        if not 1 <= position <= SWEEP_CITIES:
-            raise ValueError(f"position must be in 1..{SWEEP_CITIES}")
+    def config(self, position: int, turnout: float) -> BeliefCityConfig | PopulationConfig:
+        """
+        The configuration of the city at `position` (1-based) of the
+        sequence, at mean turnout `turnout` on the dial.
+        """
+        limit = MAX_CITIES if self.family == "primary" else SWEEP_CITIES
+        if not 1 <= position <= limit:
+            raise ValueError(f"position must be in 1..{limit}")
         seed = primary_city_seeds(position)[-1]
         if self.population == "structural":
-            if self.within_block_correlation is None:
-                return replace(STRUCTURAL_BASE, seed=seed, factor_loading=self.correlation**0.5)
-            block_part = self.within_block_correlation - self.correlation
-            return replace(
+            base = replace(
                 STRUCTURAL_BASE,
                 seed=seed,
                 factor_loading=self.correlation**0.5,
-                blocks=self.blocks,
-                block_loading=block_part**0.5,
+                turnout_mean=turnout,
+                turnout_logit_sd=self.turnout_logit_sd,
             )
+            if self.within_block_correlation is None:
+                return base
+            block_part = self.within_block_correlation - self.correlation
+            return replace(base, blocks=self.blocks, block_loading=block_part**0.5)
         heavy = (position - 1) % TOPICS
         history = _agenda(heavy, self.history_heavy) if self.history_heavy else None
         evaluation_topic = (heavy + self.evaluation_offset) % TOPICS
@@ -131,6 +151,8 @@ class SweepPoint:
             within_topic_spread=self.within_topic_spread,
             history_topic_weights=history,
             evaluation_topic_weights=evaluation,
+            turnout_mean=turnout,
+            turnout_logit_sd=self.turnout_logit_sd,
         )
 
 
@@ -153,6 +175,13 @@ SWEEPS: Final = (
     # Even history, one heavy topic in evaluation, rotating over cities
     SweepPoint("evaluation_mix", "one topic 2x in evaluation", "fitted", evaluation_heavy=2.0),
     SweepPoint("evaluation_mix", "one topic 4x in evaluation", "fitted", evaluation_heavy=HEAVY),
+    # Spread of engagement (amendment A6). The fitted 2.07 matches Geneva's
+    # never-voters (about 9% across 20 ballot days at the Swiss mean) but
+    # gives only 3-5% always-voters against about 10% reported; 3.0 matches
+    # the always-voters (and gives 17% never-voters); 1.0 is a fairly even
+    # electorate in which nearly everyone votes sometimes
+    SweepPoint("turnout_spread", "engagement spread 1.0", "fitted", turnout_logit_sd=1.0),
+    SweepPoint("turnout_spread", "engagement spread 3.0", "fitted", turnout_logit_sd=3.0),
     # Belief structure on the matched structural population
     SweepPoint("belief_structure", "correlation 0", "structural", correlation=0.0),
     SweepPoint("belief_structure", "correlation 0.4", "structural", correlation=0.4),
@@ -165,24 +194,21 @@ SWEEPS: Final = (
         "belief_structure", "two blocks of four: 0.87 within, 0.2 across", "structural",
         correlation=0.2, blocks=2, within_block_correlation=CES_MATCHED_CORRELATION,
     ),
-    # Sparse records, an uneven agenda (a different heavy topic in each
-    # period) and ordinary resolver turnout, together
+    # Sparse records and an uneven agenda (a different heavy topic in each
+    # period), together; delegates at their own rate, as everywhere on the dial
     SweepPoint(
         "stress", "stress case", "fitted", history_per_topic=10,
         history_heavy=HEAVY, evaluation_heavy=HEAVY, evaluation_offset=4,
-        declared_turnout="ordinary",
     ),
 )
 
-# Amendment A2: resolver-turnout floors for the break-even curve, run on the
-# primary cities with the representative at the office-holder rate. A
-# resolver votes at max(own rate, floor) and every own rate is at least
-# ORDINARY_PLATEAU, so every floor up to it is ordinary turnout exactly: the
-# grid starts there (second sweep review: starting at 0 let interpolation
-# place a crossing inside the flat range). 0.96 is the primary floor, 1 every
-# resolver always voting
-ORDINARY_PLATEAU: Final = BeliefCityConfig().min_turnout
-BREAK_EVEN_FLOORS: Final = (ORDINARY_PLATEAU, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.96, 1.0)
+# The frontier (amendment A6, replacing the single break-even of A2): at
+# every level of the dial, resolver-turnout floors from 0 (delegates at their
+# own rate, the dial's condition) up to 1, with the representative at the
+# office-holder rate. Own rates now run down to about 0, so every floor
+# changes some ballots and the grid starts at 0
+FRONTIER_FLOORS: Final = (0.0, 0.2, 0.4, 0.6, 0.8, 0.9, 0.96, 1.0)
+FRONTIER_LEVELS: Final = TURNOUT_GRID
 
 
 def break_even_policy(floor: float) -> TurnoutPolicy:
@@ -193,21 +219,21 @@ def break_even_policy(floor: float) -> TurnoutPolicy:
 class BreakEven:
     """
     Where liquid's fidelity reaches the representative's as the resolver
-    floor rises. Raising the floor only adds ballots, so the difference
-    never falls and crosses zero at most once.
+    floor rises, at one level of the dial. Raising the floor only adds
+    ballots, so the difference never falls and crosses zero at most once.
 
-    A2 reports the grid bracket and the pointwise intervals, not an interval
+    It reports the grid bracket and the pointwise intervals, not an interval
     for the crossing itself (second sweep review, 2026-11-18): an interval
     at each floor says whether the difference there could be zero, which is
     a different question from where the crossing lies.
     """
 
-    # "liquid ahead throughout" (strictly ahead at ordinary turnout),
-    # "equal at ordinary turnout", "crosses" or "no crossing in the tested
+    # "liquid ahead throughout" (strictly ahead at the lowest floor),
+    # "equal at the lowest floor", "crosses" or "no crossing in the tested
     # range"
     status: str
     # The grid floors between which the mean difference first reaches zero
-    # (both the lowest floor when equal at ordinary turnout)
+    # (both the lowest floor when equal there)
     bracket: tuple[float, float] | None
     # Linear interpolation inside the bracket: a grid approximation
     interpolated: float | None
@@ -228,7 +254,7 @@ def break_even(floors: tuple[float, ...], intervals: tuple[Interval, ...]) -> Br
     if means[0] > 0.0:
         return BreakEven("liquid ahead throughout", None, None, intervals)
     if means[0] == 0.0:
-        return BreakEven("equal at ordinary turnout", (floors[0], floors[0]), floors[0], intervals)
+        return BreakEven("equal at the lowest floor", (floors[0], floors[0]), floors[0], intervals)
     for k in range(1, len(floors)):
         if means[k] >= 0.0:
             low, high = means[k - 1], means[k]

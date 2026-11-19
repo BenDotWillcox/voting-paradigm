@@ -816,3 +816,21 @@ def test_only_people_who_decide_cast_ballots(small):
         assert np.array_equal(outcome.counted != NOT_CAST, outcome.cast[rows, columns]), outcome.arrangement
     rep = outcomes[1]
     assert set(np.flatnonzero(rep.cast.any(axis=1))) <= set(election.elected.tolist())
+
+
+def test_light_records_are_reported_apart():
+    from delegation.comparison.beliefs import BeliefCityConfig, load_beliefs, simulate_belief_city
+    from delegation.comparison.measures import LIGHT_RECORD
+
+    city = simulate_belief_city(
+        load_beliefs(),
+        BeliefCityConfig(seed=9, districts=2, residents_per_district=80,
+                         history_questions_per_topic=6, evaluation_questions_per_topic=3,
+                         turnout_mean=0.2),
+    )
+    outcome = direct(city)
+    m = measure(city, outcome, full_turnout(city))
+    light = city.history.casts.mean(axis=1) < LIGHT_RECORD
+    assert 0.0 < m.light_record_share == pytest.approx(light.mean())
+    per_voter = (outcome.counted == city.evaluation.sincere).mean(axis=1)
+    assert m.light_record_fidelity == pytest.approx(per_voter[light].mean())

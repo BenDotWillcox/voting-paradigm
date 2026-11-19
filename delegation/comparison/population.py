@@ -39,6 +39,8 @@ from typing import Final, Protocol
 
 import numpy as np
 import numpy.typing as npt
+from scipy.optimize import brentq
+from scipy.special import expit
 
 from ..types import PersonId, QuestionId
 
@@ -61,6 +63,61 @@ _EVALUATION: Final = 5
 _CANDIDATES: Final = 6
 _ELECTION: Final = 7
 _BLOCKS: Final = 8
+
+# The turnout dial (amendment A6, 2026-11-18). A resident's own rate is
+# logistic(location + spread * z), with z ~ N(0, 1) fixed per resident and the
+# location chosen so the population's mean rate is the dial's value. Turning
+# the dial moves everyone's log-odds of voting by the same amount, so the same
+# residents stay ranked the same at every level. The spread is fitted to
+# Geneva's official register at the Swiss mean of 0.45: about 9% of citizens
+# vote in none of 20 successive ballot days (Sciarini et al. 2016; Goldberg and
+# Sciarini 2021).
+TURNOUT_LOGIT_SD: Final = 2.07
+_HERMITE_NODES, _HERMITE_WEIGHTS = np.polynomial.hermite_e.hermegauss(200)
+_HERMITE_WEIGHTS = _HERMITE_WEIGHTS / _HERMITE_WEIGHTS.sum()
+
+
+def mean_turnout(location: float, logit_sd: float) -> float:
+    """The mean of logistic(location + logit_sd * z) over z ~ N(0, 1)."""
+    return float((_HERMITE_WEIGHTS * expit(location + logit_sd * _HERMITE_NODES)).sum())
+
+
+def turnout_location(mean: float, logit_sd: float) -> float:
+    """The location at which the population's mean turnout rate is `mean`."""
+    if not 0.0 < mean < 1.0:
+        raise ValueError("mean turnout must be in (0, 1)")
+    return float(brentq(lambda loc: mean_turnout(loc, logit_sd) - mean, -60.0, 60.0, xtol=1e-12))
+
+
+def draw_turnout(
+    seed: int,
+    purpose: int,
+    size: int,
+    *,
+    mean: float | None,
+    logit_sd: float,
+    low: float,
+    high: float,
+) -> FloatArray:
+    """
+    Each resident's own turnout rate: the dial when `mean` is set, otherwise
+    the legacy uniform rate on [low, high] (kept so development results stay
+    reproducible).
+    """
+    rng = stream(seed, purpose)
+    if mean is None:
+        return np.asarray(rng.uniform(low, high, size=size), dtype=np.float64)
+    z = rng.standard_normal(size)
+    return np.asarray(expit(turnout_location(mean, logit_sd) + logit_sd * z), dtype=np.float64)
+
+
+def check_turnout(mean: float | None, logit_sd: float, low: float, high: float) -> None:
+    if mean is not None and not 0.0 < mean < 1.0:
+        raise ValueError("turnout_mean must be in (0, 1)")
+    if not math.isfinite(logit_sd) or logit_sd < 0.0:
+        raise ValueError("turnout_logit_sd must be a non-negative number")
+    if not 0.0 <= low <= high <= 1.0:
+        raise ValueError("turnout bounds must satisfy 0 <= min <= max <= 1")
 
 
 @dataclass(frozen=True)
@@ -91,8 +148,14 @@ class PopulationConfig:
     cutpoint_sd: float = 0.7
     # Spread of the idiosyncratic part of a sincere vote
     preference_noise_sd: float = 0.3
+    # Legacy uniform turnout bounds, used when turnout_mean is None
     min_turnout: float = 0.3
     max_turnout: float = 0.9
+    # The turnout dial (amendment A6): the population's mean own rate, with
+    # rates spread on the logit scale by turnout_logit_sd. None keeps the
+    # legacy uniform rate, so existing structural cities are unchanged
+    turnout_mean: float | None = None
+    turnout_logit_sd: float = TURNOUT_LOGIT_SD
     candidates_per_district: int = 3
 
     def __post_init__(self) -> None:
@@ -120,8 +183,7 @@ class PopulationConfig:
             value = getattr(self, name)
             if not math.isfinite(value) or value < 0.0:
                 raise ValueError(f"{name} must be a non-negative number")
-        if not 0.0 <= self.min_turnout <= self.max_turnout <= 1.0:
-            raise ValueError("turnout bounds must satisfy 0 <= min <= max <= 1")
+        check_turnout(self.turnout_mean, self.turnout_logit_sd, self.min_turnout, self.max_turnout)
 
     @property
     def size(self) -> int:
@@ -292,8 +354,10 @@ def simulate_population(config: PopulationConfig | None = None) -> Population:
         np.arange(config.districts, dtype=np.int64), config.residents_per_district
     )
     positions = _positions(config, district)
-    turnout = stream(config.seed, _TURNOUT).uniform(
-        config.min_turnout, config.max_turnout, size=config.size
+    turnout = draw_turnout(
+        config.seed, _TURNOUT, config.size,
+        mean=config.turnout_mean, logit_sd=config.turnout_logit_sd,
+        low=config.min_turnout, high=config.max_turnout,
     )
     history = _questions(
         config,

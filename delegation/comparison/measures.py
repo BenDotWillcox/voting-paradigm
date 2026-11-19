@@ -52,6 +52,9 @@ from .arrangements import (
 )
 from .population import NOT_CAST, Population
 
+# A resident's record is light below this share of history questions cast
+LIGHT_RECORD = 0.1
+
 # Arrangements whose resolvers are chosen from a public voting record
 NEEDS_RECORD = frozenset(
     {PROXY, LIQUID, REPRESENTATIVE_BY_RECORD, DISTRICT_CHOICE_VOTERS, DISTRICT_CHOICE}
@@ -98,6 +101,12 @@ class Measures:
     # Share of (voter, question) pairs on a loop, and loops per question
     loop_share: float
     mean_loops: float
+    # Residents with a light public record (fewer than LIGHT_RECORD of the
+    # history questions cast themselves), who can barely rank candidates:
+    # their share and their fidelity, reported apart so the averages cannot
+    # hide them (amendment A6)
+    light_record_share: float
+    light_record_fidelity: float
 
 
 @dataclass(frozen=True)
@@ -175,6 +184,7 @@ def measure(population: Population, outcome: Outcome, reference: Outcome) -> Mea
     agree = [a == b for a, b in zip(outcome.winners, reference.winners, strict=True)]
     per_voter = match.mean(axis=1)
     below = per_voter < 0.5
+    light = population.history.casts.mean(axis=1) < LIGHT_RECORD
     # A person decides a question when they resolve their own vote or hold
     # anyone else's
     overhead = float((outcome.kept | holds).mean())
@@ -207,4 +217,6 @@ def measure(population: Population, outcome: Outcome, reference: Outcome) -> Mea
         max_largest_share=float(largest.max()),
         loop_share=float(outcome.looped.mean()),
         mean_loops=float(outcome.loops.mean()),
+        light_record_share=float(light.mean()),
+        light_record_fidelity=_mean_where(per_voter, light),
     )

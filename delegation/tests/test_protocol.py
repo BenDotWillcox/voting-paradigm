@@ -5,8 +5,8 @@ import pytest
 
 from delegation.comparison.protocol import (
     DEVELOPMENT_SEEDS,
-    FIRST_STAGE,
     MAX_CITIES,
+    TURNOUT_GRID,
     Interval,
     direction,
     h1_size,
@@ -16,9 +16,10 @@ from delegation.comparison.protocol import (
     primary_city_seeds,
     specialisation_size,
     specialisation_verdict,
-    stein_city_count,
-    stein_interval,
+    sustained_crossing,
     t_interval,
+    threshold,
+    threshold_verdict,
 )
 
 
@@ -31,39 +32,6 @@ def test_primary_seeds_are_a_fixed_sequence_disjoint_from_development():
     assert min(seeds) > 10**8
     with pytest.raises(ValueError):
         primary_city_seeds(MAX_CITIES + 1)
-
-
-def test_stein_count_reads_only_the_spread():
-    rng = np.random.default_rng(0)
-    first = rng.normal(0.0, 0.01, FIRST_STAGE)
-    assert stein_city_count(first) == stein_city_count(first + 0.3)
-    assert stein_city_count(np.zeros(FIRST_STAGE)) == FIRST_STAGE
-    assert stein_city_count(rng.normal(0.0, 1.0, FIRST_STAGE)) == MAX_CITIES
-    with pytest.raises(ValueError):
-        stein_city_count(first[:-1])
-
-
-def test_stein_interval_meets_the_half_width_when_uncapped():
-    rng = np.random.default_rng(1)
-    first = rng.normal(0.01, 0.025, FIRST_STAGE)
-    n = stein_city_count(first)
-    assert FIRST_STAGE < n < MAX_CITIES
-    rest = rng.normal(0.01, 0.025, n - FIRST_STAGE)
-    interval = stein_interval(np.concatenate([first, rest]))
-    assert interval.half_width <= 0.005 + 1e-12
-
-
-def test_stein_interval_has_its_nominal_coverage():
-    rng = np.random.default_rng(2)
-    hits = 0
-    trials = 2000
-    for _ in range(trials):
-        first = rng.normal(0.0, 0.012, FIRST_STAGE)
-        n = stein_city_count(first)
-        values = np.concatenate([first, rng.normal(0.0, 0.012, n - FIRST_STAGE)])
-        i = stein_interval(values)
-        hits += i.lower <= 0.0 <= i.upper
-    assert hits / trials == pytest.approx(0.95, abs=0.015)
 
 
 def test_conflicting_directions_are_inconclusive():
@@ -95,22 +63,20 @@ def test_size_categories_do_not_overlap():
 
 
 def test_cities_over_the_cap_cannot_carry_a_size_claim():
-    # The reviewer's case: 190 cities meeting the cap gain 1.8 points, ten
-    # over the cap gain 18 points (one of them in the first stage)
+    # The reviewer's case, read at one level of the dial: 190 cities
+    # meeting the cap gain 1.8 points, ten over the cap gain 18 points
     values = np.full(200, 0.018)
     over = np.array([5] + list(range(30, 200, 19)))[:10]
     values[over] = 0.18
     meets = np.ones(200, dtype=bool)
     meets[over] = False
     assert meets.mean() == 0.95
-    assert stein_city_count(values[:FIRST_STAGE]) == MAX_CITIES
-    all_cities = stein_interval(values)
+    all_cities = t_interval(values)
     meeting = t_interval(values[meets])
     assert h1_size(all_cities) == "gain of at least delta established"
     assert h1_size(meeting) == "gain below delta established"
     assert h1_verdict(all_cities, meeting, meets.mean()) == "supported"
     assert h1_size_verdict(all_cities, meeting, meets.mean()) == "size unresolved"
-    # The same for specialisation, read over cities where both arms meet the cap
     sign, size = specialisation_verdict(all_cities, meeting, meets.mean())
     assert specialisation_size(all_cities) == "worthwhile"
     assert (sign, size) == ("liquid better", "size unresolved")
@@ -131,3 +97,70 @@ def test_t_interval():
     i = t_interval([0.0, 0.02, 0.04])
     assert i.estimate == pytest.approx(0.02)
     assert i.lower < 0.02 < i.upper
+
+
+LEVELS = (0.1, 0.3, 0.5, 0.7, 0.9)
+
+
+def _curves(means, cities=200, noise=0.01, seed=0):
+    rng = np.random.default_rng(seed)
+    return np.asarray(means)[None, :] + rng.normal(0.0, noise, (cities, len(means)))
+
+
+def test_sustained_crossing_takes_the_last_entry_into_non_negative():
+    assert sustained_crossing(LEVELS, [-0.05, -0.02, 0.01, 0.03, 0.04])[:2] == ("crosses", (0.3, 0.5))
+    status, bracket, at = sustained_crossing(LEVELS, [-0.05, -0.02, 0.02, 0.03, 0.04])
+    assert at == pytest.approx(0.4)
+    # Positive, negative, then positive again: the sustained crossing is the last one
+    assert sustained_crossing(LEVELS, [0.01, -0.01, 0.02, 0.03, 0.04])[1] == (0.3, 0.5)
+    assert sustained_crossing(LEVELS, [0.01, 0.02, 0.0, 0.03, 0.04])[0] == "liquid ahead throughout"
+    assert sustained_crossing(LEVELS, [-0.05, -0.02, 0.01, 0.03, -0.01])[0] == (
+        "no crossing in the tested range"
+    )
+    with pytest.raises(ValueError):
+        sustained_crossing((0.5, 0.3), [0.0, 0.0])
+
+
+def test_threshold_is_read_with_a_city_bootstrap():
+    d = _curves([-0.05, -0.02, 0.02, 0.03, 0.04])
+    result = threshold(LEVELS, d, np.ones(d.shape, dtype=bool))
+    assert result.status == "crosses" and result.bracket == (0.3, 0.5)
+    low, high = result.interval
+    assert low <= result.interpolated <= high
+    assert 0.3 <= low and high <= 0.5
+    assert result.sign_changes == 1 and result.gate_holds
+    assert threshold_verdict(result) == "crosses"
+    assert len(result.pointwise) == len(LEVELS)
+    # Reproducible: the bootstrap is seeded
+    assert threshold(LEVELS, d, np.ones(d.shape, dtype=bool)) == result
+
+
+def test_threshold_intervals_reach_past_the_range_when_uncertain():
+    flat = _curves([0.0, 0.0, 0.0, 0.0, 0.0], noise=0.02)
+    result = threshold(LEVELS, flat, np.ones(flat.shape, dtype=bool))
+    assert result.interval[0] == -np.inf or result.interval[1] == np.inf
+
+
+def test_the_overhead_gate_applies_where_liquid_is_claimed_ahead():
+    d = _curves([-0.05, -0.02, 0.02, 0.03, 0.04])
+    cap = np.ones(d.shape, dtype=bool)
+    # Failing the cap below the crossing does not matter
+    cap[:20, 0] = False
+    assert threshold(LEVELS, d, cap).gate_holds
+    # Failing it at a level where liquid is claimed ahead does
+    cap[:20, 3] = False
+    result = threshold(LEVELS, d, cap)
+    assert not result.gate_holds
+    assert threshold_verdict(result) == "overhead condition not met where liquid is ahead"
+
+
+def test_a_non_monotone_curve_is_flagged():
+    d = _curves([0.02, -0.02, 0.02, 0.03, 0.04], noise=0.001)
+    result = threshold(LEVELS, d, np.ones(d.shape, dtype=bool))
+    assert result.sign_changes == 2
+    assert threshold_verdict(result) == "crosses (non-monotone curve)"
+
+
+def test_the_grid_contains_the_swiss_marker():
+    assert 0.45 in TURNOUT_GRID and TURNOUT_GRID == tuple(sorted(TURNOUT_GRID))
+    assert TURNOUT_GRID[0] > 0.0 and TURNOUT_GRID[-1] < 1.0

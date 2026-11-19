@@ -10,11 +10,16 @@ protocol".
              config defaults, test fixtures) lies in that range, so "the
              first 20" and "21 to N" are positions in this sequence, never
              reused development IDs.
-  Count      Stein's two-stage rule: the first FIRST_STAGE cities fix N
-             from their standard deviation alone, and the interval uses
-             that standard deviation with FIRST_STAGE - 1 degrees of
-             freedom, which has exact coverage for normal differences.
-  Verdicts   H1 direction and size, the overhead gate, and the
+  Estimand   H1 is a threshold (amendment A6, 2026-11-18): the mean
+             citizen turnout on the dial above which liquid's fidelity
+             stays at or above the representative's. It is read from the
+             paired difference curve over TURNOUT_GRID on PRIMARY_CITIES
+             cities, with a city-bootstrap interval.
+  Count      A fixed PRIMARY_CITIES, so nothing stops on the data. (Stein's
+             two-stage rule, declared for the earlier single-difference H1,
+             is withdrawn with it.)
+  Verdicts   The threshold's status and overhead gate, and, at any one
+             level of the dial, the direction and size labels and the
              specialisation categories, exactly as declared.
 """
 
@@ -29,10 +34,16 @@ import numpy.typing as npt
 from scipy.stats import t as student_t
 
 PRIMARY_SEED_BASE: Final = 1_000_000_000
-FIRST_STAGE: Final = 20
 MAX_CITIES: Final = 200
-HALF_WIDTH: Final = 0.005
+# Every primary city is run at every level of the dial
+PRIMARY_CITIES: Final = MAX_CITIES
 CONFIDENCE: Final = 0.95
+# The turnout dial's levels (mean own turnout rate). 0.45, the Swiss mean
+# per federal vote, is the reference marker, not an assumption
+TURNOUT_GRID: Final = (0.1, 0.2, 0.3, 0.4, 0.45, 0.5, 0.6, 0.7, 0.8, 0.9)
+SWISS_MARKER: Final = 0.45
+BOOTSTRAP_RESAMPLES: Final = 2000
+BOOTSTRAP_SEED: Final = 20261118
 # The share of cities that must meet the overhead cap before a claim made
 # at that overhead is assessed
 FEASIBLE_SHARE: Final = 0.95
@@ -53,20 +64,6 @@ def _t(df: int) -> float:
     return float(student_t.ppf(0.5 + CONFIDENCE / 2.0, df))
 
 
-def stein_city_count(first_stage: npt.ArrayLike) -> int:
-    """
-    N from the first-stage paired differences: max(FIRST_STAGE,
-    ceil((t * s0 / HALF_WIDTH)^2)), capped at MAX_CITIES. Reads only their
-    standard deviation, never their mean.
-    """
-    values = np.asarray(first_stage, dtype=np.float64)
-    if values.shape != (FIRST_STAGE,):
-        raise ValueError(f"the first stage has exactly {FIRST_STAGE} cities")
-    s0 = float(values.std(ddof=1))
-    wanted = math.ceil((_t(FIRST_STAGE - 1) * s0 / HALF_WIDTH) ** 2)
-    return int(min(MAX_CITIES, max(FIRST_STAGE, wanted)))
-
-
 @dataclass(frozen=True)
 class Interval:
     estimate: float
@@ -78,25 +75,10 @@ class Interval:
         return (self.upper - self.lower) / 2.0
 
 
-def stein_interval(differences: npt.ArrayLike) -> Interval:
-    """
-    The two-stage interval over all N cities, in sequence order: the mean
-    of all N, with the first stage's standard deviation and FIRST_STAGE - 1
-    degrees of freedom. Used for every contrast and condition.
-    """
-    values = np.asarray(differences, dtype=np.float64)
-    if values.ndim != 1 or values.size < FIRST_STAGE:
-        raise ValueError(f"need at least the {FIRST_STAGE} first-stage cities")
-    s0 = float(values[:FIRST_STAGE].std(ddof=1))
-    mean = float(values.mean())
-    half = _t(FIRST_STAGE - 1) * s0 / math.sqrt(values.size)
-    return Interval(mean, mean - half, mean + half)
-
-
 def t_interval(values: npt.ArrayLike) -> Interval:
     """
-    An ordinary t-interval: the sensitivity over the cities that meet the
-    overhead cap. N was fixed on all cities, so its coverage is approximate.
+    An ordinary 95% t-interval over cities. The count is fixed in advance,
+    so nothing stops on the data; coverage is approximate (normal theory).
     """
     data = np.asarray(values, dtype=np.float64)
     if data.ndim != 1 or data.size < 2:
@@ -214,3 +196,117 @@ def joint_share(liquid_meets_cap: npt.ArrayLike, proxy_meets_cap: npt.ArrayLike)
     if liquid.shape != proxy.shape or liquid.ndim != 1:
         raise ValueError("one flag per city for each arm is needed")
     return float((liquid & proxy).mean())
+
+
+# ---------------------------------------------------------------------------
+# The threshold (amendment A6)
+# ---------------------------------------------------------------------------
+
+
+def sustained_crossing(
+    levels: tuple[float, ...], means: npt.ArrayLike
+) -> tuple[str, tuple[float, float] | None, float | None]:
+    """
+    Where the mean difference becomes non-negative and stays so at every
+    higher level: the status, the grid bracket and a linear interpolation
+    inside it (a grid approximation).
+    """
+    m = np.asarray(means, dtype=np.float64)
+    if m.shape != (len(levels),) or len(levels) < 2:
+        raise ValueError("one mean per level, at least two levels")
+    if any(b <= a for a, b in zip(levels, levels[1:])):
+        raise ValueError("levels must increase")
+    if m[-1] < 0.0:
+        return "no crossing in the tested range", None, None
+    below = np.flatnonzero(m < 0.0)
+    if below.size == 0:
+        return "liquid ahead throughout", None, None
+    k = int(below[-1]) + 1
+    low, high = float(m[k - 1]), float(m[k])
+    at = levels[k - 1] + (levels[k] - levels[k - 1]) * (-low) / (high - low)
+    return "crosses", (levels[k - 1], levels[k]), float(at)
+
+
+@dataclass(frozen=True)
+class Threshold:
+    """
+    The break-even turnout: the level of the dial above which liquid's
+    fidelity stays at or above the representative's.
+    """
+
+    status: str
+    bracket: tuple[float, float] | None
+    # Linear interpolation inside the bracket: a grid approximation
+    interpolated: float | None
+    # 95% city-bootstrap percentile interval of the threshold; -inf means
+    # "below the tested range" (liquid ahead throughout) and +inf "above it"
+    interval: tuple[float, float]
+    # How often the mean curve changes sign; more than one is reported as
+    # a non-monotone curve
+    sign_changes: int
+    # Whether the overhead gate holds at every level from the bracket's
+    # upper end (or the lowest level, when ahead throughout) upward
+    gate_holds: bool
+    # The difference's 95% t-interval at every level, in grid order
+    pointwise: tuple[Interval, ...]
+
+
+def _threshold_value(levels: tuple[float, ...], means: npt.NDArray[np.float64]) -> float:
+    status, _, at = sustained_crossing(levels, means)
+    if status == "liquid ahead throughout":
+        return -math.inf
+    if status == "no crossing in the tested range":
+        return math.inf
+    assert at is not None
+    return at
+
+
+def threshold(
+    levels: tuple[float, ...],
+    differences: npt.ArrayLike,
+    meets_cap: npt.ArrayLike,
+) -> Threshold:
+    """
+    The threshold from [city, level] paired differences (liquid minus the
+    representative) and [city, level] flags for the overhead cap. The
+    bootstrap resamples whole cities, so each city's curve stays together.
+    """
+    d = np.asarray(differences, dtype=np.float64)
+    cap = np.asarray(meets_cap, dtype=np.bool_)
+    if d.ndim != 2 or d.shape[1] != len(levels) or cap.shape != d.shape:
+        raise ValueError("differences and cap flags must be [city, level]")
+    means = d.mean(axis=0)
+    status, bracket, at = sustained_crossing(levels, means)
+    signs = np.sign(means)
+    nonzero = signs[signs != 0]
+    changes = int((nonzero[1:] != nonzero[:-1]).sum())
+    gate = cap.mean(axis=0) >= FEASIBLE_SHARE
+    if status == "no crossing in the tested range":
+        gate_holds = bool(gate.all())
+    else:
+        start = 0 if bracket is None else levels.index(bracket[1])
+        gate_holds = bool(gate[start:].all())
+    rng = np.random.default_rng(np.random.SeedSequence([BOOTSTRAP_SEED]))
+    cities = d.shape[0]
+    draws = np.array(
+        [
+            _threshold_value(levels, d[rng.integers(0, cities, cities)].mean(axis=0))
+            for _ in range(BOOTSTRAP_RESAMPLES)
+        ]
+    )
+    alpha = (1.0 - CONFIDENCE) / 2.0
+    interval = (
+        float(np.quantile(draws, alpha, method="inverted_cdf")),
+        float(np.quantile(draws, 1.0 - alpha, method="inverted_cdf")),
+    )
+    pointwise = tuple(t_interval(d[:, j]) for j in range(len(levels)))
+    return Threshold(status, bracket, at, interval, changes, gate_holds, pointwise)
+
+
+def threshold_verdict(result: Threshold) -> str:
+    """The primary finding's label, exactly as declared."""
+    if not result.gate_holds:
+        return "overhead condition not met where liquid is ahead"
+    if result.status == "crosses":
+        return "crosses" if result.sign_changes <= 1 else "crosses (non-monotone curve)"
+    return result.status
