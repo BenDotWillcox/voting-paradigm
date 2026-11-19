@@ -592,6 +592,11 @@ every verdict with `protocol.py`. The script is
     where the point rotates). Matching positions is valid whether or not
     two configurations share draws, and it uses the shared draws where they
     do: the history and spread families keep residents and questions.
+    - The differences are whole-number numerators over a common
+      denominator, scaled once at the end, so an exact zero stays zero.
+    - At rotating points the degrees of freedom are Satterthwaite's, from
+      the topics that actually supply variance, not 40 (third runner
+      review).
 
 Each run works as follows:
 - **One city per task.** A city's levels run in one task, so the city
@@ -621,7 +626,10 @@ Each run works as follows:
     cities.
   - An interrupted run (Ctrl-C) stops promptly: it cancels queued cities,
     writes the ones already finished or in flight, and then stops, so a
-    rerun repeats only what never ran.
+    rerun repeats only what never ran. This holds whenever the interrupt
+    comes, including during submission or just before a file is renamed
+    into place, because what counts as saved is the city's file existing,
+    not an in-memory mark.
 - **The manifest** records:
   - the commit, whether the checkout was dirty, and a hash of any
     uncommitted difference;

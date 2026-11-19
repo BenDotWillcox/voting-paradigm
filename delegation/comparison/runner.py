@@ -553,31 +553,33 @@ def run(
             os.environ.setdefault("OMP_NUM_THREADS", "1")
             os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
             pool = ProcessPoolExecutor(max_workers=workers, initializer=_init_worker)
-            futures: dict[Future[dict[str, Any]], CityTask] = {
-                pool.submit(run_task, task): task for task in todo
-            }
-            handled: set[Future[dict[str, Any]]] = set()
+            futures: dict[Future[dict[str, Any]], CityTask] = {}
             try:
+                # Submitted inside the protected region, so an interrupt during
+                # submission still keeps whatever already ran
+                for task in todo:
+                    futures[pool.submit(run_task, task)] = task
                 for future in as_completed(futures):
-                    handled.add(future)
                     record(futures[future], future.result)
             except BaseException:
                 # Interrupted (Ctrl-C, say): cancel the queued cities, keep the
                 # ones in flight, and write every success before stopping, so
-                # an interrupted sweep repeats only what never ran (second
-                # runner review)
+                # an interrupted sweep repeats only what never ran. What is
+                # saved is decided by the city file existing, not by any
+                # in-memory mark, so an interrupt between finishing a city and
+                # renaming its file into place loses nothing (second and third
+                # runner reviews)
                 for future in futures:
                     if not future.running() and not future.done():
                         future.cancel()
-                for future in futures:
-                    if future in handled or future.cancelled():
+                for future, task in futures.items():
+                    if future.cancelled() or city_path(out, task.point, task.position).exists():
                         continue
                     try:
                         row = future.result()
                     except BaseException:  # noqa: BLE001 - interrupted or failed: not written
                         continue
-                    if not city_path(out, row["point"], int(row["position"])).exists():
-                        _write_city(out, row)
+                    _write_city(out, row)
                 pool.shutdown(wait=False, cancel_futures=True)
                 raise
             pool.shutdown()
@@ -803,26 +805,42 @@ def analyse_point(point: _Point, expected: set[int]) -> dict[str, Any]:
     return out
 
 
-def _paired_interval(diff: np.ndarray, strata: np.ndarray | None) -> Interval:
+def _paired_interval(numerators: np.ndarray, denominator: float, strata: np.ndarray | None) -> Interval:
     """
-    A 95% interval for the mean of position-matched differences: an ordinary
-    t-interval, or with strata (a fixed number of positions per heavy topic)
-    the stratified one, with within-stratum variance.
+    A 95% interval for the mean of position-matched differences, given as
+    whole-number numerators over one common denominator, so an exact total
+    of zero stays exactly zero and constant strata have exactly zero
+    variance; the estimate and bounds are scaled once at the end (third
+    runner review).
+
+    Without strata it is an ordinary t-interval. With strata (a fixed
+    number of positions per heavy topic) the variance is within-stratum,
+    and the degrees of freedom are Satterthwaite's from the strata that
+    actually contribute variance, not n minus the number of strata. Zero
+    total variance gives a point interval.
     """
     from scipy.stats import t as student_t
 
+    values = np.asarray(numerators, dtype=np.float64)
+    n = values.size
+    mean = math.fsum(values) / n
     if strata is None:
-        return t_interval(diff)
-    groups = np.unique(strata)
-    n = diff.size
-    var = 0.0
-    for h in groups:
-        part = diff[strata == h]
-        if part.size > 1:
-            var += (part.size / n) ** 2 * float(part.var(ddof=1)) / part.size
-    mean = float(diff.mean())
-    half = float(student_t.ppf(0.975, max(n - groups.size, 1))) * math.sqrt(var)
-    return Interval(mean, mean - half, mean + half)
+        var = float(values.var(ddof=1)) / n if n > 1 else 0.0
+        df = float(n - 1)
+    else:
+        contributions = []
+        for h in np.unique(strata):
+            part = values[strata == h]
+            if part.size > 1 and part.max() != part.min():
+                share = (part.size / n) ** 2 * float(part.var(ddof=1)) / part.size
+                contributions.append((share, part.size - 1))
+        var = sum(c for c, _ in contributions)
+        denominator_df = sum(c * c / d for c, d in contributions)
+        df = var * var / denominator_df if denominator_df > 0 else 0.0
+    if var == 0.0:
+        return Interval(mean / denominator, mean / denominator, mean / denominator)
+    half = float(student_t.ppf(0.975, max(df, 1.0))) * math.sqrt(var)
+    return Interval(mean / denominator, (mean - half) / denominator, (mean + half) / denominator)
 
 
 def _gap(point: _Point, baseline: _Point, pairs: int, baseline_pairs: int) -> dict[str, Any]:
@@ -833,6 +851,8 @@ def _gap(point: _Point, baseline: _Point, pairs: int, baseline_pairs: int) -> di
     positions is valid whether or not the two configurations share draws,
     and it uses the shared draws where they do (the history and spread
     families keep residents and questions; second runner review).
+    Differences are formed on the common denominator pairs * baseline_pairs,
+    so they are whole numbers until the final scaling.
     """
     by_position = dict(zip(baseline.positions, baseline.rows, strict=True))
     common = [p for p in point.positions if p in by_position]
@@ -842,15 +862,17 @@ def _gap(point: _Point, baseline: _Point, pairs: int, baseline_pairs: int) -> di
     gaps: dict[str, Any] = {}
     for level in sorted(float(level) for level in point.rows[0]):
         name = repr(level)
-        if name not in baseline.rows[0]:
+        if name not in baseline.rows[0] or len(common) < 2:
             continue
-        mine = np.array([_contrast(rows[p][name], "h1") for p in common], dtype=np.float64) / pairs
-        theirs = np.array(
-            [_contrast(by_position[p][name], "h1") for p in common], dtype=np.float64
-        ) / baseline_pairs
-        if len(common) < 2:
-            continue
-        gaps[name] = _interval(_paired_interval(mine - theirs, strata))
+        numerators = np.array(
+            [
+                _contrast(rows[p][name], "h1") * baseline_pairs
+                - _contrast(by_position[p][name], "h1") * pairs
+                for p in common
+            ],
+            dtype=np.float64,
+        )
+        gaps[name] = _interval(_paired_interval(numerators, float(pairs * baseline_pairs), strata))
     return {"baseline": baseline.key, "cities": len(common), "by_level": gaps}
 
 

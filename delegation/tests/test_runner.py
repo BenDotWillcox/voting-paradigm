@@ -354,3 +354,78 @@ def test_an_interrupted_parent_keeps_finished_cities(tmp_path):
     assert not (tmp_path / LOCK).exists()
     # A rerun repeats only what is missing
     assert run(tasks, tmp_path, "smoke", state=CLEAN) == len(tasks) - len(recorded)
+
+
+def _rotating_gap(by_topic_gap):  # type: ignore[no-untyped-def]
+    rotating = next(k for k, p in runner.POINTS.items() if p.family == "evaluation_mix")
+
+    def point(key: str, h1: list[int]) -> runner._Point:
+        rows = [{"0.5": {"matches": {"liquid": d, "representative": 0}}} for d in h1]
+        return runner._Point(key, list(range(1, len(h1) + 1)), rows)
+
+    gaps = [by_topic_gap(p) for p in range(1, 49)]
+    return runner._gap(point(rotating, gaps), point(runner.REFERENCE_KEY, [0] * 48), 80_000, 80_000)
+
+
+def test_rotating_gaps_use_satterthwaite_degrees_of_freedom():
+    # The reviewer's case: seven topics with zero gap, the eighth topic's six
+    # cities at [0, 0, 0, 1600, 1600, 1600] per 80,000 pairs. Only that topic
+    # supplies variance, with five degrees of freedom, not 40
+    eighth = {8: 0, 16: 0, 24: 0, 32: 1600, 40: 1600, 48: 1600}
+    gap = _rotating_gap(lambda p: eighth.get(p, 0))["by_level"]["0.5"]
+    assert gap["estimate"] == pytest.approx(0.00125)
+    assert gap["lower"] < 0 < gap["upper"]
+    assert gap["lower"] == pytest.approx(-0.00019, abs=0.00002)
+
+
+def test_an_exactly_zero_gap_stays_zero():
+    # Constant signed gaps by topic summing to exactly zero over the rotation
+    by_topic = [16, -28, 1, 10, 12, -24, 16, -3]
+    gap = _rotating_gap(lambda p: by_topic[(p - 1) % 8])["by_level"]["0.5"]
+    assert gap["estimate"] == 0.0 and gap["lower"] == 0.0 and gap["upper"] == 0.0
+
+
+def test_an_interrupt_during_submission_keeps_what_ran(tmp_path, monkeypatch):
+    real = runner.ProcessPoolExecutor
+
+    class Interrupting(real):  # type: ignore[misc, valid-type]
+        submitted = 0
+
+        def submit(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+            Interrupting.submitted += 1
+            if Interrupting.submitted == 4:
+                raise KeyboardInterrupt
+            return super().submit(*args, **kwargs)
+
+    monkeypatch.setattr(runner, "ProcessPoolExecutor", Interrupting)
+    tasks = smoke_tasks()
+    with pytest.raises(KeyboardInterrupt):
+        run(tasks, tmp_path, "smoke", workers=2, state=CLEAN)
+    recorded = done(tmp_path)
+    # The three submitted before the interrupt ran or were cancelled while
+    # queued; whatever ran is kept, and nothing was lost to the interrupt
+    assert 1 <= len(recorded) <= 3
+    monkeypatch.setattr(runner, "ProcessPoolExecutor", real)
+    assert run(tasks, tmp_path, "smoke", state=CLEAN) == len(tasks) - len(recorded)
+
+
+def test_an_interrupt_before_the_rename_keeps_that_city(tmp_path, monkeypatch):
+    real_replace = runner.os.replace
+    state = {"raised": False}
+
+    def replace(src, dst):  # type: ignore[no-untyped-def]
+        if not state["raised"] and str(dst).endswith(".json") and CITIES in str(dst):
+            state["raised"] = True
+            raise KeyboardInterrupt
+        return real_replace(src, dst)
+
+    monkeypatch.setattr(runner.os, "replace", replace)
+    tasks = smoke_tasks()[:4]
+    with pytest.raises(KeyboardInterrupt):
+        run(tasks, tmp_path, "smoke", workers=2, state=CLEAN)
+    recorded = done(tmp_path)
+    # The city whose rename was interrupted is written in recovery
+    assert len(recorded) >= 1
+    assert not list((tmp_path / CITIES).glob("*/*.tmp"))
+    monkeypatch.setattr(runner.os, "replace", real_replace)
+    assert run(tasks, tmp_path, "smoke", state=CLEAN) == len(tasks) - len(recorded)
