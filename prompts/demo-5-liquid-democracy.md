@@ -2248,30 +2248,30 @@ Built in `delegation/simulate.py`; the scenario's settings are in
 The claim is about a population, and one account cannot show a frontier for
 a population. The demo therefore becomes two parts:
 
-1. **The walkthrough** (`/liquid`), written like a short research paper over
-   the simulated population, in the manner of the districting walkthrough and
-   the apportionment essay:
-   1. Setup: the city, the issue dimensions, how sincere votes arise.
-   2. The three arrangements on the two axes, and the headline figure.
-   3. The ladder: representative, proxy, liquid, separating dilution from
-      bundling.
-   4. How delegates are chosen from vote history, with the uncertainty
-      interval, and what history length buys.
-   5. Sensitivity: correlation across issues, districts, acceptance level,
-      turnout.
-   6. Outcomes against direct voting, including Ostrogorski-style cases.
-   7. Who decides what a question is about: the router, its evaluation, and
-      what its errors cost on each axis.
-   8. Failure modes: concentration, votes lost to resolvers who do not vote,
-      loops.
-   9. What is left out.
-2. **The control center** (the account app, moving to `/liquid/account`):
-   what using liquid democracy would look like for one person. Its scope is
-   frozen apart from three changes: delegate recommendations ranked by vote
-   history with their interval, a representation scorecard for the account
-   (its fidelity and overhead under its district representative, a personal
-   proxy and its delegations, on the closed questions), and moving City
-   Results and the city map into the walkthrough.
+1. **The walkthrough** (`/liquid`): a scrolling essay over the simulated
+   population, animated throughout, in the manner of the apportionment essay
+   and the districting walkthrough. Its plan, revised after the frozen
+   results (2026-11-19), is [`demo-5-walkthrough.md`](demo-5-walkthrough.md).
+   It replaces the 2026-11-14 outline that stood here, keeping that outline's
+   setup, how delegates are chosen, the ladder, sensitivity, outcomes, the
+   router and the failure modes. What changed:
+   - it leads with the pre-registered verdict;
+   - it explains the two edges of the turnout range, which fail for opposite
+     reasons;
+   - it adds two labelled sections:
+     - exploratory analyses: liquid's handover curve at every level, and how
+       a contrary ballot is scored;
+     - proposals: default and backup delegates, and a personal agent.
+2. **The control center** (the account app): what using liquid democracy
+   would look like for one person. For now it sits at the bottom of the
+   walkthrough page, and later it is woven into the story where it fits
+   (decided 2026-11-19; this replaces the move to `/liquid/account`). Its
+   scope is frozen apart from three changes:
+   - delegate recommendations ranked by vote history, with their interval;
+   - a representation scorecard for the account: its fidelity and overhead
+     under its district representative, under a personal proxy, and under its
+     delegations, on the closed questions;
+   - City Results and the city map moved into the walkthrough.
 
 **What each part claims (decided 2026-11-16).** The walkthrough carries the
 empirical claim, H1, at the level of the eight topics. The control center
@@ -2281,8 +2281,9 @@ something the study shows to be better than topics. The app says so where
 categories are written (a short note linking to the walkthrough's scope),
 and the walkthrough names finer-grained delegation as untested (H2).
 
-The route change is a proposal; the walkthrough could instead live at
-`/liquid/study` with the app staying at `/liquid`.
+Route (settled 2026-11-19): the walkthrough takes `/liquid`. The app's
+screens keep their routes under it, and its hub renders at the bottom of the
+page.
 
 ## Account app UI
 
@@ -2410,10 +2411,21 @@ Steps for the revised vision (2026-11-14), each its own PR:
      is a dated exploratory amendment beside these results.
 
    The routing condition is a follow-up outside H1.
-7. **Walkthrough.** The `/liquid` research page over the benchmark's
-   recorded results, with a small live re-run where it is cheap.
-8. **Control center.** Regenerate the account scenario with history-based
-   delegation, add the recommendation and the scorecard, move the app.
+7. **Walkthrough.** The `/liquid` scrolling essay over the benchmark's
+   recorded results, animated throughout. Planned 2026-11-19 in
+   [`demo-5-walkthrough.md`](demo-5-walkthrough.md), in five slices (A to
+   E):
+   - A: an exploratory handover benchmark at every level, first;
+   - B to E: the page. The account app moves to the bottom of the page in
+     slice B.
+
+   Story pages are static-first, so the earlier "small live re-run" becomes
+   one primary city precomputed at build time.
+8. **Control center.**
+   - Regenerate the account scenario with history-based delegation.
+   - Add the recommendation and the scorecard.
+   - Weave the app into the walkthrough. Until then it sits at the page's
+     bottom, from slice B.
 
 ## Reproducibility
 
