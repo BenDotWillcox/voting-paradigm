@@ -179,7 +179,10 @@ raise turnout; Germann and Serdült 2017).
     them; it held coverage on the reviewer's example to at most 84% (sixth
     A6 review). The cap-meeting curve's error is the stratified ratio
     estimator's, from each city's residual: its cap flag times its count's
-    distance from the ratio.
+    distance from the ratio. A topic whose residuals are all identical has
+    exactly zero variance, set explicitly rather than left to floating-point
+    centring, which can return about 1e-17 and hide a moved mean from the
+    exact check (eighth A6 review).
   - **A lone city.** A stratum, or the whole cap-meeting curve, with a
     single city at a level has an *undefined* spread, not a zero or an
     infinite one. A moved mean there counts as an infinite deviation, and

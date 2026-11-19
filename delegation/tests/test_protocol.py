@@ -475,3 +475,23 @@ def test_an_unmoved_resample_mean_is_decided_on_exact_totals():
     # Relabelling the topics does not change it
     rolled = threshold(levels, counts, _all(counts), pairs=80_000, strata=(strata + 1) % 8, resamples=2000)
     assert rolled.confidence == (0.8, 0.9)
+
+
+def test_identical_residuals_have_exactly_zero_variance():
+    # The reviewer's case: 48 rotating cities; -20 matches at the first eight
+    # levels; at 0.8 topic 0 gets +1 and the rest -1, with all of topic 7
+    # and the first city of topic 0 over the cap; at 0.9 everyone gains 20
+    # and complies. Resamples that drop the exceptional city move the
+    # compliant mean while every topic's residuals are identical; a ~1e-17
+    # variance from float centring had kept the set at (0.8, 0.9]
+    levels = TURNOUT_GRID
+    strata = np.arange(48) % 8
+    counts = np.full((48, len(levels)), -20.0)
+    counts[:, 8] = np.where(strata == 0, 1.0, -1.0)
+    counts[:, 9] = 20.0
+    cap = _all(counts)
+    cap[strata == 7, 8] = False
+    cap[np.flatnonzero(strata == 0)[0], 8] = False
+    result = threshold(levels, counts, cap, pairs=80_000, strata=strata)
+    assert result.gate_holds
+    assert result.confidence == (-np.inf, np.inf)

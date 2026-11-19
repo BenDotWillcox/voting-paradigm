@@ -395,7 +395,13 @@ def _curve_stats(
         if n_h < 2:
             estimable &= False
             continue
-        var_total += n_h * u[rows].var(axis=0, ddof=1)
+        block = u[rows]
+        # Identical residuals have exactly zero variance; floating-point
+        # centring on their average can leave ~1e-17, which would send a
+        # moved mean down the finite path past the exact-total check
+        # (eighth A6 review)
+        constant = block.max(axis=0) == block.min(axis=0)
+        var_total += np.where(constant, 0.0, n_h * block.var(axis=0, ddof=1))
     with np.errstate(invalid="ignore", divide="ignore"):
         se = np.where(estimable, np.sqrt(var_total) / denom, np.nan)
     return _Curve(total, denom, np.asarray(mean, dtype=np.float64), np.asarray(se, dtype=np.float64))
