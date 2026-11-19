@@ -58,7 +58,9 @@ request's merge into `main`.
   - the attendance frontier (Figure 2);
   - the runner and its analysis;
   - the model as the ODD describes it (`prompts/demo-5-odd.md`), with the
-    fitted beliefs file, whose hash every manifest records.
+    fitted beliefs file, whose hash every manifest records. Git checks the
+    file out byte for byte on every platform (`.gitattributes`), so that
+    hash is the committed file's, not a line-ending variant of it.
 - **In code:**
   - `protocol.PROTOCOL_FROZEN` records the date in every run's manifest
     (runner version 3), alongside every declared constant;
