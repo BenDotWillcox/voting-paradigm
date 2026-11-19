@@ -218,8 +218,11 @@ There are no parties.
 - Measures are taken per city, arrangement and level of the turnout dial,
   on the evaluation period.
 - The primary outcome is the paired city difference in fidelity, liquid
-  minus representative, as a curve over the dial. The threshold is where
-  that curve becomes non-negative for good.
+  minus representative, as a curve over the dial. It is computed from
+  signed match counts, so ties are exact.
+- The threshold is the lowest level from which liquid strictly leads at
+  every higher level. It is read on two curves, all cities and the cities
+  meeting the overhead cap, and the later of the two is taken.
 - Inference treats the city seed as the unit, and each city contributes
   its whole curve. Intervals, the bootstrap and the verdicts are as
   declared in the research protocol and implemented in `protocol.py`.
@@ -458,8 +461,10 @@ All measures are over the evaluation period, per arrangement:
 - **Concentration.** The largest share of all votes on one question held by
   one resolver, averaged over questions and at its maximum.
 - **Loops.** The share of pairs on a loop, and loops per question.
-- **Light records.** The share of residents who cast fewer than 10% of the
-  history questions themselves, and their fidelity, reported apart.
+- **Light and empty records.** Two rows, each with a share and a fidelity:
+  - residents who cast fewer than 10% of the history questions
+    themselves;
+  - the subset who cast none, who keep every question.
 
 ### 7.9 The structural population (`population.py`; belief-structure sweep only)
 
@@ -488,15 +493,21 @@ limit.
 These are part of the analysis plan rather than the model, listed so the run
 can be replayed. All of them are declared in the research protocol:
 - the turnout grid and the fixed 200 primary cities;
-- the threshold: the sustained strict crossing, read on the all-city and
-  cap-meeting curves with the higher taken; its confidence set from a
-  simultaneous bootstrap band over both curves (stratified at
-  rotating-agenda points); and the overhead gate where liquid is claimed
-  ahead;
+- the threshold:
+  - the sustained strict crossing, on signed match counts converted to
+    fidelity by the pairs per city;
+  - read on the all-city and cap-meeting curves, the later taken, with
+    unobserved cap-meeting levels never claimed;
+  - its confidence set, from a simultaneous bootstrap band over both
+    curves, in which sparse resamples count as infinite deviations, and
+    which is stratified at rotating-agenda points;
+  - reversal flags on both curves;
+  - the overhead gate where liquid is claimed ahead;
 - the direction and size readings at a single level;
 - the specialisation gate on the joint share;
 - the 48-city robustness sweeps, each run across the dial;
-- the frontier of attendance floors.
+- the attendance frontier (Figure 2), on the threshold's strict two-curve
+  criterion, which is a separate figure from H1.
 
 ---
 

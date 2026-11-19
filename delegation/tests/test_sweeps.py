@@ -8,7 +8,7 @@ import pytest
 from delegation.comparison import simulate_population
 from delegation.comparison.beliefs import SWISS_TURNOUT, BeliefCityConfig
 from delegation.comparison.population import TURNOUT_LOGIT_SD, PopulationConfig
-from delegation.comparison.protocol import TURNOUT_GRID, Interval, primary_city_seeds
+from delegation.comparison.protocol import TURNOUT_GRID, primary_city_seeds
 from delegation.comparison.sweeps import (
     CES_MATCHED_CORRELATION,
     DIAL_TURNOUT,
@@ -17,7 +17,7 @@ from delegation.comparison.sweeps import (
     STRUCTURAL_BASE,
     SWEEP_CITIES,
     SWEEPS,
-    break_even,
+    frontier_policy,
 )
 
 
@@ -133,25 +133,9 @@ def test_structural_base_keeps_the_one_axis_default_draws():
 def test_the_dial_condition_is_delegates_at_their_own_rate():
     assert DIAL_TURNOUT.resolver_turnout == 0.0
     assert DIAL_TURNOUT.office_rate == 0.96
+    assert frontier_policy(0.6).resolver_turnout == 0.6
+    assert frontier_policy(0.6).office_rate == 0.96
     assert FRONTIER_FLOORS[0] == 0.0 and 0.96 in FRONTIER_FLOORS and FRONTIER_FLOORS[-1] == 1.0
-
-
-def test_break_even_brackets_one_crossing():
-    floors = (0.0, 0.5, 1.0)
-    i = lambda m: Interval(m, m - 0.01, m + 0.01)  # noqa: E731
-    result = break_even(floors, (i(-0.04), i(-0.02), i(0.02)))
-    assert result.status == "crosses"
-    assert result.bracket == (0.5, 1.0)
-    assert result.interpolated == pytest.approx(0.75)
-    assert len(result.pointwise) == 3
-    ahead = break_even(floors, (i(0.01), i(0.02), i(0.03)))
-    assert ahead.status == "liquid ahead throughout" and ahead.bracket is None
-    none = break_even(floors, (i(-0.05), i(-0.03), i(-0.005)))
-    assert none.status == "no crossing in the tested range" and none.interpolated is None
-    tie = break_even((0.0, 0.5), (i(0.0), i(0.01)))
-    assert tie.status == "equal at the lowest floor" and tie.bracket == (0.0, 0.0)
-    with pytest.raises(ValueError):
-        break_even((0.5, 0.0), (i(0.0), i(0.0)))
 
 
 def test_rotating_points_carry_heavy_topic_strata():

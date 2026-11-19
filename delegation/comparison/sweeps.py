@@ -50,7 +50,7 @@ from .arrangements import DIAL_TURNOUT as _DIAL_TURNOUT
 from .arrangements import TurnoutPolicy
 from .beliefs import BeliefCityConfig
 from .population import TURNOUT_LOGIT_SD, PopulationConfig
-from .protocol import MAX_CITIES, TURNOUT_GRID, Interval, primary_city_seeds
+from .protocol import MAX_CITIES, TURNOUT_GRID, primary_city_seeds
 
 # Cities per sweep point: positions 1..SWEEP_CITIES of the primary sequence,
 # six complete rotations of the eight topics, so a rotating heavy topic is
@@ -240,53 +240,10 @@ FRONTIER_FLOORS: Final = (0.0, 0.2, 0.4, 0.6, 0.8, 0.9, 0.96, 1.0)
 FRONTIER_LEVELS: Final = TURNOUT_GRID
 
 
-def break_even_policy(floor: float) -> TurnoutPolicy:
+def frontier_policy(floor: float) -> TurnoutPolicy:
+    """The turnout policy at one floor of the frontier: office holders unchanged."""
     return TurnoutPolicy(office_rate=DIAL_TURNOUT.office_rate, resolver_turnout=floor)
 
 
-@dataclass(frozen=True)
-class BreakEven:
-    """
-    Where liquid's fidelity reaches the representative's as the resolver
-    floor rises, at one level of the dial. Raising the floor only adds
-    ballots, so the difference never falls and crosses zero at most once.
-
-    It reports the grid bracket and the pointwise intervals, not an interval
-    for the crossing itself (second sweep review, 2026-11-18): an interval
-    at each floor says whether the difference there could be zero, which is
-    a different question from where the crossing lies.
-    """
-
-    # "liquid ahead throughout" (strictly ahead at the lowest floor),
-    # "equal at the lowest floor", "crosses" or "no crossing in the tested
-    # range"
-    status: str
-    # The grid floors between which the mean difference first reaches zero
-    # (both the lowest floor when equal there)
-    bracket: tuple[float, float] | None
-    # Linear interpolation inside the bracket: a grid approximation
-    interpolated: float | None
-    # The 95% interval of the difference at every floor, in grid order
-    pointwise: tuple[Interval, ...]
-
-
-def break_even(floors: tuple[float, ...], intervals: tuple[Interval, ...]) -> BreakEven:
-    """
-    The break-even bracket on the grid, and a linear interpolation inside
-    it, from the mean paired difference (liquid minus representative).
-    """
-    if len(floors) != len(intervals) or len(floors) < 2:
-        raise ValueError("one interval per floor, at least two floors")
-    if any(b <= a for a, b in zip(floors, floors[1:])):
-        raise ValueError("floors must increase")
-    means = [i.estimate for i in intervals]
-    if means[0] > 0.0:
-        return BreakEven("liquid ahead throughout", None, None, intervals)
-    if means[0] == 0.0:
-        return BreakEven("equal at the lowest floor", (floors[0], floors[0]), floors[0], intervals)
-    for k in range(1, len(floors)):
-        if means[k] >= 0.0:
-            low, high = means[k - 1], means[k]
-            at = floors[k - 1] + (floors[k] - floors[k - 1]) * (-low) / (high - low)
-            return BreakEven("crosses", (floors[k - 1], floors[k]), float(at), intervals)
-    return BreakEven("no crossing in the tested range", None, None, intervals)
+# The frontier is read with protocol.frontier_reading, on the threshold's
+# criterion (a strict lead on both the all-city and cap-meeting curves)

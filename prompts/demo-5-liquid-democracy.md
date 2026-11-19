@@ -100,19 +100,35 @@ raise turnout; Germann and Serdült 2017).
 - **The threshold (revised 2026-11-19, third A6 review).** It is the
   lowest level from which liquid is *strictly* ahead at that level and
   every level above it (`protocol.read_curve`). A tie is not a lead: an
-  all-zero curve is *no crossing*. Signs are decided from exactly rounded
-  sums, and the runner passes signed match counts, so ties are exact.
-- **Two curves, the higher threshold.** The threshold is read on two
-  curves, and the claimed threshold is the higher of the two:
+  all-zero curve is *no crossing*.
+  - The runner passes *signed match counts*: liquid's matching ballots
+    minus the representative's, over the same voter-question pairs.
+  - It also passes the number of pairs per city (voters times evaluation
+    questions; it changes in the district-count sweep).
+  - Signs, and so ties, are decided exactly on the counts. Means,
+    intervals and the band are in fidelity units, so 800 extra matches
+    among 500 × 160 pairs reads as one point, not 800 (fourth A6 review).
+- **Two curves, the later threshold.** The threshold is read on two
+  curves, and the claimed threshold is the later of the two:
   - every city;
   - the cities meeting the overhead cap at each level.
 
   Cities over the cap therefore cannot carry it. In the reviewer's case,
   ten over-cap cities gaining ten points made the all-city curve cross
   while every compliant city lost, and that is now *no crossing*.
+  - When both curves cross in the same bracket, the later of their two
+    interpolations is reported.
+  - A level where no city meets the cap is *unobserved* on the
+    cap-meeting curve and cannot be claimed (revised 2026-11-19, fourth
+    A6 review):
+    - if the bracket's lower level is unobserved, no interpolation is
+      reported, only the bracket and the first level where the lead is
+      observed;
+    - if the top level is unobserved, the verdict is *overhead condition
+      not met at the top of the range*, not a crossing or a no-crossing.
 - **Reported:**
-  - the grid bracket and a linear interpolation inside it, labelled a grid
-    approximation;
+  - the grid bracket, the first level where the lead is observed, and a
+    linear interpolation inside the bracket, labelled a grid approximation;
   - a **95% confidence set** on the grid: the threshold lies above one
     grid level and at or below another, either end possibly beyond the
     range;
@@ -128,18 +144,30 @@ raise turnout; Germann and Serdült 2017).
     inside the band must lead.
 
   Whenever both true curves lie inside the band, the true threshold lies
-  inside the set, plateaus included. That is why it replaces the earlier
-  percentile interval of the interpolated crossing, which covered a plateau
-  at zero in only 122 of 250 runs. On the same 250 runs the set covers 248;
-  on a clean crossing it covers 250 of 250 and is usually a single grid
-  step.
+  inside the set, plateaus included.
+  - **Sparse outcomes.** A resample whose mean moved while its spread is
+    zero counts as an infinite deviation, not zero, as does a level
+    observed in the data but missing from the resample. Rare large
+    outcomes therefore widen the band rather than vanish from it. Only a
+    deterministic 0/0, mean unchanged and no spread, counts as zero
+    (revised 2026-11-19, fourth A6 review).
+  - **Coverage.** The set replaces the earlier percentile interval of the
+    interpolated crossing:
+
+    | Case | Old interval | Set |
+    |---|---|---|
+    | A plateau at zero | 122 of 250 runs | 248 of 250 |
+    | A clean crossing | — | 250 of 250, usually a single grid step |
+    | The reviewer's sparse example (a true mean of zero carried by rare large losses) | about 80% | 476 of 500 (95.2%) |
 - **Statuses.** The status is one of:
   - *crosses*;
   - *liquid ahead throughout* (strictly ahead at every level);
   - *no crossing in the tested range*.
 
-  A curve that changes between leading and not leading more than once is
-  flagged *non-monotone* and reported in full. Raising turnout only adds
+  A curve that changes between leading and not leading more than once
+  *reverses*. Both curves' reversals are reported, and the verdict is
+  flagged *(curve reverses)* if either reverses, including a cap-meeting
+  curve that reverses while the all-city curve does not. Raising turnout only adds
   ballots but also changes records and so delegations, so a single
   crossing is likely but not guaranteed.
 - **The overhead gate.** The 10% cap applies per city and level. The
@@ -329,12 +357,15 @@ For every arrangement, at every level of the dial:
   someone else supplies that ballot, as for a candidate whose own vote
   goes to the election winner).
 - **Overhead, lifecycle overhead and delegations maintained.**
-- **Light records (amendment A6):** residents who cast fewer than 10% of
-  the history questions themselves can barely rank candidates. Their share
-  and their fidelity are reported apart, so the averages cannot hide them.
-  Those with no record at all keep everything. Those with a few ballots
-  can delegate, on wide intervals, if the calibrated level is low enough.
-  Both are visible here.
+- **Light and empty records (amendment A6).** These are reported as two
+  rows, each with its share and its fidelity, so the averages cannot hide
+  either:
+  - *Light records:* residents who cast fewer than 10% of the history
+    questions themselves can barely rank candidates.
+  - *Empty records:* the subset with no recorded ballot at all keep
+    everything. The light-record row pools them with residents holding a
+    few ballots, who can delegate on wide intervals if the calibrated
+    level is low enough, so they are reported separately too.
 
 ### Robustness sweeps (declared 2026-11-18)
 
@@ -429,34 +460,43 @@ one generator. Its gap from the fitted primary is a comparison between
 generators, reported first, because a large gap means the structural
 curve says little about the primary population.
 
-**The frontier: delegate attendance against turnout (the main figure;
-amendment A6, replacing the single break-even of A2).** On the 200 primary
-cities, at every level of the dial, the delegate attendance floor at which
-liquid matches the representative. A resolver votes at the larger of
-their own rate and the floor; the representative stays at the
-office-holder rate.
+**Figure 2, the attendance frontier (amendment A6, replacing the single
+break-even of A2; criterion aligned with H1, 2026-11-19).** On the 200
+primary cities, at every level of the dial, the lowest delegate attendance
+floor from which liquid *strictly leads* the representative.
+- **The criterion** is H1's: a strict lead decided on signed counts, on
+  both the all-city and the cap-meeting curve, the later taken
+  (`protocol.frontier_reading`). Ties at every floor therefore give *no
+  lead*, not floor 0.
+- **Rates:** a delegate votes at the larger of their own rate and the
+  floor; office holders stay at exactly the office-holder rate.
+- **How it differs from H1.** It is a separate figure, not a restatement
+  of H1. Its result at each level is a floor; H1 is Figure 1, the
+  threshold on the dial. H1 additionally requires the lead to be
+  sustained at every higher level and the overhead gate to hold.
 - **Floors:** 0 (delegates at their own rate, the dial's condition), 0.2,
   0.4, 0.6, 0.8, 0.9, 0.96 and 1.0 (`sweeps.FRONTIER_FLOORS`). Own rates
   now run down to about 0, so every floor changes some ballots and the
   grid starts at 0. (A2's earlier grid started at the 0.30 plateau of the
   retired uniform turnout.)
 - **Why there is one crossing:** raising the floor only adds ballots and
-  leaves delegations unchanged, so at each level the difference never
-  falls and crosses zero at most once.
-- **What is reported, per level** (`sweeps.break_even`):
-  - the grid bracket where the mean paired difference first becomes
-    non-negative;
-  - a linear interpolation inside it, labelled a grid approximation;
+  leaves delegations, and so the cap flags, unchanged. At each level both
+  curves therefore never fall, and the first lead is sustained.
+- **What is reported, per level:**
+  - the grid bracket where liquid first leads on both curves;
+  - the later of the two curves' interpolations inside it, labelled a grid
+    approximation;
   - the 95% t-interval of the difference at every floor.
 
-  No interval is claimed for a crossing itself. The status is one of
-  *liquid ahead throughout* (already ahead with delegates at their own
-  rate), *equal at the lowest floor*, *crosses* or *no crossing in the
-  tested range*.
-- **How to read it:** the figure plots, for each level of citizen turnout,
-  how reliably delegates must vote for liquid to match representation.
-  The primary threshold is where that curve meets floor 0: where delegates
-  voting at their own rate already suffice.
+  No interval is claimed for a crossing itself. The status is one of:
+  - *leads at the lowest floor*, with delegates at their own rate;
+  - *crosses*;
+  - *no lead in the tested range*;
+  - *no city meets the cap at this level*.
+- **How to read it:** for each level of citizen turnout, Figure 2 shows how
+  reliably delegates must vote for liquid to lead representation. Where it
+  sits at floor 0 at a level and every level above it, with the gate
+  holding, Figure 1's threshold has been crossed.
 
 ### What everything else is
 
@@ -794,14 +834,16 @@ never misses a vote (about 0.67) and read as the worse arrangement.
 ### The headline figures
 
 **The threshold and the frontier (amendment A6).** The study's result is
-read from two figures:
-- *The threshold:* liquid minus representative fidelity, plotted against
-  mean turnout on the dial, with pointwise intervals and the simultaneous
-  band. The threshold and its confidence set are marked, and so is the
-  Swiss
-  reference at 0.45.
-- *The frontier:* for each turnout level, the delegate attendance needed
-  for liquid to match representation.
+read from two figures with separate labels:
+- *Figure 1, the H1 threshold:* liquid minus representative fidelity
+  against mean turnout on the dial, all-city and cap-meeting curves, with
+  pointwise intervals and the simultaneous band. The threshold, its
+  confidence set and the Swiss reference at 0.45 are marked. This is the
+  finding.
+- *Figure 2, the attendance frontier:* for each turnout level, the lowest
+  delegate attendance floor from which liquid strictly leads, on the same
+  two-curve criterion. It shows how far better delegate attendance could
+  move Figure 1's result; it is not itself the H1 reading.
 
 **The overhead-fidelity plane.** This is the demo's framing figure.
 Overhead is on the horizontal axis and fidelity on the vertical:

@@ -107,6 +107,11 @@ class Measures:
     # hide them (amendment A6)
     light_record_share: float
     light_record_fidelity: float
+    # The subset with no recorded ballot at all, who keep every question
+    # (fourth A6 review): light records pool them with residents holding a
+    # few ballots, who may delegate
+    empty_record_share: float
+    empty_record_fidelity: float
 
 
 @dataclass(frozen=True)
@@ -185,6 +190,7 @@ def measure(population: Population, outcome: Outcome, reference: Outcome) -> Mea
     per_voter = match.mean(axis=1)
     below = per_voter < 0.5
     light = population.history.casts.mean(axis=1) < LIGHT_RECORD
+    empty = np.asarray(~population.history.casts.any(axis=1), dtype=np.bool_)
     # A person decides a question when they resolve their own vote or hold
     # anyone else's
     overhead = float((outcome.kept | holds).mean())
@@ -219,4 +225,6 @@ def measure(population: Population, outcome: Outcome, reference: Outcome) -> Mea
         mean_loops=float(outcome.loops.mean()),
         light_record_share=float(light.mean()),
         light_record_fidelity=_mean_where(per_voter, light),
+        empty_record_share=float(empty.mean()),
+        empty_record_fidelity=_mean_where(per_voter, empty),
     )

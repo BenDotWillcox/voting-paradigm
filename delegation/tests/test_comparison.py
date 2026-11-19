@@ -859,6 +859,10 @@ def test_light_records_are_reported_apart():
     assert 0.0 < m.light_record_share == pytest.approx(light.mean())
     per_voter = (outcome.counted == city.evaluation.sincere).mean(axis=1)
     assert m.light_record_fidelity == pytest.approx(per_voter[light].mean())
+    empty = ~city.history.casts.any(axis=1)
+    assert m.empty_record_share == pytest.approx(empty.mean())
+    assert 0.0 < m.empty_record_share <= m.light_record_share
+    assert m.empty_record_fidelity == pytest.approx(per_voter[empty].mean())
 
 
 def test_compare_defaults_to_the_dial_condition(small):
