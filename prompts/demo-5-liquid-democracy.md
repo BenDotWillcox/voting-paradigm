@@ -158,12 +158,28 @@ raise turnout; Germann and Serdült 2017).
     observed in the data but missing from the resample. Rare large
     outcomes therefore widen the band rather than vanish from it. Only a
     deterministic 0/0, mean unchanged and no spread, counts as zero.
+    Whether the mean moved is decided exactly on count totals, so rounding
+    cannot fake a move. (Seventh A6 review: a mean of exactly 4 summed to
+    3.9999999999999996 and made unmoved resamples infinite.)
+  - **Both curves are ratios of exact totals.** Each curve is a city
+    total of signed counts divided once by a city count:
+    - the all-city curve divides by every city;
+    - the cap-meeting curve divides the compliant cities' total by their
+      number.
+
+    This is the same quantity at every sweep point as in the primary, so a
+    compliant city never counts for more because its topic lost others to
+    the cap. An exact tie stays exactly zero. (Revised 2026-11-19, seventh
+    A6 review: reweighting topics after cap filtering had let 47 compliant
+    cities that lost 90 matches in total show a lead.)
   - **Standard errors at the balanced sweep points.** The rotating-agenda
-    sweep points fix six cities per heavy topic. Both curves there use the
-    fixed topic weights and the variance *within* each topic, in the sample
-    and in every resample. Pooling the spread between topic means is wrong
-    for a design that fixes them; it held coverage on the reviewer's
-    example to at most 84% (revised 2026-11-19, sixth A6 review).
+    sweep points fix six cities per heavy topic, so standard errors there
+    use variance *within* each topic, in the sample and in every resample.
+    Pooling the spread between topic means is wrong for a design that fixes
+    them; it held coverage on the reviewer's example to at most 84% (sixth
+    A6 review). The cap-meeting curve's error is the stratified ratio
+    estimator's, from each city's residual: its cap flag times its count's
+    distance from the ratio.
   - **A lone city.** A stratum, or the whole cap-meeting curve, with a
     single city at a level has an *undefined* spread, not a zero or an
     infinite one. A moved mean there counts as an infinite deviation, and
@@ -185,11 +201,12 @@ raise turnout; Germann and Serdült 2017).
   - **Coverage.** The set replaces the earlier percentile interval of the
     interpolated crossing:
 
-    | Case | Old interval | Set |
+    | Case | Old interval | Set (current code, 2026-11-19) |
     |---|---|---|
-    | A plateau at zero | 122 of 250 runs | 248 of 250 |
-    | A clean crossing | — | 250 of 250, usually a single grid step |
-    | The reviewer's sparse examples: a true mean of zero carried by rare large losses (−199 at probability 3/202, and −196 at 3/199) | about 80% | 472 and 473 of 500 |
+    | A plateau at zero | 122 of 250 runs | 149 of 150 |
+    | A clean crossing | — | 150 of 150, usually a single grid step |
+    | The same clean crossing with 4% of city-levels over the cap | — | 150 of 150 |
+    | The reviewer's sparse example: a true mean of zero carried by a rare loss of 196 matches at probability 3/199 | about 80% | 280 of 300 |
     | The reviewer's balanced-sweep example: 48 cities, topics offset ±1,000, a loss of 60 with probability 1/15 at the top | at most 84% | 288 of 300 |
 
     The remaining misses are samples in which the rare loss never appears.
@@ -449,9 +466,11 @@ sweep shows is how the threshold moves.
   - the threshold, its bracket, confidence set and status, computed exactly
     as for the primary (`protocol.threshold`) on the point's 48 cities;
     at the rotating-agenda points (both evaluation mixes and the stress
-    case), the bootstrap resamples six cities within each heavy topic,
-    and both curves are studentized by within-topic variance with fixed
-    topic weights, keeping the balanced design (`SweepPoint.strata`);
+    case), the bootstrap resamples six cities within each heavy topic, and
+    both curves are studentized by within-topic variance, keeping the
+    balanced design (`SweepPoint.strata`). The curves themselves are the
+    primary's: all cities, and the compliant cities' total over their
+    number;
   - the difference curve with its pointwise intervals, and the
     specialisation contrast along the dial;
   - the share of cities meeting the cap at each level, and the joint share

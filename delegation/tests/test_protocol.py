@@ -434,3 +434,44 @@ def test_a_lone_cap_meeting_city_is_not_zero_spread():
     result = threshold((0.8, 0.9), counts, cap, pairs=80_000, resamples=FAST)
     assert result.gate_holds
     assert result.confidence == (-np.inf, np.inf)
+
+
+def test_the_cap_meeting_curve_keeps_the_primary_quantity_at_balanced_points():
+    # The reviewer's case: 48 cities in rotating order, offsets
+    # [-2, -1, 0, 0, 1, 2] within each topic; -20 + offset for nine levels;
+    # at 0.9, topic 0 gets +150 + offset and the rest -20 + offset; one
+    # zero-offset city in topic 0 fails the cap at 0.9. The 47 compliant
+    # cities lose 90 matches in total, so the compliant curve does not lead
+    levels = TURNOUT_GRID
+    strata = np.arange(48) % 8
+    rank = np.arange(48) // 8
+    offset = np.array([-2, -1, 0, 0, 1, 2])[rank]
+    counts = np.repeat((offset - 20)[:, None], len(levels), axis=1).astype(float)
+    counts[:, -1] = np.where(strata == 0, 150 + offset, -20 + offset)
+    cap = _all(counts)
+    failing = np.flatnonzero((strata == 0) & (offset == 0))[0]
+    cap[failing, -1] = False
+    assert counts[cap[:, -1], -1].sum() == -90
+    result = threshold(levels, counts, cap, pairs=80_000, strata=strata, resamples=FAST)
+    assert result.gate_holds
+    assert result.cap_meeting.status == "no crossing in the tested range"
+    assert threshold_verdict(result) == "no crossing in the tested range"
+
+
+def test_an_unmoved_resample_mean_is_decided_on_exact_totals():
+    # The reviewer's case: topic counts [4, 5, 3, 4, 4, 4, 4, 4] at 0.9, one
+    # match added in topic 2 and removed in topic 4; the mean is exactly 4.
+    # Rounding a weighted sum made unmoved resamples look moved and the set
+    # unbounded; on exact totals it is (0.8, 0.9]
+    levels = TURNOUT_GRID
+    strata = np.arange(48) % 8
+    counts = np.full((48, len(levels)), -20.0)
+    counts[:, -1] = np.array([4, 5, 3, 4, 4, 4, 4, 4])[strata]
+    counts[np.flatnonzero(strata == 2)[0], -1] += 1
+    counts[np.flatnonzero(strata == 4)[0], -1] -= 1
+    assert counts[:, -1].sum() / 48 == 4
+    result = threshold(levels, counts, _all(counts), pairs=80_000, strata=strata, resamples=2000)
+    assert result.confidence == (0.8, 0.9)
+    # Relabelling the topics does not change it
+    rolled = threshold(levels, counts, _all(counts), pairs=80_000, strata=(strata + 1) % 8, resamples=2000)
+    assert rolled.confidence == (0.8, 0.9)

@@ -499,11 +499,16 @@ can be replayed. All of them are declared in the research protocol:
   - read on the all-city and cap-meeting curves, the later taken, with
     unobserved cap-meeting levels never claimed;
   - its nominal 95% confidence set, from a simultaneous bootstrap-t band
-    over both curves. Each resample is studentized by its own spread, means
-    come from count totals, and sparse resamples and lone cities count as
-    infinite or undefined deviations. At rotating-agenda points resampling
-    and variance are within heavy topics. Coverage is approximate, and a
-    rare outcome absent from a sample cannot be recovered;
+    over both curves:
+    - each curve is a ratio of exact count totals to a city count, the
+      same at every sweep point as in the primary;
+    - each resample is studentized by its own spread;
+    - a moved mean with zero or undefined spread, decided on exact totals,
+      counts as an infinite deviation;
+    - at rotating-agenda points, resampling and variance are within heavy
+      topics;
+    - coverage is approximate, and a rare outcome absent from a sample
+      cannot be recovered;
   - reversal flags on both curves;
   - the overhead gate where liquid is claimed ahead;
 - the direction and size readings at a single level;

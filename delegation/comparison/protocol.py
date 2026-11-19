@@ -206,34 +206,18 @@ def joint_share(liquid_meets_cap: npt.ArrayLike, proxy_meets_cap: npt.ArrayLike)
 # ---------------------------------------------------------------------------
 
 
-def _positive(
-    counts: npt.NDArray[np.float64],
-    use: npt.NDArray[np.bool_],
-    strata: npt.NDArray[np.int64] | None = None,
-) -> npt.NDArray[np.bool_]:
+def _positive(counts: npt.NDArray[np.float64], use: npt.NDArray[np.bool_]) -> npt.NDArray[np.bool_]:
     """
-    Whether each level's mean over the cities in `use` is strictly positive,
-    decided exactly on signed match counts, so float noise cannot turn a tie
-    into a lead. With strata, the mean is the fixed-weight stratified mean
-    and its sign is decided in exact rational arithmetic; a level where a
-    stratum has no city in `use` is not positive (it is unobserved).
+    Whether each level's total over the cities in `use` is strictly
+    positive, decided with an exactly rounded sum of signed match counts, so
+    float noise cannot turn a tie into a lead. Both curves are ratios of a
+    total to a city count, so the total's sign is the curve's sign, with or
+    without strata.
     """
-    cities, levels = counts.shape
-    groups = np.zeros(cities, dtype=np.int64) if strata is None else strata
-    sizes = np.bincount(groups)
-    out = np.zeros(levels, dtype=np.bool_)
-    for j in range(levels):
-        total = Fraction(0)
-        seen = True
-        for h, n_h in enumerate(sizes):
-            rows = (groups == h) & use[:, j]
-            if not rows.any():
-                seen = False
-                break
-            stratum_sum = Fraction(math.fsum(counts[rows, j]))
-            total += Fraction(int(n_h), cities) * stratum_sum / int(rows.sum())
-        out[j] = seen and total > 0
-    return out
+    return np.asarray(
+        [bool(use[:, j].any()) and math.fsum(counts[use[:, j], j]) > 0.0 for j in range(counts.shape[1])],
+        dtype=np.bool_,
+    )
 
 
 def sustained_index(positive: npt.ArrayLike) -> int:
@@ -350,96 +334,114 @@ def _resample(rng: np.random.Generator, strata: npt.NDArray[np.int64]) -> npt.ND
     return np.concatenate(picks)
 
 
-def _group_curve(
-    d: npt.NDArray[np.float64],
-    use: npt.NDArray[np.bool_],
-    strata: npt.NDArray[np.int64],
-    weights: npt.NDArray[np.float64],
-) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
-    """
-    The mean and standard error of one curve over the cities in `use`, with
-    fixed stratum weights: mean = sum_h w_h * mean_h and
-    se^2 = sum_h w_h^2 * var_h / n_h, var_h the within-stratum sample
-    variance. One stratum is the unstratified case.
+# Whole numbers below this sum exactly in float64
+_EXACT = 2.0**52
 
-    A level is unobserved (mean NaN) when any stratum has no city there. The
-    standard error is undefined (NaN) when any stratum has a single city,
-    since its variance cannot be estimated: a lone cap-meeting city is not
-    a zero-variance one (sixth A6 review).
+
+def _totals(d: npt.NDArray[np.float64], use: npt.NDArray[np.bool_]) -> npt.NDArray[np.float64]:
+    """
+    Exact per-level totals over the cities in `use`. Signed match counts are
+    whole numbers, which float64 adds exactly while the sum stays below
+    2^52, so a vectorized sum is exact; other inputs use an exactly rounded
+    sum per level.
+    """
+    masked = np.where(use, d, 0.0)
+    if np.all(masked == np.round(masked)) and float(np.abs(masked).sum()) < _EXACT:
+        return np.asarray(masked.sum(axis=0), dtype=np.float64)
+    return np.array([math.fsum(masked[:, j]) for j in range(d.shape[1])])
+
+
+@dataclass(frozen=True)
+class _Curve:
+    """One curve's per-level statistics, in count units."""
+
+    # Exactly rounded totals of signed counts, and the number of cities
+    total: npt.NDArray[np.float64]
+    denom: npt.NDArray[np.float64]
+    # total / denom, NaN where no city contributes
+    mean: npt.NDArray[np.float64]
+    # Standard error, NaN where undefined
+    se: npt.NDArray[np.float64]
+
+
+def _curve_stats(
+    d: npt.NDArray[np.float64], use: npt.NDArray[np.bool_], strata: npt.NDArray[np.int64]
+) -> _Curve:
+    """
+    One curve over the cities in `use`: the mean is the ratio of their total
+    signed count to their number, divided once, so it is the same quantity
+    as in the primary and an exact tie stays exactly zero (sixth and seventh
+    A6 reviews). Its standard error is the stratified ratio estimator's:
+    with residuals u_i = use_i * (d_i - mean), se^2 = sum_h n_h * var_h(u)
+    / denom^2, var_h the within-stratum variance over all n_h cities of
+    stratum h. With every city used this is the fixed-weight stratified
+    standard error; with one stratum, the ordinary one.
+
+    The standard error is undefined (NaN) when one city or none contributes,
+    or a stratum has a single city: a lone city has no estimable spread,
+    which is not the same as zero spread.
     """
     levels = d.shape[1]
-    mean = np.zeros(levels)
-    var = np.zeros(levels)
-    observed = np.ones(levels, dtype=np.bool_)
-    estimable = np.ones(levels, dtype=np.bool_)
-    for h, w in enumerate(weights):
+    total = _totals(d, use)
+    denom = use.sum(axis=0).astype(np.float64)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        mean = np.where(denom > 0, total / denom, np.nan)
+    u = np.where(use, d - np.nan_to_num(mean)[None, :], 0.0)
+    var_total = np.zeros(levels)
+    estimable = denom > 1
+    for h in np.unique(strata):
         rows = strata == h
-        mask = use[rows]
-        vals = d[rows]
-        n_h = mask.sum(axis=0)
-        observed &= n_h > 0
-        estimable &= n_h > 1
-        with np.errstate(invalid="ignore", divide="ignore"):
-            m_h = np.where(mask, vals, 0.0).sum(axis=0) / n_h
-            ss = (np.where(mask, vals - m_h, 0.0) ** 2).sum(axis=0)
-            v_h = ss / (n_h - 1)
-            mean += w * np.where(n_h > 0, m_h, 0.0)
-            var += np.where(n_h > 1, w * w * v_h / n_h, 0.0)
-    mean = np.where(observed, mean, np.nan)
-    se = np.where(observed & estimable, np.sqrt(var), np.nan)
-    return np.asarray(mean, dtype=np.float64), np.asarray(se, dtype=np.float64)
+        n_h = int(rows.sum())
+        if n_h < 2:
+            estimable &= False
+            continue
+        var_total += n_h * u[rows].var(axis=0, ddof=1)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        se = np.where(estimable, np.sqrt(var_total) / denom, np.nan)
+    return _Curve(total, denom, np.asarray(mean, dtype=np.float64), np.asarray(se, dtype=np.float64))
 
 
 def _curves(
     d: npt.NDArray[np.float64],
     cap: npt.NDArray[np.bool_],
     strata: npt.NDArray[np.int64] | None = None,
-) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+) -> tuple[_Curve, _Curve]:
     """
-    Means and standard errors of the all-city and cap-meeting curves. Called
-    on signed match counts (whole numbers held exactly in float64), so a
-    mean whose count total is zero is exactly zero; converting to fidelity
-    first and then summing could turn an exact tie into a tiny lead (fifth
-    A6 review). Every quantity the band uses is a ratio or a sign, so the
-    count unit needs no conversion.
-
-    With `strata` (the rotating-agenda sweep points, a fixed number of
-    cities per heavy topic), both curves use the fixed stratum weights and
-    within-stratum variance; pooling the spread between topic means into
-    the standard error is wrong for a design that fixes them (sixth A6
-    review). The cap-meeting curve is the same weighted mean over the cities
-    meeting the cap within each stratum.
+    The all-city and cap-meeting curves, on signed match counts. With
+    `strata` (the rotating-agenda sweep points, a fixed number of cities
+    per heavy topic) the standard errors use within-stratum variance; the
+    means are the same ratios as without strata, so a sweep measures the
+    same quantity as the primary.
     """
-    cities = d.shape[0]
-    groups = np.zeros(cities, dtype=np.int64) if strata is None else strata
-    sizes = np.bincount(groups).astype(np.float64)
-    weights = sizes / sizes.sum()
-    everyone = np.ones_like(cap)
-    mean_all, se_all = _group_curve(d, everyone, groups, weights)
-    mean_cap, se_cap = _group_curve(d, cap, groups, weights)
-    return mean_all, se_all, mean_cap, se_cap
+    groups = np.zeros(d.shape[0], dtype=np.int64) if strata is None else strata
+    return _curve_stats(d, np.ones_like(cap), groups), _curve_stats(d, cap, groups)
 
 
-def _deviation(
-    resampled: npt.NDArray[np.float64], original: npt.NDArray[np.float64], se: npt.NDArray[np.float64]
-) -> npt.NDArray[np.float64]:
+def _deviation(resampled: _Curve, original: _Curve) -> npt.NDArray[np.float64]:
     """
     Studentized deviations of a resampled curve, by the resample's own
-    standard error. A deterministic 0/0 (the mean unchanged, no spread) is
-    0. A changed mean is infinite when the resample's spread is zero or
-    undefined (a lone city in a stratum), and so is a level observed in the
-    data but missing from the resample: sparse outcomes widen the band
-    instead of vanishing from it. Levels unobserved in the data are left
+    standard error. Where that spread is zero or undefined, whether the
+    mean moved is decided exactly on count totals (total' * denom against
+    total * denom'), so rounding cannot fake a move: a moved mean is
+    infinite, an unmoved one is 0. A level observed in the data but missing
+    from the resample is infinite. Levels unobserved in the data are left
     out.
     """
-    known = np.isfinite(original)
-    missing = known & ~np.isfinite(resampled)
-    delta = np.abs(np.where(known & np.isfinite(resampled), resampled - original, 0.0))
-    usable = np.isfinite(se) & (se > 0)
-    with np.errstate(invalid="ignore", divide="ignore"):
-        ratio = np.where(usable, delta / np.where(usable, se, 1.0), np.where(delta > 0, np.inf, 0.0))
-    out = np.where(known, ratio, 0.0)
-    return np.asarray(np.where(missing, np.inf, out), dtype=np.float64)
+    known = np.isfinite(original.mean)
+    present = np.isfinite(resampled.mean)
+    usable = np.isfinite(resampled.se) & (resampled.se > 0)
+    out = np.zeros_like(original.mean)
+    for j in np.flatnonzero(known):
+        if not present[j]:
+            out[j] = np.inf
+        elif usable[j]:
+            out[j] = abs(resampled.mean[j] - original.mean[j]) / resampled.se[j]
+        else:
+            moved = Fraction(resampled.total[j]) * Fraction(original.denom[j]) != Fraction(
+                original.total[j]
+            ) * Fraction(resampled.denom[j])
+            out[j] = np.inf if moved else 0.0
+    return out
 
 
 def _band(
@@ -506,10 +508,11 @@ def threshold(
 
     # All curve arithmetic is on counts; fidelity only for reported intervals
     layered = None if strata is None else groups
-    mean_all, se_all, mean_cap, se_cap = _curves(raw, cap, layered)
+    curve_all, curve_cap = _curves(raw, cap, layered)
+    mean_all, se_all, mean_cap, se_cap = curve_all.mean, curve_all.se, curve_cap.mean, curve_cap.se
     observed_cap = np.isfinite(mean_cap)
-    all_cities = read_curve(levels, mean_all, _positive(raw, np.ones_like(cap), layered))
-    cap_meeting = read_curve(levels, mean_cap, _positive(raw, cap, layered), observed_cap)
+    all_cities = read_curve(levels, mean_all, _positive(raw, np.ones_like(cap)))
+    cap_meeting = read_curve(levels, mean_cap, _positive(raw, cap), observed_cap)
 
     n = len(levels)
     readings = (all_cities, cap_meeting)
@@ -535,10 +538,8 @@ def threshold(
         # Bootstrap-t: each resample is studentized by its own spread (fifth
         # A6 review: the original spread let a resample with a moved mean and
         # no spread of its own count as a finite deviation)
-        m_a, s_a, m_c, s_c = _curves(raw[idx], cap[idx], None if layered is None else groups[idx])
-        maxima[b] = float(
-            np.concatenate([_deviation(m_a, mean_all, s_a), _deviation(m_c, mean_cap, s_c)]).max()
-        )
+        r_all, r_cap = _curves(raw[idx], cap[idx], None if layered is None else groups[idx])
+        maxima[b] = float(np.concatenate([_deviation(r_all, curve_all), _deviation(r_cap, curve_cap)]).max())
     critical = float(np.quantile(maxima, CONFIDENCE, method="higher"))
     lower_a, upper_a = _band(mean_all, se_all, critical)
     lower_c, upper_c = _band(mean_cap, se_cap, critical)
@@ -643,7 +644,8 @@ def frontier_reading(
         raise ValueError("pairs must be positive")
     cap = np.broadcast_to(flags[:, None], raw.shape)
     d = raw / pairs
-    mean_all, _, mean_cap, _ = _curves(raw, cap)
+    curve_all, curve_cap = _curves(raw, cap)
+    mean_all, mean_cap = curve_all.mean, curve_cap.mean
     seen = np.full(len(floors), bool(flags.any()))
     a = read_curve(floors, mean_all, _positive(raw, np.ones_like(cap)))
     c = read_curve(floors, mean_cap, _positive(raw, cap), seen)
