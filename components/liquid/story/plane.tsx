@@ -8,8 +8,8 @@ import { dec } from "@/lib/liquid/format";
 import { ARRANGEMENT_LABEL, ARRANGEMENTS, type Arrangement } from "@/lib/liquid/story-types";
 import { INK, seriesColor } from "@/lib/story/palette";
 
-import { useStoryData } from "./story-data";
-import { TurnoutDial, useTurnout } from "./turnout";
+import { useSetting } from "./setting";
+import { TurnoutDial } from "./turnout";
 
 type Shape = "circle" | "ring" | "diamond" | "triangle" | "square";
 
@@ -81,15 +81,13 @@ interface PanelProps {
 }
 
 function Panel({ domainX, domainY, ticksX, ticksY, width, height, zoomWindow, title }: PanelProps) {
-  const { measures } = useStoryData();
-  const { key } = useTurnout();
+  const values = useSetting().shares;
   const [hover, setHover] = React.useState<{ name: Arrangement; x: number; y: number } | null>(null);
   const margin = { top: 24, right: 14, bottom: 42, left: 46 };
   const plotWidth = Math.max(60, width - margin.left - margin.right);
   const plotHeight = height - margin.top - margin.bottom;
   const x = (v: number) => ((v - domainX[0]) / (domainX[1] - domainX[0])) * plotWidth;
   const y = (v: number) => plotHeight - ((v - domainY[0]) / (domainY[1] - domainY[0])) * plotHeight;
-  const values = measures.levels[key];
   const clip = `plane-${React.useId().replace(/:/g, "")}`;
 
   return (
@@ -156,22 +154,30 @@ function Panel({ domainX, domainY, ticksX, ticksY, width, height, zoomWindow, ti
  * §4, the framing figure: the five arrangements on the overhead-fidelity
  * plane at the dial's turnout, as averaged over the 200 primary cities.
  * Only the calibrated arrangements are drawn; liquid's own curve is §12's
- * exploratory figure.
+ * exploratory figure. Under the everyone-votes setting it shows that
+ * reference point, where direct voting is full turnout.
  */
 export function PlaneFigure() {
-  const { measures } = useStoryData();
-  const { key, level, swiss } = useTurnout();
+  const setting = useSetting();
   const [ref, width] = useElementWidth<HTMLDivElement>();
   const twoUp = width >= 640;
   const panelWidth = twoUp ? Math.floor((width - 24) / 2) : width;
-  const values = measures.levels[key];
+  const values = setting.shares;
 
   return (
     <StoryFigure
-      title={`Five arrangements on one plane, at ${level === swiss ? "Swiss turnout" : "turnout"} ${level}`}
+      title={
+        setting.everyone
+          ? "Four arrangements on one plane, with everyone voting"
+          : `Five arrangements on one plane, at ${setting.label.charAt(0).toLowerCase()}${setting.label.slice(1)}`
+      }
       subtitle="Up is more faithful; left asks less of each voter. The right panel enlarges the dashed corner."
-      source="eval/benchmarks/delegation_frontier_v1/measures.csv, mean over the 200 primary cities"
-      note="Where two marks overlap (liquid and the proxy at some turnouts), the table below separates them."
+      source={`${setting.source}, measures.csv: mean over the 200 primary cities`}
+      note={
+        setting.everyone
+          ? "With everyone voting, direct voting is full turnout: their marks coincide at the top right."
+          : "Where two marks overlap (liquid and the proxy at some turnouts), the table below separates them."
+      }
     >
       <Legend />
       <div ref={ref} className="mt-3">
@@ -203,7 +209,7 @@ export function PlaneFigure() {
       </div>
       <TurnoutDial className="mt-4 max-w-xl" />
       <DataTable
-        caption={`Overhead and fidelity at turnout ${level}`}
+        caption={`Overhead and fidelity: ${setting.label.toLowerCase()}`}
         columns={[
           { key: "arrangement", label: "Arrangement" },
           { key: "overhead", label: "Overhead", numeric: true },

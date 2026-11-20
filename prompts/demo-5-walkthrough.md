@@ -1090,7 +1090,7 @@ Slices after the 2026-11-20 draft (see "The story"):
 |---|---|---|
 | F (built) | The split, from the first draft. The current page moves, as built, to `/liquid/study`. `/liquid` is rebuilt as five parts, plain and static, from existing figures with new copy, linked both ways. The app's hub moves to the end of part 5. | the story (first draft), with the full study beside it |
 | R1 | The everyone-votes reference run (see "Research the outline needs") on the 200 primary cities, and the example city at the same setting. Its summaries join `public/data/liquid-story/`, labelled exploratory. No UI. | unchanged |
-| F2 | The revised outline. `/liquid` is rebuilt in the new five parts, plain and static, from existing figures, R1's numbers and new copy. The verdict moves to part 4, and each break sits beside its fix. The study page is unchanged. | the revised story |
+| F2 (built) | The revised outline. `/liquid` is rebuilt in the new five parts, plain and static, from existing figures, R1's numbers and new copy. The verdict moves to part 4, and each break sits beside its fix. The study page is unchanged. | the revised story |
 | G | The animations and diagrams in "Animations and diagrams", once Ben has described them, drawn with the app's elements and driven by `city.json` and R1. | + the mechanisms in motion |
 | R2 | The fallback study: declared with Ben, then run. The fallback rules go into the app's package, off by default. | part 3's fixes gain their evidence |
 | H | The app: build step 8, re-scoped around the proposals, with the preset scenarios. Possibly two PRs. | + the proposed system to try |
@@ -1221,6 +1221,46 @@ Plain and static, like slices B to D. The walkthrough's content is complete.
   decided; a slider stays possible.
 - **Methods and sources** carry no claim label; the heading's label is
   optional.
+
+## Built in slice F2 (2026-11-20)
+
+`/liquid` rebuilt to the revised outline, plain and static. The study page
+is unchanged.
+- **Parts 1 and 2 read as if everyone votes.** A nested `TurnoutProvider`
+  with `everyone` and a `fixed` note holds them; its dials show the note.
+  Figures read their data through `useSetting()`
+  (`components/liquid/story/setting.tsx`), which returns R1's measures and
+  the city's everyone-votes setting there, and the dial's level elsewhere.
+  - The three-ways figure, the plane and the one-resident figure support
+    it. With everyone voting the three-ways figure shows direct voting,
+    the representative, the proxy and liquid, and the plane notes that
+    direct voting and full turnout coincide.
+  - The ballot tooltip takes a city setting instead of a level key.
+- **The opening** asks the question and says part 4 gives the answer. The
+  short-answer box is gone.
+- **Part 1** builds the case: direct voting, the representative (dilution and
+  bundling), the proxy, liquid. Then the three-ways figure, the two measures
+  with the one-resident figure and the plane, and the asterisk on what parts
+  1 and 2 assume.
+- **Part 2** is the basic version in five beats. Its three animations are
+  dashed "Animation in progress" boxes saying what each will show, for slice
+  G. The Swiss-turnout mechanism figures were not reused there, because
+  turnout is not yet on the page.
+- **Part 3** opens with the dial, the three-ways figure and the resident from
+  part 1 at Swiss turnout. Each break (a delegate who does not vote, nobody
+  to delegate to, loops) is followed by its fix in a `Fix` note with its
+  label and its evidence. The lost-vote and loop chain figures, the kept
+  city and the edges figure moved here.
+- **Part 4** has strict categories (the router), the initial history (the
+  candidates, short-record and calibration figures moved here, then the
+  cold start and the personal agent), and turnout: the result, the verdict
+  in a box with "How we know", the two edges, the ladder line,
+  concentration as a turnout effect with capture named, the per-voter
+  ceiling with the handover curve, and what delegation cannot change.
+- **Part 5** lists the assembled design, each piece with its label, then a
+  placeholder for the diagram and the app.
+- **Dropped from the story** (still in the study): the costs figure, because
+  concentration is no longer framed as a cost.
 
 ## Built in slice F (2026-11-20)
 

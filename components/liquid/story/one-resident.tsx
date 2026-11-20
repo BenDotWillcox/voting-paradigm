@@ -9,6 +9,7 @@ import { topicLabel, type BallotCode } from "@/lib/liquid/story-types";
 import { INK } from "@/lib/story/palette";
 
 import { BallotLegend, ballotLook, tally } from "./city-dots";
+import { useSetting } from "./setting";
 import { useStoryData } from "./story-data";
 
 const PANELS = [
@@ -19,24 +20,35 @@ const PANELS = [
 /**
  * §2: the two measures on one resident. Each panel holds their 160 scored
  * questions, a row per topic: fidelity is the share of blue dots, overhead
- * the share of filled ones (questions they decide themself).
+ * the share of filled ones (questions they decide themself). Under the
+ * everyone-votes setting it shows the same resident voting on everything.
  */
 export function OneResident() {
   const { city } = useStoryData();
+  const { everyone } = useSetting();
   const { typical, level } = city.mechanism;
   const perTopic = city.design.evaluation_per_topic;
+  const strips = everyone ? city.everyone.typical_strips : typical.strips;
 
   const panels = PANELS.map(({ key, title }) => {
-    const strip = typical.strips[key];
+    const strip = strips[key];
     const counts = tally(strip);
     return { key, title, strip, counts };
   });
 
   return (
     <StoryFigure
-      title={`${resident(typical.voter)}'s ${typical.questions.length} scored questions at Swiss turnout (${level})`}
-      subtitle={`They vote on about ${pct(typical.turnout, 0)} of questions themselves. Under liquid delegation they hand every topic to someone else.`}
-      source="Primary city 1, recomputed with the frozen code"
+      title={
+        everyone
+          ? `${resident(typical.voter)}'s ${typical.questions.length} scored questions, with everyone voting`
+          : `${resident(typical.voter)}'s ${typical.questions.length} scored questions at Swiss turnout (${level})`
+      }
+      subtitle={
+        everyone
+          ? "They vote on every question themselves. Under liquid delegation they hand every topic to someone else."
+          : `They vote on about ${pct(typical.turnout, 0)} of questions themselves. Under liquid delegation they hand every topic to someone else.`
+      }
+      source={`Primary city 1, recomputed with the frozen code${everyone ? " (the everyone-votes setting, exploratory)" : ""}`}
       note="Fidelity counts a ballot against them the same as no ballot. A later section returns to that choice."
       table={{
         caption: `${resident(typical.voter)}'s ballots, counted`,

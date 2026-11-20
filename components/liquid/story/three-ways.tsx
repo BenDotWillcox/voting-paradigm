@@ -14,30 +14,39 @@ import { cn } from "@/lib/utils";
 
 import { BallotTooltip } from "./ballot-text";
 import { BallotLegend, CityDots, OUTCOME_COLOR, ballotLook, tally } from "./city-dots";
+import { useSetting } from "./setting";
 import { useStoryData } from "./story-data";
-import { TurnoutDial, useTurnout } from "./turnout";
+import { TurnoutDial } from "./turnout";
 
 /** What the reader can show the city under, in the order the text takes them. */
 const SHOWN: readonly Arrangement[] = ["full_turnout", "direct", "representative", "liquid"];
 const STRIPS: readonly Arrangement[] = ["direct", "representative", "liquid"];
+/**
+ * With everyone voting, direct voting is full turnout, and the story's first
+ * part builds the case through the proxy.
+ */
+const SHOWN_EVERYONE: readonly Arrangement[] = ["direct", "representative", "proxy", "liquid"];
 
 /**
  * §0, three ways to be represented. Strips give the average resident's three
  * shares over the 200 cities; the city below shows one real city on one
- * question, under the arrangement the reader picks.
+ * question, under the arrangement the reader picks. Under the everyone-votes
+ * setting it shows the four arrangements of the story's first part.
  */
 export function ThreeWaysFigure() {
   const { measures, city } = useStoryData();
-  const { key, level, swiss } = useTurnout();
+  const setting = useSetting();
+  const shownList = setting.everyone ? SHOWN_EVERYONE : SHOWN;
+  const strips = setting.everyone ? SHOWN_EVERYONE : STRIPS;
   const [shown, setShown] = React.useState<Arrangement>("direct");
-  const codes = city.levels[key].codes[shown];
+  const codes = setting.city.codes[shown];
   const looks = React.useMemo(() => Array.from(codes, (code) => ballotLook(code as BallotCode)), [codes]);
   const counts = tally(codes);
-  const shares = measures.levels[key];
+  const shares = setting.shares;
 
   return (
     <StoryFigure
-      title={`${level === swiss ? "Swiss turnout" : "Turnout"} ${level}: ${ARRANGEMENT_LABEL[shown].toLowerCase()}`}
+      title={`${setting.label}: ${ARRANGEMENT_LABEL[shown].toLowerCase()}`}
       subtitle={
         <>
           The bars: an average resident&apos;s {city.design.topics * city.design.evaluation_per_topic} scored
@@ -45,16 +54,16 @@ export function ThreeWaysFigure() {
           ({topicLabel(city.topics[city.question.topic])}).
         </>
       }
-      source="eval/benchmarks/delegation_frontier_v1 (bars); primary city 1, recomputed with the frozen code (dots)"
+      source={`${setting.source} (bars); primary city 1, recomputed with the frozen code (dots)`}
       table={{
-        caption: `Shares of an average resident's questions at turnout ${level}`,
+        caption: `Shares of an average resident's questions: ${setting.label.toLowerCase()}`,
         columns: [
           { key: "arrangement", label: "Arrangement" },
           { key: "match", label: "Ballot matches them", numeric: true },
           { key: "contrary", label: "Ballot against them", numeric: true },
           { key: "none", label: "No ballot", numeric: true },
         ],
-        rows: STRIPS.map((name) => {
+        rows: strips.map((name) => {
           const m = shares[name];
           return {
             arrangement: ARRANGEMENT_LABEL[name],
@@ -66,7 +75,7 @@ export function ThreeWaysFigure() {
       }}
     >
       <div role="group" aria-label="Show the city under" className="mb-4 flex flex-wrap gap-1.5 font-sans text-xs">
-        {SHOWN.map((name) => (
+        {shownList.map((name) => (
           <button
             key={name}
             type="button"
@@ -82,7 +91,7 @@ export function ThreeWaysFigure() {
         ))}
       </div>
       <div className="space-y-2">
-        {STRIPS.map((name) => {
+        {strips.map((name) => {
           const m = shares[name];
           const active = name === shown;
           return (
@@ -120,7 +129,15 @@ export function ThreeWaysFigure() {
           looks={looks}
           markRepresentatives={shown === "representative"}
           ariaLabel={`One city's ${city.design.residents} residents under ${ARRANGEMENT_LABEL[shown].toLowerCase()}: ${counts.match} ballots match their resident, ${counts.contrary} are against them, ${counts.none} residents have no ballot.`}
-          tooltip={(voter) => <BallotTooltip city={city} levelKey={key} arrangement={shown} voter={voter} />}
+          tooltip={(voter) => (
+            <BallotTooltip
+              city={city}
+              level={setting.city}
+              turnout={setting.turnoutOf(voter)}
+              arrangement={shown}
+              voter={voter}
+            />
+          )}
         />
         <p className="mt-2 font-sans text-xs text-story-ink-2 tabular-nums">
           On this question: {counts.match} match, {counts.contrary} against, {counts.none} no ballot
