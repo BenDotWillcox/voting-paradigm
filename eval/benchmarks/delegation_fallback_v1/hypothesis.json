@@ -1,0 +1,46 @@
+{
+  "benchmark_id": "delegation_fallback_v1",
+  "label": "exploratory",
+  "hypothesis": "Under the frozen test's rules, liquid with the representative as default meets the overhead condition at every low level (0.1 to 0.3) where it leads.",
+  "rules": {
+    "cap": 0.1,
+    "feasible_share": 0.95,
+    "lead": "all-city 95% t-interval above zero"
+  },
+  "levels": [
+    {
+      "level": 0.1,
+      "leads": true,
+      "h1": {
+        "estimate": 0.056615312499999994,
+        "lower": 0.05391171419473261,
+        "upper": 0.059318910805267376
+      },
+      "cap_share": 1.0,
+      "frozen_verdict": "supported"
+    },
+    {
+      "level": 0.2,
+      "leads": true,
+      "h1": {
+        "estimate": 0.08838125000000002,
+        "lower": 0.08558927831650222,
+        "upper": 0.09117322168349783
+      },
+      "cap_share": 1.0,
+      "frozen_verdict": "supported"
+    },
+    {
+      "level": 0.3,
+      "leads": true,
+      "h1": {
+        "estimate": 0.10989093749999998,
+        "lower": 0.10697189478156797,
+        "upper": 0.11280998021843198
+      },
+      "cap_share": 1.0,
+      "frozen_verdict": "supported"
+    }
+  ],
+  "outcome": "supported"
+}

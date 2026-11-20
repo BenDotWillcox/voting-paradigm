@@ -1,0 +1,3 @@
+# The city records stay local. metadata.json keeps their hash, and
+# `python -m eval.delegation_fallback run` then `publish` regenerate them.
+cities.jsonl.gz

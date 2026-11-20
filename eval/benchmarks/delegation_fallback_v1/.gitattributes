@@ -1,0 +1,5 @@
+# Keep every published byte exactly as built, so the hashes in metadata.json
+# hold on every platform (core.autocrlf on Windows)
+*.json -text
+*.csv -text
+*.gz binary

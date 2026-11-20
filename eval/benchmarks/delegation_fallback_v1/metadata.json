@@ -1,0 +1,44 @@
+{
+  "arrangements": [
+    "representative",
+    "liquid",
+    "liquid_default"
+  ],
+  "beliefs_sha256": "2c7fa2202ebf4d5a78d1c94a465a446885063ecd98033ca72ca025d2c11f9c86",
+  "benchmark_id": "delegation_fallback_v1",
+  "cities": 200,
+  "commit": "c5a297161febb1bbc5aa62d32bdb28190bc74fd6",
+  "declared": "2026-11-20",
+  "environment": {
+    "numpy": "2.4.6",
+    "python": "3.11.3",
+    "scipy": "1.17.1"
+  },
+  "frozen_protocol": "2026-11-19",
+  "generator": "python -m eval.delegation_fallback publish",
+  "inference_provider_calls": 0,
+  "label": "exploratory",
+  "levels": [
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.45,
+    0.5,
+    0.6,
+    0.7,
+    0.8,
+    0.9
+  ],
+  "outputs": {
+    "cities.jsonl.gz": "04ee0cad66b927dac4ec93a62cac1e17198d8bbd90762503534660f881e5c97e",
+    "hypothesis.json": "f0b203039faf46fe93297903e3f58a22ee385faa8870ed2ea393ebfd06d229d5",
+    "levels.csv": "89b86c334ed97e3e096973d960301279d7810745032d394aa666357e09ffabea",
+    "manifest.json": "315984f6b23f739c479f7a2c0349b8790ee84364492df5de7e33b7631ac715d2",
+    "measures.csv": "7cb1588289f2c8520d475f85fa2576c0805285998e284c92e52b8437f51643f9"
+  },
+  "participant_data": false,
+  "source_sha256_lf_normalized": {
+    "eval/delegation_fallback.py": "b0def76f958f8f1135d535e17af65f941304d3cbbe2dd44ae2a77864179484d1"
+  }
+}
