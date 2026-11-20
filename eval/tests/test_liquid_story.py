@@ -51,6 +51,12 @@ def city() -> dict[str, Any]:
     return value
 
 
+@pytest.fixture(scope="module")
+def results() -> dict[str, Any]:
+    value: dict[str, Any] = json.loads((ARTIFACTS / "results.json").read_text(encoding="utf-8"))
+    return value
+
+
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -88,6 +94,36 @@ class TestStoryBuild:
         assert measures["verdict"]["gate_holds"] is False
 
 
+class TestResults:
+    def test_the_ladder_adds_up_to_the_lead_at_every_level(self, results: dict[str, Any]) -> None:
+        for level, values in results["levels"].items():
+            d = {k: v["estimate"] for k, v in values["decomposition"].items()}
+            steps = (
+                d["cost_of_sharing"]
+                + d["choice_by_non_voters"]
+                + d["city_wide_proxy_combined"]
+                + d["specialisation"]
+                - d["platform_against_record"]
+            )
+            assert steps == pytest.approx(d["h1"], abs=5e-6), level
+            assert d["h1"] == values["h1"]["estimate"], level
+
+    def test_the_result_is_the_frozen_reading(self, results: dict[str, Any]) -> None:
+        with (FRONTIER / "levels.csv").open(encoding="utf-8", newline="") as handle:
+            rows = {r["level"]: r for r in csv.DictReader(handle) if r["point"] == "primary: primary settings"}
+        for level, values in results["levels"].items():
+            row = rows[level]
+            assert values["cap_share"] == float(row["cap_share"])
+            assert values["h1"]["estimate"] == float(row["h1_all_estimate"])
+            assert values["band"]["lower"] == float(row["band_all_lower"])
+            assert (values["direction"], values["size"]) == (row["h1_direction"], row["h1_size"])
+        assert results["threshold"]["confidence"] == [0.1, 0.3]
+        assert results["threshold"]["gate_holds"] is False
+        failing = [lv for lv, v in results["levels"].items()
+                   if v["h1"]["estimate"] > 0 and v["cap_share"] < results["rules"]["feasible_share"]]
+        assert failing == ["0.2", "0.9"]
+
+
 class TestCity:
     def test_every_level_holds_every_resident(self, city: dict[str, Any]) -> None:
         residents = city["design"]["residents"]
@@ -101,6 +137,10 @@ class TestCity:
             assert set(values["codes"]["full_turnout"]) == {"M"}
             # Direct voting is always the resident's own ballot
             assert set(values["codes"]["direct"]) <= {"M", "N"}
+            # Under liquid, a ballot is someone else's exactly when it was delegated
+            reasons, liquid = values["liquid_reason"], values["codes"]["liquid"]
+            assert len(reasons) == residents and set(reasons) <= set("dlek"), level
+            assert all((r == "d") == (c in "mcn") for r, c in zip(reasons, liquid, strict=True)), level
             for name, totals in values["totals"].items():
                 assert totals["match"] + totals["contrary"] + totals["none"] == pairs, (level, name)
                 assert totals["fidelity"] == pytest.approx(totals["match"] / pairs, abs=1e-12)
@@ -143,6 +183,7 @@ class TestCity:
         for name in builder.ARRANGEMENTS:
             assert builder._codes(population, result, name, question) == level["codes"][name], name
             assert builder._totals(population, result, name) == level["totals"][name], name
+        assert builder._reasons(population, result, question) == level["liquid_reason"]
         mechanism = json.loads(builder.dumps(builder._mechanism(population, result, question)))
         assert mechanism == city["mechanism"]
 

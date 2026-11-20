@@ -31,6 +31,61 @@ export interface ArrangementMeasures {
   contrary_share: number;
   none_share: number;
   overhead: number;
+  /** Null where an arrangement has none (a representative has no loops). */
+  empty_record_share: number | null;
+  empty_record_fidelity: number | null;
+  light_record_share: number | null;
+  light_record_fidelity: number | null;
+  loop_share: number | null;
+  /** Fidelity on the questions voters decide themselves. */
+  fidelity_kept: number | null;
+  /** How often whoever decides for others actually votes. */
+  resolver_attendance: number | null;
+}
+
+export interface Interval {
+  estimate: number;
+  lower: number;
+  upper: number;
+}
+
+/** One level of the frozen result, ladder and attendance frontier. */
+export interface ResultLevel {
+  /** Share of cities whose liquid overhead stays at or under the cap. */
+  cap_share: number;
+  cap_meeting_cities: number;
+  proxy_cap_share: number;
+  /** Liquid minus the representative, all cities, with its t-interval. */
+  h1: Interval;
+  /** The simultaneous band around that curve. */
+  band: { lower: number; upper: number };
+  /** The same over the cities under the cap; null where none are. */
+  h1_cap: Interval | null;
+  band_cap: { lower: number; upper: number } | null;
+  /** The per-level reading under the frozen rules. */
+  direction: string;
+  size: string;
+  /** Topic specialisation's reading against its own pre-set minimum. */
+  specialisation: { direction: string; size: string };
+  /** The declared contrasts, keyed as in decomposition.csv. */
+  decomposition: Record<string, Interval>;
+  /** Liquid minus the representative with delegates voting at least `floor`. */
+  frontier: Array<{ floor: number } & Interval>;
+}
+
+export interface StoryResults {
+  source: string;
+  label: "frozen";
+  rules: { cap: number; delta: number; feasible_share: number; confidence: number };
+  threshold: {
+    status: string;
+    bracket: [number, number];
+    crossing: number;
+    confidence: [number, number];
+    first_supported: number | null;
+    gate_holds: boolean;
+  };
+  levels: Record<LevelKey, ResultLevel>;
 }
 
 export interface StoryMeasures {
@@ -84,6 +139,11 @@ export interface CityLevel {
   codes: Record<Arrangement, string>;
   /** Liquid: whose ballot counted for each resident on the featured question. */
   liquid_resolver: number[];
+  /**
+   * Liquid: why each resident's ballot is or is not their own. d delegated,
+   * l on a loop, e an empty record, k kept (no candidate good enough).
+   */
+  liquid_reason: string;
   totals: Record<Arrangement, CityTotals>;
 }
 
