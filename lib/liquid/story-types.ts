@@ -344,6 +344,18 @@ export interface StoryCity {
     source: string;
     /** The typical resident's ballot on every evaluation question, per arrangement. */
     typical_strips: Record<"direct" | "representative" | "liquid", string>;
+    /** Part 2's scene: the typical resident's delegations with everyone voting. */
+    typical: {
+      voter: number;
+      /** Per topic: their delegate, or -1 where they keep it. */
+      delegates: number[];
+      /** Per topic: whose ballot counts for them in the end. */
+      resolvers: number[];
+      /** Their longest path to whoever decides for them, from themself. */
+      chain: { topic: number; path: number[] };
+    };
+    /** Everyone's delegate (or -1) in the featured question's topic. */
+    graph: { topic: number; delegate_of: number[] };
   };
 }
 

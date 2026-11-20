@@ -23,7 +23,9 @@ It writes public/data/liquid-story/city.json:
 - the same city with everyone voting (exploratory, the declared setting of
   eval/benchmarks/delegation_everyone_votes_v1): the featured question's
   ballots, the totals and winners, and the typical resident's ballots, for
-  the story's first two parts.
+  the story's first two parts; and its delegations for part 2's scene: the
+  typical resident's delegate and decider in every topic, their longest
+  chain, and everyone's delegate in the featured question's topic.
 
 The featured question is the evaluation question whose match, contrary and
 no-ballot shares, under direct voting, the representative and liquid at
@@ -78,7 +80,8 @@ from eval.delegation_everyone_votes import population as everyone_population  # 
 
 
 # 2: adds the everyone-votes setting (2026-11-20)
-CITY_VERSION: Final = 2
+# 3: adds that setting's delegations for part 2's scene (2026-11-20)
+CITY_VERSION: Final = 3
 POSITION: Final = 1
 OUT: Final = ROOT / "public" / "data" / "liquid-story" / "city.json"
 RECORDED: Final = ROOT / "eval" / "benchmarks" / "delegation_frontier_v1" / "primary_cities.jsonl.gz"
@@ -428,7 +431,30 @@ def _everyone(reference: Population, question: int, typical: int) -> dict[str, A
     population, result = _everyone_level()
     if population.ids != reference.ids or not (population.district == reference.district).all():
         raise CityError("the residents differ with everyone voting")
-    count = population.evaluation.dimension.size
+    dimension = population.evaluation.dimension
+    count = dimension.size
+    topics = len(population.categories)
+
+    # The calibrated delegations, which must give the comparison's resolvers
+    choice = choose_liquid(population, replace(ChoicePolicy(), acceptance=result.liquid_acceptance.acceptance))
+    liquid = result.outcomes["liquid"]
+    resolvers = []
+    for k in range(topics):
+        resolver, _, _ = resolve_with_loops(choice.delegate[:, k])
+        if not (liquid.resolver[:, np.flatnonzero(dimension == k)] == resolver[:, None]).all():
+            raise CityError(f"everyone votes, topic {k}: the delegations do not give the comparison's resolvers")
+        resolvers.append(resolver)
+
+    def path(voter: int, topic: int) -> list[int]:
+        """From a resident along their delegations to whoever decides for them."""
+        steps = [voter]
+        while steps[-1] != resolvers[topic][voter]:
+            steps.append(int(choice.delegate[steps[-1], topic]))
+        return steps
+
+    # The typical resident's longest chain (ties to the earlier topic)
+    chain_topic = max(range(topics), key=lambda k: (len(path(typical, k)), -k))
+    graph_topic = int(dimension[question])
     return {
         "label": "exploratory",
         "source": "eval/benchmarks/delegation_everyone_votes_v1 (the declared setting)",
@@ -437,6 +463,17 @@ def _everyone(reference: Population, question: int, typical: int) -> dict[str, A
             name: "".join(_codes(population, result, name, q)[typical] for q in range(count))
             for name in ("direct", "representative", "liquid")
         },
+        # Part 2's scene: the typical resident's delegate (or -1, kept) and
+        # decider per topic, and their longest chain
+        "typical": {
+            "voter": typical,
+            "delegates": [int(choice.delegate[typical, k]) for k in range(topics)],
+            "resolvers": [int(resolvers[k][typical]) for k in range(topics)],
+            "chain": {"topic": chain_topic, "path": path(typical, chain_topic)},
+        },
+        # Everyone's delegate (or -1) in the featured question's topic; the
+        # featured question's deciders are `liquid_resolver`
+        "graph": {"topic": graph_topic, "delegate_of": [int(d) for d in choice.delegate[:, graph_topic]]},
     }
 
 
