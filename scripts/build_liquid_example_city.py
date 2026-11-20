@@ -86,7 +86,9 @@ from eval.delegation_everyone_votes import population as everyone_population  # 
 # 3: adds that setting's delegations for part 2's scene (2026-11-20)
 # 4: adds that setting's votes on the featured question, and the typical
 #    resident's representative and proxy, for part 1 (2026-11-20)
-CITY_VERSION: Final = 4
+# 5: adds the lost vote's path, the voter's backup and what each fix would
+#    have cast, for part 3 (2026-11-20)
+CITY_VERSION: Final = 5
 POSITION: Final = 1
 OUT: Final = ROOT / "public" / "data" / "liquid-story" / "city.json"
 RECORDED: Final = ROOT / "eval" / "benchmarks" / "delegation_frontier_v1" / "primary_cities.jsonl.gz"
@@ -358,6 +360,34 @@ def _mechanism(population: Population, result: Comparison, question: int) -> dic
         "resolver": int(liquid.resolver[lost_voter, question]),
         "question": question,
     }
+    if lost is not None:
+        # The path to whoever did not vote; the voter's backup, their best
+        # candidate after the delegate they chose (ranked delegation); and
+        # what each fix would have cast for them on this question: m
+        # (matches), c (against) or n (nothing cast)
+        k = int(dimension[question])
+        steps = [lost_voter]
+        while steps[-1] != lost["resolver"]:
+            steps.append(int(choice.delegate[steps[-1], k]))
+        backup = next(int(c) for c in agreements[k].ranking(lost_voter, tie) if int(c) != steps[1])
+        sincere = population.evaluation.sincere[lost_voter, question]
+        direct = result.outcomes["direct"].counted
+
+        def cast(ballot: int) -> str:
+            return "n" if ballot == NOT_CAST else ("m" if ballot == sincere else "c")
+
+        lost.update(
+            {
+                "topic": k,
+                "path": steps,
+                "backup": backup,
+                "catch": {
+                    "you": cast(int(direct[lost_voter, question])),
+                    "backup": cast(int(direct[backup, question])),
+                    "representative": cast(int(result.outcomes["representative"].counted[lost_voter, question])),
+                },
+            }
+        )
 
     curve_levels = sorted({*CURVE_LEVELS, _round(acceptance)})
     curve = [

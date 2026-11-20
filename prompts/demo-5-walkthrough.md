@@ -481,14 +481,12 @@ is to try.
   - **G1 (built):** the stage, the vocabulary and part 2's scene (8, 9,
     13). It replaces part 2's three placeholders.
   - **G2 (built):** part 1's diagrams (1, 2, 3) on the same stage.
-  - **G3:** part 3's breaks (11, 17, 10 and 18) with the swipe-through
-    fixes, using R2's results.
+  - **G3 (built):** part 3's breaks (11, 17, 10 and 18) with the
+    swipe-through fixes, using R2's results.
   - **G4:** part 4 (21, 6, 7 and 12, 20, 27, 14, 15, 26, 22, 23).
   - **G5:** part 5's assembled design (24, 25), and 16 if kept.
 - **Open:**
-  - The backup delegate. Part 3a's fix names it, but 11's options are you,
-    the representative and the agent. Add it as a fourth option, or drop it
-    from part 3a's copy?
+  - ~~The backup delegate~~: added as a fourth fix (Ben, 2026-11-20).
   - Item 16 has no description.
 
 ### Research the outline needs
@@ -1284,6 +1282,40 @@ Plain and static, like slices B to D. The walkthrough's content is complete.
   decided; a slider stays possible.
 - **Methods and sources** carry no claim label; the heading's label is
   optional.
+
+## Built in slice G3 (2026-11-20)
+
+Part 3's breaks on the shared stage (`components/liquid/story/breaks-scene.tsx`),
+with R2's evidence. Ben added the backup delegate as a fix (resolving the open
+question).
+- **Swipe-through fixes.** Arrows and tabs step through the problem, you
+  catch it, a backup delegate, the representative and a personal agent; each
+  replays the scene and carries its label and evidence.
+- **Item 11, a delegate who does not vote:** resident 33's vote passes through
+  203 to 137, who does not vote; it falls and cracks. Each fix catches it
+  and shows what that catcher would really have cast on that question: 33
+  would not have voted, their backup (441) did not either, and their
+  representative (3) would have voted against them. The notes give the
+  averages: R2 cuts votes with no ballot at Swiss turnout from 6.6% to 0.3%;
+  overhead's health bar shows the rise if everyone caught their own (9.8%
+  to 11.1%, from frozen shares).
+- **Item 17, nobody to delegate to:** the city at the dial's turnout;
+  residents with no record grey out, then take each fix's ballots: their own
+  (almost none), none from a backup (it needs a record too), the
+  representative's (at 0.1: 71 match, 36 against, from R2's rule), or
+  unknown for the agent.
+- **Items 10 and 18, loops:** the recorded chain runs into its two-person
+  loop, circles it twice and stops under the loop rule; a meter below shows
+  the loop share at every turnout and with everyone voting, following the
+  dial.
+- **Copy:** part 3's fix notes, part 4's edges and part 5's list now cite R2
+  (supported at 0.1 to 0.3); the backup delegate and the agent stay
+  untested.
+- **Data:** `city.json` (version 5) adds the lost vote's path, the voter's
+  backup and each fix's would-be ballot; `exploratory.json` gains a
+  `fallback` block from `eval/benchmarks/delegation_fallback_v1`.
+- **Dropped from the story** (still in the study): the kept-city figure and
+  the static chain figures, which the new scenes replace.
 
 ## Built in slice G2 (2026-11-20)
 

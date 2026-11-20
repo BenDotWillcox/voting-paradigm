@@ -28,6 +28,7 @@ ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS = ROOT / "public" / "data" / "liquid-story"
 FRONTIER = ROOT / "eval" / "benchmarks" / "delegation_frontier_v1"
 EVERYONE = ROOT / "eval" / "benchmarks" / "delegation_everyone_votes_v1"
+FALLBACK = ROOT / "eval" / "benchmarks" / "delegation_fallback_v1"
 CODES = set("MNmcn")
 
 
@@ -196,6 +197,22 @@ class TestExploratory:
         assert exploratory["label"] == "exploratory"
         assert everyone["setting"] == "everyone votes"
 
+    def test_the_fallback_block_is_its_benchmark(self, exploratory: dict[str, Any]) -> None:
+        fallback = exploratory["fallback"]
+        hypothesis = json.loads((FALLBACK / "hypothesis.json").read_text(encoding="utf-8"))
+        assert fallback["outcome"] == hypothesis["outcome"] == "supported"
+        assert fallback["hypothesis_levels"] == [0.1, 0.2, 0.3]
+        with (FALLBACK / "levels.csv").open(encoding="utf-8", newline="") as handle:
+            levels = {r["level"]: r for r in csv.DictReader(handle)}
+        with (FALLBACK / "measures.csv").open(encoding="utf-8", newline="") as handle:
+            measures = {(r["level"], r["arrangement"]): r for r in csv.DictReader(handle)}
+        for level, values in fallback["levels"].items():
+            assert values["h1"]["estimate"] == float(levels[level]["h1_estimate"]), level
+            assert values["cap_share"] == float(levels[level]["cap_share"]), level
+            assert values["default_gain"]["lower"] == float(levels[level]["default_gain_lower"]), level
+            for field, value in values["liquid_default"].items():
+                assert value == float(measures[(level, "liquid_default")][field]), (level, field)
+
     def test_everyone_votes_ladder_adds_up_to_its_lead(self, exploratory: dict[str, Any]) -> None:
         everyone = exploratory["everyone_votes"]
         d = {k: v["estimate"] for k, v in everyone["contrasts"].items()}
@@ -264,6 +281,14 @@ class TestCity:
         typical = m["typical"]
         assert set(typical["strips"]["liquid"]) <= CODES
         assert len(typical["questions"]) == len(typical["strips"]["direct"])
+        # The lost vote: its path ends at whoever did not vote, and the backup
+        # is someone other than the voter and their chosen delegate
+        lost = m["lost"]
+        assert lost["path"][0] == lost["voter"] and lost["path"][-1] == lost["resolver"]
+        assert lost["backup"] not in (lost["voter"], lost["path"][1])
+        assert set(lost["catch"]) == {"you", "backup", "representative"}
+        assert set(lost["catch"].values()) <= {"m", "c", "n"}
+        assert city["levels"]["0.45"]["codes"]["liquid"][lost["voter"]] == "n"
 
     def test_swiss_turnout_recomputes_byte_for_byte(self, builder: ModuleType, city: dict[str, Any]) -> None:
         population, result = builder._level(0.45)

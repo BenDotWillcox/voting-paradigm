@@ -21,6 +21,7 @@ public/data/liquid-story/:
                  handover curve and the wrong-ballot scores
                  (eval/benchmarks/delegation_handover_v1), the everyone-votes
                  reference point (eval/benchmarks/delegation_everyone_votes_v1),
+                 the fallback study (eval/benchmarks/delegation_fallback_v1),
                  and the personal agent's bars (proposal arithmetic on the
                  frozen shares)
 - manifest.json  SHA-256 of every input and output, city.json included
@@ -50,6 +51,10 @@ HANDOVER: Final = ROOT / "eval" / "benchmarks" / "delegation_handover_v1"
 HANDOVER_INPUTS: Final = ("curve.csv", "wrong_ballot.csv", "manifest.json")
 EVERYONE: Final = ROOT / "eval" / "benchmarks" / "delegation_everyone_votes_v1"
 EVERYONE_INPUTS: Final = ("measures.csv", "contrasts.csv", "cap.csv", "manifest.json")
+FALLBACK: Final = ROOT / "eval" / "benchmarks" / "delegation_fallback_v1"
+FALLBACK_INPUTS: Final = ("measures.csv", "levels.csv", "hypothesis.json", "manifest.json")
+# What the story reads of liquid with the default at each level
+FALLBACK_FIELDS: Final = ("fidelity", "contrary_share", "none_share", "overhead", "loop_share", "empty_record_fidelity")
 OUT: Final = ROOT / "public" / "data" / "liquid-story"
 CITY: Final = OUT / "city.json"
 ARTIFACT_VERSION: Final = 1
@@ -268,6 +273,42 @@ def _everyone() -> dict[str, Any]:
     }
 
 
+def _fallback(grid: list[float]) -> dict[str, Any]:
+    """
+    The fallback study: liquid with the representative as default, its
+    declared hypothesis read, and the default's effect at every level.
+    """
+    manifest = json.loads((FALLBACK / "manifest.json").read_text(encoding="utf-8"))
+    hypothesis = json.loads((FALLBACK / "hypothesis.json").read_text(encoding="utf-8"))
+    measures = {(r["level"], r["arrangement"]): r for r in _rows(FALLBACK / "measures.csv")}
+    levels = {r["level"]: r for r in _rows(FALLBACK / "levels.csv")}
+
+    def interval(row: dict[str, str], name: str) -> dict[str, float]:
+        return {f: float(row[f"{name}_{f}"]) for f in ("estimate", "lower", "upper")}
+
+    return {
+        "source": "eval/benchmarks/delegation_fallback_v1 (measures, levels and hypothesis)",
+        "commit": manifest["commit"],
+        "declared": manifest["declared"],
+        "cities": manifest["primary_cities"],
+        "hypothesis": hypothesis["hypothesis"],
+        "outcome": hypothesis["outcome"],
+        "hypothesis_levels": [level["level"] for level in hypothesis["levels"]],
+        "levels": {
+            repr(level): {
+                "liquid_default": {
+                    f: _optional(measures[(repr(level), "liquid_default")][f]) for f in FALLBACK_FIELDS
+                },
+                "h1": interval(levels[repr(level)], "h1"),
+                "cap_share": float(levels[repr(level)]["cap_share"]),
+                "default_gain": interval(levels[repr(level)], "default_gain"),
+                "verdict": levels[repr(level)]["frozen_verdict"],
+            }
+            for level in grid
+        },
+    }
+
+
 def _exploratory(grid: list[float], frozen: dict[str, Any]) -> dict[str, Any]:
     """
     The analyses made after the freeze (§12) and one proposal's arithmetic
@@ -323,6 +364,7 @@ def _exploratory(grid: list[float], frozen: dict[str, Any]) -> dict[str, Any]:
             },
         },
         "everyone_votes": _everyone(),
+        "fallback": _fallback(grid),
         "agent_bars": {
             "label": "proposal",
             "formula": {
@@ -408,6 +450,10 @@ def manifest(outputs: dict[str, bytes]) -> dict[str, Any]:
             **{
                 f"eval/benchmarks/delegation_everyone_votes_v1/{name}": sha256((EVERYONE / name).read_bytes())
                 for name in EVERYONE_INPUTS
+            },
+            **{
+                f"eval/benchmarks/delegation_fallback_v1/{name}": sha256((FALLBACK / name).read_bytes())
+                for name in FALLBACK_INPUTS
             },
         },
         "outputs": {name: sha256(body) for name, body in outputs.items()},

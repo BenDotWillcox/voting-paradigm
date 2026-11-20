@@ -9,9 +9,10 @@ import {
   WhoDecidesFigure,
 } from "@/components/liquid/story/delegation-scene";
 import { RouterFigure } from "@/components/liquid/story/costs-figure";
-import { EdgesFigure, KeepCityFigure } from "@/components/liquid/story/edges-figure";
+import { EmptyRecordFigure, LoopFigure, LostVoteFigure } from "@/components/liquid/story/breaks-scene";
+import { EdgesFigure } from "@/components/liquid/story/edges-figure";
 import { HandoverFigure } from "@/components/liquid/story/exploratory-figures";
-import { CalibrationFigure, CandidatesFigure, ChainFigure } from "@/components/liquid/story/mechanism";
+import { CalibrationFigure, CandidatesFigure } from "@/components/liquid/story/mechanism";
 import { OneResident } from "@/components/liquid/story/one-resident";
 import { OutcomesFigure } from "@/components/liquid/story/outcomes-figure";
 import { StructureFigure, VoteEndToEndFigure } from "@/components/liquid/story/structures-scene";
@@ -94,7 +95,7 @@ function Pending({ children }: { children: React.ReactNode }) {
   );
 }
 
-const NOT_YET = "None yet. The fallback study, declared before it runs, will test it.";
+const NOT_YET = "None yet: untested here.";
 
 /** A difference in points, unsigned: 0.178 -> "17.8". */
 function pts(value: number): string {
@@ -148,6 +149,9 @@ export default async function LiquidStoryPage() {
   const top = m.showcase.candidates[0];
   const shortBest = m.short_record.candidates[0];
   const operating = router.operating;
+  // The fallback study (R2): the representative as default
+  const fallback = exploratory.fallback;
+  const defaulted = (l: number) => fallback.levels[levelKey(l)];
 
   // The ceiling's exploratory evidence, and the agent's bars
   const handoverAt = (l: number) => exploratory.handover.levels[levelKey(l)];
@@ -422,12 +426,24 @@ export default async function LiquidStoryPage() {
               </p>
             </LiquidText>
             <LiquidFigure>
-              <ChainFigure mode="lost" />
+              <LostVoteFigure />
             </LiquidFigure>
             <LiquidText>
-              <Fix evidence={NOT_YET}>
-                A backup delegate for each topic, an existing idea known as ranked delegation, then the district
-                representative as the last default, so a vote whose holder does not vote still counts.
+              <Fix
+                title="The fixes"
+                evidence={
+                  <>
+                    <span className="mr-1 inline-block align-middle">
+                      <ClaimLabel claim="exploratory" />
+                    </span>
+                    The fallback study tested the representative as default: at {lowest}, votes with no ballot fall
+                    from {pct(measured(lowest).liquid.none_share)} to {pct(defaulted(lowest).liquid_default.none_share ?? 0)}.
+                    The backup delegate and the personal agent are untested.
+                  </>
+                }
+              >
+                Catch the vote: you vote yourself, a backup delegate takes it (an existing idea known as ranked
+                delegation), the district representative takes it as the last default, or a personal agent casts it.
               </Fix>
 
               <Beat>Nobody to delegate to</Beat>
@@ -444,13 +460,29 @@ export default async function LiquidStoryPage() {
                 chosen proxy for everything has the same floor, so the cause is choosing by record, not delegating by
                 topic.
               </p>
-              <Fix evidence={NOT_YET}>
+              <Fix
+                evidence={
+                  <>
+                    <span className="mr-1 inline-block align-middle">
+                      <ClaimLabel claim="exploratory" />
+                    </span>
+                    Tested in the fallback study, declared before it ran, and {fallback.outcome}: at{" "}
+                    {fallback.hypothesis_levels.join(", ")}, liquid with the default leads the representative by{" "}
+                    {fallback.hypothesis_levels.map((l) => pts(defaulted(l).h1.estimate)).join(", ")} points, and{" "}
+                    {pct(Math.min(...fallback.hypothesis_levels.map((l) => defaulted(l).cap_share)), 0)} of cities stay
+                    under the cap. At {lowest}, residents with no record go from{" "}
+                    {pct(measured(lowest).liquid.empty_record_fidelity ?? 0)} fidelity to{" "}
+                    {pct(defaulted(lowest).liquid_default.empty_record_fidelity ?? 0)}.
+                  </>
+                }
+              >
                 The representative as default delegate: anyone with no delegate for a topic is represented by their
-                district&apos;s representative rather than not at all.
+                district&apos;s representative rather than not at all. A backup delegate cannot help here: it is
+                chosen from the same record.
               </Fix>
             </LiquidText>
             <LiquidFigure>
-              <KeepCityFigure />
+              <EmptyRecordFigure />
             </LiquidFigure>
 
             <LiquidText>
@@ -462,7 +494,7 @@ export default async function LiquidStoryPage() {
               </p>
             </LiquidText>
             <LiquidFigure>
-              <ChainFigure mode="loop" />
+              <LoopFigure />
             </LiquidFigure>
             <LiquidText>
               <p>
@@ -563,7 +595,10 @@ export default async function LiquidStoryPage() {
                 {shortestHistory.label} questions per topic, too few cities stay within the {pct(rules.cap, 0)} limit
                 at any level.
               </p>
-              <Fix title="Our answers" evidence="None of either is tested here.">
+              <Fix
+                title="Our answers"
+                evidence="The fallback study tested the default against a mature record, not a launch; the agent is untested."
+              >
                 The representative as default lets a city start as representative democracy while records build,
                 though a resident who never votes still never builds one. And a personal agent, a model of the voter
                 built from one interview (the preference elicitation of demo 2), could cast the ballots they would
@@ -621,7 +656,8 @@ export default async function LiquidStoryPage() {
             </LiquidFigure>
             <LiquidText>
               <p>
-                The two ends fail for opposite reasons. The low end is part 3&apos;s empty record. At the high end, the
+                The two ends fail for opposite reasons. The low end is part 3&apos;s empty record, which the
+                representative as default closes in the fallback study. At the high end, the
                 city-wide limit pushes people who would vote into delegating: direct voting, with full overhead,
                 passes liquid between {beforePass} ({dec(measured(beforePass).direct.fidelity)} against{" "}
                 {dec(measured(beforePass).liquid.fidelity)}) and {afterPass} (
@@ -721,7 +757,8 @@ export default async function LiquidStoryPage() {
                 </li>
                 <li>
                   <strong>The representative as default</strong> <ClaimLabel claim="proposal" />: for anyone with no
-                  delegate for a topic, and for a vote still uncast. Untested.
+                  delegate for a topic, and for a vote still uncast. Tested in the fallback study, and{" "}
+                  {fallback.outcome} at low turnout; it does nothing for the high end.
                 </li>
                 <li>
                   <strong>A decision-model router</strong> <ClaimLabel claim="proposal" />: questions filed against

@@ -76,11 +76,42 @@ export interface StoryExploratory {
     levels: Record<LevelKey, Record<Arrangement, { match: number; contrary: number; none: number; w0: number; w1: number }>>;
   };
   everyone_votes: EveryoneVotes;
+  fallback: Fallback;
   agent_bars: {
     label: "proposal";
     formula: { representative: string; delegate: string };
     levels: Record<LevelKey, { representative: number; delegate: number }>;
   };
+}
+
+/**
+ * The fallback study (exploratory; delegation_fallback_v1): liquid with the
+ * representative as default, its one declared hypothesis read, and the
+ * default's effect at every level.
+ */
+export interface Fallback {
+  source: string;
+  commit: string;
+  declared: string;
+  cities: number;
+  hypothesis: string;
+  outcome: string;
+  hypothesis_levels: number[];
+  levels: Record<
+    LevelKey,
+    {
+      liquid_default: Record<
+        "fidelity" | "contrary_share" | "none_share" | "overhead" | "loop_share" | "empty_record_fidelity",
+        number | null
+      >;
+      /** Liquid with the default minus the representative. */
+      h1: Interval;
+      cap_share: number;
+      /** Liquid with the default minus frozen liquid. */
+      default_gain: Interval;
+      verdict: string;
+    }
+  >;
 }
 
 /**
@@ -305,7 +336,18 @@ export interface CityMechanism {
     /** Their ballot on every evaluation question, per arrangement. */
     strips: Record<"direct" | "representative" | "liquid", string>;
   };
-  lost: { voter: number; resolver: number; question: number } | null;
+  lost: {
+    voter: number;
+    resolver: number;
+    question: number;
+    topic: number;
+    /** From the voter to whoever did not vote. */
+    path: number[];
+    /** The voter's best candidate after the delegate they chose. */
+    backup: number;
+    /** What each fix would have cast for them: m matches, c against, n nothing. */
+    catch: Record<"you" | "backup" | "representative", "m" | "c" | "n">;
+  } | null;
   calibration: Array<{ acceptance: number; overhead: number }>;
 }
 
