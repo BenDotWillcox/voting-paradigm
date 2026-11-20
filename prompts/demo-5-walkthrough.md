@@ -501,6 +501,18 @@ hypothesis].
 
 **R2. The fallback study** [exploratory; one hypothesis, declared with Ben
 before it runs].
+- **Declared 2026-11-20** in
+  [`demo-5-liquid-democracy.md`](demo-5-liquid-democracy.md), item 4, after
+  Ben approved the candidate hypothesis below. Settled there:
+  - the default applies to (a) every topic a resident has no delegate for,
+    and (b) every vote still uncast at close;
+  - delegations and the calibrated acceptance level stay the frozen
+    liquid's;
+  - the backup delegate moves out of R2 to a later declaration, because the
+    hypothesis does not involve it.
+
+  The runner is `eval/delegation_fallback.py`. The notes below are the
+  draft as it stood before the declaration.
 - It replaces the earlier draft, whose arms were keep, a representative
   default and an agent at an assumed accuracy. The agent leaves, because
   there is no measured accuracy to give it.

@@ -1076,6 +1076,68 @@ results, figure and limits are in
    and all of its overhead is from loops. Results and limits are in
    `eval/benchmarks/delegation_everyone_votes_v1/README.md`.
 
+4. **The fallback study: the representative as default** (declared
+   2026-11-20; `prompts/demo-5-walkthrough.md`, R2). One pre-declared
+   hypothesis, approved by Ben the same day.
+   - **The hypothesis.** Under the frozen test's rules, liquid with the
+     representative as default meets the overhead condition at every low
+     level (0.1 to 0.3) where it leads.
+     - *Leads* at a level: the all-city 95% t-interval of its fidelity
+       minus the representative's lies above zero (`protocol.direction`).
+     - *Meets the overhead condition*: at least 95% of cities
+       (`FEASIBLE_SHARE`) keep its overhead at or under 10% (`CAP`).
+     - **Supported** if it leads at one of the three levels or more, and
+       meets the condition at every level where it leads. **Not
+       supported** if it leads at none, or misses the condition at a level
+       where it leads. Each outcome is reported in those words.
+   - **The arrangement.** The frozen calibrated liquid arrangement, with two
+     rules added:
+     - (a) a resident with no delegate for a topic (they keep it only
+       because no candidate cleared the acceptance level, or they have no
+       record) is represented on it by their district's representative;
+     - (b) a vote still uncast at close (whoever decided it did not vote)
+       takes the representative's ballot.
+
+     Delegations, the acceptance level (calibrated as frozen, without the
+     default), routing, the loop rule and the turnout draws are unchanged.
+     Delegates vote at their own rate (`DIAL_TURNOUT`). A representative
+     holding default votes on a question votes on it at the larger of
+     their own rate and the office-holder rate, so taking them on never
+     removes a ballot they would have cast. A vote the representative does
+     not cast stays uncast; there is no further fallback.
+   - **On what.** The 200 primary cities at every level of the dial, with
+     the frozen beliefs file, from a committed state
+     (`eval/delegation_fallback.py`).
+   - **It favours itself, and says so.** Rule (a) leaves only loop members
+     deciding for themselves, so overhead falls to about the loop share,
+     small at low turnout. Rule (b) replaces a missing ballot with the
+     representative's, and delegates are chosen for agreeing with the
+     voter. Both parts of the hypothesis are therefore expected from how
+     the default works. The run measures by how much, and what the default
+     costs where voting yourself would be more faithful.
+   - **Reported, not tested.**
+     - At every level, for the representative, frozen liquid and liquid
+       with the default: every frozen measure, with 95% t-intervals for
+       fidelity and overhead, including the three shares (match, contrary,
+       no ballot) and the fidelity of residents with empty records.
+     - At every level: liquid with the default minus the representative
+       (all cities and cities under the cap), the share under the cap, the
+       frozen per-level verdict (`h1_verdict`), and liquid with the default
+       minus frozen liquid.
+   - **A check.** The frozen arrangements it reports must equal the frozen
+     benchmark's, and the default's recount must reproduce frozen liquid
+     exactly before the rules are applied.
+   - **Out of scope.** The backup delegate (a second choice per topic) is
+     left for a later declaration, since the hypothesis does not involve
+     it. So are the per-voter ceiling (the handover curve covers it) and a
+     personal agent (no measured accuracy).
+   - **Where.** `eval/benchmarks/delegation_fallback_v1/`, city records
+     kept local with their hashes.
+   - **Seen before this was declared.** The rule was tested on three
+     development cities (seeds 1 to 3, outside the primary namespace) to
+     check the code, and their measures were seen. No primary city was
+     computed.
+
 ## The comparison
 
 ### Arrangements
