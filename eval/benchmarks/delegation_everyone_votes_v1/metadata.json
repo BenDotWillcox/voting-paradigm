@@ -1,0 +1,42 @@
+{
+  "arrangements": [
+    "full_turnout",
+    "direct",
+    "representative",
+    "representative_by_record",
+    "district_choice_voters",
+    "district_choice",
+    "proxy",
+    "liquid"
+  ],
+  "beliefs_sha256": "2c7fa2202ebf4d5a78d1c94a465a446885063ecd98033ca72ca025d2c11f9c86",
+  "benchmark_id": "delegation_everyone_votes_v1",
+  "cities": 200,
+  "commit": "770f413ac350ac0b79662d974e00d0c1e7d2f137",
+  "declared": "2026-11-20",
+  "environment": {
+    "numpy": "2.4.6",
+    "python": "3.11.3",
+    "scipy": "1.17.1"
+  },
+  "frozen_protocol": "2026-11-19",
+  "generator": "python -m eval.delegation_everyone_votes publish",
+  "inference_provider_calls": 0,
+  "label": "exploratory",
+  "outputs": {
+    "cap.csv": "0e3d159f1a2c2b3673adc4c5d8c51d20c5a7b5acf7695e892099a13fcbe7f88e",
+    "cities.jsonl.gz": "65246c7c9a07595ebb81747611e0eed8a0e2ed0a9a52e013383f3977f532c2a4",
+    "contrasts.csv": "dc74202981c97ceca795ef0f33874fed2218926391ee2cec2bdfa090b5bae76c",
+    "manifest.json": "ade8f3fbfd3b3512b092a777a7f5bd8164d3b6fbf922e74a0fe73db2c98b6ba5",
+    "measures.csv": "163df182d162aab904fa57abd9fb23ae7c1af749334b20a01c93f92fa06f4a39"
+  },
+  "participant_data": false,
+  "setting": "everyone votes",
+  "source_sha256_lf_normalized": {
+    "eval/delegation_everyone_votes.py": "1c5125ae64923c8480af63fb51790d5e4a780db14c005fd4d7fcbcc3bbe1fdd5"
+  },
+  "turnout_policy": {
+    "office_rate": 1.0,
+    "resolver_turnout": 1.0
+  }
+}

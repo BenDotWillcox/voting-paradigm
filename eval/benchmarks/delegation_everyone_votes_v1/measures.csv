@@ -1,0 +1,9 @@
+arrangement,cities,fidelity,fidelity_lower,fidelity_upper,overhead,overhead_lower,overhead_upper,contrary_share,none_share,lifecycle_overhead,delegations_per_voter,outcome_agreement,delegated_share,lost_share,resolver_attendance,fidelity_kept,fidelity_resolved,share_below_half,p10_voter_fidelity,below_half_none_share,below_half_contrary_share,mean_largest_share,max_largest_share,loop_share,mean_loops,light_record_share,light_record_fidelity,empty_record_share,empty_record_fidelity
+full_turnout,200,1,1,1,1,1,1,0,0,1,0,1,0,0,,1,,0,1,,,0.002,0.002,0,0,0,,0,
+direct,200,1,1,1,1,1,1,0,0,1,0,1,0,0,,1,,0,1,,,0.002,0.002,0,0,0,,0,
+representative,200,0.632625,0.629215,0.636035,0.01,0.01,0.01,0.367375,0,0.01,0,0.830687,0.99,0,1,1,0.628914,0.13553,0.474153,0,0.574943,0.2,0.2,0,0,0,,0,
+representative_by_record,200,0.652274,0.64943,0.655119,0.01,0.01,0.01,0.347726,0,0.717143,0,0.853781,0.99,0,1,1,0.648762,0.11994,0.480847,0,0.582691,0.2,0.2,0,0,0,,0,
+district_choice_voters,200,0.704994,0.702547,0.707441,0.03,0.03,0.03,0.295006,0,0.722857,0.97,0.8845,0.97,0,1,1,0.69587,0.0283,0.575897,0,0.548938,0.13627,0.13627,0,0,0,,0,
+district_choice,200,0.704994,0.702547,0.707441,0.03,0.03,0.03,0.295006,0,0.722857,0.97,0.8845,0.97,0,1,1,0.69587,0.0283,0.575897,0,0.548938,0.13627,0.13627,0,0,0,,0,
+proxy,200,0.790014,0.788673,0.791356,0.10586,0.104449,0.107271,0.209986,0,0.744531,0.99398,0.892937,0.89414,0,1,1,0.765163,0.00235,0.664372,0,0.533087,0.16791,0.16791,0.09984,24.96,0,,0,
+liquid,200,0.810245,0.809174,0.811315,0.182927,0.181493,0.184362,0.189755,0,0.766551,8,0.922813,0.817072,0,1,1,0.767775,0.00014,0.696209,0,0.519271,0.102583,0.16461,0.182927,45.731875,0,,0,
