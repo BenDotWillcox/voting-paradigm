@@ -25,7 +25,9 @@ It writes public/data/liquid-story/city.json:
   ballots, the totals and winners, and the typical resident's ballots, for
   the story's first two parts; and its delegations for part 2's scene: the
   typical resident's delegate and decider in every topic, their longest
-  chain, and everyone's delegate in the featured question's topic.
+  chain, and everyone's delegate in the featured question's topic; and for
+  part 1, everyone's own vote on the featured question and the typical
+  resident's representative and proxy.
 
 The featured question is the evaluation question whose match, contrary and
 no-ballot shares, under direct voting, the representative and liquid at
@@ -65,13 +67,14 @@ from delegation.comparison.arrangements import (  # noqa: E402
     DIAL_TURNOUT,
     _liquid_agreements,
     choose_liquid,
+    choose_proxies,
     history_overhead,
     population_tie_key,
     resolve_with_loops,
 )
 from delegation.comparison.beliefs import BeliefCityConfig  # noqa: E402
 from delegation.comparison.choice import KEEP, ChoicePolicy, top_candidates  # noqa: E402
-from delegation.comparison.population import NOT_CAST, Population  # noqa: E402
+from delegation.comparison.population import NOT_CAST, YES, Population  # noqa: E402
 from delegation.comparison.protocol import SWISS_MARKER, TURNOUT_GRID  # noqa: E402
 from delegation.comparison.runner import CAP  # noqa: E402
 from delegation.comparison.sweeps import PRIMARY_POINT  # noqa: E402
@@ -81,7 +84,9 @@ from eval.delegation_everyone_votes import population as everyone_population  # 
 
 # 2: adds the everyone-votes setting (2026-11-20)
 # 3: adds that setting's delegations for part 2's scene (2026-11-20)
-CITY_VERSION: Final = 3
+# 4: adds that setting's votes on the featured question, and the typical
+#    resident's representative and proxy, for part 1 (2026-11-20)
+CITY_VERSION: Final = 4
 POSITION: Final = 1
 OUT: Final = ROOT / "public" / "data" / "liquid-story" / "city.json"
 RECORDED: Final = ROOT / "eval" / "benchmarks" / "delegation_frontier_v1" / "primary_cities.jsonl.gz"
@@ -454,6 +459,14 @@ def _everyone(reference: Population, question: int, typical: int) -> dict[str, A
 
     # The typical resident's longest chain (ties to the earlier topic)
     chain_topic = max(range(topics), key=lambda k: (len(path(typical, k)), -k))
+
+    # Their representative, elected with everyone voting, and their proxy:
+    # one person for everything, chosen by agreement over the whole record
+    representative = int(result.outcomes["representative"].resolver[typical, 0])
+    proxies = choose_proxies(population, replace(ChoicePolicy(), acceptance=result.proxy_acceptance.acceptance))
+    proxy_resolver, _, _ = resolve_with_loops(proxies.delegate[:, 0])
+    if not (result.outcomes["proxy"].resolver == proxy_resolver[:, None]).all():
+        raise CityError("everyone votes: the proxies do not give the comparison's resolvers")
     graph_topic = int(dimension[question])
     return {
         "label": "exploratory",
@@ -470,7 +483,13 @@ def _everyone(reference: Population, question: int, typical: int) -> dict[str, A
             "delegates": [int(choice.delegate[typical, k]) for k in range(topics)],
             "resolvers": [int(resolvers[k][typical]) for k in range(topics)],
             "chain": {"topic": chain_topic, "path": path(typical, chain_topic)},
+            "representative": representative,
+            # Their proxy (or -1) and whose ballot counts for them in the end
+            "proxy": int(proxies.delegate[typical, 0]),
+            "proxy_resolver": int(proxy_resolver[typical]),
         },
+        # Everyone's own vote on the featured question: y (yes) or n (no)
+        "featured_votes": "".join("y" if vote == YES else "n" for vote in population.evaluation.sincere[:, question]),
         # Everyone's delegate (or -1) in the featured question's topic; the
         # featured question's deciders are `liquid_resolver`
         "graph": {"topic": graph_topic, "delegate_of": [int(d) for d in choice.delegate[:, graph_topic]]},

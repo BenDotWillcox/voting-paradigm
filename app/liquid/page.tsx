@@ -14,6 +14,7 @@ import { HandoverFigure } from "@/components/liquid/story/exploratory-figures";
 import { CalibrationFigure, CandidatesFigure, ChainFigure } from "@/components/liquid/story/mechanism";
 import { OneResident } from "@/components/liquid/story/one-resident";
 import { OutcomesFigure } from "@/components/liquid/story/outcomes-figure";
+import { StructureFigure, VoteEndToEndFigure } from "@/components/liquid/story/structures-scene";
 import { PlaneFigure } from "@/components/liquid/story/plane";
 import { ResultFigure } from "@/components/liquid/story/result-figure";
 import {
@@ -209,11 +210,27 @@ export default async function LiquidStoryPage() {
                   Start with a city where everyone votes on every question they are asked. There are several ways to
                   turn what its residents want into decisions, and each asks a different amount of them.
                 </p>
+              </LiquidText>
+              <LiquidFigure>
+                <VoteEndToEndFigure />
+              </LiquidFigure>
+              <LiquidText>
+                <p>
+                  Each arrangement below changes one thing: whose ballot counts for you. The figures follow one
+                  resident, {resident(city.everyone.typical.voter)}, and their {design.topics} topics, each in its own
+                  colour. Under each, two bars: <strong>fidelity</strong>, how often the ballot counted for you
+                  matches what you want, and <strong>overhead</strong>, how many questions you decide yourself.
+                </p>
                 <Beat>Direct voting</Beat>
                 <p>
                   Everyone decides every question themself. Every ballot is the voter&apos;s own, so it always matches
                   what they want. But the work is the problem: every resident decides every question.
                 </p>
+              </LiquidText>
+              <LiquidFigure>
+                <StructureFigure kind="direct" />
+              </LiquidFigure>
+              <LiquidText>
                 <Beat>A district representative</Beat>
                 <p>
                   Each district elects one person, who votes on every question for everyone in it. Residents decide
@@ -230,12 +247,22 @@ export default async function LiquidStoryPage() {
                     everything.
                   </li>
                 </ul>
+              </LiquidText>
+              <LiquidFigure>
+                <StructureFigure kind="representative" />
+              </LiquidFigure>
+              <LiquidText>
                 <Beat>A proxy you choose</Beat>
                 <p>
                   Instead of sharing a representative, each resident picks their own person, anyone in the city, to
                   vote for them on everything. That removes dilution: the proxy&apos;s ballots match on{" "}
                   {pct(e.proxy.fidelity)} of questions.
                 </p>
+              </LiquidText>
+              <LiquidFigure>
+                <StructureFigure kind="proxy" />
+              </LiquidFigure>
+              <LiquidText>
                 <Beat>Liquid delegation</Beat>
                 <p>
                   Liquid delegation picks a person for each topic, so it removes bundling too. Its ballots match on{" "}
@@ -245,14 +272,14 @@ export default async function LiquidStoryPage() {
                 </p>
               </LiquidText>
               <LiquidFigure>
-                <ThreeWaysFigure />
+                <StructureFigure kind="liquid" />
               </LiquidFigure>
               <LiquidText>
                 <Beat className="pt-0">The trade-off, on two measures</Beat>
                 <p>
-                  <strong>Fidelity</strong> is the share of your questions on which the ballot counted for you matches
-                  what you would have chosen. <strong>Overhead</strong> is the share you decide yourself: the work an
-                  arrangement asks of you. Direct voting scores 100% on both.
+                  The two bars are the trade-off. <strong>Fidelity</strong> is the share of your questions on which
+                  the ballot counted for you matches what you would have chosen. <strong>Overhead</strong> is the
+                  share you decide yourself: the work an arrangement asks of you. Direct voting scores 100% on both.
                 </p>
                 <p>
                   Liquid delegation aims between the corners: far less work than voting on everything yourself, and

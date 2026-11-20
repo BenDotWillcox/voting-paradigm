@@ -20,8 +20,11 @@ let cached: Promise<LiquidStoryData> | null = null;
  * Everything the walkthrough renders, from the generated artifacts
  * (scripts/build_liquid_story.py, scripts/build_liquid_example_city.py).
  * Cached per server process; the page is static, so this runs at build time.
+ * In development it reads the files every time, so a rebuilt artifact shows
+ * without restarting the server.
  */
 export function loadLiquidStory(): Promise<LiquidStoryData> {
+  if (process.env.NODE_ENV === "development") return load();
   cached ??= load();
   return cached;
 }

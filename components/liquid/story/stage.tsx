@@ -293,3 +293,19 @@ export function Edge({
 export function along(a: Point, b: Point, x: number): Point {
   return { x: lerp(a.x, b.x, x), y: lerp(a.y, b.y, x) };
 }
+
+/** A node trusted with several topics: one segment in each topic's colour. */
+export function Segments({ at, r, colors }: { at: Point; r: number; colors: string[] }) {
+  const step = (2 * Math.PI) / colors.length;
+  return (
+    <g transform={`translate(${at.x},${at.y})`} pointerEvents="none">
+      {colors.map((color, i) => {
+        const a0 = -Math.PI / 2 + i * step;
+        const a1 = a0 + step;
+        const large = step > Math.PI ? 1 : 0;
+        const d = `M0,0 L${r * Math.cos(a0)},${r * Math.sin(a0)} A${r},${r} 0 ${large} 1 ${r * Math.cos(a1)},${r * Math.sin(a1)} Z`;
+        return <path key={i} d={d} style={{ fill: color }} />;
+      })}
+    </g>
+  );
+}
