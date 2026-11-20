@@ -17,6 +17,10 @@ public/data/liquid-story/:
                  and the protocol's rules; every sweep point in the
                  benchmark's own panels; and the router's measured errors
                  (eval/benchmarks/delegation_router_v1)
+- exploratory.json  the analyses made after the freeze, labelled so: liquid's
+                 handover curve and the wrong-ballot scores
+                 (eval/benchmarks/delegation_handover_v1), and the personal
+                 agent's bars (proposal arithmetic on the frozen shares)
 - manifest.json  SHA-256 of every input and output, city.json included
 
 Every number the page quotes is read from these files, never typed into the
@@ -39,6 +43,9 @@ from typing import Any, Final
 ROOT: Final = Path(__file__).resolve().parents[1]
 FRONTIER: Final = ROOT / "eval" / "benchmarks" / "delegation_frontier_v1"
 ROUTER: Final = ROOT / "eval" / "benchmarks" / "delegation_router_v1"
+HANDOVER: Final = ROOT / "eval" / "benchmarks" / "delegation_handover_v1"
+# The exploratory benchmark's committed summaries
+HANDOVER_INPUTS: Final = ("curve.csv", "wrong_ballot.csv", "manifest.json")
 OUT: Final = ROOT / "public" / "data" / "liquid-story"
 CITY: Final = OUT / "city.json"
 ARTIFACT_VERSION: Final = 1
@@ -64,6 +71,10 @@ EXTRA_FIELDS: Final = (
     "below_half_contrary_share",
     "lifecycle_overhead",
     "outcome_agreement",
+    # A chosen delegate's ballots, for the personal agent's bar (§13)
+    "fidelity_resolved",
+    "delegated_share",
+    "lost_share",
 )
 INPUTS: Final = (
     "measures.csv",
@@ -213,6 +224,71 @@ def _router() -> dict[str, Any]:
     }
 
 
+def _exploratory(grid: list[float], frozen: dict[str, Any]) -> dict[str, Any]:
+    """
+    The analyses made after the freeze (§12) and one proposal's arithmetic
+    (§13). Nothing here changes a frozen reading.
+    """
+    manifest = json.loads((HANDOVER / "manifest.json").read_text(encoding="utf-8"))
+    curve = _rows(HANDOVER / "curve.csv")
+    wrong = _rows(HANDOVER / "wrong_ballot.csv")
+    shares = ("fidelity", "overhead", "contrary_share", "none_share")
+
+    def bars(level: float) -> dict[str, float]:
+        at = frozen[repr(level)]
+        rep, liquid = at["representative"], at["liquid"]
+        # How often a ballot matches its voter when one is cast: a personal
+        # agent filling empty ballots must match more often to beat it
+        delegated_cast = 1 - liquid["lost_share"] / liquid["delegated_share"]
+        return {
+            "representative": rep["fidelity"] / (1 - rep["none_share"]),
+            "delegate": liquid["fidelity_resolved"] / delegated_cast,
+        }
+
+    return {
+        "label": "exploratory",
+        "handover": {
+            "source": "eval/benchmarks/delegation_handover_v1/curve.csv",
+            "commit": manifest["commit"],
+            "declared": manifest["declared"],
+            "cities": manifest["primary_cities"],
+            "levels": {
+                repr(level): [
+                    {"depth": int(r["depth"]), **{f: float(r[f]) for f in shares}}
+                    for r in curve
+                    if float(r["level"]) == level
+                ]
+                for level in grid
+            },
+        },
+        "wrong_ballot": {
+            "source": "eval/benchmarks/delegation_handover_v1/wrong_ballot.csv",
+            "levels": {
+                repr(level): {
+                    r["arrangement"]: {
+                        "match": float(r["match"]),
+                        "contrary": float(r["contrary"]),
+                        "none": float(r["none"]),
+                        "w0": float(r["score_w0"]),
+                        "w1": float(r["score_w1"]),
+                    }
+                    for r in wrong
+                    if float(r["level"]) == level
+                }
+                for level in grid
+            },
+        },
+        "agent_bars": {
+            "label": "proposal",
+            "formula": {
+                "representative": "representative fidelity / (1 - representative no-ballot share)",
+                "delegate": "liquid fidelity on delegated pairs / (1 - lost share / delegated share)",
+            },
+            "levels": {repr(level): bars(level) for level in grid},
+        },
+    }
+
+
 def build_artifacts() -> dict[str, Any]:
     protocol = json.loads((FRONTIER / "manifest.json").read_text(encoding="utf-8"))["primary"]
     rows = [r for r in _rows(FRONTIER / "measures.csv") if r["point"] == PRIMARY]
@@ -258,6 +334,7 @@ def build_artifacts() -> dict[str, Any]:
             "sweeps": _sweeps(grid),
             "router": _router(),
         },
+        "exploratory.json": _exploratory(grid, levels),
     }
 
 
@@ -279,6 +356,10 @@ def manifest(outputs: dict[str, bytes]) -> dict[str, Any]:
                 for name in INPUTS
             },
             "eval/benchmarks/delegation_router_v1/summary.json": sha256((ROUTER / "summary.json").read_bytes()),
+            **{
+                f"eval/benchmarks/delegation_handover_v1/{name}": sha256((HANDOVER / name).read_bytes())
+                for name in HANDOVER_INPUTS
+            },
         },
         "outputs": {name: sha256(body) for name, body in outputs.items()},
         # Written by scripts/build_liquid_example_city.py, which recomputes

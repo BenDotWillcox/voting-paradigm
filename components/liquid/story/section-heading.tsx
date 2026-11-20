@@ -19,14 +19,15 @@ export function LiquidHeading({
 }: {
   id: string;
   kicker: string;
-  claim: Claim;
+  /** What the section may claim; omitted where it claims nothing (methods). */
+  claim?: Claim;
   children: React.ReactNode;
 }) {
   return (
     <div id={id} className="mx-auto mt-24 mb-4 max-w-2xl scroll-mt-16 px-4">
       <div className="flex flex-wrap items-center gap-2">
         <p className="text-sm font-medium text-story-muted">{kicker}</p>
-        <ClaimLabel claim={claim} />
+        {claim ? <ClaimLabel claim={claim} /> : null}
       </div>
       <h2 className="mt-2 text-2xl font-semibold tracking-tight text-balance text-story-ink sm:text-3xl">
         {children}

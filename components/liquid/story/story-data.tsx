@@ -2,11 +2,12 @@
 
 import * as React from "react";
 
-import type { StoryCity, StoryMeasures, StoryResults } from "@/lib/liquid/story-types";
+import type { StoryCity, StoryExploratory, StoryMeasures, StoryResults } from "@/lib/liquid/story-types";
 
 interface StoryData {
   measures: StoryMeasures;
   results: StoryResults;
+  exploratory: StoryExploratory;
   city: StoryCity;
 }
 
@@ -20,10 +21,14 @@ const StoryDataContext = React.createContext<StoryData | null>(null);
 export function StoryDataProvider({
   measures,
   results,
+  exploratory,
   city,
   children,
 }: StoryData & { children: React.ReactNode }) {
-  const value = React.useMemo(() => ({ measures, results, city }), [measures, results, city]);
+  const value = React.useMemo(
+    () => ({ measures, results, exploratory, city }),
+    [measures, results, exploratory, city]
+  );
   return <StoryDataContext.Provider value={value}>{children}</StoryDataContext.Provider>;
 }
 

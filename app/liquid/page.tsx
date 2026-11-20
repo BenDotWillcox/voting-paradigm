@@ -5,6 +5,7 @@ import { AttendanceFigure } from "@/components/liquid/story/attendance-figure";
 import { ClaimLabel } from "@/components/liquid/story/claim-label";
 import { CostsFigure, RouterFigure } from "@/components/liquid/story/costs-figure";
 import { EdgesFigure, KeepCityFigure } from "@/components/liquid/story/edges-figure";
+import { HandoverFigure, WrongBallotFigure } from "@/components/liquid/story/exploratory-figures";
 import { LadderFigure } from "@/components/liquid/story/ladder-figure";
 import { CalibrationFigure, CandidatesFigure, ChainFigure, RoutingFigure } from "@/components/liquid/story/mechanism";
 import { OneResident } from "@/components/liquid/story/one-resident";
@@ -50,7 +51,7 @@ function Step({ title, children, figure }: { title: string; children: React.Reac
  * talks to the Python service, from the browser.
  */
 export default async function LiquidWalkthroughPage() {
-  const { measures, results, city } = await loadLiquidStory();
+  const { measures, results, exploratory, city } = await loadLiquidStory();
   const swiss = measures.protocol.swiss_marker;
   const at = measures.levels[levelKey(swiss)];
   const { design } = city;
@@ -110,10 +111,27 @@ export default async function LiquidWalkthroughPage() {
     Array.from(winners[name]).filter((w, q) => w !== winners.full_turnout[q]).length;
   const cityMisses = { direct: missesOf("direct"), liquid: missesOf("liquid"), representative: missesOf("representative") };
 
+  // §12–15
+  const handoverAt = (l: number) => exploratory.handover.levels[levelKey(l)];
+  const rises = (l: number) => handoverAt(l).every((p, i, all) => i === 0 || p.fidelity > all[i - 1].fidelity);
+  const lastRise = grid.filter(rises).slice(-1)[0];
+  const firstFall = grid[grid.indexOf(lastRise) + 1];
+  const dominated = grid.filter((l) => {
+    const deepest = handoverAt(l)[handoverAt(l).length - 1];
+    const calibrated = measured(l).liquid;
+    // Better on fidelity by more than the curve's intervals (about ±0.4 points), and lower on overhead
+    return deepest.fidelity - calibrated.fidelity > 0.004 && deepest.overhead < calibrated.overhead;
+  });
+  const wrongAt = (l: number) => exploratory.wrong_ballot.levels[levelKey(l)];
+  const repW1 = grid.map((l) => wrongAt(l).representative.w1);
+  const tieLevel = grid.find((l) => Math.abs(wrongAt(l).direct.w1 - wrongAt(l).liquid.w1) < 0.005);
+  const directLeads = grid.find((l) => wrongAt(l).direct.w1 > wrongAt(l).liquid.w1 + 0.005);
+  const agentBars = exploratory.agent_bars.levels[levelKey(swiss)];
+
   return (
     <>
       <div className="story liquid-story min-h-screen pb-24">
-        <StoryDataProvider measures={measures} results={results} city={city}>
+        <StoryDataProvider measures={measures} results={results} exploratory={exploratory} city={city}>
           <TurnoutProvider levels={measures.protocol.turnout_grid} swiss={swiss}>
             <header id="top" className="mx-auto max-w-2xl px-4 pt-14 pb-6">
               <p className="text-sm font-medium text-story-muted">Demo 05 · Liquid democracy</p>
@@ -617,6 +635,178 @@ export default async function LiquidWalkthroughPage() {
             <LiquidFigure>
               <OutcomeStrip />
             </LiquidFigure>
+
+            {/* §12 What overhead is worth */}
+            <LiquidHeading id="exploratory" kicker="What overhead is worth" claim="exploratory">
+              Two questions the frozen test did not ask
+            </LiquidHeading>
+            <LiquidText>
+              <p>
+                The two analyses in this section were declared and run after the frozen results had been seen. Neither
+                is a hypothesis test, and neither changes the verdict.
+              </p>
+              <h3 className="pt-2 text-lg font-semibold text-story-ink">Liquid&apos;s whole curve</h3>
+              <p>
+                The plane above holds one liquid point per turnout: the acceptance level calibrated to the cap. Handing
+                over one more topic at a time traces the rest of the curve, from voting yourself to handing over
+                everything. It turns where the study said it would. Up to {lastRise}, every topic handed over raises
+                fidelity. From {firstFall} it does not: at {highest}, every topic handed over lowers it, from{" "}
+                {dec(handoverAt(highest)[0].fidelity)} to {dec(handoverAt(highest)[handoverAt(highest).length - 1].fidelity)}.
+                Keeping a question, the overhead, buys fidelity only where people would vote on it often enough to
+                beat their delegate.
+              </p>
+              <p>
+                The calibrated point sits on the curve, short of its end: the frozen rule stops as soon as overhead
+                meets the cap. From {dominated[0]} to {dominated[dominated.length - 1]}, handing over everything beats
+                it on both measures, with less overhead and more fidelity. That is an observation on the later
+                questions, made after the freeze; a rule tuned to it would need its own declared test.
+              </p>
+            </LiquidText>
+            <LiquidFigure>
+              <HandoverFigure />
+            </LiquidFigure>
+            <LiquidText>
+              <h3 className="text-lg font-semibold text-story-ink">How bad is a ballot against you?</h3>
+              <p>
+                Fidelity counts a ballot against you the same as no ballot. On a yes-or-no question, though, a ballot
+                against you cancels one cast your way. Counted as −1, the representative scores about{" "}
+                {dec(Math.min(...repW1), 2)} at every turnout. Liquid rises from {dec(wrongAt(lowest).liquid.w1)} at{" "}
+                {lowest} to {dec(wrongAt(highest).liquid.w1)} at {highest}, ahead of the representative at every level.
+                Direct voting, which never votes against anyone, ties liquid at {tieLevel} and leads from{" "}
+                {directLeads}.
+              </p>
+              <p>
+                The choice of metric is a value judgment, and it changes which arrangement looks best.
+              </p>
+            </LiquidText>
+            <LiquidFigure>
+              <WrongBallotFigure />
+            </LiquidFigure>
+
+            {/* §13 What could be built */}
+            <LiquidHeading id="proposals" kicker="What could be built" claim="proposal">
+              Four ideas the study did not test
+            </LiquidHeading>
+            <LiquidText>
+              <p>Each names the failure it targets and the bar it would have to clear. None is tested here.</p>
+              <ul>
+                <li>
+                  <strong>The representative as a default delegate.</strong> It targets the low edge: no one with an
+                  empty record would fall below being represented.
+                </li>
+                <li>
+                  <strong>A backup delegate for loops.</strong> It targets the high edge, where loops send votes back to
+                  people who then decide for themselves.
+                </li>
+                <li>
+                  <strong>The cap as each voter&apos;s own ceiling, not a city-wide target.</strong> People who would
+                  vote keep their questions. It targets the high end, where delegation now costs fidelity.
+                </li>
+                <li>
+                  <strong>A personal agent.</strong> A model of the voter casts the ballots they would leave empty. The
+                  people who need it most have no record to learn from, so its input would be the preference interview
+                  of demo 2: the cost moves from every ballot to one onboarding conversation.
+                  <ul className="mt-2">
+                    <li>
+                      It must be scored on all three shares. On a yes-or-no question, a coin flip cast for an abstainer
+                      raises fidelity as frozen.
+                    </li>
+                    <li>
+                      The bars at Swiss turnout: to beat a representative as the default, its ballots must match the
+                      voter more than {pct(agentBars.representative)} of the time they are cast; to beat a chosen
+                      delegate, more than {pct(agentBars.delegate)}.
+                    </li>
+                    <li>No accuracy is claimed: demo 2 has no measured ballot accuracy yet.</li>
+                    <li>
+                      One model serving everyone shares its errors across every ballot it casts: the super-delegate
+                      problem in a new form.
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+              <p>
+                The follow-up is one pre-declared study of fallback rules for the questions voters keep: keep them, a
+                representative default, or an agent at an assumed accuracy, all scored on the three shares. It will be
+                declared and run separately, and linked here only once it has results.
+              </p>
+              <p className="text-sm text-story-ink-2">
+                How the bars are worked out: a representative&apos;s ballot matches its voter{" "}
+                {pct(agentBars.representative)} of the time it is cast ({exploratory.agent_bars.formula.representative}
+                ); a chosen delegate&apos;s, {pct(agentBars.delegate)} ({exploratory.agent_bars.formula.delegate}). Both
+                from the frozen shares at Swiss turnout.
+              </p>
+            </LiquidText>
+
+            {/* §14 What is left out */}
+            <LiquidHeading id="left-out" kicker="What is left out" claim="design">
+              What this study does not model
+            </LiquidHeading>
+            <LiquidText>
+              <ul>
+                <li>
+                  <strong>What representatives do</strong> besides voting: deliberation, setting the agenda, brokering
+                  across issues.
+                </li>
+                <li>
+                  <strong>Behaviour:</strong> strategic voting, campaigns, and preferences that change.
+                </li>
+                <li>
+                  <strong>Questions of unequal weight.</strong> Every question counts the same, so bundling&apos;s
+                  trade of minor issues for major ones gets no credit.
+                </li>
+                <li>
+                  <strong>Real cities and real routing.</strong> The cities are synthetic, and every question reaches
+                  the right topic.
+                </li>
+                <li>
+                  <strong>Finer categories than topics,</strong> which remain untested.
+                </li>
+                <li>
+                  <strong>Turnout that depends on opinion.</strong> Here it does not.
+                </li>
+              </ul>
+            </LiquidText>
+
+            {/* §15 Methods and sources */}
+            <LiquidHeading id="methods" kicker="Methods and sources">
+              How this was made
+            </LiquidHeading>
+            <LiquidText>
+              <ul>
+                <li>
+                  <strong>The protocol</strong> was frozen on {measures.protocol.frozen}, before any primary or sweep
+                  city ran. Both runs were made from merge commit <code>{measures.protocol.commit.slice(0, 7)}</code> on
+                  a clean checkout: {measures.protocol.cities} primary cities, and {sweepCities} per sweep setting.
+                </li>
+                <li>
+                  <strong>The model:</strong> beliefs from a model fitted to the CES 2024 Common Content, the turnout
+                  spread from Geneva&apos;s voting register, and the office-holder rate from Voteview. The full
+                  description is <code>prompts/demo-5-odd.md</code>.
+                </li>
+                <li>
+                  <strong>Reproducing the benchmark:</strong> <code>python -m eval.delegation_frontier verify</code>{" "}
+                  checks every committed file against its hash. The city records are kept locally, with their hashes
+                  committed.
+                </li>
+                <li>
+                  <strong>The exploratory analyses</strong> were declared on {exploratory.handover.declared} and run
+                  from commit <code>{exploratory.handover.commit.slice(0, 7)}</code> with the frozen code (
+                  <code>eval/benchmarks/delegation_handover_v1</code>). The router&apos;s errors come from{" "}
+                  <code>eval/benchmarks/delegation_router_v1</code>.
+                </li>
+                <li>
+                  <strong>This page</strong> reads every number from <code>public/data/liquid-story/</code>, built
+                  from those committed files, with a manifest of their hashes. The illustrative city is primary city 1,
+                  recomputed with the frozen code.
+                </li>
+                <li>
+                  <strong>The labels.</strong> A <em>frozen result</em> is read under the rules fixed before the run.
+                  An <em>exploratory</em> analysis was made after the freeze and changes no verdict. A{" "}
+                  <em>proposal</em> is an idea the study did not test. An <em>illustration</em> shows how the system
+                  works and claims nothing on its own.
+                </li>
+              </ul>
+            </LiquidText>
           </TurnoutProvider>
         </StoryDataProvider>
       </div>
