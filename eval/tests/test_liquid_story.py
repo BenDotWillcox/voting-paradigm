@@ -297,11 +297,33 @@ class TestCity:
             assert len(strip) == questions and not set(strip) & {"N", "n"}, name
         assert set(everyone["typical_strips"]["direct"]) == {"M"}
 
+    def test_everyone_votes_delegations_give_the_deciders(self, city: dict[str, Any]) -> None:
+        everyone = city["everyone"]
+        typical = everyone["typical"]
+        assert typical["voter"] == city["mechanism"]["typical"]["voter"]
+        assert len(typical["delegates"]) == len(typical["resolvers"]) == city["design"]["topics"]
+        chain = typical["chain"]
+        assert chain["path"][0] == typical["voter"]
+        assert chain["path"][-1] == typical["resolvers"][chain["topic"]]
+        assert chain["path"][1:2] == [typical["delegates"][chain["topic"]]][: len(chain["path"]) - 1]
+        # Following everyone's delegations in the featured question's topic
+        # reaches whoever decides for them on that question
+        graph = everyone["graph"]
+        assert graph["topic"] == city["question"]["topic"]
+        delegate_of, resolver = graph["delegate_of"], everyone["liquid_resolver"]
+        for voter, decider in enumerate(resolver):
+            seen, at = {voter}, voter
+            while at != decider:
+                at = delegate_of[at]
+                assert at >= 0 and at not in seen, voter
+                seen.add(at)
+
     def test_everyone_votes_recomputes_byte_for_byte(self, builder: ModuleType, city: dict[str, Any]) -> None:
-        population, result = builder._everyone_level()
-        values = json.loads(builder.dumps(builder._level_values(population, result, city["question"]["index"])))
-        for key, value in values.items():
-            assert city["everyone"][key] == value, key
+        reference, _ = builder._level(0.45)
+        everyone = json.loads(
+            builder.dumps(builder._everyone(reference, city["question"]["index"], city["mechanism"]["typical"]["voter"]))
+        )
+        assert everyone == city["everyone"]
 
     @pytest.mark.skipif(not (EVERYONE / "cities.jsonl.gz").exists(), reason="the city records are kept local")
     def test_everyone_votes_is_the_recorded_city(self, builder: ModuleType, city: dict[str, Any]) -> None:

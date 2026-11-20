@@ -3,6 +3,11 @@ import Link from "next/link";
 
 import { AppSection } from "@/components/liquid/story/app-section";
 import { ClaimLabel, type Claim } from "@/components/liquid/story/claim-label";
+import {
+  BallotArrivesFigure,
+  VotesTravelFigure,
+  WhoDecidesFigure,
+} from "@/components/liquid/story/delegation-scene";
 import { RouterFigure } from "@/components/liquid/story/costs-figure";
 import { EdgesFigure, KeepCityFigure } from "@/components/liquid/story/edges-figure";
 import { HandoverFigure } from "@/components/liquid/story/exploratory-figures";
@@ -316,7 +321,9 @@ export default async function LiquidStoryPage() {
                   that.
                 </p>
               </LiquidText>
-              <Pending>A ballot&apos;s questions, each filed under its topic and sent to that topic&apos;s delegate.</Pending>
+              <LiquidFigure>
+                <BallotArrivesFigure />
+              </LiquidFigure>
               <LiquidText>
                 <Beat className="pt-0">Votes travel on</Beat>
                 <p>
@@ -325,7 +332,9 @@ export default async function LiquidStoryPage() {
                   before someone decides it.
                 </p>
               </LiquidText>
-              <Pending>One vote passing along a chain of delegates until someone decides it.</Pending>
+              <LiquidFigure>
+                <VotesTravelFigure />
+              </LiquidFigure>
               <LiquidText>
                 <Beat className="pt-0">Who ends up deciding</Beat>
                 <p>
@@ -340,10 +349,9 @@ export default async function LiquidStoryPage() {
                   part 4.
                 </p>
               </LiquidText>
-              <Pending>
-                Every resident&apos;s vote on one question flowing to whoever decides it, each decider growing with
-                the votes they hold.
-              </Pending>
+              <LiquidFigure>
+                <WhoDecidesFigure />
+              </LiquidFigure>
               <StudyLinks links={[{ anchor: "how", label: "How it works" }]} />
             </TurnoutProvider>
 

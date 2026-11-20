@@ -420,8 +420,8 @@ is to try.
 - Numbers come from the generated data. An animation that shows a result
   carries that result's label.
 
-**The list,** numbered as first proposed and placed in the revised parts.
-The rows with a description are Ben's; the rest wait for his.
+**The list,** numbered as first proposed, with Ben's descriptions
+(2026-11-20). Items 8, 9 and 13 became one scene.
 
 | # | Animation or diagram | Part | Ben's description | Data |
 |---|---|---|---|---|
@@ -430,24 +430,66 @@ The rows with a description are Ben's; the rest wait for his.
 | 3 | Dilution and bundling | 1 | As proposed. | design |
 | 4 | The trade-off: the four arrangements on fidelity and overhead | 1 | No turnout yet. The idea: liquid lowers overhead against direct voting and raises fidelity against a representative. It shows the data, with an asterisk saying its assumptions are unpacked later. It replaces the three-ways figure at Swiss turnout. | R1 |
 | 5 | One resident's ballots, question by question | 1, then 3 | Everyone votes at first. The turnout effect waits for part 3. | example city, R1, then the dial |
-| 8 | A ballot arrives and is routed | 2 | | `mechanism.ballot`, example city at R1 |
-| 9 | Votes travel on | 2 | | `mechanism.chain` |
-| 13 | Who ends up deciding, with concentration as the mechanism working | 2 | | example city |
-| 11 | A delegate who does not vote, and the fix | 3a | | `mechanism.lost`; R2 for the fix |
-| 17 | The empty record: residents with no record grey out, then the default steps in | 3b | | `empty_records`, `liquid_reason`; R2 |
-| 10, 18 | Loops: chains ending at a loop, the loop rule, and loops multiplying as turnout rises | 3c | | `mechanism.loop`, `loops_per_topic`, `liquid_reason` |
-| 21 | Routing errors | 4a | | `results.router` |
-| 6, 7, 12 | Choosing from the record, the short record, and the acceptance level | 4b | | `mechanism.showcase`, `short_record`, `calibration` |
-| 20 | The cold start, as a timeline | 4b | | `lifecycle_overhead` |
-| 27 | The personal agent: an interview, a model, filled ballots against the bars | 4b | | `agent_bars` |
-| 14 | The result curve, drawing with the dial | 4c | | `results.levels` |
-| 15 | The ladder | 4c | | `decomposition` |
-| 16 | "How we know", as a timeline | 4c | | the protocol |
-| 26 | The per-voter ceiling on the handover curve | 4c | | `exploratory.handover` |
-| 22 | Borrowed engagement | 4c | | the sweeps |
-| 23 | Individuals and outcomes | 4c | | `outcome_agreement`, the city's winners |
-| 24, 25 | The design, assembled, with the default and the backup delegate in place | 5 | | design |
-| 19 | Concentration | — | Folded into 13, plus one line in 4c. | |
+| 8, 9, 13 | Part 2 as one scene, in three stages, one per beat | 2 | **A ballot arrives:** a ballot measure, with scribbled lines where the question would be and a yes and a no box, shrinks into a glowing orb. The orb goes to the resident, who has graph edges to their delegates. Many orbs float in and are sorted, each into the edge for its topic, by colour: a yellow orb to the yellow delegate, red to red. **Votes travel on:** a slight zoom shows one delegate passing that colour on to another delegate. **Who ends up deciding:** zoom out to a fuller graph, with orbs flowing around the network, no longer coloured. | the typical resident's delegates, one onward chain and the city's delegation graph, with everyone voting (new data) |
+| 11 | A delegate who does not vote, and the fixes | 3a | The delegate drops the orb and it cracks. Then arrows let the reader swipe through fixes that catch it: **you** catch it yourself, and your overhead bar, drawn like a health bar, bumps up; **an elected representative**, whose job is still to vote for everyone, catches it; **a personal agent**, a model of you, votes on your behalf. | `mechanism.lost`; R2 for the representative |
+| 17 | Nobody to delegate to | 3b | As proposed (residents with no record grey out), then the same swipe-through fixes as 11. | `empty_records`, `liquid_reason`; R2 |
+| 10, 18 | Loops: chains ending at a loop, the loop rule, and loops multiplying as turnout rises | 3c | As proposed. | `mechanism.loop`, `loops_per_topic`, `liquid_reason`, R1 |
+| 21 | Routing errors | 4a | Start from the app's routing tracer. | `results.router` |
+| 6, 7, 12 | Choosing from the record, the short record, and the acceptance level | 4b | As proposed. | `mechanism.showcase`, `short_record`, `calibration` |
+| 20 | The cold start, as a timeline | 4b | As proposed. | `lifecycle_overhead` |
+| 27 | The personal agent: an interview, a model, filled ballots against the bars | 4b | As proposed. | `agent_bars` |
+| 14 | The result curve, drawing with the dial | 4c | As proposed. | `results.levels` |
+| 15 | The ladder | 4c | As proposed. | `decomposition` |
+| 16 | "How we know", as a timeline | 4c | No comment yet: optional, built last if at all. | the protocol |
+| 26 | The per-voter ceiling on the handover curve | 4c | As proposed. | `exploratory.handover` |
+| 22 | Borrowed engagement | 4c | As proposed. | the sweeps |
+| 23 | Individuals and outcomes | 4c | As proposed. | `outcome_agreement`, the city's winners |
+| 24, 25 | The design, assembled | 5 | As proposed. | design |
+| 19 | Concentration | — | Folded into the third stage of 8, 9 and 13, plus one line in 4c. | |
+
+**G's design** (draft, 2026-11-20):
+- **One visual vocabulary,** from Ben's descriptions:
+  - a vote is a glowing orb;
+  - residents are nodes, and delegations are directed edges;
+  - each topic has its own colour: eight topics, the validated categorical
+    palette in its fixed order, checked with the palette validator in both
+    themes;
+  - a ballot is a card with scribbled question lines and a yes and a no box;
+  - overhead is a bar drawn like a health bar.
+- **One stage.** A shared network component (nodes, edges, orbs moving along
+  edges) serves item 1, part 2's scene, part 3's breaks and part 5's
+  assembled design, so the city carries through. It is SVG driven by
+  `requestAnimationFrame`. The site has no animation library, and the
+  apportionment essay's figures are hand-rolled the same way, with
+  `useReducedMotion`.
+- **Playing.** Each animation plays once when scrolled into view, with a
+  replay button. Reduced motion shows the end state. The swipe-through fixes
+  (11, 17) are arrow buttons, reachable by keyboard, each option with its
+  own still end state.
+- **Data.** Part 2's scene needs the typical resident's eight delegates, one
+  onward chain and the city's delegation graph with everyone voting: a small
+  addition to `city.json`'s everyone block, built by the example-city
+  script and labelled exploratory.
+- **Labels.**
+  - Part 2's scene is an illustration.
+  - In 11 and 17, "you catch it" is direct voting; the representative is
+    R2's arrangement; the personal agent is a proposal with no claimed
+    accuracy.
+  - The health bar's bump is drawn, not quoted as a number, unless a
+    computed value exists.
+- **Sub-slices,** each its own PR:
+  - **G1 (built):** the stage, the vocabulary and part 2's scene (8, 9,
+    13). It replaces part 2's three placeholders.
+  - **G2:** part 1's diagrams (1, 2, 3) on the same stage.
+  - **G3:** part 3's breaks (11, 17, 10 and 18) with the swipe-through
+    fixes, using R2's results.
+  - **G4:** part 4 (21, 6, 7 and 12, 20, 27, 14, 15, 26, 22, 23).
+  - **G5:** part 5's assembled design (24, 25), and 16 if kept.
+- **Open:**
+  - The backup delegate. Part 3a's fix names it, but 11's options are you,
+    the representative and the agent. Add it as a fourth option, or drop it
+    from part 3a's copy?
+  - Item 16 has no description.
 
 ### Research the outline needs
 
@@ -1221,6 +1263,37 @@ Plain and static, like slices B to D. The walkthrough's content is complete.
   decided; a slider stays possible.
 - **Methods and sources** carry no claim label; the heading's label is
   optional.
+
+## Built in slice G1 (2026-11-20)
+
+The shared stage and part 2's scene, replacing its three placeholders.
+- **The stage** (`components/liquid/story/stage.tsx`): `useScenePlayer` runs
+  a scene once when it first scrolls into view and holds its end state; the
+  replay button runs it again; reduced motion shows the end state and never
+  animates. The vocabulary: `Orb` (a glowing vote), `Ballot` (scribbled
+  lines with a yes and a no box), `Person`, `Edge`. Each topic takes its
+  series slot's colour; the eight passed the palette validator in both
+  themes, with a contrast warning in light mode that every scene meets with
+  text labels and a data table.
+- **Part 2's scene** (`components/liquid/story/delegation-scene.tsx`), drawn
+  from the illustrative city with everyone voting:
+  - **A ballot arrives:** the ballot shrinks into an orb in its topic's
+    colour, which goes to resident 227 and then along the edge to their
+    delegate; sixteen more orbs follow, sorted by colour. A delegate trusted
+    with two topics is one node with a segment per topic, and its edges sit
+    side by side. A legend names each topic's delegate.
+  - **Votes travel on:** the camera starts close on the first hand-over and
+    pulls back as the orb passes 374, 403 and 53 before 203 decides it.
+  - **Who ends up deciding:** a canvas radial tree of the featured
+    question. Deciders sit on the inner ring, everyone else outward by
+    their hand-overs; uncoloured orbs flow inward and the deciders grow with
+    the votes they hold, the largest (61 of 500) named at the centre.
+- **Data:** `city.json` (version 3) gains, for the everyone-votes setting,
+  the typical resident's delegate and decider per topic, their longest
+  chain, and everyone's delegate in the featured question's topic. The
+  builder checks the delegations give the comparison's resolvers; a test
+  follows every delegation to its decider and recomputes the block.
+- **The loop back-edge is not drawn** in part 2: loops are part 3's.
 
 ## Built in slice F2 (2026-11-20)
 
