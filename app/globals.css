@@ -1062,6 +1062,21 @@
   --story-div-pos: #3987e5;
 }
 
+/* Demo 5's walkthrough (/liquid) uses the story kit's validated chart
+ * palette, not the essays' editorial look: its own design comes once its
+ * content is complete. Until then its page, surfaces, text and rules are
+ * the site's neutral tokens (after the dark block, so they win there too). */
+.story.liquid-story {
+  --story-page: var(--background);
+  --story-surface: var(--card);
+  --story-ink: var(--foreground);
+  --story-ink-2: var(--muted-foreground);
+  --story-muted: var(--muted-foreground);
+  --story-grid: var(--border);
+  --story-rule: var(--border);
+  --story-accent: var(--muted-foreground);
+}
+
 /* Text-only reading (the essay's Contents menu sets data-reading on <html>):
  * the pinned figures go, every step's words run as one column, and hints
  * about scrolling disappear. */

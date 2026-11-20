@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { AxisX, AxisY, ChartTooltip, useElementWidth, useReducedMotion } from "@/components/story/chart";
+import { AxisX, AxisY, ChartTooltip, useElementWidth } from "@/components/story/chart";
 import { DataTable, StoryFigure } from "@/components/story/story-figure";
 import { dec } from "@/lib/liquid/format";
 import { ARRANGEMENT_LABEL, ARRANGEMENTS, type Arrangement } from "@/lib/liquid/story-types";
@@ -83,7 +83,6 @@ interface PanelProps {
 function Panel({ domainX, domainY, ticksX, ticksY, width, height, zoomWindow, title }: PanelProps) {
   const { measures } = useStoryData();
   const { key } = useTurnout();
-  const reduced = useReducedMotion();
   const [hover, setHover] = React.useState<{ name: Arrangement; x: number; y: number } | null>(null);
   const margin = { top: 24, right: 14, bottom: 42, left: 46 };
   const plotWidth = Math.max(60, width - margin.left - margin.right);
@@ -127,10 +126,7 @@ function Panel({ domainX, domainY, ticksX, ticksY, width, height, zoomWindow, ti
               return (
                 <g
                   key={name}
-                  style={{
-                    transform: `translate(${px}px, ${py}px)`,
-                    transition: reduced ? undefined : "transform 550ms cubic-bezier(0.2,0.7,0.2,1)",
-                  }}
+                  transform={`translate(${px},${py})`}
                   onPointerEnter={() => setHover({ name, x: px + margin.left, y: py + margin.top })}
                   onPointerLeave={() => setHover(null)}
                 >

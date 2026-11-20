@@ -3,7 +3,6 @@
 import * as React from "react";
 
 import { Annotation, AxisX, AxisY, useElementWidth } from "@/components/story/chart";
-import { useScrollyStep } from "@/components/story/scrolly";
 import { StoryFigure } from "@/components/story/story-figure";
 import { dec, district, pct, resident, share } from "@/lib/liquid/format";
 import { topicLabel, type Candidate } from "@/lib/liquid/story-types";
@@ -13,45 +12,15 @@ import { cn } from "@/lib/utils";
 import { OUTCOME_COLOR } from "./city-dots";
 import { useStoryData } from "./story-data";
 
-/** §3's steps, in order: what the pinned figure shows at each. */
-export const MECHANISM_STEPS = ["choose", "short", "route", "chain", "loop", "lost", "calibrate"] as const;
-type MechanismStep = (typeof MECHANISM_STEPS)[number];
+/*
+ * §3, how it works: the mechanism shown on the illustrative city at Swiss
+ * turnout, one figure per step. Every resident, count and value is the
+ * frozen code's own (scripts/build_liquid_example_city.py); the figures make
+ * no claim of their own. Static for now: animation comes with the design.
+ */
 
 const CHOSEN = seriesColor(0);
-
-/**
- * On a phone the figure pins above the step text, which already says what
- * a subtitle or note would; these hide there so the figure leaves the text
- * room. The source moves into the note slot to hide with its "Source:".
- */
-function wide(node: React.ReactNode) {
-  return <span className="max-lg:hidden">{node}</span>;
-}
-const SOURCE_NOTE = wide("Source: primary city 1 at Swiss turnout, recomputed with the frozen code.");
-
-/**
- * §3, how it works: the mechanism acted out on the illustrative city at
- * Swiss turnout. Every resident, count and value is the frozen code's own
- * (scripts/build_liquid_example_city.py); the figure makes no claim of its own.
- */
-export function MechanismGraphic() {
-  const { step } = useScrollyStep();
-  const current: MechanismStep = MECHANISM_STEPS[Math.min(step, MECHANISM_STEPS.length - 1)];
-  const group =
-    current === "choose" || current === "short"
-      ? "choose"
-      : current === "chain" || current === "loop" || current === "lost"
-        ? "chain"
-        : current;
-  return (
-    <div key={group} className="motion-safe:animate-[story-swap-in_480ms_cubic-bezier(0.2,0.7,0.2,1)_both]">
-      {group === "choose" ? <CandidatesFigure short={current === "short"} /> : null}
-      {group === "route" ? <RoutingFigure /> : null}
-      {group === "chain" ? <ChainFigure mode={current as "chain" | "loop" | "lost"} /> : null}
-      {group === "calibrate" ? <CalibrationFigure /> : null}
-    </div>
-  );
-}
+const SOURCE = "Primary city 1 at Swiss turnout, recomputed with the frozen code";
 
 // ---------------------------------------------------------------------------
 // Choosing a delegate from the record
@@ -63,7 +32,7 @@ interface CandidateRow {
   chosen: boolean;
 }
 
-function CandidatesFigure({ short }: { short: boolean }) {
+export function CandidatesFigure({ short = false }: { short?: boolean }) {
   const { city } = useStoryData();
   const { showcase, short_record: shortRecord, acceptance, credible_mass: mass, empty_records: empty } = city.mechanism;
   const topic = topicLabel(city.topics[showcase.topic]).toLowerCase();
@@ -97,10 +66,9 @@ function CandidatesFigure({ short }: { short: boolean }) {
 
   return (
     <StoryFigure
-      bare
       title={`Who should decide ${topic} for ${resident(showcase.voter)}?`}
-      subtitle={wide(`${resident(showcase.voter)} has voted on ${showcase.record} of the ${city.design.history_per_topic} past questions on ${topic}. Each candidate's past votes are lined up against theirs.`)}
-      note={SOURCE_NOTE}
+      subtitle={`${resident(showcase.voter)} has voted on ${showcase.record} of the ${city.design.history_per_topic} past questions on ${topic}. Each candidate's past votes are lined up against theirs.`}
+      source={SOURCE}
       table={{
         caption: "Candidates ranked by the lower bound of their agreement",
         columns: [
@@ -196,19 +164,17 @@ function CandidatesFigure({ short }: { short: boolean }) {
 // A ballot arrives
 // ---------------------------------------------------------------------------
 
-function RoutingFigure() {
+export function RoutingFigure() {
   const { city } = useStoryData();
   const { showcase, ballot } = city.mechanism;
   const onBallot = new Map(ballot.map((entry, order) => [entry.topic, order]));
 
   return (
     <StoryFigure
-      bare
       title={`A ballot arrives for ${resident(showcase.voter)}`}
-      subtitle={wide("Each question is filed under its topic and goes where they send that topic: to their delegate, or back to them.")}
-      note={wide(
-        "The study files every question under its true topic; a real router can err, which comes later. Source: primary city 1 at Swiss turnout, recomputed with the frozen code."
-      )}
+      subtitle={"Each question is filed under its topic and goes where they send that topic: to their delegate, or back to them."}
+      source={SOURCE}
+      note="The study files every question under its true topic. A real router can err; that comes later."
       table={{
         caption: `Where ${resident(showcase.voter)} sends each topic`,
         columns: [
@@ -240,8 +206,7 @@ function RoutingFigure() {
               <span className="relative h-5 sm:h-6">
                 {order !== undefined ? (
                   <span
-                    className="absolute inset-y-0 left-0 inline-flex items-center rounded bg-story-ink px-1.5 text-[0.7rem] font-medium text-story-page motion-safe:animate-[story-swap-in_520ms_cubic-bezier(0.2,0.7,0.2,1)_both]"
-                    style={{ animationDelay: `${order * 280}ms` }}
+                    className="absolute inset-y-0 left-0 inline-flex items-center rounded bg-story-ink px-1.5 text-[0.7rem] font-medium text-story-page"
                   >
                     Question {order + 1}
                   </span>
@@ -272,23 +237,20 @@ function RoutingFigure() {
 function Person({
   index,
   tone = "plain",
-  delay,
   note,
 }: {
   index: number;
   tone?: "plain" | "decides" | "absent";
-  delay?: number;
   note?: string;
 }) {
   return (
     <span
       className={cn(
-        "inline-flex flex-col items-center rounded-full px-2.5 py-1 text-xs ring-1 motion-safe:animate-[story-swap-in_420ms_cubic-bezier(0.2,0.7,0.2,1)_both]",
+        "inline-flex flex-col items-center rounded-full px-2.5 py-1 text-xs ring-1",
         tone === "decides" && "bg-story-ink font-semibold text-story-page ring-story-ink",
         tone === "absent" && "bg-story-page text-story-muted ring-story-axis",
         tone === "plain" && "bg-story-surface text-story-ink ring-story-rule"
       )}
-      style={delay !== undefined ? { animationDelay: `${delay}ms` } : undefined}
     >
       <span className="tabular-nums">{index}</span>
       {note ? <span className="text-[0.62rem] font-normal opacity-80">{note}</span> : null}
@@ -296,32 +258,29 @@ function Person({
   );
 }
 
-function Arrow({ delay, symbol = "→" }: { delay?: number; symbol?: string }) {
+function Arrow({ symbol = "→" }: { symbol?: string }) {
   return (
     <span
       aria-hidden="true"
-      className="text-story-muted motion-safe:animate-[story-swap-in_420ms_both]"
-      style={delay !== undefined ? { animationDelay: `${delay}ms` } : undefined}
+      className="text-story-muted"
     >
       {symbol}
     </span>
   );
 }
 
-function ChainFigure({ mode }: { mode: "chain" | "loop" | "lost" }) {
+export function ChainFigure({ mode }: { mode: "chain" | "loop" | "lost" }) {
   const { city } = useStoryData();
   const { chain, loop, lost, loops_per_topic: loops, handed_pairs: handed, handed_pairs_ending_on_loop: onLoop } =
     city.mechanism;
-  const step = 140;
 
   if (mode === "chain") {
     const end = chain.path[chain.path.length - 1];
     return (
       <StoryFigure
-        bare
         title={`One resident's vote on ${topicLabel(city.topics[chain.topic]).toLowerCase()} passes through ${chain.path.length} people`}
-        subtitle={wide("Each person applies their own delegation to the votes they receive, so a vote keeps moving until it reaches someone who decides.")}
-        note={SOURCE_NOTE}
+        subtitle={"Each person applies their own delegation to the votes they receive, so a vote keeps moving until it reaches someone who decides."}
+        source={SOURCE}
         table={{
           caption: "The chain, in order",
           columns: [
@@ -335,28 +294,27 @@ function ChainFigure({ mode }: { mode: "chain" | "loop" | "lost" }) {
         <div className="flex flex-wrap items-center gap-x-1.5 gap-y-2 font-sans">
           {chain.path.map((person, index) => (
             <React.Fragment key={person}>
-              {index > 0 ? <Arrow delay={index * step - 60} /> : null}
+              {index > 0 ? <Arrow /> : null}
               <Person
                 index={person}
                 tone={person === end ? "decides" : "plain"}
                 note={index === 0 ? "starts" : person === end ? "decides" : undefined}
-                delay={index * step}
+               
               />
             </React.Fragment>
           ))}
           {/* The loop the chain ends on: a pair hands the topic back and forth */}
-          {chain.cycle.slice(1).map((person, index) => (
+          {chain.cycle.slice(1).map((person) => (
             <React.Fragment key={`loop-${person}`}>
-              <Arrow symbol={chain.cycle.length === 2 ? "⇄" : "→"} delay={(chain.path.length + index) * step} />
-              <Person index={person} note="loop" delay={(chain.path.length + index) * step + 60} />
+              <Arrow symbol={chain.cycle.length === 2 ? "⇄" : "→"} />
+              <Person index={person} note="loop" />
             </React.Fragment>
           ))}
-          {chain.cycle.length > 2 ? <Arrow symbol="↩" delay={(chain.path.length + chain.cycle.length) * step} /> : null}
+          {chain.cycle.length > 2 ? <Arrow symbol="↩" /> : null}
         </div>
         {chain.ends === "loop" ? (
           <p
-            className="mt-4 font-sans text-sm leading-relaxed text-story-ink-2 motion-safe:animate-[story-swap-in_480ms_both]"
-            style={{ animationDelay: `${chain.path.length * step}ms` }}
+            className="mt-4 font-sans text-sm leading-relaxed text-story-ink-2"
           >
             {resident(end)}&apos;s own delegation leads round to them again
             {chain.cycle.length > 1 ? ` (through ${chain.cycle.slice(1).map(resident).join(", ")})` : ""}: a loop.
@@ -372,10 +330,9 @@ function ChainFigure({ mode }: { mode: "chain" | "loop" | "lost" }) {
     const total = loops.reduce((sum, n) => sum + n, 0);
     return (
       <StoryFigure
-        bare
         title="Loops send votes back to their owners"
-        subtitle={wide(`In ${topicLabel(city.topics[loop.topic]).toLowerCase()}, ${resident(a)} hands the topic to ${resident(b)}, and ${resident(b)} hands it straight back. Both decide for themselves.`)}
-        note={SOURCE_NOTE}
+        subtitle={`In ${topicLabel(city.topics[loop.topic]).toLowerCase()}, ${resident(a)} hands the topic to ${resident(b)}, and ${resident(b)} hands it straight back. Both decide for themselves.`}
+        source={SOURCE}
         table={{
           caption: "Loops per topic",
           columns: [
@@ -413,24 +370,22 @@ function ChainFigure({ mode }: { mode: "chain" | "loop" | "lost" }) {
 
   return (
     <StoryFigure
-      bare
       title="A delegate who does not vote leaves an empty ballot"
-      subtitle={wide(
+      subtitle={
         lost
           ? `${resident(lost.resolver)} decides ${topicLabel(city.topics[city.question.topic]).toLowerCase()} for ${resident(lost.voter)}, but did not vote on this question. ${resident(lost.voter)} has no ballot on it.`
           : "Every resolver voted on the featured question."
-      )}
-      note={SOURCE_NOTE}
+      }
+      source={SOURCE}
     >
       {lost ? (
         <div className="flex items-center justify-center gap-3 py-6 font-sans">
           <Person index={lost.voter} note="hands it on" />
           <Arrow />
-          <Person index={lost.resolver} tone="absent" note="did not vote" delay={step} />
-          <Arrow delay={2 * step} />
+          <Person index={lost.resolver} tone="absent" note="did not vote" />
+          <Arrow />
           <span
-            className="rounded-md px-2 py-1 text-xs text-story-muted ring-1 ring-story-axis motion-safe:animate-[story-swap-in_420ms_both]"
-            style={{ animationDelay: `${3 * step}ms` }}
+            className="rounded-md px-2 py-1 text-xs text-story-muted ring-1 ring-story-axis"
           >
             no ballot counted
           </span>
@@ -448,7 +403,7 @@ function ChainFigure({ mode }: { mode: "chain" | "loop" | "lost" }) {
 // The calibration
 // ---------------------------------------------------------------------------
 
-function CalibrationFigure() {
+export function CalibrationFigure() {
   const { city } = useStoryData();
   const { calibration, acceptance, cap, history_overhead: atLevel } = city.mechanism;
   const [ref, width] = useElementWidth<HTMLDivElement>();
@@ -463,10 +418,9 @@ function CalibrationFigure() {
 
   return (
     <StoryFigure
-      bare
       title="Each city's acceptance level: the strictest that keeps overhead at or under 10%"
-      subtitle={wide("A stricter level hands over fewer topics, so more people decide for themselves. The rule takes the highest level at which overhead on the past questions stays at or under the cap.")}
-      note={SOURCE_NOTE}
+      subtitle={"A stricter level hands over fewer topics, so more people decide for themselves. The rule takes the highest level at which overhead on the past questions stays at or under the cap."}
+      source={SOURCE}
       table={{
         caption: "Overhead on past questions at each acceptance level",
         columns: [

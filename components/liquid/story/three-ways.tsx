@@ -2,7 +2,6 @@
 
 import * as React from "react";
 
-import { useScrollyStep } from "@/components/story/scrolly";
 import { StoryFigure } from "@/components/story/story-figure";
 import { pct } from "@/lib/liquid/format";
 import {
@@ -18,20 +17,19 @@ import { BallotLegend, CityDots, OUTCOME_COLOR, ballotLook, tally } from "./city
 import { useStoryData } from "./story-data";
 import { TurnoutDial, useTurnout } from "./turnout";
 
-/** The steps of the cold open, in order: what the city shows at each. */
-export const COLD_OPEN_STEPS: readonly Arrangement[] = ["full_turnout", "direct", "representative", "liquid"];
+/** What the reader can show the city under, in the order the text takes them. */
+const SHOWN: readonly Arrangement[] = ["full_turnout", "direct", "representative", "liquid"];
 const STRIPS: readonly Arrangement[] = ["direct", "representative", "liquid"];
 
 /**
- * §0, the cold open: three ways to be represented. Strips give the average
- * resident's three shares over the 200 cities; the city below shows one real
- * city filling in, question by question, for the arrangement in view.
+ * §0, three ways to be represented. Strips give the average resident's three
+ * shares over the 200 cities; the city below shows one real city on one
+ * question, under the arrangement the reader picks.
  */
-export function ThreeWaysGraphic() {
+export function ThreeWaysFigure() {
   const { measures, city } = useStoryData();
   const { key, level, swiss } = useTurnout();
-  const { step } = useScrollyStep();
-  const shown = COLD_OPEN_STEPS[Math.min(step, COLD_OPEN_STEPS.length - 1)];
+  const [shown, setShown] = React.useState<Arrangement>("direct");
   const codes = city.levels[key].codes[shown];
   const looks = React.useMemo(() => Array.from(codes, (code) => ballotLook(code as BallotCode)), [codes]);
   const counts = tally(codes);
@@ -39,23 +37,15 @@ export function ThreeWaysGraphic() {
 
   return (
     <StoryFigure
-      bare
       title={`${level === swiss ? "Swiss turnout" : "Turnout"} ${level}: ${ARRANGEMENT_LABEL[shown].toLowerCase()}`}
       subtitle={
-        // On a phone the figure pins above the text, which says this already
-        <span className="max-lg:hidden">
+        <>
           The bars: an average resident&apos;s {city.design.topics * city.design.evaluation_per_topic} scored
           questions, over {measures.protocol.cities} cities. The dots: one city&apos;s residents on one question
           ({topicLabel(city.topics[city.question.topic])}).
-        </span>
+        </>
       }
-      note={
-        // A note, not `source`, so the whole line (its "Source:" too) hides on a phone
-        <span className="max-lg:hidden">
-          Source: eval/benchmarks/delegation_frontier_v1 (bars); primary city 1, recomputed with the frozen code
-          (dots)
-        </span>
-      }
+      source="eval/benchmarks/delegation_frontier_v1 (bars); primary city 1, recomputed with the frozen code (dots)"
       table={{
         caption: `Shares of an average resident's questions at turnout ${level}`,
         columns: [
@@ -75,6 +65,22 @@ export function ThreeWaysGraphic() {
         }),
       }}
     >
+      <div role="group" aria-label="Show the city under" className="mb-4 flex flex-wrap gap-1.5 font-sans text-xs">
+        {SHOWN.map((name) => (
+          <button
+            key={name}
+            type="button"
+            aria-pressed={name === shown}
+            onClick={() => setShown(name)}
+            className={cn(
+              "rounded-md px-2.5 py-1 ring-1 ring-story-rule",
+              name === shown ? "bg-story-ink font-medium text-story-page" : "text-story-ink-2 hover:text-story-ink"
+            )}
+          >
+            {ARRANGEMENT_LABEL[name]}
+          </button>
+        ))}
+      </div>
       <div className="space-y-2">
         {STRIPS.map((name) => {
           const m = shares[name];
@@ -83,10 +89,8 @@ export function ThreeWaysGraphic() {
             <div
               key={name}
               className={cn(
-                "grid grid-cols-[8.5rem_minmax(0,1fr)] items-center gap-3 font-sans text-xs transition-opacity duration-300",
-                active || shown === "full_turnout" ? "opacity-100" : "opacity-35",
-                // On a phone only the strip in view fits above the steps
-                !active && "max-lg:hidden"
+                "grid grid-cols-[8.5rem_minmax(0,1fr)] items-center gap-3 font-sans text-xs",
+                active || shown === "full_turnout" ? "opacity-100" : "opacity-40"
               )}
             >
               <span className={cn("text-story-ink-2", active && "font-semibold text-story-ink")}>
@@ -133,9 +137,6 @@ function Segment({ share, color }: { share: number; color: string }) {
   // Direct voting never casts a contrary ballot: no empty segment for it
   if (share < 0.0005) return null;
   return (
-    <span
-      className="h-full transition-[width] duration-500 ease-out motion-reduce:transition-none"
-      style={{ width: `${share * 100}%`, background: color }}
-    />
+    <span className="h-full" style={{ width: `${share * 100}%`, background: color }} />
   );
 }

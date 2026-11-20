@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { ChartTooltip, useElementWidth, useReducedMotion } from "@/components/story/chart";
+import { ChartTooltip, useElementWidth } from "@/components/story/chart";
 import { district as districtName } from "@/lib/liquid/format";
 import type { BallotCode, StoryCity } from "@/lib/liquid/story-types";
 import { DIVERGING, INK } from "@/lib/story/palette";
@@ -114,8 +114,7 @@ interface CityDotsProps {
 
 /**
  * The walkthrough's motif: the illustrative city, one dot per resident.
- * Dots change color and form in a left-to-right sweep when their looks
- * change (instantly under reduced motion).
+ * Static for now; how it moves comes with the page's design.
  */
 export function CityDots({
   city,
@@ -127,7 +126,6 @@ export function CityDots({
   className,
 }: CityDotsProps) {
   const [ref, width] = useElementWidth<HTMLDivElement>();
-  const reduced = useReducedMotion();
   const [hover, setHover] = React.useState<{ resident: number; x: number; y: number } | null>(null);
   const geometry = React.useMemo(() => (width > 0 ? layout(city, width) : null), [city, width]);
   const representatives = React.useMemo(() => new Set(city.representatives), [city.representatives]);
@@ -181,10 +179,6 @@ export function CityDots({
             const look = looks[resident];
             if (!look) return null;
             const faded = focus ? !focus.has(resident) : false;
-            const delay = reduced ? 0 : Math.round((point.x / geometry.width) * 320);
-            const transition = reduced
-              ? undefined
-              : `fill 420ms ease ${delay}ms, stroke 420ms ease ${delay}ms, opacity 300ms ease`;
             return (
               <g key={resident}>
                 {markRepresentatives && representatives.has(resident) ? (
@@ -207,7 +201,6 @@ export function CityDots({
                     fill: look.ring ? "transparent" : look.color,
                     stroke: look.color,
                     opacity: faded ? 0.16 : 1,
-                    transition,
                   }}
                 />
               </g>
