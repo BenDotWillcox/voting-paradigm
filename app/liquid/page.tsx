@@ -1,16 +1,20 @@
 import type { Metadata } from "next";
 
 import { AppSection } from "@/components/liquid/story/app-section";
+import { AttendanceFigure } from "@/components/liquid/story/attendance-figure";
 import { ClaimLabel } from "@/components/liquid/story/claim-label";
+import { EdgesFigure, KeepCityFigure } from "@/components/liquid/story/edges-figure";
+import { LadderFigure } from "@/components/liquid/story/ladder-figure";
 import { CalibrationFigure, CandidatesFigure, ChainFigure, RoutingFigure } from "@/components/liquid/story/mechanism";
 import { OneResident } from "@/components/liquid/story/one-resident";
 import { PlaneFigure } from "@/components/liquid/story/plane";
+import { ResultFigure } from "@/components/liquid/story/result-figure";
 import { LiquidFigure, LiquidHeading, LiquidText } from "@/components/liquid/story/section-heading";
 import { StoryDataProvider } from "@/components/liquid/story/story-data";
 import { ThreeWaysFigure } from "@/components/liquid/story/three-ways";
 import { TurnoutProvider } from "@/components/liquid/story/turnout";
 import { TurnoutCity } from "@/components/liquid/story/turnout-city";
-import { dec, pct, resident, share } from "@/lib/liquid/format";
+import { dec, pct, pointsLabel, resident, share } from "@/lib/liquid/format";
 import { loadLiquidStory } from "@/lib/liquid/story-data";
 import { levelKey, topicLabel } from "@/lib/liquid/story-types";
 
@@ -43,7 +47,7 @@ function Step({ title, children, figure }: { title: string; children: React.Reac
  * talks to the Python service, from the browser.
  */
 export default async function LiquidWalkthroughPage() {
-  const { measures, city } = await loadLiquidStory();
+  const { measures, results, city } = await loadLiquidStory();
   const swiss = measures.protocol.swiss_marker;
   const at = measures.levels[levelKey(swiss)];
   const { design } = city;
@@ -58,10 +62,35 @@ export default async function LiquidWalkthroughPage() {
   const everything = m.handed_over[m.handed_over.length - 1];
   const chainTopic = topicLabel(city.topics[m.chain.topic]).toLowerCase();
 
+  // §5–8: every quoted value read from the frozen summaries
+  const grid = measures.protocol.turnout_grid;
+  const result = (l: number) => results.levels[levelKey(l)];
+  const measured = (l: number) => measures.levels[levelKey(l)];
+  const { threshold, rules } = results;
+  const lowest = grid[0];
+  const highest = grid[grid.length - 1];
+  const leadAtSwiss = result(swiss).h1.estimate;
+  const worthwhile = grid.filter((l) => result(l).size === "gain of at least delta established");
+  const failing = grid.filter((l) => result(l).h1.estimate > 0 && result(l).cap_share < rules.feasible_share);
+  const crossingCities = result(threshold.bracket[1]);
+  const emptyFidelity = grid.map((l) => measured(l).liquid.empty_record_fidelity ?? 0);
+  const lightWorse = grid.filter(
+    (l) => (measured(l).liquid.light_record_fidelity ?? 0) < (measured(l).representative.light_record_fidelity ?? 0)
+  );
+  const passed = grid.findIndex((l) => measured(l).direct.fidelity > measured(l).liquid.fidelity);
+  const [beforePass, afterPass] = [grid[passed - 1], grid[passed]];
+  const ladder = result(swiss).decomposition;
+  const specialisationSizes = Array.from(
+    new Set(grid.map((l) => result(l).specialisation.size).filter((size) => !size.startsWith("not assessable")))
+  );
+  const floor = (l: number, f: number) => result(l).frontier.find((entry) => entry.floor === f)?.estimate ?? 0;
+  /** A share as quoted: 7.5%, 4%, 98.5%. */
+  const quoted = (value: number) => pct(value, Math.round(value * 1000) % 10 ? 1 : 0);
+
   return (
     <>
       <div className="story liquid-story min-h-screen pb-24">
-        <StoryDataProvider measures={measures} city={city}>
+        <StoryDataProvider measures={measures} results={results} city={city}>
           <TurnoutProvider levels={measures.protocol.turnout_grid} swiss={swiss}>
             <header id="top" className="mx-auto max-w-2xl px-4 pt-14 pb-6">
               <p className="text-sm font-medium text-story-muted">Demo 05 · Liquid democracy</p>
@@ -282,10 +311,145 @@ export default async function LiquidWalkthroughPage() {
             <LiquidText>
               <p>
                 The plane holds only the calibrated arrangements. Liquid&apos;s whole curve, from voting yourself to
-                handing over everything, is an exploratory figure later on. The full frozen results are in the
-                benchmark&apos;s README, <code>eval/benchmarks/delegation_frontier_v1</code>.
+                handing over everything, is an exploratory figure later on.
               </p>
             </LiquidText>
+
+            {/* §5 The result */}
+            <LiquidHeading id="result" kicker="The result" claim="frozen">
+              Far ahead in the middle, not established at the ends
+            </LiquidHeading>
+            <LiquidText>
+              <p>
+                Liquid delegation overtakes the district representative near turnout {dec(threshold.crossing, 2)}. The
+                95% range for where it crosses runs from {threshold.confidence[0]} to {threshold.confidence[1]}.
+              </p>
+              <p>
+                From there the lead grows. At Swiss turnout liquid is {pointsLabel(100 * leadAtSwiss)} points ahead,
+                and at every level from {worthwhile[0]} to {worthwhile[worthwhile.length - 1]} the lead clears{" "}
+                {100 * rules.delta} points, the smallest lead the study set out to count as worthwhile.
+              </p>
+              <p>
+                The test had one more condition: at every level where liquid leads, at least{" "}
+                {pct(rules.feasible_share, 0)} of cities must keep its overhead at or under {pct(rules.cap, 0)}.{" "}
+                {failing.map((l, i) => `${i === 0 ? "Only " : ""}${quoted(result(l).cap_share)}${i === 0 ? " do" : ""} at ${l}`).join(" and ")}. So the verdict,
+                fixed in advance, is <em>{measures.verdict.text}</em>.
+              </p>
+            </LiquidText>
+            <LiquidFigure>
+              <ResultFigure />
+            </LiquidFigure>
+            <LiquidText>
+              <p className="text-sm text-story-ink-2">
+                Why the crossing&apos;s range ends at {threshold.confidence[1]}: at {threshold.bracket[1]} only{" "}
+                {crossingCities.cap_meeting_cities} cities keep liquid under the cap, and the band over those cities
+                still dips below zero ({pointsLabel(100 * (crossingCities.band_cap?.lower ?? 0))} points).
+              </p>
+            </LiquidText>
+
+            {/* §6 The two edges */}
+            <LiquidHeading id="edges" kicker="The two edges" claim="frozen">
+              Two failures for opposite reasons
+            </LiquidHeading>
+            <LiquidText>
+              <h3 className="text-lg font-semibold text-story-ink">Low turnout: overhead nobody uses</h3>
+              <p>
+                A resident with no votes in the record has nothing to choose a delegate by. They keep their own vote,
+                and they rarely use it. At {lowest} liquid&apos;s overhead is {pct(measured(lowest).liquid.overhead)},
+                and {pct(measured(lowest).liquid.empty_record_share ?? 0)} of residents have an empty record: the
+                overhead is these residents.
+              </p>
+              <p>
+                They are barely represented. Their fidelity under liquid is between{" "}
+                {Math.min(...emptyFidelity).toFixed(3)} and {Math.max(...emptyFidelity).toFixed(3)} at every level,
+                against about {dec(measured(swiss).representative.empty_record_fidelity ?? 0, 2)} under the
+                representative. Residents with a light record, under 10% of the past questions, do slightly worse
+                under liquid than under the representative at every level up to {lightWorse[lightWorse.length - 1]}:{" "}
+                {dec(measured(swiss).liquid.light_record_fidelity ?? 0)} against{" "}
+                {dec(measured(swiss).representative.light_record_fidelity ?? 0)} at Swiss turnout, where they are{" "}
+                {pct(measured(swiss).liquid.light_record_share ?? 0, 0)} of the city.
+              </p>
+              <p>
+                It isn&apos;t caused by topics. The personal proxy has the same floor (
+                {pct(measured(threshold.bracket[1]).proxy.overhead)} overhead at {threshold.bracket[1]}), so the cause
+                is choosing by record.
+              </p>
+              <h3 className="pt-4 text-lg font-semibold text-story-ink">High turnout: overhead people do use</h3>
+              <p>
+                When nearly everyone delegates, voters on a loop decide for themselves. At {highest},{" "}
+                {pct(measured(highest).liquid.loop_share ?? 0)} of voter-question pairs sit on a loop, and
+                liquid&apos;s overhead is {pct(measured(highest).liquid.overhead)}. The questions liquid&apos;s voters
+                keep match them {pct(measured(highest).liquid.fidelity_kept ?? 0, 0)} of the time.
+              </p>
+              <p>
+                This one is specific to topic delegation. The single proxy&apos;s loop share is{" "}
+                {pct(measured(highest).proxy.loop_share ?? 0)}, and it meets the cap in{" "}
+                {quoted(result(highest).proxy_cap_share)} of cities. Meanwhile direct voting, with full overhead,
+                passes liquid between {beforePass} ({dec(measured(beforePass).direct.fidelity)} against{" "}
+                {dec(measured(beforePass).liquid.fidelity)}) and {afterPass} (
+                {dec(measured(afterPass).direct.fidelity)} against {dec(measured(afterPass).liquid.fidelity)}): the cap
+                pushes people who would vote into delegating.
+              </p>
+              <p>One overhead number cannot tell a burden people carry from one they drop.</p>
+            </LiquidText>
+            <LiquidFigure>
+              <EdgesFigure />
+            </LiquidFigure>
+            <LiquidFigure>
+              <KeepCityFigure />
+            </LiquidFigure>
+
+            {/* §7 The ladder */}
+            <LiquidHeading id="ladder" kicker="Where the lead comes from" claim="frozen">
+              Most of it arrives with the single proxy
+            </LiquidHeading>
+            <LiquidText>
+              <p>
+                The study declared a chain of arrangements from the representative to liquid delegation, each run on
+                the same cities, so the lead splits into steps. At Swiss turnout, choosing one delegate for everything
+                from the whole city adds {pointsLabel(100 * ladder.city_wide_proxy_combined.estimate)} of the{" "}
+                {pointsLabel(100 * ladder.h1.estimate)} points.
+              </p>
+              <p>
+                The signature feature adds least. Handing each topic to its own delegate adds{" "}
+                {pointsLabel(100 * ladder.specialisation.estimate)} points (95% interval{" "}
+                {pointsLabel(100 * ladder.specialisation.lower)} to {pointsLabel(100 * ladder.specialisation.upper)}).
+                It is real, but it never clears the same {100 * rules.delta}-point minimum: where it can be assessed it
+                reads {specialisationSizes.join(" or ")}.
+              </p>
+              <p>
+                The proxy step bundles several changes at once, and no matched arm separates them. So most of the lead
+                arrives with the single proxy, and the study cannot say which part of that step causes it.
+              </p>
+            </LiquidText>
+            <LiquidFigure>
+              <LadderFigure />
+            </LiquidFigure>
+
+            {/* §8 Attendance */}
+            <LiquidHeading id="attendance" kicker="Delegates who don't show up" claim="frozen">
+              Attendance is not the bottleneck
+            </LiquidHeading>
+            <LiquidText>
+              <p>
+                Delegates vote at their own rate. Whoever holds someone&apos;s vote at Swiss turnout votes{" "}
+                {pct(measured(swiss).liquid.resolver_attendance ?? 0, 0)} of the time, and{" "}
+                {pct(measured(lowest).liquid.resolver_attendance ?? 0, 0)} at {lowest}.
+              </p>
+              <p>
+                A floor helps a little. If every delegate always voted, liquid would gain{" "}
+                {pointsLabel(100 * (floor(lowest, 1) - floor(lowest, 0)))} points at {lowest}, about{" "}
+                {pointsLabel(100 * (floor(swiss, 1) - floor(swiss, 0)))} at Swiss turnout, and less above.
+              </p>
+              <p>
+                It cannot rescue the low end. At {lowest} liquid trails the representative by{" "}
+                {(-100 * floor(lowest, 0)).toFixed(1)} points, and still by {(-100 * floor(lowest, 1)).toFixed(1)} if
+                every delegate always votes: the shortfall is residents who keep their own vote.
+              </p>
+            </LiquidText>
+            <LiquidFigure>
+              <AttendanceFigure />
+            </LiquidFigure>
           </TurnoutProvider>
         </StoryDataProvider>
       </div>

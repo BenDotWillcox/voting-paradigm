@@ -4,7 +4,8 @@ Status: planned 2026-11-19, after the frozen benchmark was published (PR #110).
 Decisions made with Ben the same day are recorded below. Slice A (the
 exploratory handover benchmark) is published (PR #112). Slice B (the data
 pipeline, the illustrative city, §0–4 and the app at the page's foot) is
-built; "Built in slice B" below records the choices made while building it.
+published (PR #113). Slice C (§5–8) is built. "Built in slice B" and "Built
+in slice C" below record the choices made while building them.
 
 This is build step 7 of
 [`demo-5-liquid-democracy.md`](demo-5-liquid-democracy.md). It replaces the
@@ -561,6 +562,26 @@ Each slice is its own PR.
 - **The app's hub loads in the browser** through a read-only server action,
   so `/liquid` stays static; its screens keep a dynamic layout in the
   `app/liquid/(app)/` route group.
+
+## Built in slice C (2026-11-19)
+
+Plain and static, like slice B (see "Form" and "Look").
+- **Data.** `scripts/build_liquid_story.py` adds `results.json`: per level,
+  liquid minus the representative with its simultaneous band, the cap-only
+  curve and band, liquid's and the proxy's share of cities under the cap (the
+  proxy's from `primary_report.json.gz`), the per-level readings, the
+  declared ladder and the attendance frontier. `measures.json` gains the
+  record, loop, kept-fidelity and attendance measures §6 and §8 quote.
+- **The city records why each resident decides.** `liquid_reason` per level:
+  delegated, on a loop, an empty record, or no candidate good enough. It is
+  §6's city: at 0.1, 107 residents decide only because they have no record;
+  at 0.9, 44 because their delegation loops back.
+- **Figures.** §5 mirrors the benchmark's Figure 1 (the cap-only curve drawn
+  under the all-city one, with bars only where few cities qualify) and §8
+  its Figure 2. §6 is four small panels and the city. §7's ladder follows the
+  dial; a test checks its steps add up to the lead at every level.
+- **One chart for every "across the dial" figure**
+  (`components/liquid/story/dial-chart.tsx`), marking the dial's own level.
 
 ## Decisions settled 2026-11-19
 

@@ -16,6 +16,12 @@ export function points(value: number, digits = 1): string {
   return `${value > 0 ? "+" : ""}${text} points`;
 }
 
+/** A difference already in points: 10.23 -> "+10.2"; whole ticks lose the decimal. */
+export function pointsLabel(value: number): string {
+  const text = Number.isInteger(value) ? String(value) : value.toFixed(1);
+  return value > 0 ? `+${text}` : text;
+}
+
 /** A resident by array index: 310 -> "Resident 310". */
 export function resident(index: number): string {
   return `Resident ${index}`;

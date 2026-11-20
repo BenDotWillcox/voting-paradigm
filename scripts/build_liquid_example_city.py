@@ -13,7 +13,8 @@ It writes public/data/liquid-story/city.json:
 - every resident's district, and their own turnout rate at each level;
 - one featured question, chosen by a fixed rule (below), and for each level
   and arrangement every resident's ballot on it: whose it was and whether
-  it matched them;
+  it matched them; and under liquid, why it is or is not their own (a
+  delegate, a loop, an empty record, or no candidate good enough);
 - each arrangement's totals over all 80,000 voter-question pairs per level;
 - the mechanism the page animates, at Swiss turnout: one resident's
   candidates for one topic, a short and an empty record, a ballot routed by
@@ -121,6 +122,30 @@ def _codes(population: Population, result: Comparison, name: str, question: int)
         else:
             codes.append(OTHER_CONTRARY)
     return "".join(codes)
+
+
+# Why a resident's liquid ballot on a question is or is not their own: d
+# (delegated: someone else decides), l (they delegated, but their chain loops
+# back, so they decide), e (an empty record: no ballot of their own in the
+# history, so no candidate to rank) or k (they keep it: no candidate cleared
+# the acceptance level)
+DELEGATED, ON_LOOP, EMPTY_RECORD, KEPT = "d", "l", "e", "k"
+
+
+def _reasons(population: Population, result: Comparison, question: int) -> str:
+    outcome = result.outcomes["liquid"]
+    record = (population.history.own_votes != NOT_CAST).sum(axis=1)
+    reasons = []
+    for voter in range(population.size):
+        if int(outcome.resolver[voter, question]) != voter:
+            reasons.append(DELEGATED)
+        elif outcome.looped[voter, question]:
+            reasons.append(ON_LOOP)
+        elif record[voter] == 0:
+            reasons.append(EMPTY_RECORD)
+        else:
+            reasons.append(KEPT)
+    return "".join(reasons)
 
 
 def _totals(population: Population, result: Comparison, name: str) -> dict[str, Any]:
@@ -388,6 +413,7 @@ def build() -> dict[str, Any]:
             "meets_cap": bool(result.liquid_acceptance.feasible),
             "codes": {name: _codes(population, result, name, question) for name in ARRANGEMENTS},
             "liquid_resolver": [int(r) for r in result.outcomes["liquid"].resolver[:, question]],
+            "liquid_reason": _reasons(population, result, question),
             "totals": {name: _totals(population, result, name) for name in ARRANGEMENTS},
         }
 

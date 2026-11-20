@@ -3,10 +3,11 @@ import "server-only";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import type { StoryCity, StoryMeasures } from "./story-types";
+import type { StoryCity, StoryMeasures, StoryResults } from "./story-types";
 
 export interface LiquidStoryData {
   measures: StoryMeasures;
+  results: StoryResults;
   city: StoryCity;
 }
 
@@ -25,12 +26,14 @@ export function loadLiquidStory(): Promise<LiquidStoryData> {
 }
 
 async function load(): Promise<LiquidStoryData> {
-  const [measures, city] = await Promise.all([
+  const [measures, results, city] = await Promise.all([
     readFile(join(ARTIFACTS, "measures.json"), "utf-8"),
+    readFile(join(ARTIFACTS, "results.json"), "utf-8"),
     readFile(join(ARTIFACTS, "city.json"), "utf-8"),
   ]);
   return {
     measures: JSON.parse(measures) as StoryMeasures,
+    results: JSON.parse(results) as StoryResults,
     city: JSON.parse(city) as StoryCity,
   };
 }
