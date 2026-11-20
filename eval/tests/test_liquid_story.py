@@ -7,6 +7,9 @@ The liquid walkthrough's static data (public/data/liquid-story/).
   frozen code reproduces that level and the mechanism byte for byte.
 - Where the frozen benchmark's city records are present, the city's totals
   equal the recorded city's at every level.
+- The everyone-votes reference point (exploratory) is its benchmark's
+  summaries, and the city's everyone-votes setting recomputes byte for byte
+  and, where that benchmark's city records are present, equals its record.
 """
 
 from __future__ import annotations
@@ -24,6 +27,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS = ROOT / "public" / "data" / "liquid-story"
 FRONTIER = ROOT / "eval" / "benchmarks" / "delegation_frontier_v1"
+EVERYONE = ROOT / "eval" / "benchmarks" / "delegation_everyone_votes_v1"
 CODES = set("MNmcn")
 
 
@@ -179,6 +183,33 @@ class TestExploratory:
         swiss = exploratory["agent_bars"]["levels"]["0.45"]
         assert (round(swiss["representative"], 3), round(swiss["delegate"], 3)) == (0.632, 0.747)
 
+    def test_everyone_votes_is_its_benchmark(self, exploratory: dict[str, Any]) -> None:
+        everyone = exploratory["everyone_votes"]
+        with (EVERYONE / "measures.csv").open(encoding="utf-8", newline="") as handle:
+            rows = {r["arrangement"]: r for r in csv.DictReader(handle)}
+        for name, values in everyone["measures"].items():
+            for field in ("fidelity", "contrary_share", "none_share", "overhead", "fidelity_lower"):
+                assert values[field] == float(rows[name][field]), (name, field)
+            # Everyone votes, so no ballot is missing under any arrangement
+            assert values["none_share"] == 0.0, name
+        assert everyone["measures"]["direct"]["fidelity"] == everyone["measures"]["direct"]["overhead"] == 1.0
+        assert exploratory["label"] == "exploratory"
+        assert everyone["setting"] == "everyone votes"
+
+    def test_everyone_votes_ladder_adds_up_to_its_lead(self, exploratory: dict[str, Any]) -> None:
+        everyone = exploratory["everyone_votes"]
+        d = {k: v["estimate"] for k, v in everyone["contrasts"].items()}
+        steps = (
+            d["cost_of_sharing"]
+            + d["choice_by_non_voters"]
+            + d["city_wide_proxy_combined"]
+            + d["specialisation"]
+            - d["platform_against_record"]
+        )
+        assert steps == pytest.approx(d["h1"], abs=5e-6)
+        lead = everyone["measures"]["liquid"]["fidelity"] - everyone["measures"]["representative"]["fidelity"]
+        assert d["h1"] == pytest.approx(lead, abs=2e-6)
+
 
 class TestCity:
     def test_every_level_holds_every_resident(self, city: dict[str, Any]) -> None:
@@ -251,3 +282,27 @@ class TestCity:
     @pytest.mark.skipif(not (FRONTIER / "primary_cities.jsonl.gz").exists(), reason="the city records are kept local")
     def test_the_city_is_the_recorded_city(self, builder: ModuleType, city: dict[str, Any]) -> None:
         assert builder.check_recorded(city) is True
+
+    def test_with_everyone_voting_no_ballot_is_missing(self, city: dict[str, Any]) -> None:
+        everyone = city["everyone"]
+        assert everyone["label"] == "exploratory"
+        for name, codes in everyone["codes"].items():
+            assert len(codes) == city["design"]["residents"] and not set(codes) & {"N", "n"}, name
+            assert everyone["totals"][name]["none"] == 0, name
+        assert set(everyone["codes"]["direct"]) == {"M"}
+        # Everyone has a full record, so no one keeps a topic for want of one
+        assert "e" not in everyone["liquid_reason"]
+        questions = city["design"]["topics"] * city["design"]["evaluation_per_topic"]
+        for name, strip in everyone["typical_strips"].items():
+            assert len(strip) == questions and not set(strip) & {"N", "n"}, name
+        assert set(everyone["typical_strips"]["direct"]) == {"M"}
+
+    def test_everyone_votes_recomputes_byte_for_byte(self, builder: ModuleType, city: dict[str, Any]) -> None:
+        population, result = builder._everyone_level()
+        values = json.loads(builder.dumps(builder._level_values(population, result, city["question"]["index"])))
+        for key, value in values.items():
+            assert city["everyone"][key] == value, key
+
+    @pytest.mark.skipif(not (EVERYONE / "cities.jsonl.gz").exists(), reason="the city records are kept local")
+    def test_everyone_votes_is_the_recorded_city(self, builder: ModuleType, city: dict[str, Any]) -> None:
+        assert builder.check_everyone_recorded(city) is True

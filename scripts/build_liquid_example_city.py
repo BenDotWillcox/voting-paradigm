@@ -19,7 +19,11 @@ It writes public/data/liquid-story/city.json:
   and its winner on every question;
 - the mechanism the page animates, at Swiss turnout: one resident's
   candidates for one topic, a short and an empty record, a ballot routed by
-  topic, a chain, a loop, a lost vote and the calibration curve.
+  topic, a chain, a loop, a lost vote and the calibration curve;
+- the same city with everyone voting (exploratory, the declared setting of
+  eval/benchmarks/delegation_everyone_votes_v1): the featured question's
+  ballots, the totals and winners, and the typical resident's ballots, for
+  the story's first two parts.
 
 The featured question is the evaluation question whose match, contrary and
 no-ballot shares, under direct voting, the representative and liquid at
@@ -34,7 +38,8 @@ Usage:
 Where the frozen benchmark's city records are present locally
 (eval/benchmarks/delegation_frontier_v1/primary_cities.jsonl.gz), both
 modes first check this city's recomputed totals and acceptance levels
-against the recorded city. Takes about three minutes.
+against the recorded city, and likewise the everyone-votes setting against
+that benchmark's local records. Takes about three minutes.
 """
 
 from __future__ import annotations
@@ -68,13 +73,17 @@ from delegation.comparison.population import NOT_CAST, Population  # noqa: E402
 from delegation.comparison.protocol import SWISS_MARKER, TURNOUT_GRID  # noqa: E402
 from delegation.comparison.runner import CAP  # noqa: E402
 from delegation.comparison.sweeps import PRIMARY_POINT  # noqa: E402
+from eval.delegation_everyone_votes import EVERYONE_VOTES  # noqa: E402
+from eval.delegation_everyone_votes import population as everyone_population  # noqa: E402
 
 
-CITY_VERSION: Final = 1
+# 2: adds the everyone-votes setting (2026-11-20)
+CITY_VERSION: Final = 2
 POSITION: Final = 1
 OUT: Final = ROOT / "public" / "data" / "liquid-story" / "city.json"
 RECORDED: Final = ROOT / "eval" / "benchmarks" / "delegation_frontier_v1" / "primary_cities.jsonl.gz"
 RECORDED_POINT: Final = "primary: primary settings"
+EVERYONE_RECORDED: Final = ROOT / "eval" / "benchmarks" / "delegation_everyone_votes_v1" / "cities.jsonl.gz"
 # The arrangements the page shows, in its order
 ARRANGEMENTS: Final = ("full_turnout", "direct", "representative", "proxy", "liquid")
 # Arrangements whose shares pick the featured question
@@ -104,6 +113,12 @@ def _level(level: float) -> tuple[Population, Comparison]:
     config = PRIMARY_POINT.config(POSITION, level)
     population = runner._population(config)
     return population, compare(population, DIAL_TURNOUT, CAP)
+
+
+def _everyone_level() -> tuple[Population, Comparison]:
+    """The same city with every resident, office holder and delegate voting on every question."""
+    population = everyone_population(POSITION)
+    return population, compare(population, EVERYONE_VOTES, CAP)
 
 
 def _codes(population: Population, result: Comparison, name: str, question: int) -> str:
@@ -391,6 +406,40 @@ def _mechanism(population: Population, result: Comparison, question: int) -> dic
 # ---------------------------------------------------------------------------
 
 
+def _level_values(population: Population, result: Comparison, question: int) -> dict[str, Any]:
+    """One setting of the city: the featured question's ballots, and every question's winners and totals."""
+    return {
+        "acceptance": _round(result.liquid_acceptance.acceptance),
+        "meets_cap": bool(result.liquid_acceptance.feasible),
+        "codes": {name: _codes(population, result, name, question) for name in ARRANGEMENTS},
+        "liquid_resolver": [int(r) for r in result.outcomes["liquid"].resolver[:, question]],
+        "liquid_reason": _reasons(population, result, question),
+        # Every question's winner per arrangement, to set against full turnout
+        "winners": {name: _winners(result, name) for name in ARRANGEMENTS},
+        "totals": {name: _totals(population, result, name) for name in ARRANGEMENTS},
+    }
+
+
+def _everyone(reference: Population, question: int, typical: int) -> dict[str, Any]:
+    """
+    The city with everyone voting (exploratory): one setting shaped like a
+    level, and the typical resident's ballot on every question.
+    """
+    population, result = _everyone_level()
+    if population.ids != reference.ids or not (population.district == reference.district).all():
+        raise CityError("the residents differ with everyone voting")
+    count = population.evaluation.dimension.size
+    return {
+        "label": "exploratory",
+        "source": "eval/benchmarks/delegation_everyone_votes_v1 (the declared setting)",
+        **_level_values(population, result, question),
+        "typical_strips": {
+            name: "".join(_codes(population, result, name, q)[typical] for q in range(count))
+            for name in ("direct", "representative", "liquid")
+        },
+    }
+
+
 def build() -> dict[str, Any]:
     by_level = {level: _level(level) for level in TURNOUT_GRID}
     swiss_population, swiss = by_level[SWISS_MARKER]
@@ -414,17 +463,9 @@ def build() -> dict[str, Any]:
     for level, (population, result) in by_level.items():
         if population.ids != swiss_population.ids or not (population.district == swiss_population.district).all():
             raise CityError(f"the residents differ at {level}")
-        levels[repr(level)] = {
-            "acceptance": _round(result.liquid_acceptance.acceptance),
-            "meets_cap": bool(result.liquid_acceptance.feasible),
-            "codes": {name: _codes(population, result, name, question) for name in ARRANGEMENTS},
-            "liquid_resolver": [int(r) for r in result.outcomes["liquid"].resolver[:, question]],
-            "liquid_reason": _reasons(population, result, question),
-            # Every question's winner per arrangement, to set against full turnout
-            "winners": {name: _winners(result, name) for name in ARRANGEMENTS},
-            "totals": {name: _totals(population, result, name) for name in ARRANGEMENTS},
-        }
+        levels[repr(level)] = _level_values(population, result, question)
 
+    mechanism = _mechanism(swiss_population, swiss, question)
     return {
         "city_version": CITY_VERSION,
         "generator": "scripts/build_liquid_example_city.py",
@@ -457,7 +498,8 @@ def build() -> dict[str, Any]:
             "topic": int(swiss_population.evaluation.dimension[question]),
         },
         "levels": levels,
-        "mechanism": _mechanism(swiss_population, swiss, question),
+        "mechanism": mechanism,
+        "everyone": _everyone(swiss_population, question, mechanism["typical"]["voter"]),
     }
 
 
@@ -487,6 +529,27 @@ def check_recorded(city: dict[str, Any]) -> bool:
     return True
 
 
+def check_everyone_recorded(city: dict[str, Any]) -> bool:
+    """Compare the everyone-votes setting with that benchmark's city record; False when absent."""
+    if not EVERYONE_RECORDED.exists():
+        return False
+    with gzip.open(EVERYONE_RECORDED, "rt", encoding="utf-8") as handle:
+        recorded = next((row for row in map(json.loads, handle) if row["position"] == POSITION), None)
+    if recorded is None:
+        raise CityError(f"position {POSITION} is not in the everyone-votes city records")
+    values = city["everyone"]
+    if values["acceptance"] != _round(recorded["liquid_acceptance"]["acceptance"]):
+        raise CityError("everyone votes: acceptance differs from the recorded city")
+    for name in ARRANGEMENTS:
+        totals = values["totals"][name]
+        if totals["match"] != recorded["matches"][name]:
+            raise CityError(f"everyone votes {name}: matches differ from the recorded city")
+        for key in ("fidelity", "overhead"):
+            if totals[key] != recorded["measures"][name][key]:
+                raise CityError(f"everyone votes {name}: {key} differs from the recorded city")
+    return True
+
+
 def dumps(payload: Any) -> str:
     return json.dumps(payload, ensure_ascii=False, separators=(",", ":"), allow_nan=False) + "\n"
 
@@ -498,6 +561,8 @@ def main(argv: list[str] | None = None) -> int:
     city = build()
     print("checked against the recorded city" if check_recorded(city) else
           "the recorded city is not present; its check was skipped")
+    print("checked everyone votes against its recorded city" if check_everyone_recorded(city) else
+          "the everyone-votes city records are not present; that check was skipped")
     body = dumps(city).encode("utf-8")
     if args.check:
         if not OUT.exists() or OUT.read_bytes() != body:

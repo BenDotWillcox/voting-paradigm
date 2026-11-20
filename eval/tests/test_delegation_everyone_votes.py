@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import io
 import json
+import shutil
 from typing import Any
 
 import numpy as np
@@ -146,6 +148,111 @@ class TestSummaries:
         rows = {r["arrangement"]: r for r in csv.DictReader(io.StringIO(cap_csv(_rows()).decode("utf-8")))}
         assert rows["liquid"]["meets_cap"] == str(PRIMARY_CITIES // 2)
         assert rows["proxy"]["history_feasible"] == str(PRIMARY_CITIES)
+
+
+# ---------------------------------------------------------------------------
+# The published benchmark
+# ---------------------------------------------------------------------------
+
+BENCHMARK = everyone.DEFAULT_OUT
+RUN_COMMIT = "770f413ac350ac0b79662d974e00d0c1e7d2f137"
+needs_cities = pytest.mark.skipif(
+    not everyone.has_cities(BENCHMARK), reason="the city records are kept out of the repository"
+)
+
+
+def _sha256(path: Any) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _published(name: str, key: str) -> dict[str, dict[str, str]]:
+    with (BENCHMARK / name).open(encoding="utf-8", newline="") as handle:
+        return {r[key]: r for r in csv.DictReader(handle)}
+
+
+class TestPublishedFiles:
+    def test_every_file_matches_its_recorded_hash(self) -> None:
+        outputs = json.loads((BENCHMARK / everyone.METADATA).read_text(encoding="utf-8"))["outputs"]
+        assert set(outputs) == {everyone.CITIES, MANIFEST, everyone.MEASURES, everyone.CONTRASTS_CSV, everyone.CAP_CSV}
+        for name, digest in outputs.items():
+            if name == everyone.CITIES and not (BENCHMARK / name).exists():
+                continue
+            assert _sha256(BENCHMARK / name) == digest, name
+
+    def test_the_city_records_are_not_committed(self) -> None:
+        assert everyone.CITIES in (BENCHMARK / ".gitignore").read_text(encoding="utf-8").splitlines()
+
+    def test_without_the_city_records_every_committed_file_is_still_checked(self, tmp_path: Any) -> None:
+        copy_dir = tmp_path / "benchmark"
+        shutil.copytree(BENCHMARK, copy_dir, ignore=shutil.ignore_patterns(everyone.CITIES))
+        assert everyone.verify(copy_dir) == []
+        (copy_dir / everyone.CAP_CSV).write_bytes(b"tampered\n")
+        assert everyone.verify(copy_dir) == [f"{everyone.CAP_CSV} does not match its recorded hash"]
+
+    def test_the_run_is_the_declared_run_from_its_commit(self) -> None:
+        recorded = json.loads((BENCHMARK / MANIFEST).read_text(encoding="utf-8"))
+        check_manifest(recorded)
+        assert recorded["commit"] == RUN_COMMIT
+
+    def test_the_summaries_were_built_by_the_current_code(self) -> None:
+        recorded = json.loads((BENCHMARK / everyone.METADATA).read_text(encoding="utf-8"))
+        for source, digest in recorded["source_sha256_lf_normalized"].items():
+            data = (everyone.ROOT / source).read_bytes().replace(b"\r\n", b"\n")
+            assert hashlib.sha256(data).hexdigest() == digest, f"{source} changed: republish the benchmark"
+
+    def test_the_setting_holds_in_the_published_measures(self) -> None:
+        assert everyone.setting_problems(BENCHMARK) == []
+
+    @needs_cities
+    def test_the_summaries_rebuild_from_the_city_records(self) -> None:
+        for name, data in everyone.build(BENCHMARK).items():
+            assert (BENCHMARK / name).read_bytes() == data, name
+
+
+class TestReadmeReadings:
+    """The README's statements, read again from the published summaries."""
+
+    @pytest.mark.parametrize(
+        ("arrangement", "name", "value"),
+        [
+            ("representative", "fidelity", 0.633),
+            ("proxy", "fidelity", 0.790),
+            ("liquid", "fidelity", 0.810),
+            ("proxy", "overhead", 0.106),
+            ("liquid", "overhead", 0.183),
+            ("liquid", "mean_largest_share", 0.103),
+            ("liquid", "max_largest_share", 0.165),
+            ("representative", "share_below_half", 0.136),
+            ("liquid", "outcome_agreement", 0.923),
+            ("representative", "outcome_agreement", 0.831),
+        ],
+    )
+    def test_quoted_measures(self, arrangement: str, name: str, value: float) -> None:
+        assert float(_published(everyone.MEASURES, "arrangement")[arrangement][name]) == pytest.approx(
+            value, abs=5e-4
+        )
+
+    def test_all_of_liquids_overhead_is_loops(self) -> None:
+        liquid = _published(everyone.MEASURES, "arrangement")["liquid"]
+        assert float(liquid["loop_share"]) == pytest.approx(float(liquid["overhead"]), abs=1e-9)
+
+    def test_no_citys_liquid_meets_the_cap(self) -> None:
+        cap = _published(everyone.CAP_CSV, "arrangement")
+        assert (cap["liquid"]["meets_cap"], cap["proxy"]["meets_cap"]) == ("0", "114")
+
+    def test_the_ladder(self) -> None:
+        contrasts = {k: float(r["estimate"]) for k, r in _published(everyone.CONTRASTS_CSV, "quantity").items()}
+        assert contrasts["h1"] == pytest.approx(0.178, abs=5e-4)
+        assert contrasts["specialisation"] == pytest.approx(0.020, abs=5e-4)
+        assert contrasts["choice_by_non_voters"] == 0.0
+        steps = (
+            -contrasts["platform_against_record"]
+            + contrasts["cost_of_sharing"]
+            + contrasts["choice_by_non_voters"]
+            + contrasts["city_wide_proxy_combined"]
+            + contrasts["specialisation"]
+        )
+        assert steps == pytest.approx(contrasts["h1"], abs=5e-6)
 
 
 def test_the_manifest_records_the_declared_analysis() -> None:

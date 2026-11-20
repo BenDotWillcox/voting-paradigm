@@ -75,11 +75,33 @@ export interface StoryExploratory {
     source: string;
     levels: Record<LevelKey, Record<Arrangement, { match: number; contrary: number; none: number; w0: number; w1: number }>>;
   };
+  everyone_votes: EveryoneVotes;
   agent_bars: {
     label: "proposal";
     formula: { representative: string; delegate: string };
     levels: Record<LevelKey, { representative: number; delegate: number }>;
   };
+}
+
+/**
+ * The everyone-votes reference point (exploratory; delegation_everyone_votes_v1):
+ * every arrangement with every resident, office holder and delegate voting.
+ * Descriptive: it has no verdict.
+ */
+export interface EveryoneVotes {
+  source: string;
+  commit: string;
+  declared: string;
+  cities: number;
+  setting: string;
+  measures: Record<
+    Arrangement,
+    ArrangementMeasures & { fidelity_lower: number; fidelity_upper: number; overhead_lower: number; overhead_upper: number }
+  >;
+  /** The frozen runner's declared contrasts (h1, specialisation and the ladder's steps). */
+  contrasts: Record<string, Interval>;
+  /** How many cities' calibrated arrangements stay at or under the cap. */
+  cap: Record<"proxy" | "liquid", { cities: number; meets_cap: number; history_feasible: number }>;
 }
 
 export interface SweepPoint {
@@ -316,6 +338,13 @@ export interface StoryCity {
   question: { index: number; id: string; topic: number };
   levels: Record<LevelKey, CityLevel>;
   mechanism: CityMechanism;
+  /** The same city with everyone voting (exploratory), for the story's first two parts. */
+  everyone: CityLevel & {
+    label: "exploratory";
+    source: string;
+    /** The typical resident's ballot on every evaluation question, per arrangement. */
+    typical_strips: Record<"direct" | "representative" | "liquid", string>;
+  };
 }
 
 /** The data keys turnout levels by Python's repr: 0.1 -> "0.1". */

@@ -1,0 +1,7 @@
+quantity,first,second,estimate,lower,upper
+h1,liquid,representative,0.17762,0.174509,0.180731
+specialisation,liquid,proxy,0.02023,0.01949,0.020971
+cost_of_sharing,district_choice_voters,representative_by_record,0.05272,0.05089,0.05455
+choice_by_non_voters,district_choice,district_choice_voters,0,0,0
+platform_against_record,representative,representative_by_record,-0.019649,-0.022144,-0.017154
+city_wide_proxy_combined,proxy,district_choice,0.08502,0.082944,0.087097

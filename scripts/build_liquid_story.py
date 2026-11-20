@@ -19,8 +19,10 @@ public/data/liquid-story/:
                  (eval/benchmarks/delegation_router_v1)
 - exploratory.json  the analyses made after the freeze, labelled so: liquid's
                  handover curve and the wrong-ballot scores
-                 (eval/benchmarks/delegation_handover_v1), and the personal
-                 agent's bars (proposal arithmetic on the frozen shares)
+                 (eval/benchmarks/delegation_handover_v1), the everyone-votes
+                 reference point (eval/benchmarks/delegation_everyone_votes_v1),
+                 and the personal agent's bars (proposal arithmetic on the
+                 frozen shares)
 - manifest.json  SHA-256 of every input and output, city.json included
 
 Every number the page quotes is read from these files, never typed into the
@@ -46,6 +48,8 @@ ROUTER: Final = ROOT / "eval" / "benchmarks" / "delegation_router_v1"
 HANDOVER: Final = ROOT / "eval" / "benchmarks" / "delegation_handover_v1"
 # The exploratory benchmark's committed summaries
 HANDOVER_INPUTS: Final = ("curve.csv", "wrong_ballot.csv", "manifest.json")
+EVERYONE: Final = ROOT / "eval" / "benchmarks" / "delegation_everyone_votes_v1"
+EVERYONE_INPUTS: Final = ("measures.csv", "contrasts.csv", "cap.csv", "manifest.json")
 OUT: Final = ROOT / "public" / "data" / "liquid-story"
 CITY: Final = OUT / "city.json"
 ARTIFACT_VERSION: Final = 1
@@ -224,6 +228,46 @@ def _router() -> dict[str, Any]:
     }
 
 
+def _everyone() -> dict[str, Any]:
+    """
+    The everyone-votes reference point: every arrangement with everyone
+    voting, the declared contrasts and the cap counts. Descriptive; no verdict.
+    """
+    manifest = json.loads((EVERYONE / "manifest.json").read_text(encoding="utf-8"))
+    measures = {r["arrangement"]: r for r in _rows(EVERYONE / "measures.csv")}
+    missing = [name for name in ARRANGEMENTS if name not in measures]
+    if missing:
+        raise ValueError(f"the everyone-votes measures.csv has no {', '.join(missing)}")
+    intervals = ("fidelity_lower", "fidelity_upper", "overhead_lower", "overhead_upper")
+    return {
+        "source": "eval/benchmarks/delegation_everyone_votes_v1 (measures, contrasts and cap CSVs)",
+        "commit": manifest["commit"],
+        "declared": manifest["declared"],
+        "cities": manifest["primary_cities"],
+        "setting": manifest["setting"],
+        "measures": {
+            name: {
+                **{f: float(measures[name][f]) for f in FIELDS},
+                **{f: _optional(measures[name][f]) for f in EXTRA_FIELDS},
+                **{f: float(measures[name][f]) for f in intervals},
+            }
+            for name in ARRANGEMENTS
+        },
+        "contrasts": {
+            r["quantity"]: {f: float(r[f]) for f in ("estimate", "lower", "upper")}
+            for r in _rows(EVERYONE / "contrasts.csv")
+        },
+        "cap": {
+            r["arrangement"]: {
+                "cities": int(r["cities"]),
+                "meets_cap": int(r["meets_cap"]),
+                "history_feasible": int(r["history_feasible"]),
+            }
+            for r in _rows(EVERYONE / "cap.csv")
+        },
+    }
+
+
 def _exploratory(grid: list[float], frozen: dict[str, Any]) -> dict[str, Any]:
     """
     The analyses made after the freeze (§12) and one proposal's arithmetic
@@ -278,6 +322,7 @@ def _exploratory(grid: list[float], frozen: dict[str, Any]) -> dict[str, Any]:
                 for level in grid
             },
         },
+        "everyone_votes": _everyone(),
         "agent_bars": {
             "label": "proposal",
             "formula": {
@@ -359,6 +404,10 @@ def manifest(outputs: dict[str, bytes]) -> dict[str, Any]:
             **{
                 f"eval/benchmarks/delegation_handover_v1/{name}": sha256((HANDOVER / name).read_bytes())
                 for name in HANDOVER_INPUTS
+            },
+            **{
+                f"eval/benchmarks/delegation_everyone_votes_v1/{name}": sha256((EVERYONE / name).read_bytes())
+                for name in EVERYONE_INPUTS
             },
         },
         "outputs": {name: sha256(body) for name, body in outputs.items()},

@@ -475,9 +475,23 @@ hypothesis].
   `eval/delegation_everyone_votes.py`.
 - **Seen in that one city (position 1):** liquid's overhead is above the
   10% cap, all of it on loops, because with everyone voting nearly everyone
-  hands every topic over. If the run confirms it, part 1 says "far less work
-  than voting yourself" without promising the cap, and loops (part 3c) are
-  where that work comes from.
+  hands every topic over.
+- **Run and published 2026-11-20** (`eval/benchmarks/delegation_everyone_votes_v1/`,
+  from commit `770f413`). The run confirms the one city:
+  - liquid 81.0% fidelity at 18.3% overhead; the proxy 79.0% at 10.6%; the
+    representative 63.3% at 1%;
+  - no city's liquid stays under the cap (the proxy does in 114 of 200), and
+    all of liquid's overhead is loops;
+  - the ladder: +17.8 points over the representative, 15.8 of them before
+    topics, and topics add 2.0;
+  - the largest decider holds 10.3% of a question's votes on average,
+    below a representative's 20%.
+- **What it means for the copy:**
+  - part 1 says "far less work than voting yourself" (about a fifth) and
+    does not promise the cap;
+  - part 3c can say the loops grow as turnout rises, from 0.8% of
+    voter-question pairs at 0.1 to 18.3% with everyone voting;
+  - "What changed"'s concentration note gains its everyone-votes point.
 - **Output:**
   - a new exploratory benchmark, with summaries committed and city records
     kept local;

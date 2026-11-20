@@ -1069,6 +1069,13 @@ results, figure and limits are in
      measures were seen. Liquid's overhead there is above the 10% cap, all
      of it from residents whose chains loop back to them.
 
+   **Run and published (2026-11-20).** Run as declared from commit
+   `770f413` on a clean checkout (200 cities on 14 workers); every city
+   passed both checks. Liquid's fidelity is 81.0% at 18.3% overhead, against
+   the representative's 63.3% at 1%. No city's liquid stays under the cap,
+   and all of its overhead is from loops. Results and limits are in
+   `eval/benchmarks/delegation_everyone_votes_v1/README.md`.
+
 ## The comparison
 
 ### Arrangements
