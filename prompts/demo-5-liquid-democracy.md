@@ -1028,6 +1028,47 @@ workers). Depth 0 reproduces the frozen direct voting at every level. The
 results, figure and limits are in
 `eval/benchmarks/delegation_handover_v1/README.md`.
 
+3. **Everyone votes: a reference point** (declared 2026-11-20). The story
+   at `/liquid` shows the idea and the basic mechanism before turnout
+   enters (`prompts/demo-5-walkthrough.md`, R1). The frozen grid stops at
+   0.9, so this measures the arrangements with everyone voting.
+   - **What is computed.** Every arrangement `compare` runs, with every
+     resident voting on every history and evaluation question, and every
+     office holder and delegate voting on every question. Liquid and the
+     proxy are calibrated by the frozen overhead rule on history questions,
+     as at every level.
+   - **How.** The frozen code, unchanged.
+     - Turnout has its own random stream. Setting the population's legacy
+       uniform bounds to [1, 1], with no dial mean, gives every resident a
+       rate of 1 and keeps each city's residents, beliefs, candidates and
+       questions.
+     - The turnout policy puts office holders and delegates at rate 1
+       (`TurnoutPolicy(office_rate=1, resolver_turnout=1)`).
+     - The runner is `eval/delegation_everyone_votes.py`.
+   - **On what.** The 200 primary cities on their pinned seeds, with the
+     frozen beliefs file. It runs from a committed state.
+   - **What is reported.**
+     - For each arrangement, the mean over cities of every frozen measure,
+       with 95% t-intervals for fidelity and overhead.
+     - The declared contrasts (H1, specialisation and the ladder's steps),
+       with 95% t-intervals.
+     - How many cities' liquid and proxy meet the 10% cap.
+
+     No threshold, gate or verdict is computed.
+   - **Checks.**
+     - In every city, no ballot goes uncast under any arrangement, and
+       direct voting equals full turnout.
+     - A test checks that one city's residents and questions are those of
+       the frozen city.
+   - **What it is not.** A test. Direct voting's fidelity is 1 by
+     construction, and the run describes the trade-off before turnout.
+   - **Where.** `eval/benchmarks/delegation_everyone_votes_v1/`. The city
+     records are kept local, with their hashes.
+   - **Seen before this was declared.** One city (primary position 1) was
+     computed to check that the setting runs on the frozen code, and its
+     measures were seen. Liquid's overhead there is above the 10% cap, all
+     of it from residents whose chains loop back to them.
+
 ## The comparison
 
 ### Arrangements

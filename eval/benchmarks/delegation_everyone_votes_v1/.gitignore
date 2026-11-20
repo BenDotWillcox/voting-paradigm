@@ -1,0 +1,4 @@
+# The city records stay local. metadata.json keeps their hash, and
+# `python -m eval.delegation_everyone_votes run` then `publish` regenerate
+# them (see README.md, "Reproduce").
+cities.jsonl.gz
