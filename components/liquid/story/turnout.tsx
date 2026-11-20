@@ -13,6 +13,11 @@ interface TurnoutState {
   setLevel: (level: number) => void;
   /** Set when the level is held fixed: the note a dial shows in its place. */
   fixed: React.ReactNode | null;
+  /**
+   * Whether figures show the everyone-votes reference point (exploratory)
+   * instead of a turnout level. Always held fixed.
+   */
+  everyone: boolean;
 }
 
 const TurnoutContext = React.createContext<TurnoutState | null>(null);
@@ -25,24 +30,29 @@ const TurnoutContext = React.createContext<TurnoutState | null>(null);
  *
  * With `fixed`, the level stays at Swiss turnout and every dial inside shows
  * that note instead, so a stretch of the page can be read at one turnout
- * before the reader is handed the dial.
+ * before the reader is handed the dial. With `everyone` as well, figures
+ * that support it show the everyone-votes reference point instead (see
+ * `useSetting`), so the story can show the idea before turnout enters.
  */
 export function TurnoutProvider({
   levels,
   swiss,
   fixed = null,
+  everyone = false,
   children,
 }: {
   levels: readonly number[];
   swiss: number;
   fixed?: React.ReactNode;
+  everyone?: boolean;
   children: React.ReactNode;
 }) {
   const [level, setLevel] = React.useState(swiss);
   const value = React.useMemo(
-    () => ({ levels, swiss, level, key: levelKey(level), setLevel, fixed }),
-    [levels, swiss, level, fixed]
+    () => ({ levels, swiss, level, key: levelKey(level), setLevel, fixed, everyone }),
+    [levels, swiss, level, fixed, everyone]
   );
+  if (everyone && !fixed) throw new Error("the everyone-votes setting is held fixed: give it a note");
   return <TurnoutContext.Provider value={value}>{children}</TurnoutContext.Provider>;
 }
 

@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { AppSection } from "@/components/liquid/story/app-section";
-import { ClaimLabel } from "@/components/liquid/story/claim-label";
-import { CostsFigure, RouterFigure } from "@/components/liquid/story/costs-figure";
+import { ClaimLabel, type Claim } from "@/components/liquid/story/claim-label";
+import { RouterFigure } from "@/components/liquid/story/costs-figure";
 import { EdgesFigure, KeepCityFigure } from "@/components/liquid/story/edges-figure";
 import { HandoverFigure } from "@/components/liquid/story/exploratory-figures";
-import { CalibrationFigure, CandidatesFigure, ChainFigure, RoutingFigure } from "@/components/liquid/story/mechanism";
+import { CalibrationFigure, CandidatesFigure, ChainFigure } from "@/components/liquid/story/mechanism";
+import { OneResident } from "@/components/liquid/story/one-resident";
 import { OutcomesFigure } from "@/components/liquid/story/outcomes-figure";
+import { PlaneFigure } from "@/components/liquid/story/plane";
 import { ResultFigure } from "@/components/liquid/story/result-figure";
 import {
   LiquidFigure,
@@ -19,88 +21,109 @@ import {
 import { StoryDataProvider } from "@/components/liquid/story/story-data";
 import { ThreeWaysFigure } from "@/components/liquid/story/three-ways";
 import { TurnoutProvider } from "@/components/liquid/story/turnout";
-import { dec, pct, pointsLabel, resident, share } from "@/lib/liquid/format";
+import { dec, pct, resident, share } from "@/lib/liquid/format";
 import { loadLiquidStory } from "@/lib/liquid/story-data";
 import { levelKey, topicLabel } from "@/lib/liquid/story-types";
 
 export const metadata: Metadata = {
   title: "Who Votes for You? · Liquid democracy",
   description:
-    "Liquid delegation lets you hand each kind of decision to someone you choose. A pre-registered simulation of 200 cities asks whether that represents people better than an elected representative, where it breaks, and what could be built to fix it.",
+    "Liquid delegation lets you hand each kind of decision to someone you choose. How it works, where it breaks, and what we would build to fix it, from a pre-registered simulation of 200 cities.",
 };
 
-/** The published repository, for the benchmark and the design doc. */
+/** The published repository, for the benchmarks and the design doc. */
 const REPOSITORY = "https://github.com/BenDotWillcox/voting-paradigm/tree/main";
 
 /** The story's five parts, for the opening's contents. */
 const PARTS = [
   { id: "idea", label: "The idea" },
   { id: "how", label: "How it works" },
-  { id: "result", label: "Does it work?" },
-  { id: "breaks", label: "Where it breaks" },
+  { id: "breaks", label: "Where the machinery breaks" },
+  { id: "struggles", label: "Where it still struggles" },
   { id: "build", label: "What we'd build" },
 ] as const;
-
-/** A step inside part 2: a small heading, its text, its figure. */
-function Step({ title, children, figure }: { title: string; children: React.ReactNode; figure: React.ReactNode }) {
-  return (
-    <section className="mt-14">
-      <LiquidText>
-        <h3 className="text-lg font-semibold text-story-ink">{title}</h3>
-        {children}
-      </LiquidText>
-      <LiquidFigure>{figure}</LiquidFigure>
-    </section>
-  );
-}
 
 /** A small heading inside a part. */
 function Beat({ children, className }: { children: React.ReactNode; className?: string }) {
   return <h3 className={`pt-4 text-lg font-semibold text-story-ink ${className ?? ""}`}>{children}</h3>;
 }
 
-/** Which part 5 proposal targets a bottleneck, or that none does. */
-function Targets({ children }: { children: React.ReactNode }) {
+/** The fix or answer that follows a problem, with its label and the evidence for it. */
+function Fix({
+  title = "The fix",
+  claim = "proposal",
+  children,
+  evidence,
+}: {
+  title?: string;
+  claim?: Claim;
+  children: React.ReactNode;
+  evidence: React.ReactNode;
+}) {
   return (
-    <p className="border-l-2 border-story-rule pl-3 text-sm text-story-ink-2">
-      <span className="font-medium text-story-ink">In part 5:</span> {children}
-    </p>
+    <div className="space-y-2 border-l-2 border-story-rule pl-4 text-story-ink-2">
+      <p>
+        <span className="mr-1.5 font-medium text-story-ink">{title}</span>
+        <span className="mr-1.5 inline-block align-middle">
+          <ClaimLabel claim={claim} />
+        </span>
+        {children}
+      </p>
+      <p className="text-sm">
+        <span className="font-medium text-story-ink">Evidence:</span> {evidence}
+      </p>
+    </div>
   );
+}
+
+/** Where a mechanism animation will go (slice G); until then, what it will show. */
+function Pending({ children }: { children: React.ReactNode }) {
+  return (
+    <LiquidFigure>
+      <div className="mx-auto max-w-2xl rounded-lg border border-dashed border-story-rule p-5 font-sans text-sm text-story-ink-2">
+        <p className="text-xs font-medium tracking-wide text-story-muted uppercase">Animation in progress</p>
+        <p className="mt-1">{children}</p>
+      </div>
+    </LiquidFigure>
+  );
+}
+
+const NOT_YET = "None yet. The fallback study, declared before it runs, will test it.";
+
+/** A difference in points, unsigned: 0.178 -> "17.8". */
+function pts(value: number): string {
+  return (100 * value).toFixed(1);
 }
 
 /**
  * Demo 5: "Who Votes for You?", the liquid-democracy story
- * (prompts/demo-5-walkthrough.md, "The story"). Five parts: the idea, how it
- * works, the result, where it breaks, and what could be built, ending with
- * the account app. It shows highlights only; every part links to the full
- * study at /liquid/study, which holds every figure and interval. Plain for
- * now: the styling comes once the core is built. Static: every number comes
- * from public/data/liquid-story/. Only the account app talks to the Python
- * service, from the browser.
+ * (prompts/demo-5-walkthrough.md, "The story", revised 2026-11-20). Five
+ * parts: the idea and the basic mechanism, shown as if everyone votes; the
+ * breaks real turnout opens, each with its fix; the limits no rule settles,
+ * each with our answer, where the verdict lands; and the app. It shows
+ * highlights only; every part links to the full study at /liquid/study.
+ * Plain for now: the styling comes once the core is built. Static: every
+ * number comes from public/data/liquid-story/. Only the account app talks to
+ * the Python service, from the browser.
  */
 export default async function LiquidStoryPage() {
   const { measures, results, exploratory, city } = await loadLiquidStory();
   const { protocol } = measures;
   const swiss = protocol.swiss_marker;
-  const at = measures.levels[levelKey(swiss)];
   const { design } = city;
   const m = city.mechanism;
 
-  // Part 2: the illustrative city at Swiss turnout
-  const showcaseTopic = topicLabel(city.topics[m.showcase.topic]).toLowerCase();
-  const kept = m.showcase.delegates
-    .map((delegate, topic) => (delegate < 0 ? topicLabel(city.topics[topic]).toLowerCase() : null))
-    .filter((topic): topic is string => topic !== null);
-  const top = m.showcase.candidates[0];
-  const shortBest = m.short_record.candidates[0];
-  const everything = m.handed_over[m.handed_over.length - 1];
-  const chainTopic = topicLabel(city.topics[m.chain.topic]).toLowerCase();
+  // Parts 1 and 2: the everyone-votes reference point (exploratory)
+  const everyone = exploratory.everyone_votes;
+  const e = everyone.measures;
+  const topicList = city.topics.map((t) => topicLabel(t).toLowerCase());
 
   // Parts 3 and 4: every quoted value read from the frozen summaries
   const grid = protocol.turnout_grid;
   const result = (l: number) => results.levels[levelKey(l)];
   const measured = (l: number) => measures.levels[levelKey(l)];
-  const { threshold, rules } = results;
+  const at = measured(swiss);
+  const { threshold, rules, router, sweeps } = results;
   const lowest = grid[0];
   const highest = grid[grid.length - 1];
   const worthwhile = grid.filter((l) => result(l).size === "gain of at least delta established");
@@ -111,13 +134,16 @@ export default async function LiquidStoryPage() {
   const emptyFidelity = grid.map((l) => measured(l).liquid.empty_record_fidelity ?? 0);
   const passed = grid.findIndex((l) => measured(l).direct.fidelity > measured(l).liquid.fidelity);
   const [beforePass, afterPass] = [grid[passed - 1], grid[passed]];
-  const { sweeps } = results;
   const sweepLead = (point: string) => sweeps.points[point].levels[levelKey(swiss)].h1;
   const sweepPanel = (title: string) => sweeps.panels.find((panel) => panel.title.startsWith(title))?.series ?? [];
   const shortestHistory = sweepPanel("History")[0];
   const evenKey = sweepPanel("Turnout spread")[0].point;
+  const showcaseTopic = topicLabel(city.topics[m.showcase.topic]).toLowerCase();
+  const top = m.showcase.candidates[0];
+  const shortBest = m.short_record.candidates[0];
+  const operating = router.operating;
 
-  // Part 5
+  // The ceiling's exploratory evidence, and the agent's bars
   const handoverAt = (l: number) => exploratory.handover.levels[levelKey(l)];
   const rises = (l: number) => handoverAt(l).every((p, i, all) => i === 0 || p.fidelity > all[i - 1].fidelity);
   const lastRise = grid.filter(rises).slice(-1)[0];
@@ -130,33 +156,22 @@ export default async function LiquidStoryPage() {
       <div className="story liquid-story min-h-screen pb-24">
         <StoryDataProvider measures={measures} results={results} exploratory={exploratory} city={city}>
           <TurnoutProvider levels={grid} swiss={swiss}>
-            {/* The opening: the question and the answer, unsoftened */}
+            {/* The opening: the question, and what the page will show. The answer waits for part 4. */}
             <header id="top" className="mx-auto max-w-2xl px-4 pt-14 pb-6">
               <p className="text-sm font-medium text-story-muted">Demo 05 · Liquid democracy</p>
               <h1 className="mt-3 text-4xl font-semibold tracking-tight text-balance text-story-ink sm:text-5xl">
                 Who Votes for You?
               </h1>
               <p className="mt-4 text-lg leading-relaxed text-story-ink-2">
-                Liquid delegation lets you hand each kind of decision to someone you choose, and keep the rest. We
-                simulated {protocol.cities} cities to ask one question: can people hand most of their civic decisions
-                to delegates they choose, and still be represented better than by an elected representative?
+                Liquid delegation lets you hand each kind of decision to someone you choose, and keep the rest. Can
+                people hand most of their civic decisions to delegates they choose, and still be represented better
+                than by an elected representative?
               </p>
-              <div className="mt-8 rounded-lg bg-story-surface p-5 ring-1 ring-story-rule">
-                <p className="text-xs font-medium tracking-wide text-story-ink-2 uppercase">The short answer</p>
-                <p className="mt-2 text-lg leading-relaxed text-story-ink">
-                  Clearly yes in the middle of the turnout range. But the test we declared before the run is not met:
-                  at both ends, liquid delegation cannot keep the work it asks of voters low.
-                </p>
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-medium tracking-wide text-story-ink-2 uppercase">
-                    The pre-registered verdict
-                  </span>
-                  <ClaimLabel claim="frozen" />
-                </div>
-                <p className="mt-1 font-semibold text-story-ink">
-                  &ldquo;{measures.verdict.text.charAt(0).toUpperCase() + measures.verdict.text.slice(1)}.&rdquo;
-                </p>
-              </div>
+              <p className="mt-4 leading-relaxed text-story-ink-2">
+                This page shows how liquid delegation works, where it breaks, and what we would build to fix it. The
+                answer comes from a test declared before {protocol.cities} synthetic cities were run, and part 4 gives
+                it.
+              </p>
               <nav aria-label="The story's parts" className="mt-8 text-sm text-story-ink-2">
                 <ol className="space-y-1">
                   {PARTS.map((part, index) => (
@@ -173,69 +188,94 @@ export default async function LiquidStoryPage() {
               </nav>
             </header>
 
-            {/* Parts 1 and 2 are read at Swiss turnout; the dial arrives in part 3 */}
+            {/* Parts 1 and 2 read as if everyone votes; the dial arrives in part 3 */}
             <TurnoutProvider
               levels={grid}
               swiss={swiss}
-              fixed={`Shown at Swiss turnout, ${swiss}. You set the turnout from part 3.`}
+              everyone
+              fixed="Everyone votes here. You set the turnout from part 3."
             >
               {/* Part 1. The idea */}
-              <LiquidHeading id="idea" kicker="Part 1 · The idea" claim="frozen">
-                Three ways to be represented
+              <LiquidHeading id="idea" kicker="Part 1 · The idea" claim="exploratory">
+                Between voting on everything and handing everything over
               </LiquidHeading>
               <LiquidText>
-                <p>There are three ways a city can turn what its residents want into ballots.</p>
+                <p>
+                  Start with a city where everyone votes on every question they are asked. There are several ways to
+                  turn what its residents want into decisions, and each asks a different amount of them.
+                </p>
+                <Beat>Direct voting</Beat>
+                <p>
+                  Everyone decides every question themself. Every ballot is the voter&apos;s own, so it always matches
+                  what they want. But the work is the problem: every resident decides every question.
+                </p>
+                <Beat>A district representative</Beat>
+                <p>
+                  Each district elects one person, who votes on every question for everyone in it. Residents decide
+                  almost nothing themselves, but the representative&apos;s ballot matches a resident on only{" "}
+                  {pct(e.representative.fidelity)} of their questions. Representation costs fidelity twice:
+                </p>
                 <ul>
                   <li>
-                    <strong>Direct voting.</strong> Everyone votes on every question themself. A ballot you cast is
-                    always yours, but most people skip most questions.
+                    <em>Dilution:</em> you share the representative with your whole district, whose views differ from
+                    yours, and they were elected by all of it.
                   </li>
                   <li>
-                    <strong>A district representative.</strong> Your district elects one person, who votes on every
-                    question for everyone in it.
-                  </li>
-                  <li>
-                    <strong>Liquid delegation.</strong> You hand each topic to someone you choose, anyone in the city,
-                    and keep any topic you want. Your delegate can pass your vote on to their own delegate.
+                    <em>Bundling:</em> one person stands for you on every issue, and you will not agree with anyone on
+                    everything.
                   </li>
                 </ul>
+                <Beat>A proxy you choose</Beat>
                 <p>
-                  A representative costs you in two ways. <em>Dilution</em>: you share them with your whole district,
-                  whose views differ from yours, and they were elected by all of it. <em>Bundling</em>: one person
-                  stands for you on every issue, and you will not agree with anyone on everything. Liquid delegation
-                  removes both, because you choose the person, topic by topic.
+                  Instead of sharing a representative, each resident picks their own person, anyone in the city, to
+                  vote for them on everything. That removes dilution: the proxy&apos;s ballots match on{" "}
+                  {pct(e.proxy.fidelity)} of questions.
                 </p>
+                <Beat>Liquid delegation</Beat>
                 <p>
-                  Two numbers measure the trade. <strong>Fidelity</strong> is the share of your questions on which the
-                  ballot counted for you matches what you would have chosen. <strong>Overhead</strong> is the share
-                  you decide yourself: the work an arrangement asks of you. Voting on everything yourself scores one
-                  on both. The question is how much fidelity an arrangement keeps for how little overhead.
-                </p>
-                <p>
-                  To measure them we built synthetic cities. Each has {design.residents} residents in{" "}
-                  {design.districts} districts, with views drawn from a model fitted to the CES 2024 survey of American
-                  voters, and {design.topics} topics, each with a public record of {design.history_per_topic} past
-                  votes to choose delegates from. Each resident votes at their own rate. The study ran{" "}
-                  {protocol.cities} such cities.
-                </p>
-                <p>
-                  Until part 3, everything is shown at Swiss turnout, where the average resident votes on{" "}
-                  {pct(at.direct.fidelity)} of questions. Voting yourself is never wrong but usually absent:{" "}
-                  {pct(at.direct.none_share)} of their questions carry no ballot for them. A representative leaves only{" "}
-                  {pct(at.representative.none_share)} empty, but votes against the resident on{" "}
-                  {pct(at.representative.contrary_share)}: about a third of the time. Liquid delegation&apos;s ballots
-                  match the resident on {pct(at.liquid.fidelity)} of questions; {pct(at.liquid.contrary_share)} are
-                  against them and {pct(at.liquid.none_share)} are empty.
+                  Liquid delegation picks a person for each topic, so it removes bundling too. Its ballots match on{" "}
+                  {pct(e.liquid.fidelity)} of questions, {pts(everyone.contrasts.h1.estimate)} points more
+                  than the representative. Most of that gain comes from choosing your own person at all: splitting the
+                  choice by topic adds {pts(everyone.contrasts.specialisation.estimate)} of them.
                 </p>
               </LiquidText>
               <LiquidFigure>
                 <ThreeWaysFigure />
               </LiquidFigure>
               <LiquidText>
+                <Beat className="pt-0">The trade-off, on two measures</Beat>
                 <p>
-                  Each dot is one resident of one real city of the {protocol.cities}, on one question; the bars average
-                  all {design.topics * design.evaluation_per_topic} questions they are scored on, over all{" "}
-                  {protocol.cities} cities.
+                  <strong>Fidelity</strong> is the share of your questions on which the ballot counted for you matches
+                  what you would have chosen. <strong>Overhead</strong> is the share you decide yourself: the work an
+                  arrangement asks of you. Direct voting scores 100% on both.
+                </p>
+                <p>
+                  Liquid delegation aims between the corners: far less work than voting on everything yourself, and
+                  more faithful than a representative. Here residents decide {pct(e.liquid.overhead)} of their
+                  questions themselves under liquid delegation, against {pct(e.direct.overhead, 0)} under direct voting
+                  and {pct(e.representative.overhead, 0)} under a representative.
+                </p>
+              </LiquidText>
+              <LiquidFigure>
+                <OneResident />
+              </LiquidFigure>
+              <LiquidFigure>
+                <PlaneFigure />
+              </LiquidFigure>
+              <LiquidText>
+                <p className="text-sm text-story-ink-2">
+                  <span className="font-medium text-story-ink">* What this assumes.</span> Everything in parts 1 and 2
+                  has everyone voting on every question, and residents choosing delegates by how often they have agreed
+                  in the past. Neither holds in a real city: part 3 drops the first assumption and part 4 the second.
+                  These numbers come from an analysis made after the study&apos;s test was fixed. They describe the
+                  setting and test nothing.
+                </p>
+                <Beat>The city</Beat>
+                <p>
+                  To measure all this we built synthetic cities. Each has {design.residents} residents in{" "}
+                  {design.districts} districts, with views drawn from a model fitted to the CES 2024 survey of American
+                  voters, and {design.topics} topics, each with a public record of {design.history_per_topic} past
+                  votes. The study ran {protocol.cities} such cities. Each figure&apos;s dots are one of them.
                 </p>
               </LiquidText>
               <StudyLinks
@@ -247,95 +287,265 @@ export default async function LiquidStoryPage() {
                 ]}
               />
 
-              {/* Part 2. How it works */}
+              {/* Part 2. How it works: the basic version */}
               <LiquidHeading id="how" kicker="Part 2 · How it works" claim="illustration">
-                From the record to the ballot
+                The basic version
               </LiquidHeading>
               <LiquidText>
                 <p>
-                  Liquid delegation runs on a few simple rules: hand over a topic, let votes travel on, and let loops
-                  come back. The hard part is choosing whom to trust. The steps below run on one of the{" "}
-                  {protocol.cities} cities, and every resident, count and setting in them is the frozen code&apos;s
-                  own.
+                  Liquid delegation runs on a few rules. This is the version most proposals share, still with everyone
+                  voting.
+                </p>
+                <Beat>Topics are fixed in advance</Beat>
+                <p>
+                  The city agrees on a list of topics. Ours have {design.topics}: {topicList.slice(0, -1).join(", ")}{" "}
+                  and {topicList[topicList.length - 1]}. Every question on a ballot arrives tagged with one of them.
+                </p>
+                <Beat>For each topic, you name a delegate or keep it</Beat>
+                <p>
+                  You can hand any topic to anyone in the city, and take it back at any time. In the basic version you
+                  pick someone you trust. The simulated residents cannot trust anyone, so they pick by record: the
+                  person whose past votes on that topic agree with theirs most, as long as there is enough record to
+                  tell. Part 4 shows how.
+                </p>
+                <Beat>A ballot arrives</Beat>
+                <p>
+                  Each question goes where its topic says. A question in a topic you delegated goes to your delegate,
+                  and the rest come to you. Once you hand a topic over, your own ballot on it does not count, even if
+                  you cast one. Some systems let your own vote replace your delegate&apos;s; the study does not model
+                  that.
                 </p>
               </LiquidText>
-              <Step title="Choosing a delegate from the record" figure={<CandidatesFigure />}>
+              <Pending>A ballot&apos;s questions, each filed under its topic and sent to that topic&apos;s delegate.</Pending>
+              <LiquidText>
+                <Beat className="pt-0">Votes travel on</Beat>
                 <p>
-                  {resident(m.showcase.voter)} has to decide who, if anyone, should vote for them on {showcaseTopic}.
-                  Every other resident&apos;s past votes on it are lined up against theirs and the agreements counted:{" "}
-                  {resident(top.person)} matched {top.matches} of {top.trials}.
+                  Your delegate&apos;s own delegations apply to the votes they hold. If your housing delegate has
+                  handed housing to someone else, your vote goes there too, so a vote can pass through several people
+                  before someone decides it.
+                </p>
+              </LiquidText>
+              <Pending>One vote passing along a chain of delegates until someone decides it.</Pending>
+              <LiquidText>
+                <Beat className="pt-0">Who ends up deciding</Beat>
+                <p>
+                  Everyone who decides a question casts one ballot, and it counts for everyone whose vote reached them.
+                  Votes gather around the people many others agree with on a topic. That is the mechanism working: with
+                  everyone voting, the largest single decider holds {pct(e.liquid.mean_largest_share ?? 0)} of a
+                  question&apos;s votes on average, against a district representative&apos;s{" "}
+                  {pct(e.representative.mean_largest_share ?? 0, 0)}.
                 </p>
                 <p>
-                  Candidates are ranked by a cautious estimate, the lower end of a credible interval, so a short record
-                  counts for less than a long one. The topic goes to the best candidate if that estimate clears the
-                  city&apos;s acceptance level, {dec(m.acceptance)}.
+                  The study files every question under its true topic. Filing real questions is the first problem in
+                  part 4.
                 </p>
-              </Step>
-              <Step title="A short record, and an empty one" figure={<CandidatesFigure short />}>
-                <p>
-                  A resident with almost no record has little to go on. {resident(m.short_record.voter)} has cast{" "}
-                  {m.short_record.total_record} ballot{m.short_record.total_record === 1 ? "" : "s"} in the whole
-                  record. Their best candidate&apos;s lower bound, {dec(shortBest.lower)}, falls just short of the
-                  acceptance level, so they keep the topic.
-                </p>
-                <p>
-                  {m.empty_records.count} residents have cast no ballot at all. With nothing to compare, they keep every
-                  topic. Part 4 comes back to them: they are where liquid delegation breaks.
-                </p>
-              </Step>
-              <Step title="A ballot arrives" figure={<RoutingFigure />}>
-                <p>
-                  When a ballot arrives, each question is filed under its topic. It goes to the resident&apos;s delegate
-                  for that topic, or stays with them. {resident(m.showcase.voter)} keeps {kept.join(" and ")} and hands
-                  the other {design.topics - kept.length} topics on. That makes them unusual: at this turnout{" "}
-                  {everything} of the city&apos;s {design.residents} residents hand over all {design.topics} topics.
-                </p>
-              </Step>
-              <Step title="Votes travel on" figure={<ChainFigure mode="chain" />}>
-                <p>
-                  A delegate applies their own delegations to the votes they receive, so a vote can pass through several
-                  people. In this city one resident&apos;s vote on {chainTopic} passes through {m.chain.path.length}.
-                </p>
-              </Step>
-              <Step title="Loops come back" figure={<ChainFigure mode="loop" />}>
-                <p>
-                  When nearly everyone delegates, delegations close into loops. The rule fixed before the run: everyone
-                  on a loop decides for themself. Here {share(m.handed_pairs_ending_on_loop, m.handed_pairs)} of
-                  handed-over votes end with someone on a loop. Loops are where the work of voting lands.
-                </p>
-              </Step>
-              <Step title="A delegate who does not vote" figure={<ChainFigure mode="lost" />}>
-                <p>
-                  A delegate votes at their own rate, like anyone else. One who skips a question leaves every vote they
-                  hold on it empty.
-                </p>
-              </Step>
-              <Step title="How good a delegate must be" figure={<CalibrationFigure />}>
-                <p>
-                  One setting remains: the acceptance level. Each city takes the strictest level at which overhead on
-                  the past questions stays at or under {pct(m.cap, 0)}. Here that is {dec(m.acceptance)}. The rule uses
-                  no later question, so the scores are not tuned to the answers.
-                </p>
-                <p>That {pct(m.cap, 0)} limit is the one the study&apos;s verdict tests.</p>
-              </Step>
+              </LiquidText>
+              <Pending>
+                Every resident&apos;s vote on one question flowing to whoever decides it, each decider growing with
+                the votes they hold.
+              </Pending>
               <StudyLinks links={[{ anchor: "how", label: "How it works" }]} />
             </TurnoutProvider>
 
-            {/* Part 3. Does it work? */}
-            <LiquidHeading id="result" kicker="Part 3 · Does it work?" claim="frozen">
-              Far ahead in the middle, not established at the ends
+            {/* Part 3. Where the machinery breaks, and the fix for each */}
+            <LiquidHeading id="breaks" kicker="Part 3 · Where the machinery breaks" claim="frozen">
+              Real people miss votes
             </LiquidHeading>
             <LiquidText>
               <p>
-                Everything so far was at Swiss turnout. Turnout is the one setting that changes the answer, so from here
-                on you set it: the dial under each figure moves every figure below.
+                So far everyone voted. Real people miss votes. In the study each resident votes at their own rate,
+                some almost never and some almost always, around a city-wide average. That one change opens gaps in
+                the rules. Each break below says what goes wrong, how often, and the fix we would build.
               </p>
               <p>
-                Liquid delegation overtakes the district representative near turnout {dec(threshold.crossing, 2)}; the
-                95% range for where it crosses runs from {threshold.confidence[0]} to {threshold.confidence[1]}. From
-                there the lead grows. At Swiss turnout liquid is {pointsLabel(100 * result(swiss).h1.estimate)} points
-                ahead, and at every level from {worthwhile[0]} to {worthwhile[worthwhile.length - 1]} the lead clears{" "}
-                {100 * rules.delta} points, the smallest lead the study set out to count as worthwhile.
+                From here you set the average turnout, from {lowest} to {highest}, with the dial under each figure;{" "}
+                {swiss} is Swiss turnout. At Swiss turnout, voting yourself is never wrong but usually absent:{" "}
+                {pct(at.direct.none_share)} of a resident&apos;s questions carry no ballot for them. A representative
+                leaves {pct(at.representative.none_share)} empty, and liquid delegation {pct(at.liquid.none_share)}.
+              </p>
+            </LiquidText>
+            <LiquidFigure>
+              <ThreeWaysFigure />
+            </LiquidFigure>
+            <LiquidText>
+              <p>
+                The resident from part 1, at Swiss turnout: they now vote on about {pct(m.typical.turnout, 0)} of
+                questions, so voting themself matches them only that often.
+              </p>
+            </LiquidText>
+            <LiquidFigure>
+              <OneResident />
+            </LiquidFigure>
+
+            <LiquidText>
+              <Beat>A delegate who does not vote</Beat>
+              <p>
+                A delegate votes at their own rate, like anyone else. One who skips a question leaves every vote they
+                hold on it uncast. At Swiss turnout that loses {pct(at.liquid.lost_share ?? 0)} of delegated votes, and{" "}
+                {pct(measured(lowest).liquid.lost_share ?? 0)} at {lowest}. Whoever holds someone else&apos;s vote at
+                Swiss turnout casts it {pct(at.liquid.resolver_attendance ?? 0, 0)} of the time.
+              </p>
+            </LiquidText>
+            <LiquidFigure>
+              <ChainFigure mode="lost" />
+            </LiquidFigure>
+            <LiquidText>
+              <Fix evidence={NOT_YET}>
+                A backup delegate for each topic, an existing idea known as ranked delegation, then the district
+                representative as the last default, so a vote whose holder does not vote still counts.
+              </Fix>
+
+              <Beat>Nobody to delegate to</Beat>
+              <p>
+                A resident who never votes has no record, so there is nobody to choose by. They keep every topic and
+                rarely use it. At {lowest}, {pct(measured(lowest).liquid.empty_record_share ?? 0)} of residents have
+                an empty record, and they are nearly all of liquid&apos;s {pct(measured(lowest).liquid.overhead)}{" "}
+                overhead there.
+              </p>
+              <p>
+                They are barely represented: their fidelity under liquid is between{" "}
+                {Math.min(...emptyFidelity).toFixed(3)} and {Math.max(...emptyFidelity).toFixed(3)} at every level,
+                against about {dec(at.representative.empty_record_fidelity ?? 0, 2)} under the representative. One
+                chosen proxy for everything has the same floor, so the cause is choosing by record, not delegating by
+                topic.
+              </p>
+              <Fix evidence={NOT_YET}>
+                The representative as default delegate: anyone with no delegate for a topic is represented by their
+                district&apos;s representative rather than not at all.
+              </Fix>
+            </LiquidText>
+            <LiquidFigure>
+              <KeepCityFigure />
+            </LiquidFigure>
+
+            <LiquidText>
+              <Beat>Loops</Beat>
+              <p>
+                When nearly everyone hands a topic over, chains have nowhere to end but a loop: people who have handed
+                the topic to each other. In this city at Swiss turnout,{" "}
+                {share(m.handed_pairs_ending_on_loop, m.handed_pairs)} of handed-over votes end at one.
+              </p>
+            </LiquidText>
+            <LiquidFigure>
+              <ChainFigure mode="loop" />
+            </LiquidFigure>
+            <LiquidText>
+              <p>
+                The cost is work handed back, and it grows as turnout rises. At {lowest},{" "}
+                {pct(measured(lowest).liquid.loop_share ?? 0)} of all voter-question pairs sit on a loop; at Swiss
+                turnout {pct(at.liquid.loop_share ?? 0)}; at {highest}, {pct(measured(highest).liquid.loop_share ?? 0)},
+                which is all of liquid&apos;s overhead there; and with everyone voting, {pct(e.liquid.loop_share ?? 0)}.
+              </p>
+              <Fix title="The rule" claim="design" evidence="Applied in the frozen study, so no vote on a loop is lost.">
+                From the literature: everyone on a loop decides for themself.
+              </Fix>
+              <Fix evidence={NOT_YET}>
+                A backup delegate outside the loop could take that work over, but at high turnout it costs fidelity.
+                At {highest}, a delegated vote matches {pct(measured(highest).liquid.fidelity_resolved ?? 0, 0)} of the
+                time, while a resident voting for themself matches about {pct(measured(highest).direct.fidelity, 0)}.
+                Whether it helps depends on turnout, and part 4 takes that up.
+              </Fix>
+            </LiquidText>
+            <LiquidFigure>
+              <EdgesFigure />
+            </LiquidFigure>
+            <StudyLinks
+              links={[
+                { anchor: "edges", label: "The two edges" },
+                { anchor: "attendance", label: "Delegates who don't show up" },
+                { anchor: "how", label: "How it works" },
+              ]}
+            />
+
+            {/* Part 4. Where it still struggles, and our answer to each */}
+            <LiquidHeading id="struggles" kicker="Part 4 · Where it still struggles" claim="frozen">
+              Three limits no rule settles
+            </LiquidHeading>
+            <LiquidText>
+              <p>
+                Each break in part 3 has a rule that closes it. Three limits remain that no rule settles: filing
+                questions under topics, building the history people choose by, and getting enough people to vote.
+                Each comes with the answer we would build and the bar it must clear.
+              </p>
+              <Beat>Strict categories</Beat>
+              <p>
+                Real questions do not arrive tagged, and one question can touch several topics. Filing them is a
+                judgment, and it can go wrong either way: a false delegation sends a vote to someone it was not meant
+                for and costs fidelity; a false keep leaves a vote with its owner and costs overhead.
+              </p>
+              <Fix title="Our answer" evidence={<>Measured on the router benchmark, below.</>}>
+                A decision model that reads each question against the categories a voter wrote in their own words,
+                and keeps the question with the voter when it is unsure. At its operating threshold, {operating.threshold}
+                , {pct(operating.false_delegation_rate)} of the votes it sends on go to a category they are not about,
+                and it keeps {pct(operating.false_keep_rate)} of the votes that had a fitting category.
+              </Fix>
+            </LiquidText>
+            <LiquidFigure>
+              <RouterFigure />
+            </LiquidFigure>
+
+            <LiquidText>
+              <Beat>The initial history</Beat>
+              <p>
+                Choosing by record needs a record. Here is how the simulated residents choose.{" "}
+                {resident(m.showcase.voter)} has to decide who, if anyone, should vote for them on {showcaseTopic}.
+                Every other resident&apos;s past votes on it are lined up against theirs and the agreements counted:{" "}
+                {resident(top.person)} matched {top.matches} of {top.trials}. Candidates are ranked by a cautious
+                estimate, the lower end of a credible interval, so a short record counts for less than a long one.
+                The topic goes to the best candidate if that estimate clears the city&apos;s acceptance level,{" "}
+                {dec(m.acceptance)}.
+              </p>
+            </LiquidText>
+            <LiquidFigure>
+              <CandidatesFigure />
+            </LiquidFigure>
+            <LiquidText>
+              <p>
+                A resident with almost no record has little to go on. {resident(m.short_record.voter)} has cast{" "}
+                {m.short_record.total_record} ballot{m.short_record.total_record === 1 ? "" : "s"} in the whole record.
+                Their best candidate&apos;s lower bound, {dec(shortBest.lower)}, falls just short of the acceptance
+                level, so they keep the topic.
+              </p>
+            </LiquidText>
+            <LiquidFigure>
+              <CandidatesFigure short />
+            </LiquidFigure>
+            <LiquidText>
+              <p>
+                Each city takes the strictest acceptance level at which overhead on the past questions stays at or
+                under {pct(m.cap, 0)}. The rule uses no later question, so the scores are not tuned to the answers.
+              </p>
+            </LiquidText>
+            <LiquidFigure>
+              <CalibrationFigure />
+            </LiquidFigure>
+            <LiquidText>
+              <p>
+                <strong>The cold start.</strong> Before anyone can choose by record, the record has to be built, and
+                meanwhile everyone decides every question. Counting that history, liquid&apos;s overhead at Swiss
+                turnout is {pct(at.liquid.lifecycle_overhead ?? 0, 0)} instead of {pct(at.liquid.overhead, 0)}, and the
+                figure depends on how long the city runs after its history. With a history of only{" "}
+                {shortestHistory.label} questions per topic, too few cities stay within the {pct(rules.cap, 0)} limit
+                at any level.
+              </p>
+              <Fix title="Our answers" evidence="None of either is tested here.">
+                The representative as default lets a city start as representative democracy while records build,
+                though a resident who never votes still never builds one. And a personal agent, a model of the voter
+                built from one interview (the preference elicitation of demo 2), could cast the ballots they would
+                leave empty. Its bars at Swiss turnout: its ballots must match the voter more than{" "}
+                {pct(agentBars.representative)} of the time to beat a representative default, and more than{" "}
+                {pct(agentBars.delegate)} to beat a chosen delegate. No accuracy is claimed, and one model serving
+                everyone would share its errors across every ballot it casts.
+              </Fix>
+
+              <Beat>Turnout: how much is enough</Beat>
+              <p>
+                This is the question the study was built to answer. Liquid delegation overtakes the district
+                representative near turnout {dec(threshold.crossing, 2)}; the 95% range for where it crosses runs from{" "}
+                {threshold.confidence[0]} to {threshold.confidence[1]}. At Swiss turnout it is{" "}
+                {pts(result(swiss).h1.estimate)} points ahead, and at every level from {worthwhile[0]} to{" "}
+                {worthwhile[worthwhile.length - 1]} the lead clears {100 * rules.delta} points, the smallest lead the
+                study set out to count as worthwhile.
               </p>
               <p>
                 The test had one more condition: at every level where liquid leads, at least{" "}
@@ -343,26 +553,21 @@ export default async function LiquidStoryPage() {
                 {failing
                   .map((l, i) => `${i === 0 ? "Only " : ""}${quoted(result(l).cap_share)}${i === 0 ? " do" : ""} at ${l}`)
                   .join(" and ")}
-                . So the verdict, fixed in advance, is <em>{measures.verdict.text}</em>. Part 4 explains why both ends
-                fail.
+                .
               </p>
             </LiquidText>
-            <LiquidFigure>
-              <ResultFigure />
-            </LiquidFigure>
-            <LiquidText>
-              <p>
-                Where does the lead come from? The study declared a chain of arrangements from the representative to
-                liquid delegation, each run on the same cities, so the lead splits into steps. At Swiss turnout, having
-                one chosen delegate for everything adds {pointsLabel(100 * ladder.city_wide_proxy_combined.estimate)} of
-                the {pointsLabel(100 * ladder.h1.estimate)} points. Handing each topic to its own delegate, the feature
-                liquid democracy is known for, adds {pointsLabel(100 * ladder.specialisation.estimate)}. That first
-                step bundles several changes, and the study cannot say which of them causes the gain.
-              </p>
-            </LiquidText>
-            <LiquidText className="mt-8">
+            <LiquidText className="mt-6">
               <div className="rounded-lg bg-story-surface p-5 ring-1 ring-story-rule">
-                <p className="text-xs font-medium tracking-wide text-story-ink-2 uppercase">How we know</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-medium tracking-wide text-story-ink-2 uppercase">
+                    The pre-registered verdict
+                  </span>
+                  <ClaimLabel claim="frozen" />
+                </div>
+                <p className="mt-1 text-lg font-semibold text-story-ink">
+                  &ldquo;{measures.verdict.text.charAt(0).toUpperCase() + measures.verdict.text.slice(1)}.&rdquo;
+                </p>
+                <p className="mt-3 text-xs font-medium tracking-wide text-story-ink-2 uppercase">How we know</p>
                 <ul className="mt-2 text-sm text-story-ink-2">
                   <li>
                     The hypothesis, the measures and the rules for reading them were fixed on {protocol.frozen}, before
@@ -373,133 +578,68 @@ export default async function LiquidStoryPage() {
                     of sweeps changing one setting at a time.
                   </li>
                   <li>The verdict is quoted word for word, including the condition that was not met.</li>
-                  <li>Every number on this page is read from the published results.</li>
                 </ul>
               </div>
             </LiquidText>
-            <StudyLinks
-              links={[
-                { anchor: "result", label: "The result" },
-                { anchor: "ladder", label: "Where the lead comes from" },
-                { anchor: "attendance", label: "Delegates who don't show up" },
-                { anchor: "sweeps", label: "What the lead depends on" },
-                { anchor: "methods", label: "Methods and sources" },
-              ]}
-            />
-
-            {/* Part 4. Where it breaks */}
-            <LiquidHeading id="breaks" kicker="Part 4 · Where it breaks" claim="frozen">
-              What stands in the way of a real deployment
-            </LiquidHeading>
+            <LiquidFigure>
+              <ResultFigure />
+            </LiquidFigure>
             <LiquidText>
               <p>
-                Neither end of the turnout range fails because votes go astray. They fail for opposite reasons, and a
-                few further costs hide behind the headline. Each one below names the proposal in part 5 that targets
-                it, or says that none does.
-              </p>
-              <Beat>Low turnout: people with no record</Beat>
-              <p>
-                A resident with no votes in the record has nothing to choose a delegate by. They keep their own vote,
-                and they rarely use it. At {lowest}, liquid&apos;s overhead is {pct(measured(lowest).liquid.overhead)},
-                and {pct(measured(lowest).liquid.empty_record_share ?? 0)} of residents have an empty record: the
-                overhead is these residents.
-              </p>
-              <p>
-                They are barely represented. Their fidelity under liquid is between{" "}
-                {Math.min(...emptyFidelity).toFixed(3)} and {Math.max(...emptyFidelity).toFixed(3)} at every level,
-                against about {dec(measured(swiss).representative.empty_record_fidelity ?? 0, 2)} under the
-                representative. One chosen delegate for everything has the same floor (
-                {pct(measured(threshold.bracket[1]).proxy.overhead)} overhead at {threshold.bracket[1]}), so the cause is
-                choosing by record, not topics.
-              </p>
-              <Targets>the representative as a default delegate, and a personal agent.</Targets>
-              <Beat>High turnout: loops, and people who would vote</Beat>
-              <p>
-                When nearly everyone delegates, delegations close into loops, and everyone on a loop decides for
-                themself. At {highest}, {pct(measured(highest).liquid.loop_share ?? 0)} of voter-question pairs sit on
-                a loop, and liquid&apos;s overhead is {pct(measured(highest).liquid.overhead)}. This is specific to
-                topic delegation: with one delegate for everything the loop share is{" "}
-                {pct(measured(highest).proxy.loop_share ?? 0)}.
-              </p>
-              <p>
-                The city-wide limit also pushes people who would vote into delegating. Direct voting, with full
-                overhead, passes liquid between {beforePass} ({dec(measured(beforePass).direct.fidelity)} against{" "}
+                The two ends fail for opposite reasons. The low end is part 3&apos;s empty record. At the high end, the
+                city-wide limit pushes people who would vote into delegating: direct voting, with full overhead,
+                passes liquid between {beforePass} ({dec(measured(beforePass).direct.fidelity)} against{" "}
                 {dec(measured(beforePass).liquid.fidelity)}) and {afterPass} (
-                {dec(measured(afterPass).direct.fidelity)} against {dec(measured(afterPass).liquid.fidelity)}). One
-                overhead number cannot tell a burden people carry from one they drop.
+                {dec(measured(afterPass).direct.fidelity)} against {dec(measured(afterPass).liquid.fidelity)}).
               </p>
-              <Targets>a backup delegate for loops, and a ceiling set by each voter.</Targets>
+              <p>
+                Where the lead comes from: at Swiss turnout, having one chosen delegate for everything adds{" "}
+                {pts(ladder.city_wide_proxy_combined.estimate)} of the{" "}
+                {pts(ladder.h1.estimate)} points, and topic delegates add{" "}
+                {pts(ladder.specialisation.estimate)}, as with everyone voting.
+              </p>
+              <p>
+                Concentration grows as turnout falls. The largest single decider holds{" "}
+                {pct(measured(highest).liquid.mean_largest_share ?? 0)} of a question&apos;s votes on average at{" "}
+                {highest}, {pct(at.liquid.mean_largest_share ?? 0)} at Swiss turnout and{" "}
+                {pct(measured(lowest).liquid.mean_largest_share ?? 0)} at {lowest}: fewer people voting leaves fewer
+                people for trust to flow to. The risk that stays open is capture, because someone holding many votes
+                is a cheap target for lobbying.
+              </p>
+              <Fix
+                title="Our answer for the high end"
+                evidence={
+                  <>
+                    <span className="mr-1 inline-block align-middle">
+                      <ClaimLabel claim="exploratory" />
+                    </span>
+                    An analysis made after the freeze hands over one more topic at a time. Up to {lastRise}, every topic
+                    handed over raises fidelity. From {firstFall} it does not: at {highest}, every topic handed over
+                    lowers it, from {dec(highCurve[0].fidelity)} to {dec(highCurve[highCurve.length - 1].fidelity)}.
+                  </>
+                }
+              >
+                A ceiling set by each voter instead of one city-wide limit, so people keep the questions they would
+                answer themselves.
+              </Fix>
             </LiquidText>
             <LiquidFigure>
-              <EdgesFigure />
-            </LiquidFigure>
-            <LiquidFigure>
-              <KeepCityFigure />
-            </LiquidFigure>
-
-            <LiquidText>
-              <Beat>Costs the headline hides</Beat>
-              <p>
-                <strong>Concentration.</strong> A district representative decides{" "}
-                {pct(measured(swiss).representative.mean_largest_share ?? 0, 0)} of every question. Under liquid at
-                Swiss turnout, the largest single delegate decides {pct(measured(swiss).liquid.mean_largest_share ?? 0)}{" "}
-                of a question&apos;s votes on average, and {pct(measured(swiss).liquid.max_largest_share ?? 0)} on a
-                city&apos;s worst question; at {lowest}, {pct(measured(lowest).liquid.mean_largest_share ?? 0)}.
-              </p>
-              <p>
-                <strong>Poor representation looks different.</strong> Under liquid,{" "}
-                {pct(measured(swiss).liquid.share_below_half ?? 0)} of voters are represented on fewer than half their
-                questions, against {pct(measured(swiss).representative.share_below_half ?? 0)} under the
-                representative. Liquid&apos;s failures are absences; the representative&apos;s are ballots against
-                them.
-              </p>
-              <p>
-                <strong>The cold start.</strong> The {pct(rules.cap, 0)} is a steady state. The record has to be built
-                first, while everyone decides every question: counting that period, liquid&apos;s overhead is{" "}
-                {pct(measured(swiss).liquid.lifecycle_overhead ?? 0, 0)} at Swiss turnout.
-              </p>
-              <Targets>
-                a personal agent, whose record would come from one interview, for the cold start. Nothing here
-                prevents concentration, and the agent would carry the same risk in a new form.
-              </Targets>
-            </LiquidText>
-            <LiquidFigure>
-              <CostsFigure />
+              <HandoverFigure />
             </LiquidFigure>
             <LiquidText>
-              <p>
-                <strong>Routing.</strong> The study files every question under its true topic. A real system has to
-                read each question and decide which of a voter&apos;s categories it falls under, and a decision model
-                can be wrong either way: a false delegation sends a vote to someone it was not meant for and costs
-                fidelity; a false keep leaves a vote with its owner and costs overhead.
-              </p>
-            </LiquidText>
-            <LiquidFigure>
-              <RouterFigure />
-            </LiquidFigure>
-            <LiquidText>
-              <p>
-                <strong>Not a bottleneck: attendance.</strong> Whoever holds someone&apos;s vote at Swiss turnout
-                casts it {pct(measured(swiss).liquid.resolver_attendance ?? 0, 0)} of the time.
-              </p>
-
-              <Beat>What delegation cannot change</Beat>
+              <Beat className="pt-0">What delegation cannot change</Beat>
               <p>
                 <strong>It borrows engagement; it does not create it.</strong> Liquid delegation moves votes from
                 people who rarely vote to people who often do. In an electorate where nearly everyone votes sometimes,
-                the lead at Swiss turnout falls to {pointsLabel(100 * sweepLead(evenKey))} points and the crossing
-                moves to about {dec(sweeps.points[evenKey].crossing ?? 0, 2)}. With a record of only{" "}
-                {shortestHistory.label} questions per topic, too few cities stay within the {pct(rules.cap, 0)} limit at
-                any level.
+                the lead at Swiss turnout falls to {pts(sweepLead(evenKey))} points and the crossing moves
+                to about {dec(sweeps.points[evenKey].crossing ?? 0, 2)}.
               </p>
-              <Targets>nothing. None of the proposals changes this.</Targets>
               <p>
-                <strong>Better for individuals, worse for outcomes.</strong> Fidelity scores each voter. Whether an
-                arrangement picks the winner the whole city would pick if everyone voted is a different question. At
-                Swiss turnout direct voting matches it on {pct(measured(swiss).direct.outcome_agreement ?? 0)} of
-                questions, liquid on {pct(measured(swiss).liquid.outcome_agreement ?? 0)} and the representative on{" "}
-                {pct(measured(swiss).representative.outcome_agreement ?? 0)}: the arrangement that represents
-                individuals worst matches outcomes best.
+                <strong>Better for individuals, not for outcomes.</strong> Whether an arrangement picks the winner the
+                whole city would pick if everyone voted is a different question from fidelity. At Swiss turnout direct
+                voting matches it on {pct(at.direct.outcome_agreement ?? 0)} of questions, liquid on{" "}
+                {pct(at.liquid.outcome_agreement ?? 0)} and the representative on{" "}
+                {pct(at.representative.outcome_agreement ?? 0)}.
               </p>
               <p>
                 <span className="mr-1.5 inline-block align-middle">
@@ -510,94 +650,64 @@ export default async function LiquidStoryPage() {
                 who follows them. The largest caveat on any outcome claim: in this model turnout is independent of
                 opinion, and real abstention is not.
               </p>
+              <p>None of our proposals creates engagement.</p>
             </LiquidText>
             <LiquidFigure>
               <OutcomesFigure />
             </LiquidFigure>
             <StudyLinks
               links={[
-                { anchor: "edges", label: "The two edges" },
+                { anchor: "result", label: "The result" },
+                { anchor: "ladder", label: "Where the lead comes from" },
                 { anchor: "costs", label: "Costs the headline does not show" },
                 { anchor: "sweeps", label: "What the lead depends on" },
+                { anchor: "exploratory", label: "What overhead is worth" },
                 { anchor: "outcomes", label: "Individuals and outcomes" },
               ]}
             />
 
             {/* Part 5. What we'd build */}
             <LiquidHeading id="build" kicker="Part 5 · What we'd build" claim="proposal">
-              Each bottleneck points at something buildable
+              The fixes, together
             </LiquidHeading>
             <LiquidText>
               <p>
-                None of these is tested here. Each names the bottleneck it targets and the bar it would have to clear.
-              </p>
-              <Beat>The representative as a default delegate</Beat>
-              <p>
-                For people with no record. Whoever has no delegate for a topic would be represented by their
-                district&apos;s representative rather than not at all. The bar: nobody with an empty record falls below
-                being represented.
-              </p>
-              <Beat>A backup delegate for loops</Beat>
-              <p>
-                For loops at high turnout. Each topic gets a second choice, used when a delegation loops back. Ranked
-                backup delegates are an existing idea in the literature; the study shows where they would matter: at{" "}
-                {highest}, loops are liquid&apos;s whole overhead.
-              </p>
-              <Beat>A ceiling set by each voter</Beat>
-              <p>
-                For people who would vote. Today one limit is set for the whole city, and it pushes people who would
-                vote into handing their questions over. A ceiling set by each voter would let them keep the questions
-                they would answer.
-              </p>
-              <p>
-                <span className="mr-1.5 inline-block align-middle">
-                  <ClaimLabel claim="exploratory" />
-                </span>
-                The evidence for it comes from an analysis made after the freeze. Handing over one more topic at a time
-                traces liquid&apos;s whole curve, from voting yourself to handing over everything. Up to {lastRise},
-                every topic handed over raises fidelity. From {firstFall} it does not: at {highest}, every topic handed
-                over lowers it, from {dec(highCurve[0].fidelity)} to {dec(highCurve[highCurve.length - 1].fidelity)}.
-                Keeping a question buys fidelity only where a voter would vote on it often enough to beat their
-                delegate.
-              </p>
-            </LiquidText>
-            <LiquidFigure>
-              <HandoverFigure />
-            </LiquidFigure>
-            <LiquidText>
-              <Beat className="pt-0">A personal agent</Beat>
-              <p>
-                For people with no record, and for the cold start. A model of the voter casts the ballots they would
-                leave empty. The people who need it most have no record to learn from, so its input would be the
-                preference interview of demo 2: the cost moves from every ballot to one onboarding conversation.
+                Put together, the fixes make a system someone could build: the basic version of part 2, with these
+                added.
               </p>
               <ul>
                 <li>
-                  The bars at Swiss turnout: to beat a representative as the default, its ballots must match the voter
-                  more than {pct(agentBars.representative)} of the time they are cast; to beat a chosen delegate, more
-                  than {pct(agentBars.delegate)}.
+                  <strong>The loop rule</strong> <ClaimLabel claim="design" />: everyone on a loop decides for
+                  themself. From the literature, and in the study.
                 </li>
-                <li>No accuracy is claimed: demo 2 has no measured ballot accuracy yet.</li>
                 <li>
-                  One model serving everyone shares its errors across every ballot it casts: the concentration problem
-                  in a new form.
+                  <strong>A backup delegate</strong> <ClaimLabel claim="proposal" />: a second choice per topic, for
+                  a delegate who does not vote, and perhaps for loops. An existing idea, untested here.
+                </li>
+                <li>
+                  <strong>The representative as default</strong> <ClaimLabel claim="proposal" />: for anyone with no
+                  delegate for a topic, and for a vote still uncast. Untested.
+                </li>
+                <li>
+                  <strong>A decision-model router</strong> <ClaimLabel claim="proposal" />: questions filed against
+                  each voter&apos;s own categories, keeping a question when unsure. Its errors are measured.
+                </li>
+                <li>
+                  <strong>A ceiling set by each voter</strong> <ClaimLabel claim="proposal" />: in place of one
+                  city-wide limit. Its evidence is exploratory.
+                </li>
+                <li>
+                  <strong>A personal agent</strong> <ClaimLabel claim="proposal" />: ballots cast from a model of
+                  the voter. No accuracy is claimed.
                 </li>
               </ul>
               <p>
                 <strong>What none of them fixes:</strong> liquid delegation still borrows engagement rather than
                 creating it, and its outcomes still drift further from full turnout than direct voting&apos;s.
               </p>
-              <p>
-                The follow-up is one pre-declared study of fallback rules for the questions voters keep: keep them, a
-                representative default, or an agent at an assumed accuracy. It will be linked here once it has results.
-              </p>
             </LiquidText>
-            <StudyLinks
-              links={[
-                { anchor: "exploratory", label: "What overhead is worth" },
-                { anchor: "proposals", label: "What could be built" },
-              ]}
-            />
+            <Pending>One diagram that stacks these fixes on the basic version of part 2.</Pending>
+            <StudyLinks links={[{ anchor: "proposals", label: "What could be built" }]} />
           </TurnoutProvider>
         </StoryDataProvider>
       </div>
@@ -617,7 +727,7 @@ export default async function LiquidStoryPage() {
           <p className="leading-relaxed text-muted-foreground">
             A design idea, not part of the study&apos;s claim. This is a separate, smaller city of 240 residents, where
             you write your own categories in plain words and a decision model files each question under them. The
-            people, their delegations and the votes are made up; the routing is real. The proposals above are not built
+            people, their delegations and the votes are made up; the routing is real. The fixes above are not built
             into it yet.
           </p>
         </div>
@@ -654,6 +764,10 @@ export default async function LiquidStoryPage() {
             published benchmark is{" "}
             <a href={`${REPOSITORY}/eval/benchmarks/delegation_frontier_v1`}>
               <code>eval/benchmarks/delegation_frontier_v1</code>
+            </a>
+            , the everyone-votes reference point is{" "}
+            <a href={`${REPOSITORY}/eval/benchmarks/delegation_everyone_votes_v1`}>
+              <code>eval/benchmarks/delegation_everyone_votes_v1</code>
             </a>
             , and the design is in{" "}
             <a href={`${REPOSITORY}/prompts/demo-5-liquid-democracy.md`}>
