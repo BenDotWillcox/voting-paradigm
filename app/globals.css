@@ -1077,6 +1077,20 @@
   --story-accent: var(--muted-foreground);
 }
 
+/* Dark mode's own sequential steps for the walkthrough: on a dark page more
+ * magnitude reads brighter, so the blue ramp runs the other way. The steps
+ * the page uses (100-500, 700) pass the ordinal checks against the dark
+ * surface; 600, unused here, sits between 500 and 700. */
+.dark .story.liquid-story {
+  --story-seq-100: #184f95;
+  --story-seq-200: #256abf;
+  --story-seq-300: #3987e5;
+  --story-seq-400: #6da7ec;
+  --story-seq-500: #9ec5f4;
+  --story-seq-600: #b6d3f7;
+  --story-seq-700: #cde2fb;
+}
+
 /* Text-only reading (the essay's Contents menu sets data-reading on <html>):
  * the pinned figures go, every step's words run as one column, and hints
  * about scrolling disappear. */

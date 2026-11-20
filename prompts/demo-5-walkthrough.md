@@ -4,8 +4,9 @@ Status: planned 2026-11-19, after the frozen benchmark was published (PR #110).
 Decisions made with Ben the same day are recorded below. Slice A (the
 exploratory handover benchmark) is published (PR #112). Slice B (the data
 pipeline, the illustrative city, §0–4 and the app at the page's foot) is
-published (PR #113). Slice C (§5–8) is built. "Built in slice B" and "Built
-in slice C" below record the choices made while building them.
+published (PR #113), and slice C (§5–8) too (PR #115). Slice D (§9–11) is
+built. "Built in slice B", "C" and "D" below record the choices made while
+building them.
 
 This is build step 7 of
 [`demo-5-liquid-democracy.md`](demo-5-liquid-democracy.md). It replaces the
@@ -582,6 +583,27 @@ Plain and static, like slice B (see "Form" and "Look").
   dial; a test checks its steps add up to the lead at every level.
 - **One chart for every "across the dial" figure**
   (`components/liquid/story/dial-chart.tsx`), marking the dial's own level.
+
+## Built in slice D (2026-11-19)
+
+Plain and static, like slices B and C.
+- **Data.** `results.json` gains the sweeps (every point's curve, cap shares
+  and threshold, grouped in the benchmark's own panels, whose layout is
+  imported from `eval/plot_delegation_frontier.py`) and the router's measured
+  errors (`eval/benchmarks/delegation_router_v1/summary.json`, a new pinned
+  input). `measures.json` gains concentration, poor representation, lifecycle
+  overhead and outcome agreement. The sweep points keep `levels.csv` order:
+  collecting them through a set made the build depend on the hash seed.
+- **The city records each question's winner** per arrangement and level, so
+  §11 shows its Ostrogorski-style cases: at Swiss turnout the council of five
+  loses the issue majority on 24 of 160 questions (liquid 25, direct 10; one
+  city, and across all 200 liquid does better than the representative).
+- **The router is a static chart for now** (false delegations and false keeps
+  by threshold, the operating threshold marked); the animation comes with the
+  design.
+- **Dark mode's own blue steps** for the page (`.dark .story.liquid-story`):
+  the shared ramp's darkest steps vanished on a dark page. The sweeps use the
+  middle steps so no setting reads as the baseline's ink line.
 
 ## Decisions settled 2026-11-19
 
