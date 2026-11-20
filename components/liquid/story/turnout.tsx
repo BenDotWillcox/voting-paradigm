@@ -11,6 +11,8 @@ interface TurnoutState {
   level: number;
   key: LevelKey;
   setLevel: (level: number) => void;
+  /** Set when the level is held fixed: the note a dial shows in its place. */
+  fixed: React.ReactNode | null;
 }
 
 const TurnoutContext = React.createContext<TurnoutState | null>(null);
@@ -20,20 +22,26 @@ const TurnoutContext = React.createContext<TurnoutState | null>(null);
  * figure reads it, and every dial on the page sets it, so moving any dial
  * moves them all. It snaps to the recorded levels; nothing between them is
  * interpolated.
+ *
+ * With `fixed`, the level stays at Swiss turnout and every dial inside shows
+ * that note instead, so a stretch of the page can be read at one turnout
+ * before the reader is handed the dial.
  */
 export function TurnoutProvider({
   levels,
   swiss,
+  fixed = null,
   children,
 }: {
   levels: readonly number[];
   swiss: number;
+  fixed?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const [level, setLevel] = React.useState(swiss);
   const value = React.useMemo(
-    () => ({ levels, swiss, level, key: levelKey(level), setLevel }),
-    [levels, swiss, level]
+    () => ({ levels, swiss, level, key: levelKey(level), setLevel, fixed }),
+    [levels, swiss, level, fixed]
   );
   return <TurnoutContext.Provider value={value}>{children}</TurnoutContext.Provider>;
 }
@@ -49,9 +57,13 @@ export function useTurnout(): TurnoutState {
  * marked. Arrow keys step through the levels.
  */
 export function TurnoutDial({ className, label = "Mean citizen turnout" }: { className?: string; label?: string }) {
-  const { levels, swiss, level, setLevel } = useTurnout();
+  const { levels, swiss, level, setLevel, fixed } = useTurnout();
   const id = React.useId();
   const buttons = React.useRef<Array<HTMLButtonElement | null>>([]);
+
+  if (fixed) {
+    return <p className={cn("font-sans text-xs text-story-muted", className)}>{fixed}</p>;
+  }
 
   const step = (index: number) => {
     const next = Math.max(0, Math.min(levels.length - 1, index));

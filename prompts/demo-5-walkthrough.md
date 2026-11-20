@@ -5,9 +5,18 @@ Decisions made with Ben the same day are recorded below. Slice A (the
 exploratory handover benchmark) is published (PR #112). Slice B (the data
 pipeline, the illustrative city, §0–4 and the app at the page's foot) is
 published (PR #113), slice C (§5–8) too (PR #115) and slice D (§9–11) (PR
-#116). Slice E (§12–15) is built, so the walkthrough's content is complete;
-its design and animation come next. "Built in slice B" to "E" below record
-the choices made while building them.
+#116). Slice E (§12–15) is published (PR #117), so the walkthrough's
+content is complete. "Built in slice B" to "E" below record the choices
+made while building them.
+
+**2026-11-20: the story outline (draft).**
+- `/liquid` becomes a five-part story built on that content: the idea, how
+  it works, the result, where it breaks, and what we'd build.
+- The sections as built move to `/liquid/study`, the full study.
+- The app comes last, with the proposals built in.
+- Styling waits until the core is built.
+
+See "The story" and "Slices".
 
 This is build step 7 of
 [`demo-5-liquid-democracy.md`](demo-5-liquid-democracy.md). It replaces the
@@ -29,9 +38,352 @@ ends of the range liquid delegation cannot keep its overhead low. The two
 ends fail for opposite reasons, and each points to something that could be
 built.
 
+## The story: `/liquid` (draft outline, 2026-11-20)
+
+A draft for Ben to mark up. It sets the reading order of `/liquid`. The
+sections built in slices B to E ("The walkthrough" below) move, as they are,
+to `/liquid/study`, the full study. The story takes its highlights from
+them.
+
+Numbers here are for orientation. The page computes every number from the
+generated data, as it does now.
+
+### What the reader should take away
+
+Set by Ben, 2026-11-20:
+1. **What liquid democracy is,** and how it compares with representative
+   democracy, including the key trade-offs.
+2. **The mechanisms at work** in a liquid system, shown with animations and
+   diagrams where they help.
+3. **The limits and bottlenecks** that stand in the way of a successful
+   deployment.
+4. **Our proposed solutions** to some of them.
+
+The impression to leave: a careful implementation of known theory, and ideas
+of our own that improve on its limits.
+
+### Two pages
+
+- **`/liquid`, the story.** It has five parts and shows highlights only. It
+  uses well under half of the study's figures, plus the new mechanism
+  animations and the app.
+- **`/liquid/study`, the full study.** This is the current walkthrough,
+  §0–15 as built, with every figure, interval, data table and the methods.
+  - It keeps its section anchors, so the story can link to them.
+  - It reuses the same components; nothing is rebuilt.
+  - It links to the published benchmarks on GitHub for anyone who wants the
+    CSVs.
+  - `/liquid/city` is the app's City Results, so the study takes
+    `/liquid/study`.
+- **Links between them.** Each part of the story ends with links to the
+  matching sections of the study ("The full analysis"). The study opens with
+  a line pointing back to the story.
+- **The rigour stays visible on the story page, briefly.** A short "How we
+  know" note in part 3 says that the test was declared before the run, that
+  it ran on 200 synthetic cities from frozen commit `a50ebcc`, and that the
+  verdict is quoted word for word. Failing a pre-declared test and saying so
+  plainly is part of what the page shows.
+- **No expandable "deep dive" drawers.** The depth lives in the study.
+
+### Labels: known theory and what is new
+
+The claim labels stay: frozen, exploratory, proposal, illustration and
+design. Proposed: a second small tag on mechanisms and proposals, either
+*from the literature* or *new here*, with sources in the study's methods.
+- A *from the literature* tag needs its source checked before it ships.
+- A *new here* tag needs a literature check that the idea is not already
+  published.
+- Provisional mapping, from the design doc's references:
+  - **From the literature:**
+    - transitive, per-topic delegation (Christoff and Grossi; Kahng,
+      Mackenzie and Procaccia);
+    - everyone on a loop deciding for themselves (after Christoff and
+      Grossi's default opinion);
+    - backup delegates, as ranked delegations (Brill et al.; Colley, Grandi
+      and Novaro);
+    - vote concentration in a few "super-voters" (Kling et al. on
+      LiquidFeedback; Gölz et al.).
+  - **New here, pending that check:**
+    - one population scored on fidelity and overhead under every
+      arrangement, with a pre-declared test and a decomposition;
+    - the two-edge diagnosis;
+    - choosing delegates from the public record by a Beta-binomial lower
+      bound with a calibrated acceptance level;
+    - the decision-model router for free-text categories, with its measured
+      error;
+    - the representative as default, the per-voter ceiling, and the
+      personal agent with its bars.
+  - **To source or to claim:** dilution and bundling as the two costs of
+    representation.
+
+### The opening
+
+- **The title stays** "Who Votes for You?".
+- **The question, in one line:** can people hand most of their civic
+  decisions to delegates they choose, and still be represented better than
+  by an elected representative?
+- **The answer, in one line, unsoftened:**
+  - clearly yes in the middle of the turnout range;
+  - but the pre-declared test is not met, because at both ends liquid
+    delegation cannot keep its overhead low.
+
+  Part 3 gives the verdict in full.
+- **Shortcuts** to the full study and to the app, for readers who want to
+  jump.
+
+### Part 1. The idea: three ways to be represented
+
+**Message:** voting yourself is never wrong but usually absent. A
+representative is almost always there, but against you a third of the time.
+Liquid delegation hands each topic to someone you chose, and you keep any
+question you want.
+
+- **Three arrangements, one sentence each:** direct voting, a district
+  representative, and liquid delegation.
+- **Why representation costs fidelity:**
+  - dilution: you share the representative with your whole district;
+  - bundling: one person stands for you on every issue.
+
+  Liquid delegation removes both: you choose the person (no dilution), topic
+  by topic (no bundling). This is the design doc's "The claim".
+- **The trade-off, named with the two measures:**
+  - fidelity: how often the ballot counted for you matches yours;
+  - overhead: how many questions you decide yourself.
+- **The city, in one paragraph:**
+  - 500 made-up residents in five districts, with beliefs fitted to CES
+    survey data;
+  - eight topics, with a public record of past votes;
+  - one of 200 such cities.
+
+  The details stay in study §1.
+- **Fixed at Swiss turnout.** Parts 1 and 2 are set at 0.45. The dial
+  arrives in part 3, where turnout starts to change the answer.
+
+Figures:
+- **New: a structure diagram** [illustration]. You and your own ballot; you,
+  your district and its representative; you and a delegate for each topic.
+- **The three ways** (§0's strips and the city of dots), at 0.45:
+
+  | | Matches | Contrary | No ballot |
+  |---|---|---|---|
+  | Direct | 45.0% | 0% | 55.0% |
+  | Representative | 60.6% | 35.3% | 4.0% |
+  | Liquid | 70.9% | 22.6% | 6.6% |
+
+Study only: the plane of five arrangements (§4), and full turnout and the
+personal proxy as arrangements. The proxy comes back briefly, in the ladder
+line of part 3 and in part 4's low edge.
+
+### Part 2. How it works [illustration]
+
+**Message:** liquid delegation is a few simple rules: hand over a topic,
+votes travel on, and loops come back. Choosing delegates well is the hard
+part.
+
+One mechanism per beat. Each beat gets an animation or diagram, driven by
+the frozen city's recorded data (`city.json`'s `mechanism` block):
+1. **Choosing a delegate from the record.** For the showcase resident:
+   - each candidate's past votes line up against the resident's, and the
+     agreements are counted;
+   - the lower bound ranks the candidates, so a short shared record counts
+     for less;
+   - the resident hands the topic over only if the best bound clears the
+     acceptance level.
+
+   Built from `CandidatesFigure`.
+2. **A ballot arrives and is routed.** Each question is filed under its
+   topic. It goes to that topic's delegate, or stays with the voter. Built
+   from `RoutingFigure`, with the typical resident.
+3. **Votes travel on.** A delegate's own delegations apply to the votes
+   they hold, so a vote can pass through several people. Built from
+   `ChainFigure`, with the recorded chain.
+4. **Loops come back.** Everyone on a loop decides for themselves. The
+   recorded loop cycle.
+5. **A delegate who does not vote** leaves every vote they hold empty. One
+   line here; part 4 says how rarely it happens.
+6. **The acceptance level.** Each city's level is the highest at which
+   overhead on the past questions stays at or under 10%. This is the cap
+   that part 3's verdict tests. Built from `CalibrationFigure`.
+7. **Who ends up deciding.** The city at 0.45, showing whose ballot counts
+   for each resident.
+
+**The app's first appearance.** The beats are drawn with the app's own
+elements:
+- a delegation card for beat 1;
+- the routing receipt for beat 2;
+- the vote page's chain for beats 3 and 4.
+
+The reader meets the app's vocabulary before using it, and the app itself
+waits for part 5. This is a structure decision; the look comes later.
+
+The study routes exactly. The app files free-text questions with a decision
+model, mentioned here and measured in part 4.
+
+### Part 3. Does it work?
+
+**Message:** in the middle of the turnout range, liquid delegation
+represents people clearly better than an elected representative, while
+each voter decides only about one question in ten. At the ends it is not
+established.
+
+- **The dial arrives.** Everything so far was at Swiss turnout, and turnout
+  is what changes the answer. The reader sets it, from 0.1 to 0.9.
+- **Figure 1, following the dial:**
+  - liquid overtakes the representative near 0.19, with a 95% range of
+    (0.1, 0.3];
+  - it leads by +10.2 points at 0.45;
+  - it leads by at least 2 points at every level from 0.3 to 0.8.
+- **The verdict, word for word:** *overhead condition not met where liquid
+  is ahead*.
+  - The test needs 95% of cities under the 10% cap at every level where
+    liquid leads.
+  - Only 7.5% are under it at 0.2, and 4% at 0.9.
+- **Where the lead comes from, in one line.** Most of it arrives with
+  having one chosen proxy at all (+7.3 of the ladder at 0.45). Topic
+  delegation, the signature feature, adds about 2 points.
+- **The "How we know" note** (see "Two pages").
+
+Optional: the three ways again, now following the dial.
+
+Study only: the cap-only curve, the confidence-range sidenote, the full
+ladder, attendance (Figure 2) and the sweeps.
+
+### Part 4. Where it breaks
+
+**Message:** the bottlenecks are not in the rules for passing votes on.
+They lie in who has a record to choose by, in loops, in a few people
+holding many votes, and in the time it takes to build a record.
+
+Each bottleneck says what goes wrong, gives its number and says why it
+matters for a real deployment. Each names the part 5 proposal that targets
+it, or says that none does.
+
+**4a. The two edges** [frozen]. This is the main beat, with figures.
+- **Low turnout: the empty record.**
+  - A resident who never votes has nothing to choose a delegate by. They
+    keep their vote and rarely use it.
+  - At 0.1, 22.8% of residents have an empty record, and liquid's overhead
+    is 23.6%.
+  - Under liquid their fidelity is 0.001 to 0.003, against about 0.60
+    under the representative.
+  - The same thing happens under the personal proxy, so the cause is
+    choosing by record, not topics.
+  - Targeted by: the representative as default, and the personal agent.
+- **High turnout: loops and over-delegation.**
+  - At 0.9, 11.5% of voter-question pairs sit on a loop, and that is
+    liquid's whole overhead.
+  - This is specific to topic delegation: the single proxy's loop share is
+    7.0%.
+  - The city-wide cap pushes people who would vote into delegating. Direct
+    voting passes liquid between 0.7 and 0.8.
+  - Targeted by: the backup delegate, and the per-voter ceiling.
+- **The beat's point:** one overhead number cannot tell a burden people
+  carry from one they drop.
+- **Figures:** `EdgesFigure` (empty- and light-record fidelity, and the loop
+  share) and `KeepCityFigure`.
+
+**4b. Costs the headline hides** [frozen]. Compact, one small figure or line
+each.
+- **Concentration.**
+  - A district representative decides 20% of every question.
+  - Under liquid, the largest single delegate decides 28.5% at 0.45, and
+    43.7% on a city's worst question.
+  - It is 43.5% at 0.1.
+  - Targeted by: none directly. The personal agent carries the same risk in
+    a new form.
+- **The cold start.**
+  - The 10% is the steady state.
+  - Building the record means everyone decides every question first:
+    lifecycle overhead is 74% at 0.45.
+  - Targeted by: the personal agent, whose record would come from one
+    interview instead of years of votes.
+- **Routing.**
+  - A real system has to file each question under a category.
+  - The decision model's measured error, from `RouterFigure`: a false
+    delegation costs fidelity, and a false keep costs overhead.
+  - Targeted by: the app's threshold, which trades coverage for caution.
+- **Not a bottleneck: attendance.** Delegates who hold votes cast them 97%
+  of the time at 0.45. One line.
+
+**4c. What delegation cannot change** [frozen, with one interpretation].
+- **It borrows engagement; it does not create it.**
+  - With an even electorate, the lead at 0.45 falls to +4.4 points and the
+    crossing moves to about 0.35.
+  - With a short record (10 past questions per topic), the cap fails at
+    every level.
+  - No proposal targets this, and the page says so.
+- **Better for individuals, worse for outcomes.**
+  - Agreement with full-turnout outcomes at 0.45: direct voting 97.4%,
+    liquid 85.3%, the representative 82.2%.
+  - The interpretation, labelled as untested: random abstention is a fair
+    sample, while delegation copies one person's deviations onto everyone
+    who follows them.
+  - The caveat: in this model turnout does not depend on opinion.
+
+Study only: the lower tail, the other sweep families, lifecycle overhead
+across the dial, the wrong-ballot table and outcomes for every arrangement.
+
+### Part 5. What we'd build [proposal]
+
+**Message:** each bottleneck points at something buildable. Here is the
+design, the bar each piece must clear, and an app to try it in.
+
+**The four proposals**, each set against the bottleneck it targets. All are
+untested.
+1. **The representative as default delegate** → the empty record. Its bar:
+   no one with an empty record falls below being represented.
+2. **A backup delegate for loops** → loops. The page says it is a known idea
+   (ranked delegations) applied to the high edge.
+3. **A per-voter ceiling instead of a city-wide cap** → over-delegation at
+   the high end. Its evidence is the handover curve [exploratory], following
+   the dial:
+   - fidelity rises with every topic handed over up to 0.7;
+   - at 0.8 it peaks after two topics, and at 0.9 it falls with every
+     topic;
+   - the turn comes where a delegated pair's fidelity (0.75 to 0.76) drops
+     below turnout.
+4. **A personal agent** (the demo 2 link) → the empty record and the cold
+   start.
+   - Its bars at 0.45: 63.2% to beat a representative default, and 74.7% to
+     beat a chosen delegate.
+   - No accuracy is claimed.
+   - One model for everyone shares its errors across every ballot it casts.
+
+**What none of them fixes:** borrowed engagement, and outcomes that drift
+from full turnout.
+
+**The follow-up study:** the declared fallback-rules study. It is linked
+here only once it has results.
+
+**The app** [illustration]. It is the part's payoff: a plausible
+implementation of the proposed system. See "Slice H" for its changes.
+- It is introduced as a separate city of 240 residents, with free-text
+  categories and the real decision model. It is not evidence.
+- **On the page:** the hub, one vote and your delegates. The full-screen app
+  keeps the rest: Incoming Votes, Profile, Activity, City Results and About.
+- **Preset scenarios,** each a seeded starting state that shows one
+  bottleneck and its fix:
+  - "you've never voted": no recommendations, so the default
+    representative steps in;
+  - "your chain loops back to you": the backup delegate catches it;
+  - "your delegate stops voting": the fallback takes over;
+  - "you'd rather keep more": the ceiling.
+
+  Free play and reset stay.
+
+### The close
+
+- What the study leaves out (§14), as a short list.
+- Links to the full study, the benchmarks and the design doc.
+
 ## Decisions
 
 ### Stance: report, then explain, then explore
+
+*Revised 2026-11-20 (draft, see "The story"):* the story's order is the
+idea, the mechanism, the result, the limits and then the proposals. The
+verdict is still quoted word for word, in the opening's one-line answer and
+in part 3. The full study keeps the order below.
 
 The page leads with the pre-registered verdict, *overhead condition not met
 where liquid is ahead*, word for word, and does not soften it. Explanation
@@ -53,6 +405,9 @@ Animations of how the system works are illustrations: they make no claim.
 An animation that shows a result takes its numbers from the frozen data and
 carries that result's label.
 
+Proposed 2026-11-20: a second tag, *from the literature* or *new here*, on
+mechanisms and proposals (see "Labels: known theory and what is new").
+
 ### Form: a long page that tells the study's story (revised 2026-11-19)
 
 The walkthrough tells the study top to bottom: report, then explain, then
@@ -72,6 +427,14 @@ early.
   However it is done, it stays reversible, has a reduced-motion path, and
   never locks scrolling.
 
+*Revised 2026-11-20 (draft):* the content now spans two pages, the story at
+`/liquid` and the full study at `/liquid/study` (see "The story").
+- **The core comes first, styling last.** The mechanism animations and
+  diagrams are core content, because they explain how the system works. They
+  are built in slice G, in the current plain look.
+- **Styling waits.** Colour, type and any motion beyond the mechanisms come
+  after slices F to H. Ben decided there are no style mock-ups before then.
+
 ### Route and the app (settled 2026-11-19)
 
 - **The walkthrough takes `/liquid`.**
@@ -90,6 +453,15 @@ early.
   - its hub renders in the page's bottom section;
   - the app's "Hub" link points to that section.
 
+*Revised 2026-11-20 (draft):*
+- **The routes:** the story takes `/liquid`, and the full study
+  `/liquid/study`. The app's screens keep their routes.
+- **The app appears twice:**
+  - first as its elements, in part 2's mechanism diagrams;
+  - then in full as part 5's payoff, after the bottlenecks, with the
+    proposals built in.
+- **The hub's anchor stays `#app`,** now in part 5.
+
 ### Reader interaction: the turnout dial
 
 One control runs through the page: the reader sets mean citizen turnout.
@@ -98,6 +470,12 @@ One control runs through the page: the reader sets mean citizen turnout.
 - **Every turnout-dependent figure and animation follows it.**
 - **Nothing is interpolated** except where the study's own reading does (the
   crossing near 0.19).
+
+*Draft 2026-11-20:*
+- **On the story page** the dial arrives in part 3. Parts 1 and 2 are fixed
+  at Swiss turnout, so the reader first learns the system at one turnout,
+  then sees turnout change the answer.
+- **The study page** keeps the dial throughout.
 
 ### Visual motif: one city of 500 dots
 
@@ -130,8 +508,14 @@ precomputed city.
     liquid in the first series colour, comparisons in the second, failing
     gate levels in the critical colour, each sweep's baseline as a dark line
     and its settings as an ordinal ramp.
+- **The styling pass comes after the core** (slices F to H; decided
+  2026-11-20). Until then both pages keep this neutral look.
 
-## The walkthrough
+## The walkthrough (becomes the full study, `/liquid/study`)
+
+These are the sections built in slices B to E. Under the 2026-11-20 draft
+they move, as built, to `/liquid/study`. "The story" above draws its
+highlights from them. §16, the app, moves to the story's part 5.
 
 Every number below is from the published summaries unless marked. Section
 labels are in brackets.
@@ -533,7 +917,44 @@ Each slice is its own PR.
 | C | §5–8: the result, the two edges, the ladder, attendance | + the result |
 | D | §9–11: sweeps, costs (with the router animation), outcomes | + robustness and costs |
 | E | §12–15: exploratory, proposals, left out, methods | complete walkthrough |
-| F | Build step 8 in the app (§16), then weaving it into the story | + the app's changes |
+| ~~F~~ | ~~Build step 8 in the app (§16), then weaving it into the story~~ (replaced 2026-11-20 by F to H below) | |
+
+Slices after the 2026-11-20 draft (see "The story"):
+
+| Slice | Contents | `/liquid` after merge |
+|---|---|---|
+| F (built) | The split. The current page moves, as built, to `/liquid/study`. `/liquid` is rebuilt as the five parts, plain and static, from existing figures with new copy, linked both ways. The app's hub moves to the end of part 5. | the story, with the full study beside it |
+| G | The mechanism animations and diagrams: part 1's structure diagram and part 2's beats, drawn with the app's elements and driven by `city.json`. Each has a reduced-motion path and none locks scrolling. | + the mechanisms in motion |
+| H | The app: build step 8, re-scoped around the proposals. Possibly two PRs. | + the proposed system to try |
+| — | The styling pass: colour, type and any motion beyond the mechanisms, after F to H | the designed page |
+
+G and H do not depend on each other.
+
+### Slice H: the app's changes
+
+**Kept from build step 8:**
+- the scenario regenerated with delegation chosen from vote history, so the
+  app and the study describe the same world;
+- delegate recommendations ranked by vote history, with their interval;
+- the representation scorecard: the account's fidelity and overhead under
+  its district representative, under a personal proxy and under its own
+  delegations, on the closed questions.
+
+**New:**
+- **The proposals in the app's resolution path:**
+  - the representative as default delegate;
+  - a backup delegate for loops;
+  - a per-voter ceiling.
+
+  Their exact rules are settled with Ben before the slice starts (see
+  "Still open"). They go into the app's code (`delegation/election.py`,
+  `routing.py`, `graph.py`), never into the frozen comparison code
+  (`delegation/comparison/`).
+- **The preset scenarios** from part 5, each a seeded starting state.
+- **The version shown on the page:** the hub, one vote and your delegates.
+
+**Labels:** every proposal in the app carries the proposal label. The app as
+a whole stays an illustration.
 
 ## Built in slice B (2026-11-19)
 
@@ -626,6 +1047,50 @@ Plain and static, like slices B to D. The walkthrough's content is complete.
 - **Methods and sources** carry no claim label; the heading's label is
   optional.
 
+## Built in slice F (2026-11-20)
+
+The split, plain and static like slices B to E. Ben started it from the
+draft outline without changes.
+- **`/liquid/study`** is the walkthrough as built (`app/liquid/study/page.tsx`,
+  moved with history).
+  - It is retitled "The full study", with a line pointing back to the story.
+  - Its methods link the three benchmarks on GitHub (the repository is
+    public).
+  - The app section is replaced by links to the story and to `/liquid#app`.
+  - Its section ids are unchanged, because the story links to them.
+- **`/liquid`** is the story (`app/liquid/page.tsx`), built from the same
+  components with new copy:
+  - the opening, with the short answer, the verdict word for word, the five
+    parts and two shortcuts;
+  - parts 1 to 5, each ending with `StudyLinks` to the study's sections;
+  - the app at the end of part 5 (`#app`), saying the proposals are not in
+    it yet;
+  - the close, with a short "What is left out" and links to the study, the
+    benchmark and the design doc.
+- **Parts 1 and 2 at Swiss turnout.** A nested `TurnoutProvider` with a
+  `fixed` note holds them at 0.45, and every dial inside shows the note
+  instead. Moving a later dial leaves them unchanged.
+- **Each bottleneck names its proposal.** An "In part 5" note says which
+  proposal targets it, or that none does.
+- **Part 3's "How we know" note:**
+  - the freeze date and commit;
+  - the cities and the sweeps;
+  - the verdict, quoted with the condition that was not met.
+- **Left for later:**
+  - part 1's structure diagram and part 2's "who ends up deciding" beat
+    (slice G);
+  - the known-or-new tags, until the literature check is done. Meanwhile
+    the copy itself calls the backup delegate an existing idea (ranked
+    delegations).
+- **Study only:**
+  - the plane;
+  - the ladder in full;
+  - the attendance frontier (part 4 keeps one line on attendance);
+  - the sweeps panels;
+  - the wrong-ballot table;
+  - the council's Ostrogorski-style cases;
+  - the agent's "three shares" note.
+
 ## Decisions settled 2026-11-19
 
 1. **Route:** the walkthrough takes `/liquid`. The account app sits at the
@@ -638,5 +1103,25 @@ Plain and static, like slices B to D. The walkthrough's content is complete.
 
 ## Still open
 
-- Where the app is woven into the story, once the essay exists.
-- Whether the wrong-ballot table becomes a slider.
+- **Ben's markup of "The story"** (the draft of 2026-11-20).
+- **The opening:** state the answer and the verdict up front, as drafted, or
+  let part 3 reveal them.
+- **The known-or-new tag:** whether to adopt it, and how the literature check
+  behind each *new here* is done.
+- **The fallback-rules study:**
+  - run it before slice H, so part 5 has results;
+  - or ship part 5 labelled untested and add the results later.
+- **The personal agent in the app:** text only, as drafted, or a labelled
+  stand-in at an accuracy the reader sets.
+- **The app's rules for the proposals** (before slice H):
+  - when the representative default applies, for example to a vote still
+    uncast at close;
+  - whether the backup delegate also covers a delegate who does not vote,
+    or only loops;
+  - what the per-voter ceiling is. One candidate rule: hand over a topic
+    only when the delegate's expected match beats the voter's own chance of
+    voting. That is the turn the handover curve shows.
+- **The wrong-ballot table:** whether it becomes a slider. It is now on the
+  study page only.
+- ~~Where the app is woven into the story~~ Drafted 2026-11-20: as its
+  elements in part 2, then in full in part 5.
