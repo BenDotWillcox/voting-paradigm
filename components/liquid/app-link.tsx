@@ -12,3 +12,10 @@ import Link from "next/link";
 export function AppLink(props: ComponentProps<typeof Link>) {
   return <Link scroll={false} {...props} />;
 }
+
+/**
+ * The hub: the app's home screen, at the bottom of the walkthrough page.
+ * Links to it pass `scroll` so the browser goes to the section, not to the
+ * top of the essay.
+ */
+export const HUB_HREF = "/liquid#app";

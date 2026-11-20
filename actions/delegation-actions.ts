@@ -9,6 +9,7 @@ import {
   resolveBallotPaper,
   backtestDelegations,
   getCityVote,
+  getDelegationScenario,
   traceMeasure,
   validateDelegation,
 } from "@/lib/delegation-api";
@@ -25,6 +26,7 @@ import type {
   CategoryJudgmentsResponse,
   CityVote,
   DelegationBacktest,
+  DelegationScenario,
   MeasureTrace,
   PersonProfile,
   ResolveBallotPaperResponse,
@@ -107,6 +109,21 @@ export async function resolveBallotPaperAction(
       votes: Object.keys(request.viewer_votes).length,
     })
   );
+}
+
+/**
+ * The scenario the account app starts from. The walkthrough at /liquid is a
+ * static page, so its app section loads this in the browser instead of at
+ * request time.
+ */
+export async function getDelegationScenarioAction(): Promise<ActionResult<DelegationScenario>> {
+  try {
+    const data = await getDelegationScenario();
+    return { isSuccess: true, message: "Scenario loaded", data };
+  } catch (error) {
+    console.error("Delegation action failed (scenario):", { error });
+    return { isSuccess: false, message: "The delegation service is unavailable right now." };
+  }
 }
 
 /** One person's profile and voting history. */

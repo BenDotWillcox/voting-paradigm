@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AppLink as Link } from "./app-link";
+import { AppLink as Link, HUB_HREF } from "./app-link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Bell,
@@ -157,7 +157,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           >
             <Menu className="h-5 w-5" aria-hidden="true" />
           </button>
-          <Link href="/liquid" className="flex shrink-0 items-center gap-2.5">
+          <Link href={HUB_HREF} scroll className="flex shrink-0 items-center gap-2.5">
             <span className="liquid-glow flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
               <Waypoints className="h-4 w-4" aria-hidden="true" />
             </span>
@@ -215,10 +215,12 @@ function SideMenu({ open }: { open: boolean }) {
 
   const items = [
     {
-      href: "/liquid",
+      href: HUB_HREF,
       label: "Hub",
       Icon: Network,
       active: pathname === "/liquid",
+      // The hub is on another page (the walkthrough): scroll to its section
+      scroll: true,
     },
     {
       href: "/liquid/votes",
@@ -268,10 +270,11 @@ function SideMenu({ open }: { open: boolean }) {
         {/* On a phone the top bar has no room for the search, so it lives here. */}
         <PeopleSearch className="mb-3 sm:hidden" />
         <p className="liquid-label px-3 pb-1.5 pt-1">Menu</p>
-        {items.map(({ href, label, Icon, active, badge }) => (
+        {items.map(({ href, label, Icon, active, badge, scroll }) => (
           <Link
             key={href}
             href={href}
+            scroll={scroll ?? false}
             aria-current={active ? "page" : undefined}
             className={link(active)}
           >

@@ -1004,6 +1004,8 @@
   --story-seat-focus: #2a78d6;
   /* A quieter highlight between the two (40% focus over the page). */
   --story-seat-added: #a6c4e7;
+  /* A mark for nothing there (no ballot): quiet, but visible on both surfaces. */
+  --story-empty: #c3c2b7;
 
   --story-series-1: #2a78d6;
   --story-series-2: #eb6834;
@@ -1044,6 +1046,7 @@
   --story-seat: #6f6a60;
   --story-seat-focus: #3987e5;
   --story-seat-added: #224166;
+  --story-empty: #6f6a60;
 
   --story-series-1: #3987e5;
   --story-series-2: #d95926;
@@ -1057,6 +1060,21 @@
   --story-div-neg: #e66767;
   --story-div-mid: #383835;
   --story-div-pos: #3987e5;
+}
+
+/* Demo 5's walkthrough (/liquid) uses the story kit's validated chart
+ * palette, not the essays' editorial look: its own design comes once its
+ * content is complete. Until then its page, surfaces, text and rules are
+ * the site's neutral tokens (after the dark block, so they win there too). */
+.story.liquid-story {
+  --story-page: var(--background);
+  --story-surface: var(--card);
+  --story-ink: var(--foreground);
+  --story-ink-2: var(--muted-foreground);
+  --story-muted: var(--muted-foreground);
+  --story-grid: var(--border);
+  --story-rule: var(--border);
+  --story-accent: var(--muted-foreground);
 }
 
 /* Text-only reading (the essay's Contents menu sets data-reading on <html>):

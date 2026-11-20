@@ -30,7 +30,7 @@ export default async function LiquidProfilePage({
     return (
       <div className="space-y-3 text-sm">
         <p>Nobody in this city goes by that username.</p>
-        <Link href="/liquid" className="underline underline-offset-4">
+        <Link href="/liquid#app" className="underline underline-offset-4">
           Back to your delegations
         </Link>
       </div>

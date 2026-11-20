@@ -1,7 +1,10 @@
 # Demo 5: the liquid-democracy walkthrough
 
 Status: planned 2026-11-19, after the frozen benchmark was published (PR #110).
-Decisions made with Ben the same day are recorded below. Nothing is built.
+Decisions made with Ben the same day are recorded below. Slice A (the
+exploratory handover benchmark) is published (PR #112). Slice B (the data
+pipeline, the illustrative city, §0–4 and the app at the page's foot) is
+built; "Built in slice B" below records the choices made while building it.
 
 This is build step 7 of
 [`demo-5-liquid-democracy.md`](demo-5-liquid-democracy.md). It replaces the
@@ -10,8 +13,8 @@ This is build step 7 of
 ## Why a walkthrough
 
 The claim is about a population, so one account cannot show it. The
-walkthrough reports the study as a scrolling essay, in the manner of the
-apportionment essay and the districting walkthrough. It answers one
+walkthrough reports the study as a long page that tells its story as the
+reader scrolls, with a design of its own (see "Form"). It answers one
 question:
 
 > Can people hand most of their civic decisions to delegates they choose,
@@ -47,21 +50,24 @@ Animations of how the system works are illustrations: they make no claim.
 An animation that shows a result takes its numbers from the frozen data and
 carries that result's label.
 
-### Form: a scrolling essay, animated throughout (settled 2026-11-19)
+### Form: a long page that tells the study's story (revised 2026-11-19)
 
-Animations carry the mechanism and some of the results:
-- how delegates are chosen from the record;
-- how a ballot's questions are routed;
-- how votes travel on, and how loops send them back;
-- the city motif changing as the reader changes arrangement or turnout;
-- the result curves drawing as the dial moves.
+The walkthrough tells the study top to bottom: report, then explain, then
+explore. It is **not modelled on the apportionment essay**; it shares only
+being a long page that unfolds as the reader scrolls. Ben decided this after
+slice B was first built in the essay's style, to break from that pattern
+early.
 
-They follow the apportionment essay's conventions:
-- scroll-linked and reversible;
-- a skip control and a reduced-motion path that shows the end state;
-- nothing locks scrolling;
-- built from the story kit (`Scrolly`, `scrolly-reveal`, `slide-swap`, the
-  canvas dot field).
+- **Content first.** The page's own design and its animation are worked out
+  once every section's content exists (after slice E).
+- **Until then the page is plain and static.** Sections of text with their
+  figures in reading order: no pinned scroll steps, no decorative motion.
+- **What will move, once designed** (unchanged from the first plan): how
+  delegates are chosen from the record; how a ballot's questions are routed;
+  how votes travel on and loops send them back; the city changing with the
+  arrangement or the turnout; the result curves drawing as the dial moves.
+  However it is done, it stays reversible, has a reduced-motion path, and
+  never locks scrolling.
 
 ### Route and the app (settled 2026-11-19)
 
@@ -83,8 +89,7 @@ They follow the apportionment essay's conventions:
 
 ### Reader interaction: the turnout dial
 
-One control runs through the page, as the state picker does in the
-apportionment essay. The reader sets mean citizen turnout.
+One control runs through the page: the reader sets mean citizen turnout.
 - **It snaps to the recorded levels,** 0.1 to 0.9, with 0.45 marked as Swiss
   turnout.
 - **Every turnout-dependent figure and animation follows it.**
@@ -107,17 +112,21 @@ Except for the app section, data comes from build-time artifacts, never a
 live Python call. The design doc's earlier "small live re-run" becomes the
 precomputed city.
 
-### Look
+### Look (revised 2026-11-19)
 
-- **The story kit:** `components/story/`, `<StoryRoot>`, its tokens and the
-  validated palette in `lib/story/palette.ts`.
-- **Every figure ships a data table,** and chart text uses ink tokens, never a
-  series colour.
-- **Figures reuse the benchmark's encodings,** so the page and
-  `eval/benchmarks/delegation_frontier_v1/README.md` read the same way:
-  - liquid in the first series colour, comparisons in the second;
-  - failing gate levels in the critical colour;
-  - each sweep's baseline as a dark line, its settings as an ordinal ramp.
+- **Not the essays' editorial look:** no serif body, warm surfaces or pinned
+  figures. Until the design pass the page uses the site's neutral surfaces
+  and type (`.story.liquid-story` in `app/globals.css` points the story
+  tokens at them).
+- **What is about data, not style, stays:**
+  - the validated chart palette (`lib/story/palette.ts`);
+  - a data table with every figure, and chart text in ink tokens, never a
+    series colour;
+  - the benchmark's encodings, so the page and
+    `eval/benchmarks/delegation_frontier_v1/README.md` read the same way:
+    liquid in the first series colour, comparisons in the second, failing
+    gate levels in the critical colour, each sweep's baseline as a dark line
+    and its settings as an ordinal ramp.
 
 ## The walkthrough
 
@@ -168,7 +177,8 @@ ballot the same as no ballot.
 
 ### 3. How it works [illustration]
 
-Animated, one mechanism per step, on the illustrative city:
+One mechanism per step, on the illustrative city (animated once the page
+is designed):
 
 - **Choosing a delegate from the record.** For one resident and one topic:
   - each candidate's past votes line up against the resident's, and the
@@ -506,7 +516,7 @@ ballot and whether it matched, and the delegation steps the animations use.
   against the recorded city.
 - It always checks its own output hash.
 
-**Copy numbers come from generated data**, as in the apportionment essay. A
+**Copy numbers come from generated data**, never typed into the page. A
 test fails if a quoted number drifts from it.
 
 ## Slices
@@ -521,6 +531,36 @@ Each slice is its own PR.
 | D | §9–11: sweeps, costs (with the router animation), outcomes | + robustness and costs |
 | E | §12–15: exploratory, proposals, left out, methods | complete walkthrough |
 | F | Build step 8 in the app (§16), then weaving it into the story | + the app's changes |
+
+## Built in slice B (2026-11-19)
+
+- **The illustrative city is primary city 1**, recomputed at every level with
+  `compare` (`scripts/build_liquid_example_city.py`). Its totals and
+  acceptance levels equal the recorded city's at every level.
+- **The motif shows one question.** A dot is one ballot, so the city shows
+  one featured question at every level: the evaluation question whose match,
+  contrary and no-ballot shares, under direct voting, the representative and
+  liquid at Swiss turnout, lie closest to the city's own (immigration,
+  `e0096`). Filled is the resident's own ballot, a ring someone else's; blue
+  matches, red is against, grey is no ballot.
+- **The mechanism uses real residents chosen by fixed rules,** written in the
+  script. At Swiss turnout 445 of 500 residents hand over every topic, so the
+  showcase (one who keeps a topic, to show both routes) is atypical and the
+  page says so. A resident with one ballot in the whole record falls short
+  of the acceptance level (0.580 against 0.586) and keeps everything.
+- **Chains end in loops.** Because nearly everyone delegates, 96% of
+  handed-over votes in this city end with someone on a loop. The page shows
+  the longest chain (nine people, ending on a mutual pair) and that share.
+- **§2 uses a typical resident:** one who hands over every topic, with
+  turnout closest to the city's mean.
+- **Built plain** (see "Form" and "Look"): the first build used the
+  apportionment essay's pinned scroll steps and editorial styling, and was
+  reworked the same day. The cold open shows the city under whichever
+  arrangement the reader picks; "How it works" is seven steps, each with its
+  own static figure.
+- **The app's hub loads in the browser** through a read-only server action,
+  so `/liquid` stays static; its screens keep a dynamic layout in the
+  `app/liquid/(app)/` route group.
 
 ## Decisions settled 2026-11-19
 
