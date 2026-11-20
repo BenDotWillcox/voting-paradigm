@@ -353,7 +353,14 @@ export interface StoryCity {
       resolvers: number[];
       /** Their longest path to whoever decides for them, from themself. */
       chain: { topic: number; path: number[] };
+      /** Their district's representative, elected with everyone voting. */
+      representative: number;
+      /** Their proxy (or -1), and whose ballot counts for them through it. */
+      proxy: number;
+      proxy_resolver: number;
     };
+    /** Everyone's own vote on the featured question: y (yes) or n (no). */
+    featured_votes: string;
     /** Everyone's delegate (or -1) in the featured question's topic. */
     graph: { topic: number; delegate_of: number[] };
   };

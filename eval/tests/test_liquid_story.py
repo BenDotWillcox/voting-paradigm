@@ -318,6 +318,19 @@ class TestCity:
                 assert at >= 0 and at not in seen, voter
                 seen.add(at)
 
+    def test_everyone_votes_part_one_data(self, city: dict[str, Any]) -> None:
+        everyone = city["everyone"]
+        votes = everyone["featured_votes"]
+        assert len(votes) == city["design"]["residents"] and set(votes) <= {"y", "n"}
+        # With everyone voting, direct voting's winner is the plurality of these votes
+        winner = "y" if votes.count("y") > votes.count("n") else "n"
+        assert everyone["winners"]["direct"][city["question"]["index"]] == winner
+        typical = everyone["typical"]
+        # Their representative lives in their district; their proxy is someone else
+        assert city["district"][typical["representative"]] == city["district"][typical["voter"]]
+        assert typical["proxy"] != typical["voter"]
+        assert typical["proxy_resolver"] >= 0
+
     def test_everyone_votes_recomputes_byte_for_byte(self, builder: ModuleType, city: dict[str, Any]) -> None:
         reference, _ = builder._level(0.45)
         everyone = json.loads(

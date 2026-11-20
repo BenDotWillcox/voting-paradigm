@@ -480,7 +480,7 @@ is to try.
 - **Sub-slices,** each its own PR:
   - **G1 (built):** the stage, the vocabulary and part 2's scene (8, 9,
     13). It replaces part 2's three placeholders.
-  - **G2:** part 1's diagrams (1, 2, 3) on the same stage.
+  - **G2 (built):** part 1's diagrams (1, 2, 3) on the same stage.
   - **G3:** part 3's breaks (11, 17, 10 and 18) with the swipe-through
     fixes, using R2's results.
   - **G4:** part 4 (21, 6, 7 and 12, 20, 27, 14, 15, 26, 22, 23).
@@ -1263,6 +1263,37 @@ Plain and static, like slices B to D. The walkthrough's content is complete.
   decided; a slider stays possible.
 - **Methods and sources** carry no claim label; the heading's label is
   optional.
+
+## Built in slice G2 (2026-11-20)
+
+Part 1's figures on the shared stage (`components/liquid/story/structures-scene.tsx`),
+drawn from the illustrative city with everyone voting.
+- **Item 1, a vote from question to winner** (canvas with an SVG overlay):
+  a ballot reaches all 500 residents in a sweep, each ballot flies to the
+  option it chooses in the diverging palette's two poles, the tallies count
+  up and the winner is ringed (340 yes, 160 no on the featured question).
+- **Items 2 and 3 as one figure per beat.** Under direct voting, the
+  representative, the proxy and liquid, resident 227's eight topic orbs go
+  to whoever decides them and stay gathered there:
+  - direct: beside the resident;
+  - the representative: all eight round one node (bundling), with the
+    district's other residents' votes drawn in beside them (dilution);
+  - the proxy: all eight round the one person 227 chose (481);
+  - liquid: each beside its own delegate, a delegate holding two topics as
+    one segmented node.
+
+  Under each, fidelity and overhead bars (overhead drawn like a health bar)
+  from R1's averages over 200 cities, labelled exploratory.
+- **Part 1 no longer shows the three-ways figure;** the structures carry the
+  arrangements and the plane the trade-off. The three-ways figure stays in
+  part 3 with the dial.
+- **Data:** `city.json` (version 4) adds, with everyone voting, every
+  resident's vote on the featured question and resident 227's representative
+  (209), proxy (481) and the proxy's decider (176). Tests check the votes'
+  winner and that the representative lives in 227's district.
+- **Development loader:** `loadLiquidStory` re-reads the artifacts on every
+  request in development, so a rebuilt `city.json` shows without restarting
+  the server; production still caches.
 
 ## Built in slice G1 (2026-11-20)
 
