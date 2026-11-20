@@ -1138,6 +1138,15 @@ results, figure and limits are in
      check the code, and their measures were seen. No primary city was
      computed.
 
+   **Run and published (2026-11-20).** Run as declared from commit
+   `c5a2971` on a clean checkout (200 cities on 14 workers). **Supported:**
+   at 0.1, 0.2 and 0.3, liquid with the representative as default leads the
+   representative by 5.7, 8.8 and 11.0 points, and all 200 cities keep its
+   overhead at or under 10%. The default adds 16.3 points at 0.1 and almost
+   nothing at 0.9, where loops keep the overhead condition unmet in 99% of
+   cities. Results and limits are in
+   `eval/benchmarks/delegation_fallback_v1/README.md`.
+
 ## The comparison
 
 ### Arrangements

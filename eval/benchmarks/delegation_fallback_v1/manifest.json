@@ -1,0 +1,32 @@
+{
+  "benchmark_id": "delegation_fallback_v1",
+  "label": "exploratory",
+  "commit": "c5a297161febb1bbc5aa62d32bdb28190bc74fd6",
+  "dirty": false,
+  "diff_sha256": null,
+  "beliefs_sha256": "2c7fa2202ebf4d5a78d1c94a465a446885063ecd98033ca72ca025d2c11f9c86",
+  "declared": "2026-11-20",
+  "frozen_protocol": "2026-11-19",
+  "turnout_grid": [
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.45,
+    0.5,
+    0.6,
+    0.7,
+    0.8,
+    0.9
+  ],
+  "primary_cities": 200,
+  "primary_seed_base": 1000000000,
+  "turnout_policy": {
+    "office_rate": 0.96,
+    "resolver_turnout": 0.0
+  },
+  "python": "3.11.3",
+  "numpy": "2.4.6",
+  "scipy": "1.17.1",
+  "started": "2026-11-20T22:21:59.627567+00:00"
+}

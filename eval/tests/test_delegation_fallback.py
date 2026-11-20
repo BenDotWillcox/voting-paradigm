@@ -157,3 +157,96 @@ class TestRunning:
         with pytest.raises(FallbackError, match="committed"):
             check_manifest(manifest(DIRTY))
         assert manifest(CLEAN)["label"] == "exploratory"
+
+
+# ---------------------------------------------------------------------------
+# The published benchmark
+# ---------------------------------------------------------------------------
+
+BENCHMARK = fallback.DEFAULT_OUT
+RUN_COMMIT = "c5a297161febb1bbc5aa62d32bdb28190bc74fd6"
+
+
+def _published(name: str, *keys: str) -> dict[tuple[str, ...], dict[str, str]]:
+    import csv
+
+    with (BENCHMARK / name).open(encoding="utf-8", newline="") as handle:
+        return {tuple(r[k] for k in keys): r for r in csv.DictReader(handle)}
+
+
+class TestPublishedFiles:
+    def test_every_file_matches_its_recorded_hash(self) -> None:
+        import hashlib
+        import json
+
+        outputs = json.loads((BENCHMARK / fallback.METADATA).read_text(encoding="utf-8"))["outputs"]
+        assert set(outputs) == {fallback.CITIES, fallback.MANIFEST, fallback.MEASURES, fallback.LEVELS, fallback.HYPOTHESIS}
+        for name, digest in outputs.items():
+            if name == fallback.CITIES and not (BENCHMARK / name).exists():
+                continue
+            assert hashlib.sha256((BENCHMARK / name).read_bytes()).hexdigest() == digest, name
+
+    def test_the_city_records_are_not_committed(self) -> None:
+        assert fallback.CITIES in (BENCHMARK / ".gitignore").read_text(encoding="utf-8").splitlines()
+
+    def test_without_the_city_records_every_committed_file_is_still_checked(self, tmp_path: Any) -> None:
+        import shutil
+
+        copy_dir = tmp_path / "benchmark"
+        shutil.copytree(BENCHMARK, copy_dir, ignore=shutil.ignore_patterns(fallback.CITIES))
+        assert fallback.verify(copy_dir) == []
+        (copy_dir / fallback.LEVELS).write_bytes(b"tampered\n")
+        assert fallback.verify(copy_dir) == [f"{fallback.LEVELS} does not match its recorded hash"]
+
+    def test_the_run_is_the_declared_run_from_its_commit(self) -> None:
+        import json
+
+        recorded = json.loads((BENCHMARK / fallback.MANIFEST).read_text(encoding="utf-8"))
+        check_manifest(recorded)
+        assert recorded["commit"] == RUN_COMMIT
+
+    def test_the_frozen_arrangements_are_the_frozen_benchmarks(self) -> None:
+        assert fallback.frozen_problems(BENCHMARK) == []
+
+
+class TestReadmeReadings:
+    """The README's statements, read again from the published summaries."""
+
+    def test_the_hypothesis_is_supported(self) -> None:
+        import json
+
+        reading = json.loads((BENCHMARK / fallback.HYPOTHESIS).read_text(encoding="utf-8"))
+        assert reading["outcome"] == "supported"
+        assert all(level["leads"] and level["cap_share"] == 1.0 for level in reading["levels"])
+
+    @pytest.mark.parametrize(
+        ("level", "name", "value"),
+        [
+            ("0.1", "h1_estimate", 0.057),
+            ("0.2", "h1_estimate", 0.088),
+            ("0.3", "h1_estimate", 0.110),
+            ("0.1", "default_gain_estimate", 0.163),
+            ("0.9", "default_gain_estimate", 0.003),
+            ("0.9", "cap_share", 0.01),
+            ("0.8", "cap_share", 0.96),
+        ],
+    )
+    def test_quoted_levels(self, level: str, name: str, value: float) -> None:
+        assert float(_published(fallback.LEVELS, "level")[(level,)][name]) == pytest.approx(value, abs=5e-4)
+
+    @pytest.mark.parametrize(
+        ("level", "arrangement", "name", "value"),
+        [
+            ("0.1", DEFAULT_ARRANGEMENT, "fidelity", 0.660),
+            ("0.1", DEFAULT_ARRANGEMENT, "overhead", 0.018),
+            ("0.1", DEFAULT_ARRANGEMENT, "none_share", 0.011),
+            ("0.1", DEFAULT_ARRANGEMENT, "contrary_share", 0.329),
+            ("0.1", DEFAULT_ARRANGEMENT, "empty_record_fidelity", 0.603),
+            ("0.1", "liquid", "none_share", 0.270),
+            ("0.45", DEFAULT_ARRANGEMENT, "overhead", 0.043),
+            ("0.9", DEFAULT_ARRANGEMENT, "overhead", 0.116),
+        ],
+    )
+    def test_quoted_measures(self, level: str, arrangement: str, name: str, value: float) -> None:
+        row = _published(fallback.MEASURES, "level", "arrangement")[(level, arrangement)]
+        assert float(row[name]) == pytest.approx(value, abs=5e-4)

@@ -513,6 +513,15 @@ before it runs].
 
   The runner is `eval/delegation_fallback.py`. The notes below are the
   draft as it stood before the declaration.
+- **Run and published 2026-11-20** (`eval/benchmarks/delegation_fallback_v1/`,
+  from commit `c5a2971`). **Supported:** liquid with the default leads the
+  representative by 5.7, 8.8 and 11.0 points at 0.1, 0.2 and 0.3, with every
+  city under the cap. At 0.1 it adds 16.3 points of fidelity, cuts overhead
+  from 23.6% to 1.8% and lifts empty-record residents from 0.1% to 60.3%;
+  part of the gain is ballots where there were none, so contrary ballots
+  rise from 23.3% to 32.9%. At 0.9 it changes almost nothing. For the story:
+  part 3's fixes for the empty record and the uncast vote now have evidence,
+  and the high edge still belongs to the ceiling.
 - It replaces the earlier draft, whose arms were keep, a representative
   default and an agent at an assumed accuracy. The agent leaves, because
   there is no measured accuracy to give it.
