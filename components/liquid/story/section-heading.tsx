@@ -1,3 +1,4 @@
+import Link from "next/link";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
@@ -55,4 +56,27 @@ export function LiquidText({ children, className }: { children: React.ReactNode;
 /** Room for a figure between columns of text. */
 export function LiquidFigure({ children }: { children: React.ReactNode }) {
   return <div className="mx-auto my-10 max-w-4xl px-4">{children}</div>;
+}
+
+/** The full study's route; its section ids are the anchors the story links to. */
+export const STUDY_HREF = "/liquid/study";
+
+/**
+ * The end of a part of the story: links to the full study's sections that
+ * hold the rest of the evidence.
+ */
+export function StudyLinks({ links }: { links: Array<{ anchor: string; label: string }> }) {
+  return (
+    <LiquidText className="mt-10">
+      <p className="text-sm text-story-ink-2">
+        <span className="font-medium text-story-ink">The full analysis:</span>{" "}
+        {links.map((link, index) => (
+          <React.Fragment key={link.anchor}>
+            {index > 0 ? <span aria-hidden="true"> · </span> : null}
+            <Link href={`${STUDY_HREF}#${link.anchor}`}>{link.label}</Link>
+          </React.Fragment>
+        ))}
+      </p>
+    </LiquidText>
+  );
 }

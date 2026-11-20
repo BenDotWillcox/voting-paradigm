@@ -2331,6 +2331,15 @@ Route (settled 2026-11-19): the walkthrough takes `/liquid`. The app's
 screens keep their routes under it, and its hub renders at the bottom of the
 page.
 
+Revised 2026-11-20 (draft, see the walkthrough plan's "The story"):
+- **Two pages.** `/liquid` becomes a five-part story, and the walkthrough's
+  sections move, as built, to `/liquid/study`.
+- **The app comes last,** after the bottlenecks, as part 5's payoff.
+- **Its scope widens beyond the three changes above.** It also gains the
+  proposals (the representative as default delegate, a backup delegate for
+  loops and a per-voter ceiling) and preset scenarios. These go in the app's
+  code, never in `delegation/comparison/`.
+
 ## Account app UI
 
 The demo is an account app in the simulated city. The first version was a
