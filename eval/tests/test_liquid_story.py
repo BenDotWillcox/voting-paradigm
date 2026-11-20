@@ -57,6 +57,16 @@ def results() -> dict[str, Any]:
     return value
 
 
+@pytest.fixture(scope="module")
+def exploratory() -> dict[str, Any]:
+    return dict(json.loads((ARTIFACTS / "exploratory.json").read_text(encoding="utf-8")))
+
+
+@pytest.fixture(scope="module")
+def frozen() -> dict[str, Any]:
+    return dict(json.loads((ARTIFACTS / "measures.json").read_text(encoding="utf-8"))["levels"])
+
+
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -145,6 +155,29 @@ class TestSweepsAndRouter:
         assert [r["threshold"] for r in router["by_threshold"]] == [
             r["threshold"] for r in summary["router_by_threshold"]
         ]
+
+
+class TestExploratory:
+    def test_depth_zero_is_frozen_direct_voting(self, exploratory: dict[str, Any], frozen: dict[str, Any]) -> None:
+        for level, points in exploratory["handover"]["levels"].items():
+            assert [p["depth"] for p in points] == list(range(9))
+            for field in ("fidelity", "overhead"):
+                assert points[0][field] == pytest.approx(frozen[level]["direct"][field], abs=2e-6), (level, field)
+
+    def test_the_wrong_ballot_scores_are_match_minus_w_contrary(self, exploratory: dict[str, Any]) -> None:
+        for level, rows in exploratory["wrong_ballot"]["levels"].items():
+            for name, r in rows.items():
+                assert r["w0"] == pytest.approx(r["match"], abs=2e-6), (level, name)
+                assert r["w1"] == pytest.approx(r["match"] - r["contrary"], abs=2e-6), (level, name)
+
+    def test_the_agent_bars_come_from_the_frozen_shares(self, exploratory: dict[str, Any], frozen: dict[str, Any]) -> None:
+        for level, bars in exploratory["agent_bars"]["levels"].items():
+            rep, liquid = frozen[level]["representative"], frozen[level]["liquid"]
+            assert bars["representative"] == pytest.approx(rep["fidelity"] / (1 - rep["none_share"]))
+            cast = 1 - liquid["lost_share"] / liquid["delegated_share"]
+            assert bars["delegate"] == pytest.approx(liquid["fidelity_resolved"] / cast)
+        swiss = exploratory["agent_bars"]["levels"]["0.45"]
+        assert (round(swiss["representative"], 3), round(swiss["delegate"], 3)) == (0.632, 0.747)
 
 
 class TestCity:

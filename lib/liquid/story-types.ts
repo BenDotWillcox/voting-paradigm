@@ -52,6 +52,34 @@ export interface ArrangementMeasures {
   lifecycle_overhead: number | null;
   /** Share of questions whose winner is the full-turnout winner. */
   outcome_agreement: number | null;
+  /** Liquid: fidelity on delegated pairs, and the delegated and lost shares. */
+  fidelity_resolved: number | null;
+  delegated_share: number | null;
+  lost_share: number | null;
+}
+
+/** One point of liquid's handover curve: every voter hands over their `depth` best topics. */
+export interface HandoverPoint {
+  depth: number;
+  fidelity: number;
+  overhead: number;
+  contrary_share: number;
+  none_share: number;
+}
+
+/** The analyses made after the freeze, and one proposal's arithmetic (exploratory.json). */
+export interface StoryExploratory {
+  label: "exploratory";
+  handover: { source: string; commit: string; declared: string; cities: number; levels: Record<LevelKey, HandoverPoint[]> };
+  wrong_ballot: {
+    source: string;
+    levels: Record<LevelKey, Record<Arrangement, { match: number; contrary: number; none: number; w0: number; w1: number }>>;
+  };
+  agent_bars: {
+    label: "proposal";
+    formula: { representative: string; delegate: string };
+    levels: Record<LevelKey, { representative: number; delegate: number }>;
+  };
 }
 
 export interface SweepPoint {

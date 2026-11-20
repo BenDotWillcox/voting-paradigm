@@ -4,9 +4,10 @@ Status: planned 2026-11-19, after the frozen benchmark was published (PR #110).
 Decisions made with Ben the same day are recorded below. Slice A (the
 exploratory handover benchmark) is published (PR #112). Slice B (the data
 pipeline, the illustrative city, §0–4 and the app at the page's foot) is
-published (PR #113), and slice C (§5–8) too (PR #115). Slice D (§9–11) is
-built. "Built in slice B", "C" and "D" below record the choices made while
-building them.
+published (PR #113), slice C (§5–8) too (PR #115) and slice D (§9–11) (PR
+#116). Slice E (§12–15) is built, so the walkthrough's content is complete;
+its design and animation come next. "Built in slice B" to "E" below record
+the choices made while building them.
 
 This is build step 7 of
 [`demo-5-liquid-democracy.md`](demo-5-liquid-democracy.md). It replaces the
@@ -604,6 +605,26 @@ Plain and static, like slices B and C.
 - **Dark mode's own blue steps** for the page (`.dark .story.liquid-story`):
   the shared ramp's darkest steps vanished on a dark page. The sweeps use the
   middle steps so no setting reads as the baseline's ink line.
+
+## Built in slice E (2026-11-20)
+
+Plain and static, like slices B to D. The walkthrough's content is complete.
+- **Data.** `exploratory.json` (labelled exploratory) holds liquid's handover
+  curve and the wrong-ballot scores from
+  `eval/benchmarks/delegation_handover_v1/`, whose summaries are now pinned
+  inputs, and the personal agent's bars, labelled proposal arithmetic.
+- **The agent's bars use one formula for both comparisons:** how often a
+  ballot matches its voter when one is cast. A representative's: fidelity
+  divided by the share of its ballots cast (63.2% at Swiss turnout). A chosen
+  delegate's: fidelity on delegated pairs divided by the share of those cast
+  (74.7%; the plan's "about 74%" was approximate).
+- **"Beats the calibrated point on both measures"** requires a fidelity gain
+  beyond the curve's intervals (0.4 points), which gives the README's 0.3 to
+  0.5; a strict comparison would also have counted 0.2 and 0.6.
+- **The wrong-ballot table is static and always visible,** as tentatively
+  decided; a slider stays possible.
+- **Methods and sources** carry no claim label; the heading's label is
+  optional.
 
 ## Decisions settled 2026-11-19
 
