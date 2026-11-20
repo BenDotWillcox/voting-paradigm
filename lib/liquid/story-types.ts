@@ -41,6 +41,48 @@ export interface ArrangementMeasures {
   fidelity_kept: number | null;
   /** How often whoever decides for others actually votes. */
   resolver_attendance: number | null;
+  /** The share of a question's votes the largest single decider holds (mean, and the worst question). */
+  mean_largest_share: number | null;
+  max_largest_share: number | null;
+  /** Voters represented on fewer than half their questions, and how they fail. */
+  share_below_half: number | null;
+  below_half_none_share: number | null;
+  below_half_contrary_share: number | null;
+  /** Overhead counting the history period, when everyone decides everything. */
+  lifecycle_overhead: number | null;
+  /** Share of questions whose winner is the full-turnout winner. */
+  outcome_agreement: number | null;
+}
+
+export interface SweepPoint {
+  family: string;
+  label: string;
+  cities: number;
+  /** The point it is compared with. */
+  baseline: string | null;
+  verdict: string;
+  status: string;
+  crossing: number | null;
+  /** The crossing's confidence set; a null bound is unbounded. */
+  confidence: [number | null, number | null];
+  gate_holds: boolean;
+  levels: Record<LevelKey, { h1: number; cap_share: number }>;
+}
+
+export interface SweepPanel {
+  title: string;
+  series: Array<{ point: string; label: string; baseline: boolean; accent: number | null }>;
+}
+
+export interface RouterAt {
+  threshold: number;
+  coverage: number;
+  false_delegation_rate: number;
+  false_keep_rate: number;
+  false_delegations: number;
+  false_keeps: number;
+  delegable: number;
+  scored: number;
 }
 
 export interface Interval {
@@ -86,6 +128,21 @@ export interface StoryResults {
     gate_holds: boolean;
   };
   levels: Record<LevelKey, ResultLevel>;
+  sweeps: {
+    /** The sweeps' shared baseline (the first 48 primary cities). */
+    reference: string;
+    /** The belief-structure family's own baseline. */
+    structural_baseline: string;
+    panels: SweepPanel[];
+    points: Record<string, SweepPoint>;
+  };
+  router: {
+    source: string;
+    model: string;
+    fixture: { categories: number; nested_categories: number; questions: number; voter_cases: number };
+    operating: RouterAt;
+    by_threshold: RouterAt[];
+  };
 }
 
 export interface StoryMeasures {
@@ -144,6 +201,8 @@ export interface CityLevel {
    * l on a loop, e an empty record, k kept (no candidate good enough).
    */
   liquid_reason: string;
+  /** Each arrangement's winner on every question: y or n, in question order. */
+  winners: Record<Arrangement, string>;
   totals: Record<Arrangement, CityTotals>;
 }
 

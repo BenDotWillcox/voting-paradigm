@@ -3,14 +3,17 @@ import type { Metadata } from "next";
 import { AppSection } from "@/components/liquid/story/app-section";
 import { AttendanceFigure } from "@/components/liquid/story/attendance-figure";
 import { ClaimLabel } from "@/components/liquid/story/claim-label";
+import { CostsFigure, RouterFigure } from "@/components/liquid/story/costs-figure";
 import { EdgesFigure, KeepCityFigure } from "@/components/liquid/story/edges-figure";
 import { LadderFigure } from "@/components/liquid/story/ladder-figure";
 import { CalibrationFigure, CandidatesFigure, ChainFigure, RoutingFigure } from "@/components/liquid/story/mechanism";
 import { OneResident } from "@/components/liquid/story/one-resident";
+import { OutcomeStrip, OutcomesFigure } from "@/components/liquid/story/outcomes-figure";
 import { PlaneFigure } from "@/components/liquid/story/plane";
 import { ResultFigure } from "@/components/liquid/story/result-figure";
 import { LiquidFigure, LiquidHeading, LiquidText } from "@/components/liquid/story/section-heading";
 import { StoryDataProvider } from "@/components/liquid/story/story-data";
+import { SweepsFigure } from "@/components/liquid/story/sweeps-figure";
 import { ThreeWaysFigure } from "@/components/liquid/story/three-ways";
 import { TurnoutProvider } from "@/components/liquid/story/turnout";
 import { TurnoutCity } from "@/components/liquid/story/turnout-city";
@@ -86,6 +89,26 @@ export default async function LiquidWalkthroughPage() {
   const floor = (l: number, f: number) => result(l).frontier.find((entry) => entry.floor === f)?.estimate ?? 0;
   /** A share as quoted: 7.5%, 4%, 98.5%. */
   const quoted = (value: number) => pct(value, Math.round(value * 1000) % 10 ? 1 : 0);
+
+  // §9–11
+  const { sweeps } = results;
+  const sweepLead = (point: string) => sweeps.points[point].levels[levelKey(swiss)].h1;
+  const sweepPanel = (title: string) => sweeps.panels.find((panel) => panel.title.startsWith(title))?.series ?? [];
+  const historyKeys = sweepPanel("History").map((s) => ({ key: s.point, label: s.label }));
+  const evenKey = sweepPanel("Turnout spread")[0].point;
+  const coherentKey = sweepPanel("Within-topic")[0].point;
+  const districtKeys = sweepPanel("Districts").filter((s) => !s.baseline).map((s) => s.point);
+  const driftKey = sweepPanel("Evaluation topic mix").filter((s) => !s.baseline).slice(-1)[0].point;
+  const sweepKeys = Object.keys(sweeps.points).filter((k) => sweeps.points[k].family !== "primary");
+  const sweepCount = sweepKeys.length;
+  const sweepCities = sweeps.points[sweeps.reference].cities;
+  const unbounded = sweepKeys.filter((k) => sweeps.points[k].confidence.every((bound) => bound === null)).length;
+  const lifecycle = grid.map((l) => measured(l).liquid.lifecycle_overhead ?? 0);
+  const winners = city.levels[levelKey(swiss)].winners;
+  const cityQuestions = winners.full_turnout.length;
+  const missesOf = (name: "direct" | "liquid" | "representative") =>
+    Array.from(winners[name]).filter((w, q) => w !== winners.full_turnout[q]).length;
+  const cityMisses = { direct: missesOf("direct"), liquid: missesOf("liquid"), representative: missesOf("representative") };
 
   return (
     <>
@@ -449,6 +472,150 @@ export default async function LiquidWalkthroughPage() {
             </LiquidText>
             <LiquidFigure>
               <AttendanceFigure />
+            </LiquidFigure>
+
+            {/* §9 The sweeps */}
+            <LiquidHeading id="sweeps" kicker="What the lead depends on" claim="frozen">
+              Liquid borrows engagement; it does not create it
+            </LiquidHeading>
+            <LiquidText>
+              <p>
+                Each sweep reruns the benchmark on {sweepCities} cities with one setting changed. At Swiss turnout
+                the baseline leads by {pointsLabel(100 * sweepLead(sweeps.reference))} points.
+              </p>
+              <ul>
+                <li>
+                  <strong>The public record.</strong> The lead grows with the record people choose from:{" "}
+                  {historyKeys.map((k) => `${pointsLabel(100 * sweepLead(k.key))} with ${k.label}`).join(", ")}{" "}
+                  questions per topic. With {historyKeys[0].label} the cap fails at every level.
+                </li>
+                <li>
+                  <strong>Turnout spread.</strong> In an even electorate, where nearly everyone votes sometimes, the
+                  lead at Swiss turnout falls to {pointsLabel(100 * sweepLead(evenKey))} points and the crossing moves
+                  to about {dec(sweeps.points[evenKey].crossing ?? 0, 2)}. It is also the only setting whose reading
+                  is a clean crossing: wherever liquid leads, every city stays under the cap.
+                </li>
+                <li>
+                  <strong>Within-topic coherence</strong> is the only setting that shifts the whole curve. With half the
+                  spread of views within a topic, the lead at Swiss turnout is{" "}
+                  {pointsLabel(100 * sweepLead(coherentKey))}, the highest in the sweeps.
+                </li>
+                <li>
+                  <strong>Districts</strong> make no difference ({districtKeys
+                    .map((k) => `${pointsLabel(100 * sweepLead(k))}`)
+                    .join(" and ")}{" "}
+                  points with two and ten districts).
+                </li>
+                <li>
+                  <strong>Agenda drift,</strong> one topic weighing more in the later questions than in the record,
+                  leaves the lead where it was but breaks the cap: at Swiss turnout only{" "}
+                  {quoted(sweeps.points[driftKey].levels[levelKey(swiss)].cap_share)} of cities stay under it.
+                </li>
+                <li>
+                  <strong>The belief generator.</strong> Swapping the fitted model for a one-factor generator matched
+                  to the survey costs liquid {(100 * (sweepLead(sweeps.reference) - sweepLead(sweeps.structural_baseline))).toFixed(1)}{" "}
+                  points at Swiss turnout.
+                </li>
+              </ul>
+            </LiquidText>
+            <LiquidFigure>
+              <SweepsFigure />
+            </LiquidFigure>
+            <LiquidText>
+              <p className="text-sm text-story-ink-2">
+                Why {unbounded} of the {sweepCount} sweep settings have no bound on where they cross: at {sweepCities}{" "}
+                cities, levels where only a few cities stay under the cap meet the frozen band&apos;s rule, which then
+                cannot rule any level out. Changing that rule would be a dated exploratory amendment.
+              </p>
+            </LiquidText>
+
+            {/* §10 Costs */}
+            <LiquidHeading id="costs" kicker="Costs the headline does not show" claim="frozen">
+              Concentration, absences and a cold start
+            </LiquidHeading>
+            <LiquidText>
+              <p>
+                <strong>Concentration.</strong> A district representative decides{" "}
+                {pct(measured(swiss).representative.mean_largest_share ?? 0, 0)} of every question. Under liquid at
+                Swiss turnout, the largest single delegate decides {pct(measured(swiss).liquid.mean_largest_share ?? 0)}{" "}
+                of a question&apos;s votes on average, and {pct(measured(swiss).liquid.max_largest_share ?? 0)} on a
+                city&apos;s worst question. At {threshold.bracket[1]} that share is{" "}
+                {pct(measured(threshold.bracket[1]).liquid.mean_largest_share ?? 0)}, and at {lowest}{" "}
+                {pct(measured(lowest).liquid.mean_largest_share ?? 0)}.
+              </p>
+              <p>
+                <strong>Two kinds of poor representation.</strong> Under liquid,{" "}
+                {pct(measured(swiss).liquid.share_below_half ?? 0)} of voters are represented on fewer than half their
+                questions; under the representative, {pct(measured(swiss).representative.share_below_half ?? 0)}.
+                Liquid&apos;s failures are absences: no ballot on {pct(measured(swiss).liquid.below_half_none_share ?? 0, 0)}{" "}
+                of those voters&apos; questions. The representative&apos;s are contradictions: a ballot against them on{" "}
+                {pct(measured(swiss).representative.below_half_contrary_share ?? 0, 0)}.
+              </p>
+              <p>
+                <strong>The cold start.</strong> The {pct(rules.cap, 0)} is a steady state. Counting the history
+                period, when everyone decides every question so that the records exist, liquid&apos;s overhead is{" "}
+                {pct(measured(swiss).liquid.lifecycle_overhead ?? 0, 0)} at Swiss turnout, and between{" "}
+                {pct(Math.min(...lifecycle), 0)} and {pct(Math.max(...lifecycle), 0)} across the dial.
+              </p>
+            </LiquidText>
+            <LiquidFigure>
+              <CostsFigure />
+            </LiquidFigure>
+            <LiquidText>
+              <p>
+                <strong>Routing.</strong> The study files every question under its true topic. A real router reads a
+                question and decides which of a voter&apos;s written categories it falls under, and it can be wrong
+                either way: a false delegation sends a vote to someone it was not meant for and costs fidelity; a false
+                keep leaves a vote with its owner and costs overhead. Running the benchmark under routing error is a
+                declared follow-up, not a result.
+              </p>
+            </LiquidText>
+            <LiquidFigure>
+              <RouterFigure />
+            </LiquidFigure>
+
+            {/* §11 Individuals and outcomes */}
+            <LiquidHeading id="outcomes" kicker="Individuals and outcomes" claim="frozen">
+              Worst for individuals, best for outcomes
+            </LiquidHeading>
+            <LiquidText>
+              <p>
+                Fidelity scores each voter. A different question is whether an arrangement picks the winner the whole
+                city would pick if everyone voted. At Swiss turnout direct voting matches it on{" "}
+                {pct(measured(swiss).direct.outcome_agreement ?? 0)} of questions, liquid on{" "}
+                {pct(measured(swiss).liquid.outcome_agreement ?? 0)}, the personal proxy on{" "}
+                {pct(measured(swiss).proxy.outcome_agreement ?? 0)} and the representative on{" "}
+                {pct(measured(swiss).representative.outcome_agreement ?? 0)}. Direct voting represents individuals
+                worst and outcomes best.
+              </p>
+              <p>
+                <span className="mr-1.5 inline-block align-middle">
+                  <ClaimLabel claim="exploratory" />
+                </span>
+                An interpretation the study did not test: random abstention is a fair sample, so the voters who turn
+                up decide as the whole city would. Delegation instead copies one person&apos;s deviations onto everyone
+                who follows them.
+              </p>
+              <p>
+                The largest caveat on any outcome claim: in this model turnout is independent of opinion, and real
+                abstention is not.
+              </p>
+            </LiquidText>
+            <LiquidFigure>
+              <OutcomesFigure />
+            </LiquidFigure>
+            <LiquidText>
+              <p>
+                In the illustrative city the representatives&apos; council loses the issue-by-issue majority on{" "}
+                {cityMisses.representative} of its {cityQuestions} questions at Swiss turnout. These are
+                Ostrogorski-style cases: a body elected on bundled platforms that does not carry the majority on each
+                issue. Liquid
+                misses {cityMisses.liquid} there and direct voting {cityMisses.direct}; across all{" "}
+                {measures.protocol.cities} cities liquid does better than the representative, as above.
+              </p>
+            </LiquidText>
+            <LiquidFigure>
+              <OutcomeStrip />
             </LiquidFigure>
           </TurnoutProvider>
         </StoryDataProvider>

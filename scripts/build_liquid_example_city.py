@@ -15,7 +15,8 @@ It writes public/data/liquid-story/city.json:
   and arrangement every resident's ballot on it: whose it was and whether
   it matched them; and under liquid, why it is or is not their own (a
   delegate, a loop, an empty record, or no candidate good enough);
-- each arrangement's totals over all 80,000 voter-question pairs per level;
+- each arrangement's totals over all 80,000 voter-question pairs per level,
+  and its winner on every question;
 - the mechanism the page animates, at Swiss turnout: one resident's
   candidates for one topic, a short and an empty record, a ballot routed by
   topic, a chain, a loop, a lost vote and the calibration curve.
@@ -146,6 +147,11 @@ def _reasons(population: Population, result: Comparison, question: int) -> str:
         else:
             reasons.append(KEPT)
     return "".join(reasons)
+
+
+def _winners(result: Comparison, name: str) -> str:
+    """Each evaluation question's winner under one arrangement: y (yes) or n (no)."""
+    return "".join("y" if winner == "yes" else "n" for winner in result.outcomes[name].winners)
 
 
 def _totals(population: Population, result: Comparison, name: str) -> dict[str, Any]:
@@ -414,6 +420,8 @@ def build() -> dict[str, Any]:
             "codes": {name: _codes(population, result, name, question) for name in ARRANGEMENTS},
             "liquid_resolver": [int(r) for r in result.outcomes["liquid"].resolver[:, question]],
             "liquid_reason": _reasons(population, result, question),
+            # Every question's winner per arrangement, to set against full turnout
+            "winners": {name: _winners(result, name) for name in ARRANGEMENTS},
             "totals": {name: _totals(population, result, name) for name in ARRANGEMENTS},
         }
 

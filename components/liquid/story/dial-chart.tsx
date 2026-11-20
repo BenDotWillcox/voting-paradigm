@@ -20,6 +20,8 @@ export interface DialSeries {
   dotColor?: (index: number) => string;
   /** Draw a point only where this holds (the line still runs through all). */
   dotsWhere?: (index: number) => boolean;
+  /** Draw a point hollow where this holds (a level that fails a condition). */
+  hollowWhere?: (index: number) => boolean;
 }
 
 interface DialChartProps {
@@ -208,8 +210,8 @@ export function DialChart({
                     cx={x(levels[index])}
                     cy={y(value)}
                     r={levels[index] === level ? 5 : 3.5}
-                    fill={s.dotColor ? s.dotColor(index) : s.color}
-                    stroke={INK.surface}
+                    fill={s.hollowWhere?.(index) ? INK.surface : s.dotColor ? s.dotColor(index) : s.color}
+                    stroke={s.hollowWhere?.(index) ? s.color : INK.surface}
                     strokeWidth={1.5}
                   />
                 )

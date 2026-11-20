@@ -42,6 +42,7 @@ export function LiquidText({ children, className }: { children: React.ReactNode;
       className={cn(
         "mx-auto max-w-2xl space-y-4 px-4 text-base leading-relaxed text-story-ink [&_strong]:font-semibold",
         "[&_a]:underline [&_a]:underline-offset-4",
+        "[&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-6",
         className
       )}
     >

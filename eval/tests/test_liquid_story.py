@@ -124,6 +124,29 @@ class TestResults:
         assert failing == ["0.2", "0.9"]
 
 
+class TestSweepsAndRouter:
+    def test_the_panels_draw_every_declared_sweep_point_once(self, results: dict[str, Any]) -> None:
+        sweeps = results["sweeps"]
+        drawn = [s["point"] for panel in sweeps["panels"] for s in panel["series"]]
+        declared = set(sweeps["points"]) - {sweeps["reference"]}
+        assert set(drawn) - {sweeps["reference"]} == declared
+        # The shared baseline appears once per panel that compares with it
+        assert len(drawn) - drawn.count(sweeps["reference"]) == len(declared)
+        assert all(p["levels"].keys() == results["levels"].keys() for p in sweeps["points"].values())
+
+    def test_the_router_is_the_router_benchmark(self, results: dict[str, Any]) -> None:
+        summary = json.loads(
+            (ROOT / "eval" / "benchmarks" / "delegation_router_v1" / "summary.json").read_text(encoding="utf-8")
+        )
+        router = results["router"]
+        assert router["model"] == summary["model"]
+        for field, value in router["operating"].items():
+            assert summary["router_at_operating_threshold"][field] == value, field
+        assert [r["threshold"] for r in router["by_threshold"]] == [
+            r["threshold"] for r in summary["router_by_threshold"]
+        ]
+
+
 class TestCity:
     def test_every_level_holds_every_resident(self, city: dict[str, Any]) -> None:
         residents = city["design"]["residents"]
@@ -141,6 +164,9 @@ class TestCity:
             reasons, liquid = values["liquid_reason"], values["codes"]["liquid"]
             assert len(reasons) == residents and set(reasons) <= set("dlek"), level
             assert all((r == "d") == (c in "mcn") for r, c in zip(reasons, liquid, strict=True)), level
+            questions = city["design"]["topics"] * city["design"]["evaluation_per_topic"]
+            for name, winners in values["winners"].items():
+                assert len(winners) == questions and set(winners) <= {"y", "n"}, (level, name)
             for name, totals in values["totals"].items():
                 assert totals["match"] + totals["contrary"] + totals["none"] == pairs, (level, name)
                 assert totals["fidelity"] == pytest.approx(totals["match"] / pairs, abs=1e-12)
@@ -184,6 +210,8 @@ class TestCity:
             assert builder._codes(population, result, name, question) == level["codes"][name], name
             assert builder._totals(population, result, name) == level["totals"][name], name
         assert builder._reasons(population, result, question) == level["liquid_reason"]
+        for name in builder.ARRANGEMENTS:
+            assert builder._winners(result, name) == level["winners"][name], name
         mechanism = json.loads(builder.dumps(builder._mechanism(population, result, question)))
         assert mechanism == city["mechanism"]
 
