@@ -8,6 +8,7 @@ interface AutomaticTracePlugin {
 }
 
 const blockPlanAutomaticTraceIgnores = [
+  "**/eval/private_runs/**",
   "**/data/districting-block-plans/**",
   "**/.cache",
   "**/.cache/**",
@@ -54,6 +55,7 @@ const nextConfig: NextConfig = {
     // pipeline sources and browser-fetched geometry layers stay out of
     // serverless bundles.
     "/*": [
+      "./eval/private_runs/**/*",
       "./data/districting/**/*",
       "./.cache/**/*",
       "./public/data/districting/**/*",

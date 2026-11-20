@@ -18,6 +18,7 @@ from .routers.atlas import router as atlas_router
 from .routers.delegation import router as delegation_router
 from .routers.districting import router as districting_router
 from .routers.expressive import router as expressive_router
+from .routers.personal_journal import router as personal_journal_router
 from .routers.profiles import router as profiles_router
 from .routers.voting import router as voting_router
 
@@ -101,6 +102,7 @@ app.add_middleware(
 app.include_router(delegation_router)
 app.include_router(districting_router)
 app.include_router(expressive_router)
+app.include_router(personal_journal_router)
 app.include_router(profiles_router)
 app.include_router(atlas_router)
 app.include_router(voting_router)

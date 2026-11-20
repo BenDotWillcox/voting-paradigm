@@ -7,3 +7,6 @@
 # API tests import `app`, so Vercel detects them as extra Python functions.
 # Exclude tests from deployment discovery; runtime modules stay included.
 /api/tests/
+
+# Personal ballots, forecasts and reasoning stay on the machine.
+/eval/private_runs/
