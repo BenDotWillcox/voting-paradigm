@@ -1,12 +1,17 @@
 import { Toaster } from "sonner";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import Header from "@/components/header";
 import { SITE_NAME } from "@/lib/site";
 // The variable backs Tailwind's `font-sans` (app/globals.css), so sans
 // utilities resolve to Inter even inside the story pages' serif columns.
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const inter = localFont({
+  src: "./fonts/Inter.woff2",
+  weight: "100 900",
+  variable: "--font-inter",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: { default: SITE_NAME, template: `%s · ${SITE_NAME}` },
