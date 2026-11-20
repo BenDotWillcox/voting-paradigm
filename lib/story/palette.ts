@@ -45,6 +45,8 @@ export const INK = {
   grid: "var(--story-grid)",
   axis: "var(--story-axis)",
   surface: "var(--story-surface)",
+  /** A mark for nothing there (a missing ballot): quiet, visible on both surfaces. */
+  empty: "var(--story-empty)",
 } as const;
 
 /** Seat marks in dot-per-seat figures (hemicycles). */

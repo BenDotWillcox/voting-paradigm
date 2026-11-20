@@ -25,17 +25,23 @@ async function loadScenario(): Promise<DelegationScenario | null> {
   }
 }
 
-export default async function LiquidLayout({ children }: { children: React.ReactNode }) {
+/**
+ * The account app's screens (/liquid/votes, /liquid/people/..., and so on).
+ * Its hub is not here: it sits at the bottom of the walkthrough at /liquid
+ * (components/liquid/story/app-section.tsx), which is static. These screens
+ * stay dynamic because they need the Python service at request time.
+ */
+export default async function LiquidAppLayout({ children }: { children: React.ReactNode }) {
   const scenario = await loadScenario();
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <Link
-        href="/"
+        href="/liquid"
         className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-        All demos
+        The walkthrough
       </Link>
       <header className="mb-6 max-w-3xl space-y-2">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-700 dark:text-indigo-300">

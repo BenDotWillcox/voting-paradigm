@@ -1,7 +1,10 @@
 # Demo 5: the liquid-democracy walkthrough
 
 Status: planned 2026-11-19, after the frozen benchmark was published (PR #110).
-Decisions made with Ben the same day are recorded below. Nothing is built.
+Decisions made with Ben the same day are recorded below. Slice A (the
+exploratory handover benchmark) is published (PR #112). Slice B (the data
+pipeline, the illustrative city, §0–4 and the app at the page's foot) is
+built; "Built in slice B" below records the choices made while building it.
 
 This is build step 7 of
 [`demo-5-liquid-democracy.md`](demo-5-liquid-democracy.md). It replaces the
@@ -521,6 +524,31 @@ Each slice is its own PR.
 | D | §9–11: sweeps, costs (with the router animation), outcomes | + robustness and costs |
 | E | §12–15: exploratory, proposals, left out, methods | complete walkthrough |
 | F | Build step 8 in the app (§16), then weaving it into the story | + the app's changes |
+
+## Built in slice B (2026-11-19)
+
+- **The illustrative city is primary city 1**, recomputed at every level with
+  `compare` (`scripts/build_liquid_example_city.py`). Its totals and
+  acceptance levels equal the recorded city's at every level.
+- **The motif shows one question.** A dot is one ballot, so the city shows
+  one featured question at every level: the evaluation question whose match,
+  contrary and no-ballot shares, under direct voting, the representative and
+  liquid at Swiss turnout, lie closest to the city's own (immigration,
+  `e0096`). Filled is the resident's own ballot, a ring someone else's; blue
+  matches, red is against, grey is no ballot.
+- **The mechanism uses real residents chosen by fixed rules,** written in the
+  script. At Swiss turnout 445 of 500 residents hand over every topic, so the
+  showcase (one who keeps a topic, to show both routes) is atypical and the
+  page says so. A resident with one ballot in the whole record falls short
+  of the acceptance level (0.580 against 0.586) and keeps everything.
+- **Chains end in loops.** Because nearly everyone delegates, 96% of
+  handed-over votes in this city end with someone on a loop. The page shows
+  the longest chain (nine people, ending on a mutual pair) and that share.
+- **§2 uses a typical resident:** one who hands over every topic, with
+  turnout closest to the city's mean.
+- **The app's hub loads in the browser** through a read-only server action,
+  so `/liquid` stays static; its screens keep a dynamic layout in the
+  `app/liquid/(app)/` route group.
 
 ## Decisions settled 2026-11-19
 

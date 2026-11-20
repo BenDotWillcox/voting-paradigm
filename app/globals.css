@@ -1004,6 +1004,8 @@
   --story-seat-focus: #2a78d6;
   /* A quieter highlight between the two (40% focus over the page). */
   --story-seat-added: #a6c4e7;
+  /* A mark for nothing there (no ballot): quiet, but visible on both surfaces. */
+  --story-empty: #c3c2b7;
 
   --story-series-1: #2a78d6;
   --story-series-2: #eb6834;
@@ -1044,6 +1046,7 @@
   --story-seat: #6f6a60;
   --story-seat-focus: #3987e5;
   --story-seat-added: #224166;
+  --story-empty: #6f6a60;
 
   --story-series-1: #3987e5;
   --story-series-2: #d95926;
