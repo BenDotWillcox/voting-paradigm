@@ -21,6 +21,7 @@ public/data/liquid-story/:
                  handover curve and the wrong-ballot scores
                  (eval/benchmarks/delegation_handover_v1), the everyone-votes
                  reference point (eval/benchmarks/delegation_everyone_votes_v1),
+                 the fallback study (eval/benchmarks/delegation_fallback_v1),
                  and the personal agent's bars (proposal arithmetic on the
                  frozen shares)
 - manifest.json  SHA-256 of every input and output, city.json included
@@ -45,11 +46,16 @@ from typing import Any, Final
 ROOT: Final = Path(__file__).resolve().parents[1]
 FRONTIER: Final = ROOT / "eval" / "benchmarks" / "delegation_frontier_v1"
 ROUTER: Final = ROOT / "eval" / "benchmarks" / "delegation_router_v1"
+ROUTER_FIXTURE: Final = ROOT / "eval" / "fixtures" / "delegation_router_v1.json"
 HANDOVER: Final = ROOT / "eval" / "benchmarks" / "delegation_handover_v1"
 # The exploratory benchmark's committed summaries
 HANDOVER_INPUTS: Final = ("curve.csv", "wrong_ballot.csv", "manifest.json")
 EVERYONE: Final = ROOT / "eval" / "benchmarks" / "delegation_everyone_votes_v1"
 EVERYONE_INPUTS: Final = ("measures.csv", "contrasts.csv", "cap.csv", "manifest.json")
+FALLBACK: Final = ROOT / "eval" / "benchmarks" / "delegation_fallback_v1"
+FALLBACK_INPUTS: Final = ("measures.csv", "levels.csv", "hypothesis.json", "manifest.json")
+# What the story reads of liquid with the default at each level
+FALLBACK_FIELDS: Final = ("fidelity", "contrary_share", "none_share", "overhead", "loop_share", "empty_record_fidelity")
 OUT: Final = ROOT / "public" / "data" / "liquid-story"
 CITY: Final = OUT / "city.json"
 ARTIFACT_VERSION: Final = 1
@@ -214,17 +220,88 @@ def _sweeps(grid: list[float]) -> dict[str, Any]:
     return {"reference": REFERENCE_KEY, "structural_baseline": STRUCTURAL_BASELINE, "panels": panels, "points": points}
 
 
+def _router_examples(operating: dict[str, Any]) -> list[dict[str, Any]]:
+    """
+    Three voter cases from the router benchmark, routed again with the real
+    rule at the operating threshold from the recorded judgments: the first
+    correct delegation with three or more categories, the first false keep
+    and the first false delegation, in the benchmark's own case order.
+    Rebuilding every case's verdict must reproduce the published tally.
+    """
+    sys.path.insert(0, str(ROOT))
+    from delegation.jev import JEV_MODEL  # noqa: PLC0415
+    from delegation.judgments import JudgmentStore, gather_judgments  # noqa: PLC0415
+    from eval.delegation_router import (  # noqa: PLC0415
+        RouterEvalConfig,
+        Verdict,
+        judge_outcome,
+        load_fixture,
+        routed_key,
+        voter_cases,
+    )
+
+    fixture = load_fixture(ROUTER_FIXTURE)
+    config = RouterEvalConfig()
+    judgments = gather_judgments(
+        [labelled.question for labelled in fixture.questions],
+        [entry.category for entry in fixture.categories],
+        JudgmentStore(ROUTER / "judgments.jsonl"),
+        model=JEV_MODEL,
+    ).judgments
+    probability = {
+        (row["question"], row["category"]): float(row["probability"])
+        for row in map(json.loads, (ROUTER / "judgments.jsonl").read_text(encoding="utf-8").splitlines())
+    }
+    threshold = config.operating_threshold
+    verdicts = []
+    for case in voter_cases(fixture, config):
+        _, chosen = routed_key(fixture, case, judgments, threshold)
+        verdicts.append((case, chosen, judge_outcome(fixture.labelled(case.question), case.keys, chosen)))
+    counts = {v: sum(1 for _, _, verdict in verdicts if verdict is v) for v in Verdict}
+    if (counts[Verdict.FALSE_DELEGATION], counts[Verdict.FALSE_KEEP]) != (
+        operating["false_delegations"],
+        operating["false_keeps"],
+    ):
+        raise ValueError("the rebuilt routing does not reproduce the router benchmark's tally")
+
+    def first(verdict: Any, *, at_least: int = 1) -> dict[str, Any]:
+        case, chosen, _ = next(c for c in verdicts if c[2] is verdict and len(c[0].keys) >= at_least)
+        labelled = fixture.labelled(case.question)
+        return {
+            "verdict": verdict.value,
+            "question": {"id": case.question, "title": labelled.question.title, "summary": labelled.question.summary},
+            "categories": [
+                {
+                    "key": key,
+                    "text": fixture.entry(key).category.text,
+                    "probability": probability[(case.question, fixture.entry(key).category.id)],
+                    "acceptable": key in labelled.acceptable,
+                }
+                for key in case.keys
+            ],
+            "chosen": chosen,
+        }
+
+    return [
+        first(Verdict.CORRECT_DELEGATION, at_least=3),
+        first(Verdict.FALSE_KEEP),
+        first(Verdict.FALSE_DELEGATION),
+    ]
+
+
 def _router() -> dict[str, Any]:
-    """The router's measured errors at every threshold (delegation_router_v1)."""
+    """The router's measured errors at every threshold (delegation_router_v1), and three worked cases."""
     summary = json.loads((ROUTER / "summary.json").read_text(encoding="utf-8"))
     fields = ("threshold", "coverage", "false_delegation_rate", "false_keep_rate", "false_delegations",
               "false_keeps", "delegable", "scored")
+    operating = {f: summary["router_at_operating_threshold"][f] for f in fields}
     return {
         "source": "eval/benchmarks/delegation_router_v1/summary.json",
         "model": summary["model"],
         "fixture": summary["fixture"],
-        "operating": {f: summary["router_at_operating_threshold"][f] for f in fields},
+        "operating": operating,
         "by_threshold": [{f: entry[f] for f in fields} for entry in summary["router_by_threshold"]],
+        "examples": _router_examples(operating),
     }
 
 
@@ -264,6 +341,42 @@ def _everyone() -> dict[str, Any]:
                 "history_feasible": int(r["history_feasible"]),
             }
             for r in _rows(EVERYONE / "cap.csv")
+        },
+    }
+
+
+def _fallback(grid: list[float]) -> dict[str, Any]:
+    """
+    The fallback study: liquid with the representative as default, its
+    declared hypothesis read, and the default's effect at every level.
+    """
+    manifest = json.loads((FALLBACK / "manifest.json").read_text(encoding="utf-8"))
+    hypothesis = json.loads((FALLBACK / "hypothesis.json").read_text(encoding="utf-8"))
+    measures = {(r["level"], r["arrangement"]): r for r in _rows(FALLBACK / "measures.csv")}
+    levels = {r["level"]: r for r in _rows(FALLBACK / "levels.csv")}
+
+    def interval(row: dict[str, str], name: str) -> dict[str, float]:
+        return {f: float(row[f"{name}_{f}"]) for f in ("estimate", "lower", "upper")}
+
+    return {
+        "source": "eval/benchmarks/delegation_fallback_v1 (measures, levels and hypothesis)",
+        "commit": manifest["commit"],
+        "declared": manifest["declared"],
+        "cities": manifest["primary_cities"],
+        "hypothesis": hypothesis["hypothesis"],
+        "outcome": hypothesis["outcome"],
+        "hypothesis_levels": [level["level"] for level in hypothesis["levels"]],
+        "levels": {
+            repr(level): {
+                "liquid_default": {
+                    f: _optional(measures[(repr(level), "liquid_default")][f]) for f in FALLBACK_FIELDS
+                },
+                "h1": interval(levels[repr(level)], "h1"),
+                "cap_share": float(levels[repr(level)]["cap_share"]),
+                "default_gain": interval(levels[repr(level)], "default_gain"),
+                "verdict": levels[repr(level)]["frozen_verdict"],
+            }
+            for level in grid
         },
     }
 
@@ -323,6 +436,7 @@ def _exploratory(grid: list[float], frozen: dict[str, Any]) -> dict[str, Any]:
             },
         },
         "everyone_votes": _everyone(),
+        "fallback": _fallback(grid),
         "agent_bars": {
             "label": "proposal",
             "formula": {
@@ -401,6 +515,8 @@ def manifest(outputs: dict[str, bytes]) -> dict[str, Any]:
                 for name in INPUTS
             },
             "eval/benchmarks/delegation_router_v1/summary.json": sha256((ROUTER / "summary.json").read_bytes()),
+            "eval/benchmarks/delegation_router_v1/judgments.jsonl": sha256((ROUTER / "judgments.jsonl").read_bytes()),
+            "eval/fixtures/delegation_router_v1.json": sha256(ROUTER_FIXTURE.read_bytes()),
             **{
                 f"eval/benchmarks/delegation_handover_v1/{name}": sha256((HANDOVER / name).read_bytes())
                 for name in HANDOVER_INPUTS
@@ -408,6 +524,10 @@ def manifest(outputs: dict[str, bytes]) -> dict[str, Any]:
             **{
                 f"eval/benchmarks/delegation_everyone_votes_v1/{name}": sha256((EVERYONE / name).read_bytes())
                 for name in EVERYONE_INPUTS
+            },
+            **{
+                f"eval/benchmarks/delegation_fallback_v1/{name}": sha256((FALLBACK / name).read_bytes())
+                for name in FALLBACK_INPUTS
             },
         },
         "outputs": {name: sha256(body) for name, body in outputs.items()},
