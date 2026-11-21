@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { AppSection } from "@/components/liquid/story/app-section";
 import { ClaimLabel, type Claim } from "@/components/liquid/story/claim-label";
+import { DesignScene } from "@/components/liquid/story/design-scene";
 import {
   BallotArrivesFigure,
   VotesTravelFigure,
@@ -88,18 +89,6 @@ function Fix({
         <span className="font-medium text-story-ink">Evidence:</span> {evidence}
       </p>
     </div>
-  );
-}
-
-/** Where a mechanism animation will go (slice G); until then, what it will show. */
-function Pending({ children }: { children: React.ReactNode }) {
-  return (
-    <LiquidFigure>
-      <div className="mx-auto max-w-2xl rounded-lg border border-dashed border-story-rule p-5 font-sans text-sm text-story-ink-2">
-        <p className="text-xs font-medium tracking-wide text-story-muted uppercase">Animation in progress</p>
-        <p className="mt-1">{children}</p>
-      </div>
-    </LiquidFigure>
   );
 }
 
@@ -787,42 +776,19 @@ export default async function LiquidStoryPage() {
             </LiquidHeading>
             <LiquidText>
               <p>
-                Put together, the fixes make a system someone could build: the basic version of part 2, with these
-                added.
+                Put together, the fixes make a system someone could build: the basic version of part 2, with every
+                fix from parts 3 and 4 in place. Follow one vote through it.
               </p>
-              <ul>
-                <li>
-                  <strong>The loop rule</strong> <ClaimLabel claim="design" />: everyone on a loop decides for
-                  themself. From the literature, and in the study.
-                </li>
-                <li>
-                  <strong>A backup delegate</strong> <ClaimLabel claim="proposal" />: a second choice per topic, for
-                  a delegate who does not vote, and perhaps for loops. An existing idea, untested here.
-                </li>
-                <li>
-                  <strong>The representative as default</strong> <ClaimLabel claim="proposal" />: for anyone with no
-                  delegate for a topic, and for a vote still uncast. Tested in the fallback study, and{" "}
-                  {fallback.outcome} at low turnout; it does nothing for the high end.
-                </li>
-                <li>
-                  <strong>A decision-model router</strong> <ClaimLabel claim="proposal" />: questions filed against
-                  each voter&apos;s own categories, keeping a question when unsure. Its errors are measured.
-                </li>
-                <li>
-                  <strong>A ceiling set by each voter</strong> <ClaimLabel claim="proposal" />: in place of one
-                  city-wide limit. Its evidence is exploratory.
-                </li>
-                <li>
-                  <strong>A personal agent</strong> <ClaimLabel claim="proposal" />: ballots cast from a model of
-                  the voter. No accuracy is claimed.
-                </li>
-              </ul>
+            </LiquidText>
+            <LiquidFigure>
+              <DesignScene />
+            </LiquidFigure>
+            <LiquidText>
               <p>
                 <strong>What none of them fixes:</strong> liquid delegation still borrows engagement rather than
                 creating it, and its outcomes still drift further from full turnout than direct voting&apos;s.
               </p>
             </LiquidText>
-            <Pending>One diagram that stacks these fixes on the basic version of part 2.</Pending>
             <StudyLinks links={[{ anchor: "proposals", label: "What could be built" }]} />
           </TurnoutProvider>
         </StoryDataProvider>
