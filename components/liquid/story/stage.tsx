@@ -75,7 +75,8 @@ export function useScenePlayer(duration: number): ScenePlayer {
     let frame = 0;
     const start = performance.now();
     const tick = (now: number) => {
-      const elapsed = Math.min(duration, now - start);
+      // A frame's timestamp can precede `start`, so clamp at zero too
+      const elapsed = Math.max(0, Math.min(duration, now - start));
       setT(elapsed);
       if (elapsed < duration) frame = requestAnimationFrame(tick);
     };
@@ -104,6 +105,27 @@ export function ReplayButton({ player, className }: { player: ScenePlayer; class
       <RotateCcw aria-hidden="true" className="h-3.5 w-3.5" />
       Replay
     </button>
+  );
+}
+
+/**
+ * Draws a chart in from the left when it first scrolls into view: every SVG
+ * inside is clipped to the share revealed so far, so a curve draws and bars
+ * grow while the figure's text stays put. Replay draws it again.
+ */
+export function Reveal({ children, duration = 1600 }: { children: React.ReactNode; duration?: number }) {
+  const player = useScenePlayer(duration);
+  const shown = easeInOut(player.t / duration);
+  return (
+    <div ref={player.ref}>
+      <div
+        className="[&_svg]:[clip-path:inset(0_var(--reveal-hidden)_0_0)]"
+        style={{ "--reveal-hidden": `${((1 - shown) * 100).toFixed(2)}%` } as React.CSSProperties}
+      >
+        {children}
+      </div>
+      <ReplayButton player={player} className="mt-2" />
+    </div>
   );
 }
 

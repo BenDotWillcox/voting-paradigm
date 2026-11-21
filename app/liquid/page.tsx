@@ -11,7 +11,14 @@ import {
 import { RouterFigure } from "@/components/liquid/story/costs-figure";
 import { EmptyRecordFigure, LoopFigure, LostVoteFigure } from "@/components/liquid/story/breaks-scene";
 import { EdgesFigure } from "@/components/liquid/story/edges-figure";
-import { HandoverFigure } from "@/components/liquid/story/exploratory-figures";
+import { LadderFigure } from "@/components/liquid/story/ladder-figure";
+import {
+  AgentScene,
+  BorrowedEngagementScene,
+  CeilingScene,
+  ColdStartScene,
+  RoutingScene,
+} from "@/components/liquid/story/limits-scene";
 import { CalibrationFigure, CandidatesFigure } from "@/components/liquid/story/mechanism";
 import { OneResident } from "@/components/liquid/story/one-resident";
 import { OutcomesFigure } from "@/components/liquid/story/outcomes-figure";
@@ -25,6 +32,7 @@ import {
   STUDY_HREF,
   StudyLinks,
 } from "@/components/liquid/story/section-heading";
+import { Reveal } from "@/components/liquid/story/stage";
 import { StoryDataProvider } from "@/components/liquid/story/story-data";
 import { ThreeWaysFigure } from "@/components/liquid/story/three-ways";
 import { TurnoutProvider } from "@/components/liquid/story/turnout";
@@ -548,7 +556,12 @@ export default async function LiquidStoryPage() {
               </Fix>
             </LiquidText>
             <LiquidFigure>
-              <RouterFigure />
+              <RoutingScene />
+            </LiquidFigure>
+            <LiquidFigure>
+              <Reveal>
+                <RouterFigure />
+              </Reveal>
             </LiquidFigure>
 
             <LiquidText>
@@ -564,7 +577,9 @@ export default async function LiquidStoryPage() {
               </p>
             </LiquidText>
             <LiquidFigure>
-              <CandidatesFigure />
+              <Reveal>
+                <CandidatesFigure />
+              </Reveal>
             </LiquidFigure>
             <LiquidText>
               <p>
@@ -575,7 +590,9 @@ export default async function LiquidStoryPage() {
               </p>
             </LiquidText>
             <LiquidFigure>
-              <CandidatesFigure short />
+              <Reveal>
+                <CandidatesFigure short />
+              </Reveal>
             </LiquidFigure>
             <LiquidText>
               <p>
@@ -584,7 +601,9 @@ export default async function LiquidStoryPage() {
               </p>
             </LiquidText>
             <LiquidFigure>
-              <CalibrationFigure />
+              <Reveal>
+                <CalibrationFigure />
+              </Reveal>
             </LiquidFigure>
             <LiquidText>
               <p>
@@ -595,6 +614,11 @@ export default async function LiquidStoryPage() {
                 {shortestHistory.label} questions per topic, too few cities stay within the {pct(rules.cap, 0)} limit
                 at any level.
               </p>
+            </LiquidText>
+            <LiquidFigure>
+              <ColdStartScene />
+            </LiquidFigure>
+            <LiquidText>
               <Fix
                 title="Our answers"
                 evidence="The fallback study tested the default against a mature record, not a launch; the agent is untested."
@@ -607,8 +631,12 @@ export default async function LiquidStoryPage() {
                 {pct(agentBars.delegate)} to beat a chosen delegate. No accuracy is claimed, and one model serving
                 everyone would share its errors across every ballot it casts.
               </Fix>
-
-              <Beat>Turnout: how much is enough</Beat>
+            </LiquidText>
+            <LiquidFigure>
+              <AgentScene />
+            </LiquidFigure>
+            <LiquidText>
+              <Beat className="pt-0">Turnout: how much is enough</Beat>
               <p>
                 This is the question the study was built to answer. Liquid delegation overtakes the district
                 representative near turnout {dec(threshold.crossing, 2)}; the 95% range for where it crosses runs from{" "}
@@ -652,7 +680,9 @@ export default async function LiquidStoryPage() {
               </div>
             </LiquidText>
             <LiquidFigure>
-              <ResultFigure />
+              <Reveal>
+                <ResultFigure />
+              </Reveal>
             </LiquidFigure>
             <LiquidText>
               <p>
@@ -669,6 +699,13 @@ export default async function LiquidStoryPage() {
                 {pts(ladder.h1.estimate)} points, and topic delegates add{" "}
                 {pts(ladder.specialisation.estimate)}, as with everyone voting.
               </p>
+            </LiquidText>
+            <LiquidFigure>
+              <Reveal>
+                <LadderFigure />
+              </Reveal>
+            </LiquidFigure>
+            <LiquidText>
               <p>
                 Concentration grows as turnout falls. The largest single decider holds{" "}
                 {pct(measured(highest).liquid.mean_largest_share ?? 0)} of a question&apos;s votes on average at{" "}
@@ -695,7 +732,7 @@ export default async function LiquidStoryPage() {
               </Fix>
             </LiquidText>
             <LiquidFigure>
-              <HandoverFigure />
+              <CeilingScene />
             </LiquidFigure>
             <LiquidText>
               <Beat className="pt-0">What delegation cannot change</Beat>
@@ -705,6 +742,11 @@ export default async function LiquidStoryPage() {
                 the lead at Swiss turnout falls to {pts(sweepLead(evenKey))} points and the crossing moves
                 to about {dec(sweeps.points[evenKey].crossing ?? 0, 2)}.
               </p>
+            </LiquidText>
+            <LiquidFigure>
+              <BorrowedEngagementScene />
+            </LiquidFigure>
+            <LiquidText>
               <p>
                 <strong>Better for individuals, not for outcomes.</strong> Whether an arrangement picks the winner the
                 whole city would pick if everyone voted is a different question from fidelity. At Swiss turnout direct
@@ -724,7 +766,9 @@ export default async function LiquidStoryPage() {
               <p>None of our proposals creates engagement.</p>
             </LiquidText>
             <LiquidFigure>
-              <OutcomesFigure />
+              <Reveal>
+                <OutcomesFigure />
+              </Reveal>
             </LiquidFigure>
             <StudyLinks
               links={[

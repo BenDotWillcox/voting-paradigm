@@ -166,6 +166,15 @@ export interface RouterAt {
   scored: number;
 }
 
+/** One voter's categories facing one question, with the decision model's recorded scores. */
+export interface RouterExample {
+  verdict: "correct_delegation" | "false_keep" | "false_delegation";
+  question: { id: string; title: string; summary: string };
+  categories: Array<{ key: string; text: string; probability: number; acceptable: boolean }>;
+  /** The category the question was sent to, or null when the voter kept it. */
+  chosen: string | null;
+}
+
 export interface Interval {
   estimate: number;
   lower: number;
@@ -223,6 +232,8 @@ export interface StoryResults {
     fixture: { categories: number; nested_categories: number; questions: number; voter_cases: number };
     operating: RouterAt;
     by_threshold: RouterAt[];
+    /** Three worked cases, routed again at the operating threshold from the recorded judgments. */
+    examples: RouterExample[];
   };
 }
 

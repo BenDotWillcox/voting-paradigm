@@ -46,6 +46,7 @@ from typing import Any, Final
 ROOT: Final = Path(__file__).resolve().parents[1]
 FRONTIER: Final = ROOT / "eval" / "benchmarks" / "delegation_frontier_v1"
 ROUTER: Final = ROOT / "eval" / "benchmarks" / "delegation_router_v1"
+ROUTER_FIXTURE: Final = ROOT / "eval" / "fixtures" / "delegation_router_v1.json"
 HANDOVER: Final = ROOT / "eval" / "benchmarks" / "delegation_handover_v1"
 # The exploratory benchmark's committed summaries
 HANDOVER_INPUTS: Final = ("curve.csv", "wrong_ballot.csv", "manifest.json")
@@ -219,17 +220,88 @@ def _sweeps(grid: list[float]) -> dict[str, Any]:
     return {"reference": REFERENCE_KEY, "structural_baseline": STRUCTURAL_BASELINE, "panels": panels, "points": points}
 
 
+def _router_examples(operating: dict[str, Any]) -> list[dict[str, Any]]:
+    """
+    Three voter cases from the router benchmark, routed again with the real
+    rule at the operating threshold from the recorded judgments: the first
+    correct delegation with three or more categories, the first false keep
+    and the first false delegation, in the benchmark's own case order.
+    Rebuilding every case's verdict must reproduce the published tally.
+    """
+    sys.path.insert(0, str(ROOT))
+    from delegation.jev import JEV_MODEL  # noqa: PLC0415
+    from delegation.judgments import JudgmentStore, gather_judgments  # noqa: PLC0415
+    from eval.delegation_router import (  # noqa: PLC0415
+        RouterEvalConfig,
+        Verdict,
+        judge_outcome,
+        load_fixture,
+        routed_key,
+        voter_cases,
+    )
+
+    fixture = load_fixture(ROUTER_FIXTURE)
+    config = RouterEvalConfig()
+    judgments = gather_judgments(
+        [labelled.question for labelled in fixture.questions],
+        [entry.category for entry in fixture.categories],
+        JudgmentStore(ROUTER / "judgments.jsonl"),
+        model=JEV_MODEL,
+    ).judgments
+    probability = {
+        (row["question"], row["category"]): float(row["probability"])
+        for row in map(json.loads, (ROUTER / "judgments.jsonl").read_text(encoding="utf-8").splitlines())
+    }
+    threshold = config.operating_threshold
+    verdicts = []
+    for case in voter_cases(fixture, config):
+        _, chosen = routed_key(fixture, case, judgments, threshold)
+        verdicts.append((case, chosen, judge_outcome(fixture.labelled(case.question), case.keys, chosen)))
+    counts = {v: sum(1 for _, _, verdict in verdicts if verdict is v) for v in Verdict}
+    if (counts[Verdict.FALSE_DELEGATION], counts[Verdict.FALSE_KEEP]) != (
+        operating["false_delegations"],
+        operating["false_keeps"],
+    ):
+        raise ValueError("the rebuilt routing does not reproduce the router benchmark's tally")
+
+    def first(verdict: Any, *, at_least: int = 1) -> dict[str, Any]:
+        case, chosen, _ = next(c for c in verdicts if c[2] is verdict and len(c[0].keys) >= at_least)
+        labelled = fixture.labelled(case.question)
+        return {
+            "verdict": verdict.value,
+            "question": {"id": case.question, "title": labelled.question.title, "summary": labelled.question.summary},
+            "categories": [
+                {
+                    "key": key,
+                    "text": fixture.entry(key).category.text,
+                    "probability": probability[(case.question, fixture.entry(key).category.id)],
+                    "acceptable": key in labelled.acceptable,
+                }
+                for key in case.keys
+            ],
+            "chosen": chosen,
+        }
+
+    return [
+        first(Verdict.CORRECT_DELEGATION, at_least=3),
+        first(Verdict.FALSE_KEEP),
+        first(Verdict.FALSE_DELEGATION),
+    ]
+
+
 def _router() -> dict[str, Any]:
-    """The router's measured errors at every threshold (delegation_router_v1)."""
+    """The router's measured errors at every threshold (delegation_router_v1), and three worked cases."""
     summary = json.loads((ROUTER / "summary.json").read_text(encoding="utf-8"))
     fields = ("threshold", "coverage", "false_delegation_rate", "false_keep_rate", "false_delegations",
               "false_keeps", "delegable", "scored")
+    operating = {f: summary["router_at_operating_threshold"][f] for f in fields}
     return {
         "source": "eval/benchmarks/delegation_router_v1/summary.json",
         "model": summary["model"],
         "fixture": summary["fixture"],
-        "operating": {f: summary["router_at_operating_threshold"][f] for f in fields},
+        "operating": operating,
         "by_threshold": [{f: entry[f] for f in fields} for entry in summary["router_by_threshold"]],
+        "examples": _router_examples(operating),
     }
 
 
@@ -443,6 +515,8 @@ def manifest(outputs: dict[str, bytes]) -> dict[str, Any]:
                 for name in INPUTS
             },
             "eval/benchmarks/delegation_router_v1/summary.json": sha256((ROUTER / "summary.json").read_bytes()),
+            "eval/benchmarks/delegation_router_v1/judgments.jsonl": sha256((ROUTER / "judgments.jsonl").read_bytes()),
+            "eval/fixtures/delegation_router_v1.json": sha256(ROUTER_FIXTURE.read_bytes()),
             **{
                 f"eval/benchmarks/delegation_handover_v1/{name}": sha256((HANDOVER / name).read_bytes())
                 for name in HANDOVER_INPUTS

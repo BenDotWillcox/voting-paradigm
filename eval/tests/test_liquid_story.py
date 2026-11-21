@@ -162,6 +162,24 @@ class TestSweepsAndRouter:
         ]
 
 
+class TestRouterExamples:
+    def test_each_case_follows_the_routing_rule_and_its_labels(self, results: dict[str, Any]) -> None:
+        threshold = results["router"]["operating"]["threshold"]
+        verdicts = [example["verdict"] for example in results["router"]["examples"]]
+        assert verdicts == ["correct_delegation", "false_keep", "false_delegation"]
+        for example in results["router"]["examples"]:
+            cleared = [c for c in example["categories"] if c["probability"] >= threshold]
+            best = max(cleared, key=lambda c: c["probability"], default=None)
+            assert example["chosen"] == (best["key"] if best else None), example["verdict"]
+            right = {c["key"] for c in example["categories"] if c["acceptable"]}
+            if example["verdict"] == "correct_delegation":
+                assert example["chosen"] in right
+            elif example["verdict"] == "false_delegation":
+                assert example["chosen"] is not None and example["chosen"] not in right
+            else:
+                assert example["chosen"] is None and right
+
+
 class TestExploratory:
     def test_depth_zero_is_frozen_direct_voting(self, exploratory: dict[str, Any], frozen: dict[str, Any]) -> None:
         for level, points in exploratory["handover"]["levels"].items():

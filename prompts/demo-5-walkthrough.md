@@ -483,7 +483,7 @@ is to try.
   - **G2 (built):** part 1's diagrams (1, 2, 3) on the same stage.
   - **G3 (built):** part 3's breaks (11, 17, 10 and 18) with the
     swipe-through fixes, using R2's results.
-  - **G4:** part 4 (21, 6, 7 and 12, 20, 27, 14, 15, 26, 22, 23).
+  - **G4 (built):** part 4 (21, 6, 7 and 12, 20, 27, 14, 15, 26, 22, 23).
   - **G5:** part 5's assembled design (24, 25), and 16 if kept.
 - **Open:**
   - ~~The backup delegate~~: added as a fourth fix (Ben, 2026-11-20).
@@ -1282,6 +1282,38 @@ Plain and static, like slices B to D. The walkthrough's content is complete.
   decided; a slider stays possible.
 - **Methods and sources** carry no claim label; the heading's label is
   optional.
+
+## Built in slice G4 (2026-11-20)
+
+Part 4's animations (`components/liquid/story/limits-scene.tsx`, and
+`Reveal` in the shared stage). Branched on G3, whose PR was still open.
+- **Item 21, routing:** a ballot question meets a voter's written categories;
+  the decision model's recorded scores fill in, the 0.7 threshold drops
+  through, and the result is read out. Three tabs, from the router
+  benchmark's 544 cases by a fixed rule: sent right ("Senior property tax
+  freeze", 0.98), kept by mistake ("Spending cap tied to tax revenue": the
+  right category at 0.57), sent wrong ("Property tax deferral for older
+  homeowners": housing at 0.75). The story build re-routes all 544 cases
+  from the recorded judgments and refuses to build unless the published
+  error counts come out.
+- **Item 20, the cold start:** a timeline fills 400 questions at 100%, then
+  160 at 9.8%, with the running average landing on 74.2%.
+- **Item 27, the personal agent:** an interview, a model, ballots filled with
+  question marks, then the bars it must beat on a scale with its accuracy
+  hatched as unknown; the bars follow the dial.
+- **Item 26, the ceiling:** a point walks the handover curve at the dial's
+  turnout and marks its peak (all eight topics up to 0.7, two at 0.8, none
+  at 0.9); it replaces the handover figure in the story.
+- **Item 22, engagement borrowed:** the city sorted by how often residents
+  vote; each handed-over vote flies to whoever decides it, and the deciders
+  are ringed, growing with what they hold. The caption gives the two
+  turnout averages (76.9% against 99.6% at 0.8).
+- **Items 6, 7, 12, 14, 15 and 23:** the candidates, short-record,
+  calibration, result, ladder and outcomes figures draw in from the left
+  when scrolled into view (`Reveal` clips every SVG inside to the share
+  shown), with replay. The ladder figure joins the story.
+- **The shared player** now clamps elapsed time at zero: a frame's timestamp
+  can precede the start, which crashed the ceiling scene's indexing.
 
 ## Built in slice G3 (2026-11-20)
 
