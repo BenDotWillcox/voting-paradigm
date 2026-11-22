@@ -484,7 +484,7 @@ is to try.
   - **G3 (built):** part 3's breaks (11, 17, 10 and 18) with the
     swipe-through fixes, using R2's results.
   - **G4 (built):** part 4 (21, 6, 7 and 12, 20, 27, 14, 15, 26, 22, 23).
-  - **G5:** part 5's assembled design (24, 25), and 16 if kept.
+  - **G5 (built):** part 5's assembled design (24, 25); 16 not built.
 - **Open:**
   - ~~The backup delegate~~: added as a fourth fix (Ben, 2026-11-20).
   - Item 16 has no description.
@@ -1282,6 +1282,21 @@ Plain and static, like slices B to D. The walkthrough's content is complete.
   decided; a slider stays possible.
 - **Methods and sources** carry no claim label; the heading's label is
   optional.
+
+## Built in slice G5 (2026-11-20)
+
+Part 5's assembled design (`components/liquid/story/design-scene.tsx`),
+replacing its placeholder and the list of fixes.
+- **One vote through the whole system:** a rail of seven stages (a question
+  arrives, the router files it, your ceiling, your delegate and theirs, if
+  no ballot comes back, if you have no record yet, the tally); an orb moves
+  down it and each stage lights up as the vote reaches it.
+- **Each stage** carries its claim label, one line of evidence from the
+  generated data (the router's measured errors, the handover curve, the loop
+  rule, R2's result, the agent's bar) and a link to the break it answers.
+- **Item 16** ("How we know" as a timeline) had no description and is not
+  built; the verdict box in part 4 keeps its "How we know" list.
+- **Slice G is complete.** `Pending` is gone from the page.
 
 ## Built in slice G4 (2026-11-20)
 
