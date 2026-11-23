@@ -13,9 +13,9 @@ import { ReplayButton, easeInOut, lerp, span, useScenePlayer } from "./stage";
 import { useStoryData } from "./story-data";
 
 /*
- * Part 5 of the story, "what we'd build" (prompts/demo-5-walkthrough.md,
- * items 24 and 25, "as proposed"): the fixes from parts 3 and 4 stacked on
- * part 2's basic version, shown as one vote's path through the assembled
+ * Part 3 of the story, "what we'd build" (prompts/demo-5-walkthrough.md,
+ * items 24 and 25, "as proposed"): the fixes from parts 1 and 2 stacked on
+ * the basic version, shown as one vote's path through the assembled
  * system. Each stage carries its label, its evidence and the break it
  * answers. Every number comes from the generated data.
  */
@@ -48,7 +48,7 @@ export function DesignScene() {
     {
       key: "arrives",
       title: "A question arrives",
-      does: "The basic version from part 2: topics, a delegate for each one you hand over, and votes that travel on.",
+      does: "The basic version most proposals share: topics, a delegate for each one you hand over, and votes that travel on.",
       claim: "illustration",
       evidence: "How liquid delegation works in most proposals.",
     },
@@ -134,7 +134,7 @@ export function DesignScene() {
   return (
     <StoryFigure
       title="The system we would build, one vote at a time"
-      subtitle="The basic version from part 2 with every fix from parts 3 and 4 in place. A vote passes down through each stage; every stage says what it is and what we know about it."
+      subtitle="The basic version with every fix from parts 1 and 2 in place. A vote passes down through each stage; every stage says what it is and what we know about it."
       source="eval/benchmarks/delegation_router_v1, delegation_handover_v1 and delegation_fallback_v1; eval/benchmarks/delegation_frontier_v1 (the agent's bars)"
       table={{
         caption: "The assembled system, stage by stage",

@@ -29,7 +29,7 @@ import {
 import { useStoryData } from "./story-data";
 
 /*
- * Part 1 of the story, "the idea", on the shared stage
+ * "The idea" in the story's readable version, on the shared stage
  * (prompts/demo-5-walkthrough.md, items 1, 2 and 3, described by Ben): a
  * vote from question to winner, then the four arrangements as structures,
  * one per beat, each sending the same resident's eight topic votes to

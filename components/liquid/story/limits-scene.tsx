@@ -4,10 +4,9 @@ import * as React from "react";
 
 import { AxisX, AxisY, useElementWidth } from "@/components/story/chart";
 import { StoryFigure } from "@/components/story/story-figure";
-import { observeThemeChanges, resolveCssColor } from "@/lib/canvas-color";
 import { dec, pct } from "@/lib/liquid/format";
 import type { RouterExample } from "@/lib/liquid/story-types";
-import { INK, SEQUENTIAL, seriesColor } from "@/lib/story/palette";
+import { INK, seriesColor } from "@/lib/story/palette";
 import { cn } from "@/lib/utils";
 
 import { ReplayButton, along, easeInOut, easeOut, lerp, span, useScenePlayer, type Point } from "./stage";
@@ -15,12 +14,13 @@ import { useStoryData } from "./story-data";
 import { TurnoutDial, useTurnout } from "./turnout";
 
 /*
- * Part 4 of the story, "where it still struggles", on the shared stage
- * (prompts/demo-5-walkthrough.md, items 21, 20, 27, 26 and 22, "as
- * proposed"): a question routed against a voter's written categories; the
- * cold start as a timeline; the personal agent against its bars; the
- * per-voter ceiling walking the handover curve; and votes borrowed from
- * people who rarely vote. Every number comes from the generated data.
+ * Part 2 of the story, "where it's still hard", on the shared stage
+ * (prompts/demo-5-walkthrough.md, items 21, 20, 27 and 26, "as proposed"):
+ * a question routed against a voter's written categories; the cold start as
+ * a timeline; the personal agent against its bars; and the per-voter ceiling
+ * walking the handover curve. Item 22 (engagement, borrowed) was dropped in
+ * slice V; its sentence stays and the full study's sweeps carry the
+ * evidence. Every number comes from the generated data.
  */
 
 // ---------------------------------------------------------------------------
@@ -431,170 +431,3 @@ export function CeilingScene() {
     </StoryFigure>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Item 22: engagement, borrowed
-// ---------------------------------------------------------------------------
-
-const BORROW = { appear: 500, start: 600, fly: 1100, spread: 1300, tail: 600 } as const;
-const BINS = [200, 400, 600, 800, 1001] as const;
-const BIN_COLOR = [SEQUENTIAL[100], SEQUENTIAL[200], SEQUENTIAL[400], SEQUENTIAL[500], SEQUENTIAL[700]] as const;
-
-export function BorrowedEngagementScene() {
-  const { city } = useStoryData();
-  const { key, level } = useTurnout();
-  const rates = city.turnout[key];
-  const resolver = city.levels[key].liquid_resolver;
-  const n = rates.length;
-  const order = React.useMemo(() => [...Array(n).keys()].sort((a, b) => rates[a] - rates[b] || a - b), [rates, n]);
-  const slot = React.useMemo(() => {
-    const at = new Array<number>(n);
-    order.forEach((voter, i) => (at[voter] = i));
-    return at;
-  }, [order, n]);
-  const handing = React.useMemo(() => [...Array(n).keys()].filter((v) => resolver[v] !== v), [resolver, n]);
-  const held = React.useMemo(() => {
-    const counts = new Map<number, number>();
-    for (const v of handing) counts.set(resolver[v], (counts.get(resolver[v]) ?? 0) + 1);
-    return counts;
-  }, [handing, resolver]);
-  const meanRate = (people: number[], weight?: (v: number) => number) => {
-    let total = 0;
-    let weights = 0;
-    for (const v of people) {
-      const w = weight ? weight(v) : 1;
-      total += rates[v] * w;
-      weights += w;
-    }
-    return weights ? total / weights / 1000 : 0;
-  };
-  const handerRate = meanRate(handing);
-  const deciderRate = meanRate([...held.keys()], (v) => held.get(v) ?? 0);
-  const duration = BORROW.start + BORROW.spread + BORROW.fly + BORROW.tail;
-  const player = useScenePlayer(duration);
-  const [measure, width] = useElementWidth<HTMLDivElement>();
-  const canvas = React.useRef<HTMLCanvasElement | null>(null);
-  const [colors, setColors] = React.useState<string[] | null>(null);
-  const t = player.t;
-
-  const W = Math.max(width, 280);
-  const columns = 25;
-  const rows = Math.ceil(n / columns);
-  const spacing = Math.min(16, (W - 16) / columns);
-  const H = rows * spacing + 16;
-  const dot = (voter: number): Point => ({
-    x: 8 + (slot[voter] % columns) * spacing + spacing / 2,
-    y: 8 + Math.floor(slot[voter] / columns) * spacing + spacing / 2,
-  });
-
-  React.useEffect(() => {
-    const node = canvas.current;
-    if (!node) return;
-    const resolve = () => setColors([...BIN_COLOR.map((c) => resolveCssColor(node, c)), resolveCssColor(node, INK.primary)]);
-    resolve();
-    return observeThemeChanges(resolve);
-  }, [width]);
-
-  React.useEffect(() => {
-    const node = canvas.current;
-    if (!node || !colors || width === 0) return;
-    const dpr = window.devicePixelRatio || 1;
-    node.width = Math.round(W * dpr);
-    node.height = Math.round(H * dpr);
-    const ctx = node.getContext("2d");
-    if (!ctx) return;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, W, H);
-    const binOf = (rate: number) => BINS.findIndex((b) => rate < b);
-    ctx.globalAlpha = span(t, 0, BORROW.appear);
-    for (let v = 0; v < n; v++) {
-      const p = dot(v);
-      ctx.fillStyle = colors[binOf(rates[v])];
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, spacing * 0.3, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    // Each handed-over vote flies to whoever decides it
-    const arrived = new Map<number, number>();
-    ctx.fillStyle = colors[colors.length - 1];
-    handing.forEach((v) => {
-      const start = BORROW.start + (slot[v] / n) * BORROW.spread;
-      if (t < start) return;
-      const x = span(t, start, start + BORROW.fly);
-      if (x >= 1) {
-        arrived.set(resolver[v], (arrived.get(resolver[v]) ?? 0) + 1);
-        return;
-      }
-      const p = along(dot(v), dot(resolver[v]), easeInOut(x));
-      ctx.globalAlpha = 0.8;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 1.8, 0, Math.PI * 2);
-      ctx.fill();
-    });
-    // Deciders ringed, growing with the votes they hold
-    ctx.globalAlpha = 1;
-    ctx.strokeStyle = colors[colors.length - 1];
-    ctx.lineWidth = 1.5;
-    for (const [d, count] of arrived) {
-      const p = dot(d);
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, spacing * 0.3 + Math.sqrt(count) * 1.2, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-    // `W`, `H`, `spacing` and the helpers derive from width and the city
-  }, [t, colors, width, n, rates, handing, resolver, slot]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  return (
-    <StoryFigure
-      title={`Engagement, borrowed, at turnout ${level}`}
-      subtitle={`Residents are sorted by how often they vote, the rarest voters first. Each handed-over vote on one question flies to whoever decides it. Those who hand over vote on ${pct(handerRate)} of questions on average; whoever decides for them, ${pct(deciderRate)}.`}
-      source="Primary city 1, recomputed with the frozen code"
-      note="The decider's average is weighted by the votes they hold."
-      table={{
-        caption: `Turnout of those who hand over and of whoever decides for them, at turnout ${level}`,
-        columns: [
-          { key: "who", label: "Residents" },
-          { key: "count", label: "Number", numeric: true },
-          { key: "rate", label: "Average own turnout", numeric: true },
-        ],
-        rows: [
-          { who: "Hand their vote over", count: handing.length, rate: pct(handerRate) },
-          { who: "Decide for others", count: held.size, rate: pct(deciderRate) },
-        ],
-      }}
-    >
-      <div ref={player.ref}>
-        <div ref={measure} className="flex justify-center">
-          {width > 0 ? (
-            <canvas
-              ref={canvas}
-              role="img"
-              aria-label={`Votes flow from residents who vote on ${pct(handerRate)} of questions to deciders who vote on ${pct(deciderRate)}.`}
-              style={{ width: W, height: H }}
-            />
-          ) : (
-            <div style={{ height: 340 }} />
-          )}
-        </div>
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 font-sans text-xs text-story-ink-2">
-          <span>Votes on:</span>
-          {["Under 20%", "20–40%", "40–60%", "60–80%", "80% or more"].map((label, i) => (
-            <span key={label} className="inline-flex items-center gap-1.5">
-              <span aria-hidden="true" className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: BIN_COLOR[i] }} />
-              {label}
-            </span>
-          ))}
-          <span className="inline-flex items-center gap-1.5">
-            <svg width={12} height={12} aria-hidden="true">
-              <circle cx={6} cy={6} r={4.5} fill="none" style={{ stroke: INK.primary }} strokeWidth={1.5} />
-            </svg>
-            ringed: decides for others
-          </span>
-        </div>
-        <TurnoutDial className="mt-4 max-w-xl" />
-        <ReplayButton player={player} className="mt-3" />
-      </div>
-    </StoryFigure>
-  );
-}
-

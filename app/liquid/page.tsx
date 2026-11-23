@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import * as React from "react";
 
 import { AppSection } from "@/components/liquid/story/app-section";
 import { ClaimLabel, type Claim } from "@/components/liquid/story/claim-label";
@@ -11,18 +12,9 @@ import {
 } from "@/components/liquid/story/delegation-scene";
 import { RouterFigure } from "@/components/liquid/story/costs-figure";
 import { EmptyRecordFigure, LoopFigure, LostVoteFigure } from "@/components/liquid/story/breaks-scene";
-import { EdgesFigure } from "@/components/liquid/story/edges-figure";
-import { LadderFigure } from "@/components/liquid/story/ladder-figure";
-import {
-  AgentScene,
-  BorrowedEngagementScene,
-  CeilingScene,
-  ColdStartScene,
-  RoutingScene,
-} from "@/components/liquid/story/limits-scene";
-import { CalibrationFigure, CandidatesFigure } from "@/components/liquid/story/mechanism";
+import { ExplainerVideo } from "@/components/liquid/story/explainer-video";
+import { AgentScene, CeilingScene, ColdStartScene, RoutingScene } from "@/components/liquid/story/limits-scene";
 import { OneResident } from "@/components/liquid/story/one-resident";
-import { OutcomesFigure } from "@/components/liquid/story/outcomes-figure";
 import { StructureFigure, VoteEndToEndFigure } from "@/components/liquid/story/structures-scene";
 import { PlaneFigure } from "@/components/liquid/story/plane";
 import { ResultFigure } from "@/components/liquid/story/result-figure";
@@ -37,6 +29,7 @@ import { Reveal } from "@/components/liquid/story/stage";
 import { StoryDataProvider } from "@/components/liquid/story/story-data";
 import { ThreeWaysFigure } from "@/components/liquid/story/three-ways";
 import { TurnoutProvider } from "@/components/liquid/story/turnout";
+import { EXPLAINER_VIDEO } from "@/lib/liquid/explainer-video";
 import { dec, pct, resident, share } from "@/lib/liquid/format";
 import { loadLiquidStory } from "@/lib/liquid/story-data";
 import { levelKey, topicLabel } from "@/lib/liquid/story-types";
@@ -50,12 +43,10 @@ export const metadata: Metadata = {
 /** The published repository, for the benchmarks and the design doc. */
 const REPOSITORY = "https://github.com/BenDotWillcox/voting-paradigm/tree/main";
 
-/** The story's five parts, for the opening's contents. */
+/** The story's three parts after the opening, for the row that skips to them. */
 const PARTS = [
-  { id: "idea", label: "The idea" },
-  { id: "how", label: "How it works" },
   { id: "breaks", label: "Where the machinery breaks" },
-  { id: "struggles", label: "Where it still struggles" },
+  { id: "struggles", label: "Where it's still hard" },
   { id: "build", label: "What we'd build" },
 ] as const;
 
@@ -101,11 +92,13 @@ function pts(value: number): string {
 
 /**
  * Demo 5: "Who Votes for You?", the liquid-democracy story
- * (prompts/demo-5-walkthrough.md, "The story", revised 2026-11-20). Five
- * parts: the idea and the basic mechanism, shown as if everyone votes; the
- * breaks real turnout opens, each with its fix; the limits no rule settles,
- * each with our answer, where the verdict lands; and the app. It shows
- * highlights only; every part links to the full study at /liquid/study.
+ * (prompts/demo-5-walkthrough.md, "The story" and "The video opening and the
+ * trim"). The opening carries Ben's video on the idea, with a readable
+ * version of it below: the idea and the basic mechanism, as if everyone
+ * votes. Then three parts: the breaks real turnout opens, each with its fix;
+ * the limits no rule settles, each with our answer, where the verdict lands;
+ * and what we'd build, ending in the app. It shows highlights only; every
+ * part links to the full study at /liquid/study.
  * Plain for now: the styling comes once the core is built. Static: every
  * number comes from public/data/liquid-story/. Only the account app talks to
  * the Python service, from the browser.
@@ -142,9 +135,6 @@ export default async function LiquidStoryPage() {
   const sweepPanel = (title: string) => sweeps.panels.find((panel) => panel.title.startsWith(title))?.series ?? [];
   const shortestHistory = sweepPanel("History")[0];
   const evenKey = sweepPanel("Turnout spread")[0].point;
-  const showcaseTopic = topicLabel(city.topics[m.showcase.topic]).toLowerCase();
-  const top = m.showcase.candidates[0];
-  const shortBest = m.short_record.candidates[0];
   const operating = router.operating;
   // The fallback study (R2): the representative as default
   const fallback = exploratory.fallback;
@@ -157,13 +147,14 @@ export default async function LiquidStoryPage() {
   const firstFall = grid[grid.indexOf(lastRise) + 1];
   const highCurve = handoverAt(highest);
   const agentBars = exploratory.agent_bars.levels[levelKey(swiss)];
+  const video = EXPLAINER_VIDEO;
 
   return (
     <>
       <div className="story liquid-story min-h-screen pb-24">
         <StoryDataProvider measures={measures} results={results} exploratory={exploratory} city={city}>
           <TurnoutProvider levels={grid} swiss={swiss}>
-            {/* The opening: the question, and what the page will show. The answer waits for part 4. */}
+            {/* The opening: the question, the video, and a way past it. The answer waits for part 2. */}
             <header id="top" className="mx-auto max-w-2xl px-4 pt-14 pb-6">
               <p className="text-sm font-medium text-story-muted">Demo 05 · Liquid democracy</p>
               <h1 className="mt-3 text-4xl font-semibold tracking-tight text-balance text-story-ink sm:text-5xl">
@@ -176,34 +167,55 @@ export default async function LiquidStoryPage() {
               </p>
               <p className="mt-4 leading-relaxed text-story-ink-2">
                 This page shows how liquid delegation works, where it breaks, and what we would build to fix it. The
-                answer comes from a test declared before {protocol.cities} synthetic cities were run, and part 4 gives
+                answer comes from a test declared before {protocol.cities} synthetic cities were run, and part 2 gives
                 it.
               </p>
-              <nav aria-label="The story's parts" className="mt-8 text-sm text-story-ink-2">
-                <ol className="space-y-1">
+              {video ? <ExplainerVideo video={video} /> : null}
+              <nav aria-label="Skip ahead" className="mt-8 text-sm text-story-ink-2 [&_a]:underline [&_a]:underline-offset-4">
+                <p>
+                  <span className="font-medium text-story-ink">Already know liquid democracy? Skip to:</span>{" "}
                   {PARTS.map((part, index) => (
-                    <li key={part.id}>
+                    <React.Fragment key={part.id}>
+                      {index > 0 ? <span aria-hidden="true"> · </span> : null}
                       <a href={`#${part.id}`} className="hover:text-story-ink">
-                        <span className="tabular-nums text-story-muted">{index + 1}.</span> {part.label}
+                        {part.label}
                       </a>
-                    </li>
+                    </React.Fragment>
                   ))}
-                </ol>
-                <p className="mt-4 [&_a]:underline [&_a]:underline-offset-4">
-                  <a href="#app">Skip to the app</a> · <Link href={STUDY_HREF}>Read the full study</Link>
+                  <span aria-hidden="true"> · </span>
+                  <a href="#app" className="hover:text-story-ink">
+                    The app
+                  </a>
+                </p>
+                <p className="mt-2">
+                  <Link href={STUDY_HREF}>Read the full study</Link>
                 </p>
               </nav>
             </header>
 
-            {/* Parts 1 and 2 read as if everyone votes; the dial arrives in part 3 */}
+            {/*
+              The video's readable version: the idea and the basic version, as if everyone votes. Closed while
+              the video is there, open until it is. The dial arrives in part 1.
+            */}
+            <details id="read" open={!video} className="group/read mt-6">
+              <summary className="mx-auto max-w-2xl cursor-pointer list-none px-4 [&::-webkit-details-marker]:hidden">
+                <span className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-story-ink ring-1 ring-story-rule hover:bg-story-surface">
+                  <span aria-hidden="true" className="inline-block transition-transform group-open/read:rotate-90">
+                    ▸
+                  </span>
+                  {video
+                    ? "Prefer reading? The idea and the basic version, in text and animation"
+                    : "The idea and the basic version, as if everyone votes"}
+                </span>
+              </summary>
             <TurnoutProvider
               levels={grid}
               swiss={swiss}
               everyone
-              fixed="Everyone votes here. You set the turnout from part 3."
+              fixed="Everyone votes here. You set the turnout from part 1."
             >
-              {/* Part 1. The idea */}
-              <LiquidHeading id="idea" kicker="Part 1 · The idea" claim="exploratory">
+              {/* The idea */}
+              <LiquidHeading id="idea" kicker="The idea" claim="exploratory">
                 Between voting on everything and handing everything over
               </LiquidHeading>
               <LiquidText>
@@ -297,9 +309,9 @@ export default async function LiquidStoryPage() {
               </LiquidFigure>
               <LiquidText>
                 <p className="text-sm text-story-ink-2">
-                  <span className="font-medium text-story-ink">* What this assumes.</span> Everything in parts 1 and 2
-                  has everyone voting on every question, and residents choosing delegates by how often they have agreed
-                  in the past. Neither holds in a real city: part 3 drops the first assumption and part 4 the second.
+                  <span className="font-medium text-story-ink">* What this assumes.</span> Everything here has
+                  everyone voting on every question, and residents choosing delegates by how often they have agreed in
+                  the past. Neither holds in a real city: part 1 drops the first assumption and part 2 the second.
                   These numbers come from an analysis made after the study&apos;s test was fixed. They describe the
                   setting and test nothing.
                 </p>
@@ -320,8 +332,8 @@ export default async function LiquidStoryPage() {
                 ]}
               />
 
-              {/* Part 2. How it works: the basic version */}
-              <LiquidHeading id="how" kicker="Part 2 · How it works" claim="illustration">
+              {/* How it works: the basic version */}
+              <LiquidHeading id="how" kicker="How it works" claim="illustration">
                 The basic version
               </LiquidHeading>
               <LiquidText>
@@ -339,7 +351,7 @@ export default async function LiquidStoryPage() {
                   You can hand any topic to anyone in the city, and take it back at any time. In the basic version you
                   pick someone you trust. The simulated residents cannot trust anyone, so they pick by record: the
                   person whose past votes on that topic agree with theirs most, as long as there is enough record to
-                  tell. Part 4 shows how.
+                  tell. Part 2 shows how.
                 </p>
                 <Beat>A ballot arrives</Beat>
                 <p>
@@ -374,7 +386,7 @@ export default async function LiquidStoryPage() {
                 </p>
                 <p>
                   The study files every question under its true topic. Filing real questions is the first problem in
-                  part 4.
+                  part 2.
                 </p>
               </LiquidText>
               <LiquidFigure>
@@ -382,9 +394,27 @@ export default async function LiquidStoryPage() {
               </LiquidFigure>
               <StudyLinks links={[{ anchor: "how", label: "How it works" }]} />
             </TurnoutProvider>
+            </details>
 
-            {/* Part 3. Where the machinery breaks, and the fix for each */}
-            <LiquidHeading id="breaks" kicker="Part 3 · Where the machinery breaks" claim="frozen">
+            {/* The two measures every later figure reads in */}
+            <LiquidText className="mt-12">
+              <div className="rounded-lg bg-story-surface p-5 ring-1 ring-story-rule">
+                <p className="text-xs font-medium tracking-wide text-story-ink-2 uppercase">Two measures, throughout</p>
+                <p className="mt-2">
+                  <strong>Fidelity</strong> is how often the ballot counted for you matches what you would have chosen.{" "}
+                  <strong>Overhead</strong> is the share of questions you decide yourself: the work an arrangement asks
+                  of you.
+                </p>
+                <p className="mt-2 text-story-ink-2">
+                  Liquid delegation aims for less overhead than direct voting and more fidelity than a district
+                  representative.
+                </p>
+              </div>
+            </LiquidText>
+
+            {/* Part 1. Where the machinery breaks, and the fix for each. Its dials start at everyone votes. */}
+            <TurnoutProvider levels={grid} swiss={swiss} everyoneStop>
+            <LiquidHeading id="breaks" kicker="Part 1 · Where the machinery breaks" claim="frozen">
               Real people miss votes
             </LiquidHeading>
             <LiquidText>
@@ -394,23 +424,14 @@ export default async function LiquidStoryPage() {
                 the rules. Each break below says what goes wrong, how often, and the fix we would build.
               </p>
               <p>
-                From here you set the average turnout, from {lowest} to {highest}, with the dial under each figure;{" "}
-                {swiss} is Swiss turnout. At Swiss turnout, voting yourself is never wrong but usually absent:{" "}
+                From here you set the turnout with the dial under each figure. It starts with everyone voting, marked
+                All; the average levels run from {lowest} to {highest}, and {swiss} is Swiss turnout. At Swiss turnout, voting yourself is never wrong but usually absent:{" "}
                 {pct(at.direct.none_share)} of a resident&apos;s questions carry no ballot for them. A representative
                 leaves {pct(at.representative.none_share)} empty, and liquid delegation {pct(at.liquid.none_share)}.
               </p>
             </LiquidText>
             <LiquidFigure>
               <ThreeWaysFigure />
-            </LiquidFigure>
-            <LiquidText>
-              <p>
-                The resident from part 1, at Swiss turnout: they now vote on about {pct(m.typical.turnout, 0)} of
-                questions, so voting themself matches them only that often.
-              </p>
-            </LiquidText>
-            <LiquidFigure>
-              <OneResident />
             </LiquidFigure>
 
             <LiquidText>
@@ -507,12 +528,9 @@ export default async function LiquidStoryPage() {
                 A backup delegate outside the loop could take that work over, but at high turnout it costs fidelity.
                 At {highest}, a delegated vote matches {pct(measured(highest).liquid.fidelity_resolved ?? 0, 0)} of the
                 time, while a resident voting for themself matches about {pct(measured(highest).direct.fidelity, 0)}.
-                Whether it helps depends on turnout, and part 4 takes that up.
+                Whether it helps depends on turnout, and part 2 takes that up.
               </Fix>
             </LiquidText>
-            <LiquidFigure>
-              <EdgesFigure />
-            </LiquidFigure>
             <StudyLinks
               links={[
                 { anchor: "edges", label: "The two edges" },
@@ -520,14 +538,15 @@ export default async function LiquidStoryPage() {
                 { anchor: "how", label: "How it works" },
               ]}
             />
+            </TurnoutProvider>
 
-            {/* Part 4. Where it still struggles, and our answer to each */}
-            <LiquidHeading id="struggles" kicker="Part 4 · Where it still struggles" claim="frozen">
+            {/* Part 2. Where it's still hard, and our answer to each */}
+            <LiquidHeading id="struggles" kicker="Part 2 · Where it's still hard" claim="frozen">
               Three limits no rule settles
             </LiquidHeading>
             <LiquidText>
               <p>
-                Each break in part 3 has a rule that closes it. Three limits remain that no rule settles: filing
+                Each break in part 1 has a rule that closes it. Three limits remain that no rule settles: filing
                 questions under topics, building the history people choose by, and getting enough people to vote.
                 Each comes with the answer we would build and the bar it must clear.
               </p>
@@ -556,45 +575,13 @@ export default async function LiquidStoryPage() {
             <LiquidText>
               <Beat>The initial history</Beat>
               <p>
-                Choosing by record needs a record. Here is how the simulated residents choose.{" "}
-                {resident(m.showcase.voter)} has to decide who, if anyone, should vote for them on {showcaseTopic}.
-                Every other resident&apos;s past votes on it are lined up against theirs and the agreements counted:{" "}
-                {resident(top.person)} matched {top.matches} of {top.trials}. Candidates are ranked by a cautious
-                estimate, the lower end of a credible interval, so a short record counts for less than a long one.
-                The topic goes to the best candidate if that estimate clears the city&apos;s acceptance level,{" "}
-                {dec(m.acceptance)}.
+                Choosing by record needs a record. The simulated residents line up every other resident&apos;s past
+                votes on a topic against their own and count the agreements. Candidates are ranked by a cautious
+                estimate, the lower end of a credible interval, so a short record counts for less than a long one, and
+                the topic goes to the best candidate only if that estimate clears the city&apos;s acceptance level.
+                Each city sets that level as strictly as it can while keeping overhead on past questions at or under{" "}
+                {pct(m.cap, 0)}.
               </p>
-            </LiquidText>
-            <LiquidFigure>
-              <Reveal>
-                <CandidatesFigure />
-              </Reveal>
-            </LiquidFigure>
-            <LiquidText>
-              <p>
-                A resident with almost no record has little to go on. {resident(m.short_record.voter)} has cast{" "}
-                {m.short_record.total_record} ballot{m.short_record.total_record === 1 ? "" : "s"} in the whole record.
-                Their best candidate&apos;s lower bound, {dec(shortBest.lower)}, falls just short of the acceptance
-                level, so they keep the topic.
-              </p>
-            </LiquidText>
-            <LiquidFigure>
-              <Reveal>
-                <CandidatesFigure short />
-              </Reveal>
-            </LiquidFigure>
-            <LiquidText>
-              <p>
-                Each city takes the strictest acceptance level at which overhead on the past questions stays at or
-                under {pct(m.cap, 0)}. The rule uses no later question, so the scores are not tuned to the answers.
-              </p>
-            </LiquidText>
-            <LiquidFigure>
-              <Reveal>
-                <CalibrationFigure />
-              </Reveal>
-            </LiquidFigure>
-            <LiquidText>
               <p>
                 <strong>The cold start.</strong> Before anyone can choose by record, the record has to be built, and
                 meanwhile everyone decides every question. Counting that history, liquid&apos;s overhead at Swiss
@@ -675,7 +662,7 @@ export default async function LiquidStoryPage() {
             </LiquidFigure>
             <LiquidText>
               <p>
-                The two ends fail for opposite reasons. The low end is part 3&apos;s empty record, which the
+                The two ends fail for opposite reasons. The low end is part 1&apos;s empty record, which the
                 representative as default closes in the fallback study. At the high end, the
                 city-wide limit pushes people who would vote into delegating: direct voting, with full overhead,
                 passes liquid between {beforePass} ({dec(measured(beforePass).direct.fidelity)} against{" "}
@@ -688,13 +675,6 @@ export default async function LiquidStoryPage() {
                 {pts(ladder.h1.estimate)} points, and topic delegates add{" "}
                 {pts(ladder.specialisation.estimate)}, as with everyone voting.
               </p>
-            </LiquidText>
-            <LiquidFigure>
-              <Reveal>
-                <LadderFigure />
-              </Reveal>
-            </LiquidFigure>
-            <LiquidText>
               <p>
                 Concentration grows as turnout falls. The largest single decider holds{" "}
                 {pct(measured(highest).liquid.mean_largest_share ?? 0)} of a question&apos;s votes on average at{" "}
@@ -731,11 +711,6 @@ export default async function LiquidStoryPage() {
                 the lead at Swiss turnout falls to {pts(sweepLead(evenKey))} points and the crossing moves
                 to about {dec(sweeps.points[evenKey].crossing ?? 0, 2)}.
               </p>
-            </LiquidText>
-            <LiquidFigure>
-              <BorrowedEngagementScene />
-            </LiquidFigure>
-            <LiquidText>
               <p>
                 <strong>Better for individuals, not for outcomes.</strong> Whether an arrangement picks the winner the
                 whole city would pick if everyone voted is a different question from fidelity. At Swiss turnout direct
@@ -754,13 +729,9 @@ export default async function LiquidStoryPage() {
               </p>
               <p>None of our proposals creates engagement.</p>
             </LiquidText>
-            <LiquidFigure>
-              <Reveal>
-                <OutcomesFigure />
-              </Reveal>
-            </LiquidFigure>
             <StudyLinks
               links={[
+                { anchor: "how", label: "How delegates are chosen" },
                 { anchor: "result", label: "The result" },
                 { anchor: "ladder", label: "Where the lead comes from" },
                 { anchor: "costs", label: "Costs the headline does not show" },
@@ -770,14 +741,14 @@ export default async function LiquidStoryPage() {
               ]}
             />
 
-            {/* Part 5. What we'd build */}
-            <LiquidHeading id="build" kicker="Part 5 · What we'd build" claim="proposal">
+            {/* Part 3. What we'd build */}
+            <LiquidHeading id="build" kicker="Part 3 · What we'd build" claim="proposal">
               The fixes, together
             </LiquidHeading>
             <LiquidText>
               <p>
-                Put together, the fixes make a system someone could build: the basic version of part 2, with every
-                fix from parts 3 and 4 in place. Follow one vote through it.
+                Put together, the fixes make a system someone could build: the basic version, with every fix from
+                parts 1 and 2 in place. Follow one vote through it.
               </p>
             </LiquidText>
             <LiquidFigure>
@@ -794,7 +765,7 @@ export default async function LiquidStoryPage() {
         </StoryDataProvider>
       </div>
 
-      {/* Part 5's payoff: the account app */}
+      {/* Part 3's payoff: the account app */}
       <section id="app" className="mx-auto max-w-7xl scroll-mt-4 px-4 pb-16 sm:px-6">
         <div className="mb-6 max-w-3xl space-y-2">
           <div className="flex flex-wrap items-center gap-2">
@@ -821,7 +792,7 @@ export default async function LiquidStoryPage() {
         <LiquidHeading id="left-out" kicker="What is left out" claim="design">
           What this study does not model
         </LiquidHeading>
-        <LiquidText>
+        <LiquidText className="[&_code]:[overflow-wrap:anywhere]">
           <ul>
             <li>
               <strong>What representatives do</strong> besides voting: deliberation, setting the agenda, brokering

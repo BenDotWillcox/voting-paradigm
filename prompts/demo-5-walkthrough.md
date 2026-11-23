@@ -26,6 +26,13 @@ made while building them.
 
 See "The story" and "Slices".
 
+**2026-11-23: a video opening (agreed with Ben the same day).** The page
+carries too much. Ben proposes a short video of himself explaining liquid
+democracy to open it, so readers who know the idea reach the proposals and
+the app sooner. The plan, with the trim of the kept parts, is in "The video
+opening and the trim"; it became slice V, before H, and slice V is built
+(see "Built in slice V"). The recording is still to come.
+
 This is build step 7 of
 [`demo-5-liquid-democracy.md`](demo-5-liquid-democracy.md). It replaces the
 2026-11-14 outline in that doc's "Presentation" section.
@@ -45,6 +52,185 @@ turnout range. The pre-registered test does not establish it, because at both
 ends of the range liquid delegation cannot keep its overhead low. The two
 ends fail for opposite reasons, and each points to something that could be
 built.
+
+## The video opening and the trim (agreed 2026-11-23)
+
+*Agreed with Ben on 2026-11-23 and built the same day in slice V (see
+"Built in slice V"). His answers are under "Settled 2026-11-23" in "Still
+open".*
+
+**Why.** Ben, 2026-11-23: the page has too much going on, with too many
+animations, plots and text. Before the app it carries 29 figures: 7 in part
+1, 3 in part 2, 6 in part 3, 12 in part 4 and 1 in part 5. A reader who
+already knows liquid democracy meets the first idea of ours after ten
+figures of known theory.
+
+**The change.** Ben records a short video explaining liquid democracy from
+the concept up, against direct and representative democracy, and it opens
+the page.
+- A reader who knows the idea skips straight to the breaks, the proposals
+  and the app.
+- A reader who doesn't gets the background from Ben, told with the rest of
+  the demo in mind.
+- A face and a voice explaining the reasoning also show that the judgment
+  is Ben's.
+
+**What goes where.**
+- **The video takes the known theory:** what liquid democracy is, how it
+  compares with direct and representative democracy, and how a vote moves
+  through it.
+- **The page keeps what is ours, and everything that carries a number.**
+  The video states no study results. The page computes every number from
+  the generated data, and a recording cannot be regenerated when a run
+  changes. Design facts fixed by the protocol, such as eight topics, are
+  fine.
+- **The video alone does not lighten the page.** Parts 1 and 2 are 10 of
+  the 29 figures, and part 4 alone has 12. So the kept parts are trimmed
+  too: at most two figures per problem, and the rest left to the full
+  study, which already has them.
+
+### The video
+
+**Format.** Microsoft Paint with a face camera in a corner, 4 to 6 minutes,
+one chapter per beat.
+- OBS Studio (free) records the Paint window with the webcam over it.
+- Each beat's base drawing is prepared in its own Paint file and added to
+  live. Drawing from scratch with a mouse is slow; a pen tablet helps.
+- Votes are drawn as dots in the page's topic colours, so the drawings
+  match the figures that follow. The light-mode values, in topic order:
+  civil rights `#2a78d6`, environment `#eb6834`, guns and policing
+  `#1baf7a`, health care `#eda100`, housing `#e87ba4`, immigration
+  `#008300`, reproductive rights `#4a3aa7`, taxes `#e34948`. Three or four
+  are enough.
+
+**Beats.**
+1. **Direct democracy.** Everyone votes on everything. Every ballot is your
+   own, but the work does not scale; that cost is overhead.
+2. **Representative democracy.** One person votes on everything for your
+   whole district. Two costs: *dilution*, because you share them with
+   everyone in your district, and *bundling*, because one person stands for
+   you on every issue.
+3. **A proxy, then liquid delegation.** Choosing your own person removes
+   dilution; choosing one per topic removes bundling. You can take a topic
+   back at any time. Delegates' votes are public, so you choose someone
+   whose record you agree with. That sets up the page's "nobody to delegate
+   to".
+4. **One vote, end to end.** A question arrives tagged with a topic. It goes
+   to your delegate, on to theirs, and stops at whoever decides it. Their
+   ballot counts for everyone whose vote reached them.
+5. **Who ends up deciding.** Votes gather around the people many others
+   agree with. That is the mechanism working. Say "agree with", never
+   "experts".
+6. **Two measures and the goal.** *Fidelity*: how often the ballot counted
+   for you matches what you want. *Overhead*: how many questions you decide
+   yourself. The goal is less overhead than direct voting and more fidelity
+   than a representative.
+7. **The asterisk, and the hand-off.** All of this assumed that everyone
+   votes and that every question arrives neatly tagged. The page picks up
+   where that breaks.
+
+**Not in the video:** study results, the verdict and the fixes. The verdict
+stays held back for the turnout section, as decided, and the fixes are the
+page's job.
+
+**Accessibility.** Captions as a `.vtt` file, and a transcript. The readable
+version under the video covers the same ground for anyone who will not play
+it.
+
+**Hosting.** Ben will try R2 first and decide once the video is recorded.
+- **R2, tried first:** the MP4 on Cloudflare R2, beside the districting
+  assets, played in the browser's own player with a poster frame and
+  `preload="none"`. Nothing loads until the reader presses play, and no
+  outside embed is involved.
+- **The alternative:** an unlisted YouTube video, if Ben wants it findable
+  there too.
+- Either way, only the captions and the poster are committed; the video
+  file stays out of Git.
+
+### The page after the trim
+
+**The opening.**
+- The title, the question and two sentences, then the video with its
+  chapters listed under it.
+- Then one row: "Already know liquid democracy? Skip to: where it breaks ·
+  what's still hard · what we'd build · the app", with the link to the full
+  study. The row names sections and gives no result.
+- **"Prefer reading?"** holds parts 1 and 2 as built, with their numbers and
+  animations, in a section closed by default. They become the video's
+  readable version, so nothing built is lost. This is an exception to "no
+  expandable deep-dive drawers" (see "Two pages"), agreed by Ben: it holds
+  the video's content, not extra depth.
+- **Until the video exists,** its slot is empty and the readable version
+  shows open, so the slice can merge before the recording.
+- **Two measures,** in two lines after the opening: fidelity, overhead and
+  the goal. The video defines them too, but every later figure reads in
+  them, and a reader who skips the video still needs them.
+
+**Part 1 (was 3). Where the machinery breaks.** The opening copy hands off
+from the video: the video assumed everyone votes, and real people miss
+votes.
+- **Kept:** the three-ways figure with the turnout dial; the lost vote with
+  its fixes; the empty record; the loop.
+- **Cut:** the second one-resident figure, which follows the resident
+  introduced in part 1 (now in the readable version), and the two-edges
+  figure, which the full study keeps. Its link stays.
+- 6 figures become 4.
+- **The dial gains an "everyone votes" stop** (Ben, 2026-11-23), so the
+  first figure starts where the video ends. It is where the dial starts.
+  - At that stop the figures use R1's everyone-votes numbers, as the
+    readable version does.
+  - A break that cannot happen when everyone votes (a lost vote, an empty
+    record) says so at that stop, rather than showing an empty figure.
+    Loops still happen, so the loop figure shows them.
+
+**Part 2 (was 4). Where it's still hard.**
+- **Strict categories:** the routing animation and the router benchmark
+  figure, both kept.
+- **The initial history:** the cold-start scene (the problem) and the agent
+  scene (our answer), both kept. The two candidate charts and the
+  calibration chart move out, since the study has them. One paragraph
+  stays: residents choose by public record, ranked by a cautious estimate
+  so that a short record counts for less, and take a delegate only above
+  the city's acceptance level.
+- **Turnout:** the verdict box with "How we know", the result figure and the
+  ceiling scene, all kept.
+  - The ladder and outcomes figures move out; the study has both.
+  - The borrowed-engagement animation is dropped; the study's sweeps
+    section carries its evidence.
+  - Each keeps its sentence and its study link.
+- 12 figures become 6.
+
+**Part 3 (was 5). What we'd build.** The assembled design, then the app.
+Unchanged, except that its copy points to the video and to parts 1 and 2.
+
+**The close.** Unchanged.
+
+**In all:** 11 figures on the main path instead of 29, plus the video.
+
+**What else changes.**
+- The parts are renumbered from five to three, after the opening. Copy that
+  names a part ("part 3", "part 4") is swept across the page and
+  `components/liquid/story/`, including the design rail and the turnout
+  dial's note.
+- No data changes and no new runs. R1's everyone-votes numbers stay, in the
+  readable version.
+- The takeaways are unchanged. The video now carries the first and most of
+  the second.
+
+### Slice V
+
+One PR, before slice H, so the app lands in the page's final shape:
+1. **The video slot,** `components/liquid/story/explainer-video.tsx`: the
+   browser's player, the captions track, the chapter list and the poster.
+   It stays empty until a video URL is set. It is built for R2 first; a
+   YouTube embed would replace only the player.
+2. **The opening:** the skip row, the readable version and the two
+   measures.
+3. **The trim and the renumbering** described above.
+4. **The dial's "everyone votes" stop,** and how each break figure reads
+   at it.
+
+The recording is Ben's, and slots in once it exists.
 
 ## The story: `/liquid` (outline, revised 2026-11-20)
 
@@ -1154,6 +1340,7 @@ Slices after the 2026-11-20 draft (see "The story"):
 | F2 (built) | The revised outline. `/liquid` is rebuilt in the new five parts, plain and static, from existing figures, R1's numbers and new copy. The verdict moves to part 4, and each break sits beside its fix. The study page is unchanged. | the revised story |
 | G | The animations and diagrams in "Animations and diagrams", once Ben has described them, drawn with the app's elements and driven by `city.json` and R1. | + the mechanisms in motion |
 | R2 | The fallback study: declared with Ben, then run. The fallback rules go into the app's package, off by default. | part 3's fixes gain their evidence |
+| V (built) | The video opening and the trim (see "The video opening and the trim"). Parts 1 and 2 move into a readable version, closed by default, under a video slot. The main path keeps parts 3 to 5, trimmed from 19 figures to 11, and the parts are renumbered. The dial gains an "everyone votes" stop. The recording is Ben's; the slot stays empty until it exists. | the shorter story, with the video once recorded |
 | H | The app: build step 8, re-scoped around the proposals, with the preset scenarios. Possibly two PRs. | + the proposed system to try |
 | — | The styling pass: colour, type and any motion beyond the mechanisms, after F to H | the designed page |
 
@@ -1163,6 +1350,8 @@ Slices after the 2026-11-20 draft (see "The story"):
 - R2 can run beside F2 and G once its hypothesis is declared.
 - H needs R2's rules settled; its results can follow, labelled untested
   until then.
+- *Added 2026-11-23:* V comes before H, so the app lands in the page's
+  final shape.
 
 ### Slice H: the app's changes
 
@@ -1282,6 +1471,53 @@ Plain and static, like slices B to D. The walkthrough's content is complete.
   decided; a slider stays possible.
 - **Methods and sources** carry no claim label; the heading's label is
   optional.
+
+## Built in slice V (2026-11-23)
+
+- **The video slot.** `components/liquid/story/explainer-video.tsx` plays
+  the video in the browser's own player (`preload="none"`, a poster, an
+  English captions track on by default) with a chapter list that jumps to
+  each beat.
+  - Its setting is `EXPLAINER_VIDEO` in `lib/liquid/explainer-video.ts`:
+    the MP4's URL, the poster and captions paths under `public/`, the
+    length in minutes, and the chapters with their start times.
+  - It is `null` until the video is recorded, so the opening shows no
+    player. Checked with a temporary entry, then reverted: the player and
+    chapters render, and the readable version starts closed.
+- **The opening.** The question, then the video, then a row that skips to
+  the three parts and the app, and the link to the full study.
+- **The readable version** is `<details id="read">`, open until a video is
+  set. It holds the old parts 1 and 2 unchanged, under the kickers "The
+  idea" and "How it works", and their copy now points to parts 1 and 2 of
+  the main path.
+- **Two measures** sit in a box after it: fidelity, overhead and the goal.
+- **The "everyone votes" stop.** `TurnoutProvider` takes `everyoneStop`.
+  - Such a provider shares its parent's turnout level, so moving any dial
+    still moves every other. It adds "All" after 0.9, where part 1's dials
+    start.
+  - Moving a dial in part 2 or 3 moves part 1 off "All"; picking "All" in
+    part 1 leaves the later parts at their level.
+  - At "All", the three-ways figure shows the four everyone-votes
+    arrangements. The empty-record figure draws every resident as having a
+    record and says the break cannot happen, with its fixes hidden. The loop
+    meter highlights its "Everyone" row.
+- **The trim.** The main path went from 29 figures to 11, as planned.
+  - Off the page, kept in the full study: the two-edges figure, the two
+    candidate charts, the calibration chart, the ladder and the outcomes
+    figure.
+  - Removed: part 3's second one-resident figure (and its paragraph), and
+    the borrowed-engagement animation, deleted from `limits-scene.tsx`.
+    Its sentence stays, and the study's sweeps carry the evidence.
+  - The three record charts became one paragraph on choosing by record,
+    with a study link to "How delegates are chosen".
+- **Renumbering.** The parts are now 1 to 3, "Where it still struggles"
+  became "Where it's still hard", and every "part N" in the copy and the
+  design rail was updated.
+- **Also fixed:** the close's long file paths now wrap, so the page no
+  longer scrolls sideways at phone width.
+- **Checks:** types and lint are clean, and `eval/tests/test_liquid_story.py`
+  passes (24 tests). In the browser, the dials move together as described.
+  At 375px there is no sideways scroll, and the dial's eleven stops fit.
 
 ## Built in slice G5 (2026-11-20)
 
@@ -1522,6 +1758,8 @@ draft outline without changes.
 
 ## Still open
 
+- **The video's hosting:** R2 with the browser's player is tried first;
+  Ben decides once the video is recorded.
 - **Ben's descriptions** of the animations and diagrams still without one
   (the table in "Animations and diagrams").
 - **R2's hypothesis and rules,** before it runs:
@@ -1543,6 +1781,14 @@ draft outline without changes.
   stand-in at an accuracy the reader sets.
 - **The wrong-ballot table:** whether it becomes a slider. It is on the study
   page only.
+
+Settled 2026-11-23 (Ben):
+- ~~The video opening~~: the plan in "The video opening and the trim" is
+  agreed, as slice V before H.
+- ~~The readable version as an exception to "no expandable drawers"~~:
+  fine.
+- ~~An "everyone votes" stop on the dial~~: yes.
+- ~~A script drafted from the beats~~: no; Ben writes his own.
 
 Settled 2026-11-20:
 - ~~Ben's markup of "The story"~~: the revised outline.
