@@ -30,7 +30,8 @@ See "The story" and "Slices".
 carries too much. Ben proposes a short video of himself explaining liquid
 democracy to open it, so readers who know the idea reach the proposals and
 the app sooner. The plan, with the trim of the kept parts, is in "The video
-opening and the trim"; it becomes slice V, before H.
+opening and the trim"; it became slice V, before H, and slice V is built
+(see "Built in slice V"). The recording is still to come.
 
 This is build step 7 of
 [`demo-5-liquid-democracy.md`](demo-5-liquid-democracy.md). It replaces the
@@ -54,8 +55,9 @@ built.
 
 ## The video opening and the trim (agreed 2026-11-23)
 
-*Agreed with Ben on 2026-11-23; not built yet. His answers are under
-"Settled 2026-11-23" in "Still open".*
+*Agreed with Ben on 2026-11-23 and built the same day in slice V (see
+"Built in slice V"). His answers are under "Settled 2026-11-23" in "Still
+open".*
 
 **Why.** Ben, 2026-11-23: the page has too much going on, with too many
 animations, plots and text. Before the app it carries 29 figures: 7 in part
@@ -1338,7 +1340,7 @@ Slices after the 2026-11-20 draft (see "The story"):
 | F2 (built) | The revised outline. `/liquid` is rebuilt in the new five parts, plain and static, from existing figures, R1's numbers and new copy. The verdict moves to part 4, and each break sits beside its fix. The study page is unchanged. | the revised story |
 | G | The animations and diagrams in "Animations and diagrams", once Ben has described them, drawn with the app's elements and driven by `city.json` and R1. | + the mechanisms in motion |
 | R2 | The fallback study: declared with Ben, then run. The fallback rules go into the app's package, off by default. | part 3's fixes gain their evidence |
-| V | The video opening and the trim (see "The video opening and the trim"). Parts 1 and 2 move into a readable version, closed by default, under a video slot. The main path keeps parts 3 to 5, trimmed from 19 figures to 11, and the parts are renumbered. The dial gains an "everyone votes" stop. The recording is Ben's; the slot stays empty until it exists. | the shorter story, with the video once recorded |
+| V (built) | The video opening and the trim (see "The video opening and the trim"). Parts 1 and 2 move into a readable version, closed by default, under a video slot. The main path keeps parts 3 to 5, trimmed from 19 figures to 11, and the parts are renumbered. The dial gains an "everyone votes" stop. The recording is Ben's; the slot stays empty until it exists. | the shorter story, with the video once recorded |
 | H | The app: build step 8, re-scoped around the proposals, with the preset scenarios. Possibly two PRs. | + the proposed system to try |
 | — | The styling pass: colour, type and any motion beyond the mechanisms, after F to H | the designed page |
 
@@ -1469,6 +1471,53 @@ Plain and static, like slices B to D. The walkthrough's content is complete.
   decided; a slider stays possible.
 - **Methods and sources** carry no claim label; the heading's label is
   optional.
+
+## Built in slice V (2026-11-23)
+
+- **The video slot.** `components/liquid/story/explainer-video.tsx` plays
+  the video in the browser's own player (`preload="none"`, a poster, an
+  English captions track on by default) with a chapter list that jumps to
+  each beat.
+  - Its setting is `EXPLAINER_VIDEO` in `lib/liquid/explainer-video.ts`:
+    the MP4's URL, the poster and captions paths under `public/`, the
+    length in minutes, and the chapters with their start times.
+  - It is `null` until the video is recorded, so the opening shows no
+    player. Checked with a temporary entry, then reverted: the player and
+    chapters render, and the readable version starts closed.
+- **The opening.** The question, then the video, then a row that skips to
+  the three parts and the app, and the link to the full study.
+- **The readable version** is `<details id="read">`, open until a video is
+  set. It holds the old parts 1 and 2 unchanged, under the kickers "The
+  idea" and "How it works", and their copy now points to parts 1 and 2 of
+  the main path.
+- **Two measures** sit in a box after it: fidelity, overhead and the goal.
+- **The "everyone votes" stop.** `TurnoutProvider` takes `everyoneStop`.
+  - Such a provider shares its parent's turnout level, so moving any dial
+    still moves every other. It adds "All" after 0.9, where part 1's dials
+    start.
+  - Moving a dial in part 2 or 3 moves part 1 off "All"; picking "All" in
+    part 1 leaves the later parts at their level.
+  - At "All", the three-ways figure shows the four everyone-votes
+    arrangements. The empty-record figure draws every resident as having a
+    record and says the break cannot happen, with its fixes hidden. The loop
+    meter highlights its "Everyone" row.
+- **The trim.** The main path went from 29 figures to 11, as planned.
+  - Off the page, kept in the full study: the two-edges figure, the two
+    candidate charts, the calibration chart, the ladder and the outcomes
+    figure.
+  - Removed: part 3's second one-resident figure (and its paragraph), and
+    the borrowed-engagement animation, deleted from `limits-scene.tsx`.
+    Its sentence stays, and the study's sweeps carry the evidence.
+  - The three record charts became one paragraph on choosing by record,
+    with a study link to "How delegates are chosen".
+- **Renumbering.** The parts are now 1 to 3, "Where it still struggles"
+  became "Where it's still hard", and every "part N" in the copy and the
+  design rail was updated.
+- **Also fixed:** the close's long file paths now wrap, so the page no
+  longer scrolls sideways at phone width.
+- **Checks:** types and lint are clean, and `eval/tests/test_liquid_story.py`
+  passes (24 tests). In the browser, the dials move together as described.
+  At 375px there is no sideways scroll, and the dial's eleven stops fit.
 
 ## Built in slice G5 (2026-11-20)
 

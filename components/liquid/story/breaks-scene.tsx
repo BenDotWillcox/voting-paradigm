@@ -30,7 +30,7 @@ import { useStoryData } from "./story-data";
 import { TurnoutDial, useTurnout } from "./turnout";
 
 /*
- * Part 3 of the story, "where the machinery breaks", on the shared stage
+ * Part 1 of the story, "where the machinery breaks", on the shared stage
  * (prompts/demo-5-walkthrough.md, items 11, 17, 10 and 18, described by Ben):
  * a delegate who does not vote drops the vote and it cracks, then the reader
  * swipes through the fixes that could catch it; residents with no record
@@ -370,11 +370,13 @@ const GREY: DotLook = { color: INK.empty, ring: false };
 
 export function EmptyRecordFigure() {
   const { city, measures, exploratory } = useStoryData();
-  const { key, level } = useTurnout();
+  const { key, level, everyone } = useTurnout();
   const player = useScenePlayer(EMPTY.fixIn[1] + EMPTY.tail);
   const [fix, setFix] = useFix(player);
   const t = player.t;
-  const at = city.levels[key];
+  // With everyone voting every resident has a record, so the break cannot happen
+  const at = everyone ? city.everyone : city.levels[key];
+  const setting = everyone ? "with everyone voting" : `at turnout ${level}`;
   const empty = React.useMemo(
     () => Array.from(at.liquid_reason).flatMap((code, voter) => (code === "e" ? [voter] : [])),
     [at.liquid_reason]
@@ -417,11 +419,19 @@ export function EmptyRecordFigure() {
 
   return (
     <StoryFigure
-      title={`Nobody to delegate to, at turnout ${level}`}
-      subtitle={`${empty.length} of ${city.design.residents} residents have never voted, so they have no record to choose a delegate by. They keep the question, and rarely vote on it.`}
-      source="Primary city 1, recomputed with the frozen code; the representative's evidence: eval/benchmarks/delegation_fallback_v1 (exploratory)"
+      title={`Nobody to delegate to, ${setting}`}
+      subtitle={
+        everyone
+          ? "With everyone voting, every resident has a record to choose a delegate by, so this break cannot happen. Move the dial to a turnout level to see it."
+          : `${empty.length} of ${city.design.residents} residents have never voted, so they have no record to choose a delegate by. They keep the question, and rarely vote on it.`
+      }
+      source={
+        everyone
+          ? "Primary city 1 with everyone voting (exploratory)"
+          : "Primary city 1, recomputed with the frozen code; the representative's evidence: eval/benchmarks/delegation_fallback_v1 (exploratory)"
+      }
       table={{
-        caption: `The ${empty.length} residents with no record, on one question, at turnout ${level}`,
+        caption: `The ${empty.length} residents with no record, on one question, ${setting}`,
         columns: [
           { key: "fix", label: "Fix" },
           { key: "match", label: "Ballot matches them", numeric: true },
@@ -445,12 +455,16 @@ export function EmptyRecordFigure() {
         }),
       }}
     >
-      <FixPicker value={fix} onChange={setFix} />
+      {everyone ? null : <FixPicker value={fix} onChange={setFix} />}
       <div ref={player.ref}>
         <CityDots
           city={city}
           looks={looks}
-          ariaLabel={`Residents with no record on one question: ${now.match} ballots match them, ${now.contrary} are against them, ${now.none} have no ballot.`}
+          ariaLabel={
+            everyone
+              ? `With everyone voting, all ${city.design.residents} residents have a record.`
+              : `Residents with no record on one question: ${now.match} ballots match them, ${now.contrary} are against them, ${now.none} have no ballot.`
+          }
           tooltip={(voter) => (
             <div className="font-sans">
               <div className="font-semibold">
@@ -461,11 +475,14 @@ export function EmptyRecordFigure() {
           )}
         />
         <p className="mt-2 font-sans text-xs text-story-ink-2 tabular-nums">
-          {fix === "problem"
-            ? `Residents with a record are drawn faint. The ${empty.length} with none have no ballot from a delegate.`
-            : `Under this fix, of the ${empty.length}: ${now.match} ballots match them, ${now.contrary} are against them, ${now.none} ${fix === "agent" ? "are unknown" : "have no ballot"}.`}
+          {everyone
+            ? "Every resident has a record, so all are drawn faint: nobody is left without one to choose by."
+            : fix === "problem"
+              ? `Residents with a record are drawn faint. The ${empty.length} with none have no ballot from a delegate.`
+              : `Under this fix, of the ${empty.length}: ${now.match} ballots match them, ${now.contrary} are against them, ${now.none} ${fix === "agent" ? "are unknown" : "have no ballot"}.`}
         </p>
-        <BallotLegend className="mt-2" compact />
+        {everyone ? null : <BallotLegend className="mt-2" compact />}
+        {everyone ? null : (
         <FixNote fix={fix}>
           {fix === "problem"
             ? `Under liquid delegation their fidelity is ${pct(frozen.empty_record_fidelity ?? 0)} at this turnout.`
@@ -477,6 +494,7 @@ export function EmptyRecordFigure() {
                   ? `Tested in the fallback study: with the representative as default, their fidelity at this turnout rises from ${pct(frozen.empty_record_fidelity ?? 0)} to ${pct(withDefault.empty_record_fidelity ?? 0)}.`
                   : "A model of them built from one interview casts their ballots. It needs no voting record, but no accuracy is claimed, so its ballots are shown as unknown."}
         </FixNote>
+        )}
         <TurnoutDial className="mt-4 max-w-xl" />
         <ReplayButton player={player} className="mt-3" />
       </div>
@@ -492,7 +510,7 @@ const LOOP = { hop: 520, circle: 2, tail: 700 } as const;
 
 export function LoopFigure() {
   const { city, measures, exploratory } = useStoryData();
-  const { key, level, levels, swiss } = useTurnout();
+  const { key, level, levels, swiss, everyone } = useTurnout();
   const { chain, handed_pairs: handed, handed_pairs_ending_on_loop: onLoop } = city.mechanism;
   const loop = chain.cycle;
   const color = seriesColor(chain.topic);
@@ -527,8 +545,8 @@ export function LoopFigure() {
   const ruled = t >= duration - LOOP.tail;
 
   const meter = [
-    ...levels.map((l) => ({ label: String(l), value: measures.levels[levelKey(l)].liquid.loop_share ?? 0, current: levelKey(l) === key, swiss: l === swiss })),
-    { label: "Everyone", value: exploratory.everyone_votes.measures.liquid.loop_share ?? 0, current: false, swiss: false },
+    ...levels.map((l) => ({ label: String(l), value: measures.levels[levelKey(l)].liquid.loop_share ?? 0, current: !everyone && levelKey(l) === key, swiss: l === swiss })),
+    { label: "Everyone", value: exploratory.everyone_votes.measures.liquid.loop_share ?? 0, current: everyone, swiss: false },
   ];
   const most = Math.max(...meter.map((m) => m.value));
 
@@ -617,7 +635,10 @@ export function LoopFigure() {
               </div>
             ))}
           </div>
-          <p className="mt-2 text-story-muted">The highlighted row follows the dial (turnout {level}); &ldquo;Everyone&rdquo; is the exploratory everyone-votes run.</p>
+          <p className="mt-2 text-story-muted">
+            The highlighted row follows the dial ({everyone ? "everyone votes" : `turnout ${level}`}); &ldquo;Everyone&rdquo; is
+            the exploratory everyone-votes run.
+          </p>
         </div>
         <TurnoutDial className="mt-4 max-w-xl" />
       </div>

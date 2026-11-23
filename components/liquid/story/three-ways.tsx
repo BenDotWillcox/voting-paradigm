@@ -38,7 +38,9 @@ export function ThreeWaysFigure() {
   const setting = useSetting();
   const shownList = setting.everyone ? SHOWN_EVERYONE : SHOWN;
   const strips = setting.everyone ? SHOWN_EVERYONE : STRIPS;
-  const [shown, setShown] = React.useState<Arrangement>("direct");
+  const [picked, setShown] = React.useState<Arrangement>("direct");
+  // The proxy is offered only with everyone voting, and full turnout only without
+  const shown = shownList.includes(picked) ? picked : "direct";
   const codes = setting.city.codes[shown];
   const looks = React.useMemo(() => Array.from(codes, (code) => ballotLook(code as BallotCode)), [codes]);
   const counts = tally(codes);

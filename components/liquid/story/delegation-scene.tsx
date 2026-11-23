@@ -29,7 +29,7 @@ import {
 import { useStoryData } from "./story-data";
 
 /*
- * Part 2 of the story, "the basic version", as one scene in three stages
+ * "How it works" in the story's readable version, as one scene in three stages
  * (prompts/demo-5-walkthrough.md, items 8, 9 and 13, described by Ben):
  * a ballot becomes an orb and is sorted by topic colour to the resident's
  * delegates; one delegate passes it on; and the whole city's votes flow to
