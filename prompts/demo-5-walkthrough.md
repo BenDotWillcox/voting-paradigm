@@ -26,7 +26,7 @@ made while building them.
 
 See "The story" and "Slices".
 
-**2026-11-23: a video opening (proposed, for Ben's review).** The page
+**2026-11-23: a video opening (agreed with Ben the same day).** The page
 carries too much. Ben proposes a short video of himself explaining liquid
 democracy to open it, so readers who know the idea reach the proposals and
 the app sooner. The plan, with the trim of the kept parts, is in "The video
@@ -52,9 +52,10 @@ ends of the range liquid delegation cannot keep its overhead low. The two
 ends fail for opposite reasons, and each points to something that could be
 built.
 
-## The video opening and the trim (proposed 2026-11-23)
+## The video opening and the trim (agreed 2026-11-23)
 
-*For Ben's review; nothing is built yet.*
+*Agreed with Ben on 2026-11-23; not built yet. His answers are under
+"Settled 2026-11-23" in "Still open".*
 
 **Why.** Ben, 2026-11-23: the page has too much going on, with too many
 animations, plots and text. Before the app it carries 29 figures: 7 in part
@@ -134,12 +135,15 @@ page's job.
 version under the video covers the same ground for anyone who will not play
 it.
 
-**Hosting.** Proposed: the MP4 on Cloudflare R2, beside the districting
-assets, played in the browser's own player with a poster frame and
-`preload="none"`. Nothing loads until the reader presses play, and no
-outside embed is involved. Only the captions and the poster are committed;
-the video file stays out of Git. The alternative is an unlisted YouTube
-video, if Ben wants it findable there too.
+**Hosting.** Ben will try R2 first and decide once the video is recorded.
+- **R2, tried first:** the MP4 on Cloudflare R2, beside the districting
+  assets, played in the browser's own player with a poster frame and
+  `preload="none"`. Nothing loads until the reader presses play, and no
+  outside embed is involved.
+- **The alternative:** an unlisted YouTube video, if Ben wants it findable
+  there too.
+- Either way, only the captions and the poster are committed; the video
+  file stays out of Git.
 
 ### The page after the trim
 
@@ -152,8 +156,8 @@ video, if Ben wants it findable there too.
 - **"Prefer reading?"** holds parts 1 and 2 as built, with their numbers and
   animations, in a section closed by default. They become the video's
   readable version, so nothing built is lost. This is an exception to "no
-  expandable deep-dive drawers" (see "Two pages"): it holds the video's
-  content, not extra depth.
+  expandable deep-dive drawers" (see "Two pages"), agreed by Ben: it holds
+  the video's content, not extra depth.
 - **Until the video exists,** its slot is empty and the readable version
   shows open, so the slice can merge before the recording.
 - **Two measures,** in two lines after the opening: fidelity, overhead and
@@ -169,8 +173,13 @@ votes.
   introduced in part 1 (now in the readable version), and the two-edges
   figure, which the full study keeps. Its link stays.
 - 6 figures become 4.
-- **An option:** give the dial an "everyone votes" stop, so the first figure
-  starts where the video ends.
+- **The dial gains an "everyone votes" stop** (Ben, 2026-11-23), so the
+  first figure starts where the video ends. It is where the dial starts.
+  - At that stop the figures use R1's everyone-votes numbers, as the
+    readable version does.
+  - A break that cannot happen when everyone votes (a lost vote, an empty
+    record) says so at that stop, rather than showing an empty figure.
+    Loops still happen, so the loop figure shows them.
 
 **Part 2 (was 4). Where it's still hard.**
 - **Strict categories:** the routing animation and the router benchmark
@@ -211,10 +220,13 @@ Unchanged, except that its copy points to the video and to parts 1 and 2.
 One PR, before slice H, so the app lands in the page's final shape:
 1. **The video slot,** `components/liquid/story/explainer-video.tsx`: the
    browser's player, the captions track, the chapter list and the poster.
-   It stays empty until a video URL is set.
+   It stays empty until a video URL is set. It is built for R2 first; a
+   YouTube embed would replace only the player.
 2. **The opening:** the skip row, the readable version and the two
    measures.
 3. **The trim and the renumbering** described above.
+4. **The dial's "everyone votes" stop,** and how each break figure reads
+   at it.
 
 The recording is Ben's, and slots in once it exists.
 
@@ -1326,7 +1338,7 @@ Slices after the 2026-11-20 draft (see "The story"):
 | F2 (built) | The revised outline. `/liquid` is rebuilt in the new five parts, plain and static, from existing figures, R1's numbers and new copy. The verdict moves to part 4, and each break sits beside its fix. The study page is unchanged. | the revised story |
 | G | The animations and diagrams in "Animations and diagrams", once Ben has described them, drawn with the app's elements and driven by `city.json` and R1. | + the mechanisms in motion |
 | R2 | The fallback study: declared with Ben, then run. The fallback rules go into the app's package, off by default. | part 3's fixes gain their evidence |
-| V (proposed 2026-11-23) | The video opening and the trim (see "The video opening and the trim"). Parts 1 and 2 move into a readable version, closed by default, under a video slot. The main path keeps parts 3 to 5, trimmed from 19 figures to 11, and the parts are renumbered. The recording is Ben's; the slot stays empty until it exists. | the shorter story, with the video once recorded |
+| V | The video opening and the trim (see "The video opening and the trim"). Parts 1 and 2 move into a readable version, closed by default, under a video slot. The main path keeps parts 3 to 5, trimmed from 19 figures to 11, and the parts are renumbered. The dial gains an "everyone votes" stop. The recording is Ben's; the slot stays empty until it exists. | the shorter story, with the video once recorded |
 | H | The app: build step 8, re-scoped around the proposals, with the preset scenarios. Possibly two PRs. | + the proposed system to try |
 | — | The styling pass: colour, type and any motion beyond the mechanisms, after F to H | the designed page |
 
@@ -1697,12 +1709,8 @@ draft outline without changes.
 
 ## Still open
 
-- **The video opening (2026-11-23),** for Ben to confirm:
-  - the plan as a whole ("The video opening and the trim");
-  - the readable version as an exception to "no expandable drawers";
-  - hosting: R2 with the browser's player, or an unlisted YouTube video;
-  - whether the turnout dial gains an "everyone votes" stop;
-  - whether Ben wants a script drafted from the seven beats.
+- **The video's hosting:** R2 with the browser's player is tried first;
+  Ben decides once the video is recorded.
 - **Ben's descriptions** of the animations and diagrams still without one
   (the table in "Animations and diagrams").
 - **R2's hypothesis and rules,** before it runs:
@@ -1724,6 +1732,14 @@ draft outline without changes.
   stand-in at an accuracy the reader sets.
 - **The wrong-ballot table:** whether it becomes a slider. It is on the study
   page only.
+
+Settled 2026-11-23 (Ben):
+- ~~The video opening~~: the plan in "The video opening and the trim" is
+  agreed, as slice V before H.
+- ~~The readable version as an exception to "no expandable drawers"~~:
+  fine.
+- ~~An "everyone votes" stop on the dial~~: yes.
+- ~~A script drafted from the beats~~: no; Ben writes his own.
 
 Settled 2026-11-20:
 - ~~Ben's markup of "The story"~~: the revised outline.
