@@ -1,14 +1,18 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { ArrowLeft, Bot, Lock, PlayCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { LocalElicitationLab } from "@/components/preferences/local-elicitation-lab";
 import { PreferenceDemoLab } from "@/components/preferences/preference-demo-lab";
+import { isJournalLoopbackHost } from "@/lib/personal-journal-local";
 
 export const dynamic = "force-dynamic";
 
 type DemoMode = "replay" | "live";
 
-export default function PreferencesPage() {
+export default async function PreferencesPage() {
+  const showPersonalJournal = process.env.NODE_ENV === "development" &&
+    process.env.PERSONAL_JOURNAL_LOCAL === "1" && isJournalLoopbackHost((await headers()).get("host"));
   const configuredMode: DemoMode =
     process.env.PREFERENCE_DEMO_MODE === "live" ? "live" : "replay";
   const liveEnabled =
@@ -71,6 +75,11 @@ export default function PreferencesPage() {
         walkthroughVideoSrc={walkthroughVideoSrc}
       />
 
+      {showPersonalJournal && (
+        <Link href="/preferences/journal" className="mt-8 inline-flex text-sm font-medium underline underline-offset-4">
+          Open your local ballot journal
+        </Link>
+      )}
       {process.env.NODE_ENV !== "production" && <LocalElicitationLab />}
     </main>
   );
